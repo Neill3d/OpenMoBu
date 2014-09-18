@@ -1,3 +1,14 @@
+
+PLUGINS
+
+box_poseReader
+box_rayIntersect
+box_spring
+filter_extrapolate
+manager_AutoSave
+tool_renderAdvance
+
+
 How to compile
 
 1) Specify env variables with the path to your motionbuilder folder
