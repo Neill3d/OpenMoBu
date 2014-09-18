@@ -5,31 +5,31 @@
  For more information please visit my blog - http://www.neill3d.com
  
 ---
-  How to compile
+ How to compile
   
   1) Specify env variables with the path to your motionbuilder folder
-ADSK_MOBU_2010_64
-ADSK_MOBU_2011_64
-ADSK_MOBU_2012_64
-ADSK_MOBU_2013_64
-ADSK_MOBU_2014_64
-ADSK_MOBU_2015_64
+* ADSK_MOBU_2010_64
+* ADSK_MOBU_2011_64
+* ADSK_MOBU_2012_64
+* ADSK_MOBU_2013_64
+* ADSK_MOBU_2014_64
+* ADSK_MOBU_2015_64
  
  2) On my machine I have put 32 bits version of MoBu into the 64 bits folders. They share the same files except folders bin/win32 and bin/x64.
 
 3) For supporting older version of MoBu in different projects I'm using these predefines
 
-OLD_FBEVALUATE_LOCALTIME - MoBu 2010 doesn't support recieving system and local time from the evaluation variable FBEvaluateInfo
-OLD_FBTIME_SETFRAME - in old SetFrame function (MoBu 2010) you need to specify a bool parameter as an argument
-OLD_FBTIME_GETFRAME
-OLD_SCENE_EVENTS - There some new events in new version of MoBu like attach/detach component from FBScene
-OLD_FBTREE - in old tree control you don't have several function to work with a checkboxes
-OLD_FBAPP_FILERENDER
-OLD_FIND_MODEL_BY_NAME - in old MoBu version we have different function name to get objects by name. Old version FBFindModelsByName, new version - FBFindModelByLabelName
-OLD_DOCK_POSITION
-OLD_OPENGL_HEADER - starting from MoBu 2011 we need to specify fbsdk-opengl header separately
-OLD_FBMATH
-OLD_CONSTRAINT_MANAGER
+* OLD_FBEVALUATE_LOCALTIME - MoBu 2010 doesn't support recieving system and local time from the evaluation variable FBEvaluateInfo
+* OLD_FBTIME_SETFRAME - in old SetFrame function (MoBu 2010) you need to specify a bool parameter as an argument
+* OLD_FBTIME_GETFRAME
+* OLD_SCENE_EVENTS - There some new events in new version of MoBu like attach/detach component from FBScene
+* OLD_FBTREE - in old tree control you don't have several function to work with a checkboxes
+* OLD_FBAPP_FILERENDER
+* OLD_FIND_MODEL_BY_NAME - in old MoBu version we have different function name to get objects by name. Old version FBFindModelsByName, new version - FBFindModelByLabelName
+* OLD_DOCK_POSITION
+* OLD_OPENGL_HEADER - starting from MoBu 2011 we need to specify fbsdk-opengl header separately
+* OLD_FBMATH
+* OLD_CONSTRAINT_MANAGER
  
 4) You should know that each dll plugin project has a resource with version information.
  
