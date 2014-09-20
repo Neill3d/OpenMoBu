@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "autosave", "manager_AutoSav
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "renderAdvance", "tool_RenderAdvance\renderAdvance.vcxproj", "{D1E933C0-999A-43C6-B2D6-B52F56C394C5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "graphview_sample", "tool_graphview_sample\graphview.vcxproj", "{C31F0464-7832-46B5-8BC1-D5C6F105A75C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug 2011|Win32 = Debug 2011|Win32
@@ -235,6 +237,38 @@ Global
 		{D1E933C0-999A-43C6-B2D6-B52F56C394C5}.Release|Win32.ActiveCfg = Release 2011|x64
 		{D1E933C0-999A-43C6-B2D6-B52F56C394C5}.Release|x64.ActiveCfg = Release 2011|x64
 		{D1E933C0-999A-43C6-B2D6-B52F56C394C5}.Release|x64.Build.0 = Release 2011|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug 2011|Win32.ActiveCfg = Debug|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug 2011|x64.ActiveCfg = Debug|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug 2011|x64.Build.0 = Debug|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug|Win32.Build.0 = Debug|Win32
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug|x64.ActiveCfg = Debug|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug|x64.Build.0 = Debug|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2009|Win32.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2009|x64.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2009|x64.Build.0 = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2010|Win32.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2010|x64.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2010|x64.Build.0 = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2011|Win32.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2011|x64.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2011|x64.Build.0 = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2012|Win32.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2012|x64.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2012|x64.Build.0 = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2013|Win32.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2013|x64.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2013|x64.Build.0 = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2014|Win32.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2014|x64.ActiveCfg = Release 2014|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2014|x64.Build.0 = Release 2014|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2015|Win32.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2015|x64.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release 2015|x64.Build.0 = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release|Win32.ActiveCfg = Release|Win32
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release|Win32.Build.0 = Release|Win32
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release|x64.ActiveCfg = Release|x64
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
