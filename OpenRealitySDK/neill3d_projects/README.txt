@@ -5,8 +5,12 @@ PLUGINS
 * box_rayIntersect
 * box_spring
 * filter_extrapolate
-* manager_AutoSave
-* tool_renderAdvance
+* manager_AutoSave - plugin for 2009 MoBu. 
+There are three features: 
+	1) Auto save animation of current character to a specified folder
+	2) Adding a submenu to the MoBu main menu using win api hook
+	3) Key shortcuts for the FCurves window (changing keyframe tangents)
+* tool_renderAdvance - tool to render up to 4 views in a frame
 * tool_graphView_sample - simple own implementation of a graph view visual component based on FBView class
 
 How to compile
