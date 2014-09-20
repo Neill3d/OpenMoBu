@@ -1,13 +1,13 @@
 
 PLUGINS
 
-box_poseReader
-box_rayIntersect
-box_spring
-filter_extrapolate
-manager_AutoSave
-tool_renderAdvance
-tool_graphView_sample - simple own implementation of a graph view visual component based on FBView class
+* box_poseReader
+* box_rayIntersect
+* box_spring
+* filter_extrapolate
+* manager_AutoSave
+* tool_renderAdvance
+* tool_graphView_sample - simple own implementation of a graph view visual component based on FBView class
 
 How to compile
 
