@@ -6,7 +6,9 @@
  
 ---
  How to compile
-  
+ 
+ Note! Projects and MoBu solution are created in VisualStudio 2010.
+ 
   1) Specify env variables with the path to your motionbuilder folder
 * ADSK_MOBU_2010_64
 * ADSK_MOBU_2011_64
