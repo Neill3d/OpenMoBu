@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="Debug Win32" />
+	<File name="TextUtil.cpp" open="1" top="1" tabpos="5">
+		<Cursor position="2805" topLine="118" />
+	</File>
+	<File name="orimpexpcsv_engine.cxx" open="1" top="0" tabpos="1">
+		<Cursor position="5164" topLine="190" />
+	</File>
+	<File name="orimpexpcsv_menu.cxx" open="1" top="0" tabpos="4">
+		<Cursor position="864" topLine="0" />
+	</File>
+</CodeBlocks_layout_file>

@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4b7bd274-ee31-43b6-9768-a528df5c1a59}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{c86ff41d-8b79-4ca2-baf6-295a1efe0763}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Source Files\MCL">
+      <UniqueIdentifier>{19a985fc-ee88-48b3-a4f5-5bbf1966c644}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MCL">
+      <UniqueIdentifier>{7567abc6-318b-4a8e-8c5b-ec51efee9975}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="orimpexpcsv.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="orimpexpcsv_engine.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="orimpexpcsv_menu.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\TextUtil.cpp">
+      <Filter>Source Files\MCL</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="orimpexpcsv_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="orimpexpcsv_menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\TextUtil.h">
+      <Filter>Header Files\MCL</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
