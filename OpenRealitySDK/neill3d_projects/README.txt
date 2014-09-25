@@ -14,6 +14,8 @@ There are three features:
 	3) Key shortcuts for the FCurves window (changing keyframe tangents)
 * tool_renderAdvance - tool to render up to 4 views in a frame
 * tool_graphView_sample - simple own implementation of a graph view visual component based on FBView class
+* tool_SplitStyle - example of making a splitter control between two UI regions
+* tool_windowsmenu_sample - sample for MoBU under 2011. using winApi for making a context menu
 
 How to compile
 
