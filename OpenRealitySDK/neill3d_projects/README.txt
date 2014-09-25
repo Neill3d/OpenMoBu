@@ -4,6 +4,8 @@ PLUGINS
 * box_poseReader
 * box_rayIntersect
 * box_spring
+* constraint_driven - animate properties which are non-animatable by default
+* constraint_NewtonPhysics - old physics constraint based on Newton physics engine
 * filter_extrapolate
 * impexp_csm - character studio marker format support
 * impexp_csv - optitrack text format support
@@ -12,9 +14,14 @@ There are three features:
 	1) Auto save animation of current character to a specified folder
 	2) Adding a submenu to the MoBu main menu using win api hook
 	3) Key shortcuts for the FCurves window (changing keyframe tangents)
-* tool_renderAdvance - tool to render up to 4 views in a frame
+* manip_HUDext - extend funtionality of a HUD view elements
+* manip_skelet - move bone pivot with affecting the heirarchy
+* misc_VolumeCalculator - calculate your optical active zone in the virtual room
 * tool_graphView_sample - simple own implementation of a graph view visual component based on FBView class
+* tool_Hand - controls for easier fingers selection and some parametric functionality for hand animation
+* tool_renderAdvance - tool to render up to 4 views in a frame
 * tool_SplitStyle - example of making a splitter control between two UI regions
+* tool_UIBuilder - tool for faster making a UI for c++ and python
 * tool_windowsmenu_sample - sample for MoBU under 2011. using winApi for making a context menu
 
 How to compile
