@@ -5,6 +5,8 @@ PLUGINS
 * box_rayIntersect
 * box_spring
 * filter_extrapolate
+* impexp_csm - character studio marker format support
+* impexp_csv - optitrack text format support
 * manager_AutoSave - plugin for 2009 MoBu. 
 There are three features: 
 	1) Auto save animation of current character to a specified folder
