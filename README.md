@@ -5,6 +5,11 @@
  For more information please visit my blog - http://www.neill3d.com
  
 ---
+ Binaries
+ 
+ You can find some precompiled files here - https://drive.google.com/open?id=0B83XZ3TC_S6PcFZtSTJXZGk4NzQ&authuser=0
+ 
+---
  How to compile
  
  Note! Projects and MoBu solution are created in VisualStudio 2010.
