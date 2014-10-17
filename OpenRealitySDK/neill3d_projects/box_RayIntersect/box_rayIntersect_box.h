@@ -38,7 +38,7 @@ public:
 		mMesh = nullptr;
 	}
 
-	bool intersectModel( HFBModel pModel ); 
+	bool intersectModel( FBModel *pModel ); 
 
 	struct IntersectionInfo
 	{
@@ -50,8 +50,8 @@ public:
 	} info;
 
 public:
-	HFBGeometry		mGeometry;
-	HFBMesh			mMesh;
+	FBGeometry		*mGeometry;
+	FBMesh			*mMesh;
 
 	FBVector3d		mPos;
 	FBVector3d		mDir;
@@ -81,22 +81,22 @@ public:
 	virtual void FBDestroy();
 
 	//! Overloaded FBBox real-time evaluation function.
-	virtual bool AnimationNodeNotify(HFBAnimationNode pAnimationNode,HFBEvaluateInfo pEvaluateInfo);
+	virtual bool AnimationNodeNotify(FBAnimationNode *pAnimationNode, FBEvaluateInfo *pEvaluateInfo);
 
 	//! FBX Storage function
-	virtual bool FbxStore( HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat );
+	virtual bool FbxStore( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat );
 
 	//! FBX Retrieval function
-	virtual bool FbxRetrieve(HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat );
+	virtual bool FbxRetrieve( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat );
 
 private:
 
-	HFBAnimationNode	mNodeMesh;		//!> input - mesh node
-	HFBAnimationNode	mRayStart;		//!> input - ray start position
-	HFBAnimationNode	mRayDirection;	//!> input - ray direction point
+	FBAnimationNode		*mNodeMesh;		//!> input - mesh node
+	FBAnimationNode		*mRayStart;		//!> input - ray start position
+	FBAnimationNode		*mRayDirection;	//!> input - ray direction point
 
-	HFBAnimationNode	mIntersectPoint;	//!> output - mesh intersection world point
-	HFBAnimationNode	mUVCoords[2];		//!> output - intersection u,v points		
+	FBAnimationNode		*mIntersectPoint;	//!> output - mesh intersection world point
+	FBAnimationNode		*mUVCoords[2];		//!> output - intersection u,v points		
 };
 
 class Box_SphereCoords : public FBBox
@@ -112,22 +112,22 @@ public:
 	virtual void FBDestroy();
 
 	//! Overloaded FBBox real-time evaluation function.
-	virtual bool AnimationNodeNotify(HFBAnimationNode pAnimationNode,HFBEvaluateInfo pEvaluateInfo);
+	virtual bool AnimationNodeNotify(FBAnimationNode *pAnimationNode, FBEvaluateInfo *pEvaluateInfo);
 
 	//! FBX Storage function
-	virtual bool FbxStore( HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat );
+	virtual bool FbxStore( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat );
 
 	//! FBX Retrieval function
-	virtual bool FbxRetrieve(HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat );
+	virtual bool FbxRetrieve( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat );
 
 private:
 
-	HFBAnimationNode	mNodeMesh;		//!> input - mesh node - use this mesh to untransform a ray and sphere coords
-	HFBAnimationNode	mRayStart;		//!> input - ray start position
-	HFBAnimationNode	mRayDirection;	//!> input - ray direction point
+	FBAnimationNode		*mNodeMesh;		//!> input - mesh node - use this mesh to untransform a ray and sphere coords
+	FBAnimationNode		*mRayStart;		//!> input - ray start position
+	FBAnimationNode		*mRayDirection;	//!> input - ray direction point
 
-	HFBAnimationNode	mSphereCoords[2];		//!> output - inclination, azimuth
-	HFBAnimationNode	mUVCoords[2];		//!> output - result u,v coords of a point
+	FBAnimationNode		*mSphereCoords[2];		//!> output - inclination, azimuth
+	FBAnimationNode		*mUVCoords[2];		//!> output - result u,v coords of a point
 };
 
 

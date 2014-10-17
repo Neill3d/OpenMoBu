@@ -437,13 +437,13 @@ struct Camera
 
 		// Get The Current PROJECTION Matrix From OpenGL
 		//glGetFloatv( GL_PROJECTION_MATRIX, proj );
-		//pCamera->GetCameraMatrix(proj, kFBProjection);
-		proj = pCamera->GetMatrix(kFBProjection);
+		pCamera->GetCameraMatrix(proj, kFBProjection);
+		//proj = pCamera->GetMatrix(kFBProjection);
 
 		// Get The Current MODELVIEW Matrix From OpenGL
 		//glGetFloatv( GL_MODELVIEW_MATRIX, modl );
-		//pCamera->GetCameraMatrix(modl, kFBModelView);
-		modl = pCamera->GetMatrix(kFBModelView);
+		pCamera->GetCameraMatrix(modl, kFBModelView);
+		//modl = pCamera->GetMatrix(kFBModelView);
 
 		// Combine The Two Matrices (Multiply Projection By Modelview)
 		clip[ 0] = modl[ 0] * proj[ 0] + modl[ 1] * proj[ 4] + modl[ 2] * proj[ 8] + modl[ 3] * proj[12];

@@ -108,7 +108,7 @@ void ExtractSphereCoords(FBVector3d v, const FBMatrix &m, double &inclination, d
 }
 
 
-bool Box_SphereCoords::AnimationNodeNotify( HFBAnimationNode pAnimationNode, HFBEvaluateInfo pEvaluateInfo )
+bool Box_SphereCoords::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBEvaluateInfo *pEvaluateInfo )
 {
 	/*
 	*	1. Read the data from the in connector
@@ -131,13 +131,13 @@ bool Box_SphereCoords::AnimationNodeNotify( HFBAnimationNode pAnimationNode, HFB
 	int count = mNodeMesh->GetSrcCount();
 	for (int i=0; i<count; ++i)
 	{
-		HFBPlug pPlug = mNodeMesh->GetSrc(i);
+		FBPlug *pPlug = mNodeMesh->GetSrc(i);
 		pPlug = pPlug->GetOwner();
 			
 		if (pPlug->Is( FBModelPlaceHolder::TypeInfo ) )
 		{
-			HFBModelPlaceHolder pPlaceHolder = (HFBModelPlaceHolder) pPlug;
-			HFBModel pModel = pPlaceHolder->Model;
+			FBModelPlaceHolder *pPlaceHolder = (FBModelPlaceHolder*) pPlug;
+			FBModel *pModel = pPlaceHolder->Model;
 
 			FBMatrix modelMatrix;
 			pModel->GetMatrix(modelMatrix);
@@ -169,7 +169,7 @@ bool Box_SphereCoords::AnimationNodeNotify( HFBAnimationNode pAnimationNode, HFB
 /************************************************
  *	FBX Storage.
  ************************************************/
-bool Box_SphereCoords::FbxStore( HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat )
+bool Box_SphereCoords::FbxStore( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat )
 {
 	/*
 	*	Store box parameters.
@@ -181,7 +181,7 @@ bool Box_SphereCoords::FbxStore( HFBFbxObject pFbxObject, kFbxObjectStore pStore
 /************************************************
  *	FBX Retrieval.
  ************************************************/
-bool Box_SphereCoords::FbxRetrieve(HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat )
+bool Box_SphereCoords::FbxRetrieve( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat )
 {
 	/*
 	*	Retrieve box parameters.
@@ -365,7 +365,7 @@ bool InsidePolygon( int verticeCount, FBVector3d poly_verts[], FBVector3d Point)
 #define MAX_POLY_VERTS	4
 #define	TOO_FAR		1000000.0
 
-bool RayIntersector::intersectModel(HFBModel pModel)
+bool RayIntersector::intersectModel(FBModel *pModel)
 {
 	if (!pModel) return false;
 
@@ -568,7 +568,7 @@ int RayIntersector::intersect_triangle( FBVector3d orig, FBVector3d dir, FBVecto
 /************************************************
  *	Real-time engine evaluation
  ************************************************/
-bool Box_RayIntersect::AnimationNodeNotify( HFBAnimationNode pAnimationNode, HFBEvaluateInfo pEvaluateInfo )
+bool Box_RayIntersect::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBEvaluateInfo *pEvaluateInfo )
 {
 	/*
 	*	1. Read the data from the in connector
@@ -592,15 +592,15 @@ bool Box_RayIntersect::AnimationNodeNotify( HFBAnimationNode pAnimationNode, HFB
 	int count = mNodeMesh->GetSrcCount();
 	for (int i=0; i<count; ++i)
 	{
-		HFBPlug pPlug = mNodeMesh->GetSrc(i);
+		FBPlug *pPlug = mNodeMesh->GetSrc(i);
 		pPlug = pPlug->GetOwner();
 			
 		if (pPlug->Is( FBModelPlaceHolder::TypeInfo ) )
 		{
-			HFBModelPlaceHolder pPlaceHolder = (HFBModelPlaceHolder) pPlug;
-			HFBModel pModel = pPlaceHolder->Model;
+			FBModelPlaceHolder *pPlaceHolder = (FBModelPlaceHolder*) pPlug;
+			FBModel *pModel = pPlaceHolder->Model;
 
-			HFBGeometry pGeom = pModel->Geometry;
+			FBGeometry *pGeom = pModel->Geometry;
 
 			FBString name = pModel->Name;
 			printf( "%s\n", name );
@@ -622,7 +622,7 @@ bool Box_RayIntersect::AnimationNodeNotify( HFBAnimationNode pAnimationNode, HFB
 /************************************************
  *	FBX Storage.
  ************************************************/
-bool Box_RayIntersect::FbxStore( HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat )
+bool Box_RayIntersect::FbxStore( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat )
 {
 	/*
 	*	Store box parameters.
@@ -634,7 +634,7 @@ bool Box_RayIntersect::FbxStore( HFBFbxObject pFbxObject, kFbxObjectStore pStore
 /************************************************
  *	FBX Retrieval.
  ************************************************/
-bool Box_RayIntersect::FbxRetrieve(HFBFbxObject pFbxObject, kFbxObjectStore pStoreWhat )
+bool Box_RayIntersect::FbxRetrieve( FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat )
 {
 	/*
 	*	Retrieve box parameters.

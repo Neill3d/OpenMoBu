@@ -45,8 +45,8 @@ public:
 	virtual void FBDestroy();					//!< FiLMBOX Destructor.
 
 	//--- Apply filter.
-	virtual bool Apply( HFBAnimationNode pNode, bool pRecursive = true ) override;
-	virtual bool Apply( HFBFCurve pCurve ) override;
+	virtual bool Apply( FBAnimationNode *pNode, bool pRecursive = true ) override;
+	virtual bool Apply( FBFCurve *pCurve ) override;
 
 	//--- Reset Filter values
 	virtual void Reset();

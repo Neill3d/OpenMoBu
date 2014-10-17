@@ -81,7 +81,7 @@ void FilterExtrapolate::FBDestroy()
 /************************************************
  *	Filtering functionality (animation node).
  ************************************************/
-bool FilterExtrapolate::Apply( HFBAnimationNode pNode, bool pRecursive )
+bool FilterExtrapolate::Apply( FBAnimationNode *pNode, bool pRecursive )
 {
 	return FBFilter::Apply( pNode, pRecursive );
 }
@@ -89,7 +89,7 @@ bool FilterExtrapolate::Apply( HFBAnimationNode pNode, bool pRecursive )
 /************************************************
  *	Filtering functionality (FCurve).
  ************************************************/
-bool FilterExtrapolate::Apply( HFBFCurve pCurve )
+bool FilterExtrapolate::Apply( FBFCurve *pCurve )
 {
 	FBTime		lStart = FBTime(Start);
 	FBTime		lStop = FBTime(Stop);
