@@ -41,7 +41,11 @@ bool ORMenuItemCSMImport::FBCreate()
 /************************************************
  *	Import: Execution Function
  ************************************************/
-bool ORMenuItemCSMImport::Execute(const char *pFilename)
+#ifdef OLD_FBMENU_INTERFACE
+	bool ORMenuItemCSMImport::Execute(char *pFilename)
+#else
+	bool ORMenuItemCSMImport::Execute(const char *pFilename)
+#endif
 {
 	// Import data here into FiLMBOX
 	mEngine->ImportFile(pFilename);
@@ -67,7 +71,11 @@ bool ORMenuItemCSMExport::FBCreate()
 /************************************************
  *	Export: Execution Function
  ************************************************/
-bool ORMenuItemCSMExport::Execute(const char *pFilename)
+#ifdef OLD_FBMENU_INTERFACE
+	bool ORMenuItemCSMExport::Execute(char *pFilename)
+#else
+	bool ORMenuItemCSMExport::Execute(const char *pFilename)
+#endif
 {
 	// Import data here into FiLMBOX
 	mEngine->ExportFile(pFilename);

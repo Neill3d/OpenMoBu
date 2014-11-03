@@ -37,7 +37,12 @@ class ORMenuItemCSMImport : public FBMenuItem
 public:
 	//--- FBMenuItem functions
 	virtual bool FBCreate	();								//!< Overloaded FBMenuItem configuration function.
+
+#ifdef OLD_FBMENU_INTERFACE
+	virtual	bool Execute (char *pFilename=NULL);			//!< Overloaded FBMenuItem execution function.
+#else
 	virtual	bool Execute (const char *pFilename=NULL);			//!< Overloaded FBMenuItem execution function.
+#endif
 
 public:
     CSMEngine*    mEngine;
@@ -51,7 +56,12 @@ class ORMenuItemCSMExport : public FBMenuItem
 public:
 	//--- FBMenuItem functions
 	virtual bool FBCreate	();								//!< Overloaded FBMenuItem configuration function.
-	virtual bool Execute (const char *pFilename=NULL);			//!< Overloaded FBMenuItem execution function.
+
+#ifdef OLD_FBMENU_INTERFACE
+	virtual	bool Execute (char *pFilename=NULL);			//!< Overloaded FBMenuItem execution function.
+#else
+	virtual	bool Execute (const char *pFilename=NULL);			//!< Overloaded FBMenuItem execution function.
+#endif
 
 public:
     CSMEngine*    mEngine;

@@ -33,14 +33,24 @@ struct csm_data {
 	int		lastframe;
 	float	framerate;
 
+	struct	marker_name {
+		FBString name;
+
+		//! a constructor
+		marker_name(const char *_name)
+			: name(_name)
+		{}
+	};
+
 	struct	marker_data {
 		int		frame;
 		float	pos[MAX_MARKERS*3];	//
 	};
 
-	FBArrayTemplate<FBString>		markers;
+	FBArrayTemplate<marker_name*>	markers;
 	FBArrayTemplate<marker_data>	points;
 
+	//! a constructor
 	csm_data()
 	{
 		firstframe = 0;
@@ -48,7 +58,15 @@ struct csm_data {
 		framerate = 30.0;
 	}
 	~csm_data()
-	{}
+	{
+		for (int i=0; i<markers.GetCount(); ++i)
+			if (markers[i] != nullptr)
+			{
+				marker_name *ptr = markers[i];
+				delete ptr;
+				markers[i] = nullptr;
+			}
+	}
 };
 
 class CSMEngine

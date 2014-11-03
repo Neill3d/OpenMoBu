@@ -24,6 +24,8 @@
 
 #include "TextUtil.h"
 
+#include <array>
+
 /************************************************
  * File importation function
  * - to be modified to import your own custom file
@@ -37,13 +39,18 @@
  ************************************************/
 FBModelOptical *CSMEngine::CreateOpticalModel(int frameCount)
 {
-	FBConfigFile	lConfig("CSM.txt");
+	FBConfigFile	lConfig("@CSM.txt");
 
 	FBVector3d	pos;
 	FBTime	start;
 	FBTime	stop;
+	
+	// this is for mobu 2010
 	//FBTime	oneFrame(0,0,0,1,0,kFBTimeModeCustom, (double)csm.framerate);
+	
+	// this is a new FBTime constructor
 	FBTime	oneFrame(0,0,0,1,0,kFBTimeModeCustom);
+	oneFrame.SetSecondDouble( 1.0 / csm.framerate );
 
 	// set stop time
 	FBPlayerControl().SetTransportFps( kFBTimeModeCustom, (double)csm.framerate );
@@ -58,7 +65,6 @@ FBModelOptical *CSMEngine::CreateOpticalModel(int frameCount)
 	model->SamplingStart = start;
 	model->SamplingStop = stop;
 	model->SamplingPeriod = oneFrame;
-
 	
 	int sampleCount;
 	FBModelMarkerOptical  *opticalMarker;
@@ -66,29 +72,48 @@ FBModelOptical *CSMEngine::CreateOpticalModel(int frameCount)
 	// for number of markers
 	for (int i=0; i<csm.markers.GetCount(); i++)
 	{
-		opticalMarker = new FBModelMarkerOptical( csm.markers.GetAt(i) );
+		csm_data::marker_name *ptr = csm.markers.GetAt(i);
+		
+		opticalMarker = new FBModelMarkerOptical( (ptr) ? ptr->name : "opticalMarker" );
 		opticalMarker->Show = true;
 		opticalMarker->Size = 150.0;
-		model->Children.Add(opticalMarker);
+		opticalMarker->SetModelOptical(model);
+		//model->Children.Add(opticalMarker);
 	}
 
-	FBString	str;
-	str = lConfig.Get( "IMPORT", "rightCoordSys", "0" );
-	char rCoordSys = ((char*)str)[0];
-	str = lConfig.Get( "IMPORT", "scale", "0.0925" );
+	const int bufferSize = 256;
+	char buffer[bufferSize];
+	
+	memset( buffer, 0, sizeof(char) * bufferSize );
+	sprintf_s(buffer, bufferSize, "0");
+
+	const char *bufferPtr = buffer;
+	lConfig.GetOrSet( "IMPORT", "rightCoordSys", bufferPtr );
+	char rCoordSys = bufferPtr[0];
+
+	sprintf_s(buffer, bufferSize, "0.0925");
+	bufferPtr = buffer;
+	lConfig.GetOrSet( "IMPORT", "scale", bufferPtr );
+	
 	float scale;
-	char *text = (char*)str;
-	sscanf( text, "%f", &scale );
+	sscanf( bufferPtr, "%f", &scale );
 
 	// start, stop, period
 	model->ImportSetup();
+	
 	for (int i=0; i<csm.markers.GetCount(); i++)
 	{
-		opticalMarker = (FBModelMarkerOptical*) model->Children[i];
+		if (i >= model->Markers.GetCount())
+			continue;
+
+		opticalMarker = (FBModelMarkerOptical*) model->Markers[i];
 
 		sampleCount = opticalMarker->ImportBegin();
 		for (int j=0; j<csm.points.GetCount(); j++)
 		{
+			if (j >= sampleCount)
+				break;
+
 			// left handed layout
 			if (rCoordSys == '1')
 			{	
@@ -103,12 +128,18 @@ FBModelOptical *CSMEngine::CreateOpticalModel(int frameCount)
 				pos[2] = (double)csm.points[j].pos[i*3+2] * scale;
 			}
 
+			bool result = false;
 			if ( (pos[0] == 0.0) && (pos[1] == 0.0) && (pos[2] == 0.0))
-				opticalMarker->ImportKey(0.0, 0.0, 0.0, 1.0);
+				result = opticalMarker->ImportKey(0.0, 0.0, 0.0, 1.0);
 			else
-				opticalMarker->ImportKey( pos[0], pos[1], pos[2] );
+				result = opticalMarker->ImportKey( pos[0], pos[1], pos[2] );
+
+			if (result == false)
+				break;
 		}
-		opticalMarker->ImportEnd();
+		bool result = opticalMarker->ImportEnd();
+		if (result == false)
+			break;
 	}
 	
 
@@ -129,7 +160,7 @@ void CSMEngine::ImportFrameData( char *line )
 
 bool CSMEngine::ExportFile( const char* pFileName )
 {
-	FBConfigFile	lConfig("CSM.txt");
+	FBConfigFile	lConfig("@CSM.txt");
 
 	FBProgress	lProgress;
 	lProgress.Caption = "ExportCSM";
@@ -142,19 +173,22 @@ bool CSMEngine::ExportFile( const char* pFileName )
 	f = fopen( pFileName, "w" );
 	if ( f == NULL ) return false;
 	fseek(f, 0, 0);
-
+#ifdef OLD_FIND_MODEL_BY_NAME
+	FBModelOptical *pModel = (FBModelOptical*) FBFindModelByName("CSM");
+#else
 	FBModelOptical *pModel = (FBModelOptical*) FBFindModelByLabelName("CSM");
+#endif
 	if (!pModel) return false;
 
 	// info
-	fprintf(f, "$Filename actor.csm\n" );
+	fprintf(f, "$Filename test.csm\n" );
 	fprintf(f, "$Data 2009/02/06\n" );
 	fprintf(f, "$Time 18:33:00\n" );
 	fprintf(f, "$Actor test 1\n" );
 	fprintf(f, "\n" );
 
 	fprintf(f, "$Comments\n" );
-	fprintf(f, "General Capture\n" );
+	fprintf(f, "General Test\n" );
 	fprintf(f, "\n" );
 
 	// optical model statistics
@@ -170,10 +204,17 @@ bool CSMEngine::ExportFile( const char* pFileName )
 	lTime = pModel->SamplingPeriod;
 	//double rate = lTime.GetSecondDouble() * 10000.0;
 
+	std::array<char, 256> buffer;
+
+	buffer.fill(0);
+	sprintf_s(buffer.data(), buffer.size(), "120.0" );
+
+	const char *cbufferPtr = buffer.data();
+	
 	float rate;
-	FBString str = lConfig.Get( "EXPORT", "Rate", "120.00" );
-	char *text = (char*)str;
-	sscanf( text, "%f", &rate );
+	lConfig.GetOrSet( "EXPORT", "Rate", cbufferPtr );
+	
+	sscanf( cbufferPtr, "%f", &rate );
 
 	fprintf(f, "$Rate %f\n", rate );				// !! >> !!
 	fprintf(f, "\n" );
@@ -199,13 +240,28 @@ bool CSMEngine::ExportFile( const char* pFileName )
 
 	double pX, pY, pZ, pOcclusion;
 	float scale;
-	str = lConfig.Get( "EXPORT", "dropAsText", "0" );
-	char dropText = ((char*)str)[0];
-	str = lConfig.Get( "EXPORT", "rightCoordSys", "0" );
-	char rCoordSys = ((char*)str)[0];
-	str = lConfig.Get( "EXPORT", "Scale", "10.00" );
-	text = (char*)str;
-	sscanf( text, "%f", &scale );
+
+	// dropAsText
+	buffer.fill(0);
+	cbufferPtr = buffer.data();
+
+	lConfig.GetOrSet( "EXPORT", "dropAsText", cbufferPtr );
+	char dropText = cbufferPtr[0];
+
+	// rightCoordSys
+	buffer.fill(0);
+	cbufferPtr = buffer.data();
+
+	lConfig.GetOrSet( "EXPORT", "rightCoordSys", cbufferPtr );
+	char rCoordSys = cbufferPtr[0];
+
+	// scale
+	buffer.fill(0);
+	sprintf_s(buffer.data(), buffer.size(), "10.0" );
+	cbufferPtr = buffer.data();
+
+	lConfig.GetOrSet( "EXPORT", "Scale", cbufferPtr );
+	sscanf( cbufferPtr, "%f", &scale );
 
 	fprintf( f, "$Points\n" );
 	for (int i=startFrame; i<=stopFrame; i++)
@@ -270,6 +326,31 @@ bool CSMEngine::ExportFile( const char* pFileName )
 	return true;
 }
 
+#define IS_ALPHA(c) (((c) >= 'A' && (c) <= 'Z') || ((c) >= 'a' && (c) <= 'z'))
+#define TO_UPPER(c) ((c) & 0xDF)
+
+char * __cdecl strstri (const char * str1, const char * str2){
+        char *cp = (char *) str1;
+        char *s1, *s2;
+
+        if ( !*str2 )
+            return((char *)str1);
+
+        while (*cp){
+                s1 = cp;
+                s2 = (char *) str2;
+
+                while ( *s1 && *s2 && (IS_ALPHA(*s1) && IS_ALPHA(*s2))?!(TO_UPPER(*s1) - TO_UPPER(*s2)):!(*s1-*s2))
+                        ++s1, ++s2;
+
+                if (!*s2)
+                        return(cp);
+
+                ++cp;
+        }
+        return(NULL);
+}
+
 bool CSMEngine::ImportFile( const char* pFileName )
 {
 
@@ -304,7 +385,7 @@ bool CSMEngine::ImportFile( const char* pFileName )
 		{
 		case csm_common:
 			{
-				if ( strstr(buffer, "$FirstFrame") != NULL ){
+				if ( strstri(buffer, "$FirstFrame") != NULL ){
 					GetTextParts(NULL);
 					GetTextPart(buffer, 1, ptr);
 					if (ptr) {
@@ -312,7 +393,7 @@ bool CSMEngine::ImportFile( const char* pFileName )
 					}
 				}
 				else
-				if ( strstr(buffer, "$LastFrame") != NULL )
+				if ( strstri(buffer, "$LastFrame") != NULL || strstri(buffer, "$lasframe") != NULL )
 				{
 					GetTextParts(NULL);
 					GetTextPart(buffer, 1, ptr);
@@ -321,7 +402,7 @@ bool CSMEngine::ImportFile( const char* pFileName )
 					}
 				}
 				else
-				if ( strstr(buffer, "$Rate") != NULL )
+				if ( strstri(buffer, "$Rate") != NULL )
 				{
 					GetTextParts(NULL);
 					GetTextPart(buffer, 1, ptr);
@@ -330,12 +411,12 @@ bool CSMEngine::ImportFile( const char* pFileName )
 					}
 				}
 				else
-				if ( strstr(buffer, "$Order") != NULL)
+				if ( strstri(buffer, "$Order") != NULL)
 				{
 					mode = csm_markers;
 				}
 				else
-				if ( strstr(buffer, "$Points") != NULL)
+				if ( strstri(buffer, "$Points") != NULL)
 				{
 					mode = csm_points;
 					fillCount = csm.markers.GetCount() * 3;
@@ -345,7 +426,7 @@ bool CSMEngine::ImportFile( const char* pFileName )
 			}break;
 		case csm_markers:
 			{
-				if ( strstr(buffer, "$Points") != NULL)
+				if ( strstri(buffer, "$Points") != NULL)
 				{
 					mode = csm_points;
 					fillCount = csm.markers.GetCount() * 3;
@@ -359,7 +440,7 @@ bool CSMEngine::ImportFile( const char* pFileName )
 						GetTextPart( buffer, i, ptr );
 						if (ptr && isalpha(ptr[0])) {
 							FBString markerName(ptr);
-							csm.markers.Add(markerName);
+							csm.markers.Add( new csm_data::marker_name(markerName) );
 						}
 					}
 				}
@@ -368,7 +449,8 @@ bool CSMEngine::ImportFile( const char* pFileName )
 		case csm_points:
 			{
 				float percent = (float) data.frame;
-				percent = percent / (csm.lastframe - csm.firstframe) * 100.0f;
+				if ((csm.lastframe - csm.firstframe) > 0)
+					percent = percent / (csm.lastframe - csm.firstframe) * 100.0f;
 				lProgress.Percent = (int) percent;
 
 				int count = GetTextParts(buffer);
@@ -403,8 +485,13 @@ bool CSMEngine::ImportFile( const char* pFileName )
 				}
 				else
 				{
+					// frame index
+					GetTextPart( buffer, 0, ptr );
+					if (ptr)
+						sscanf( ptr, "%d", &data.frame );
+
 					// get frame positions
-					for (int i=0; i<count; i++)
+					for (int i=1; i<count; i++)
 					{
 						GetTextPart( buffer, i, ptr );
 						if (ptr && ( fillCount < ctrlLen )) {
