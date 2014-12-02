@@ -15,6 +15,7 @@
 #########################################################################################
 
 from pyfbsdk import *
+from pyfbsdk_additions import *
 import sys
 import bvh
 import math
@@ -31,6 +32,8 @@ def AxisAngleToQuaternion( ax, ay, az, angle ):
     qw = math.cos(0.5 * angle)
 
     return FBVector4d(qx, qy, qz, qw)
+
+# BVHWriter
 
 # BVHReader
 
@@ -99,29 +102,44 @@ class BVHReader(bvh.BVHReader):
         animNode = model.Rotation.GetAnimationNode()
         if animNode:
             eul = [rot[0], rot[1], rot[2]]
-            eul[0]=eul[0]*DEG_TO_RAD
-            eul[1]=eul[1]*DEG_TO_RAD
-            eul[2]=eul[2]*DEG_TO_RAD
 
-            qx = AxisAngleToQuaternion(1.0, 0.0, 0.0, eul[0])
-            qy = AxisAngleToQuaternion(0.0, 1.0, 0.0, eul[1])
-            qz = AxisAngleToQuaternion(0.0, 0.0, 1.0, eul[2])
-
-            qres = FBVector4d(0.0, 0.0, 0.0, 1.0)
-            FBQMult(qres, qy, qres)
-            FBQMult(qres, qx, qres)
-            FBQMult(qres, qz, qres)
-
-            rotEuler = FBVector3d(0.0, 0.0, 0.0)
-            FBQuaternionToRotation(rotEuler, qres, FBRotationOrder.kFBXYZ)
-           
-            rot = [rotEuler[0], rotEuler[1], rotEuler[2]]
+            if node.RotationOrder != FBModelRotationOrder.kFBEulerXYZ:
+            
+                eul[0]=eul[0]*DEG_TO_RAD
+                eul[1]=eul[1]*DEG_TO_RAD
+                eul[2]=eul[2]*DEG_TO_RAD
+    
+                qx = AxisAngleToQuaternion(1.0, 0.0, 0.0, eul[0])
+                qy = AxisAngleToQuaternion(0.0, 1.0, 0.0, eul[1])
+                qz = AxisAngleToQuaternion(0.0, 0.0, 1.0, eul[2])
+    
+                qres = FBVector4d(0.0, 0.0, 0.0, 1.0)
+                if node.RotationOrder == FBModelRotationOrder.kFBEulerZXY:
+                    FBQMult(qres, qy, qres)
+                    FBQMult(qres, qx, qres)
+                    FBQMult(qres, qz, qres)
+                elif node.RotationOrder == FBModelRotationOrder.kFBEulerZYX:
+                    FBQMult(qres, qx, qres)
+                    FBQMult(qres, qy, qres)
+                    FBQMult(qres, qz, qres)
+                else:
+                    print "unsupported mode"
+    
+                rotEuler = FBVector3d(0.0, 0.0, 0.0)
+                FBQuaternionToRotation(rotEuler, qres, FBRotationOrder.kFBXYZ)
+               
+                rot = [rotEuler[0], rotEuler[1], rotEuler[2]]
+            #
 
             animNode.KeyAdd(lTime, rot)
         
         values = values[nc:]
         for c in node.children:
             values = self.applyMotion(c, values)
+            
+        model.PropertyList.Find('RotationPivot').Data = FBVector3d(0.0, 0.0, 0.0)
+        model.PropertyList.Find('RotationOffset').Data = FBVector3d(0.0, 0.0, 0.0)
+            
         return values
         
     def createSkeleton(self, node, parent=None):
@@ -136,14 +154,16 @@ class BVHReader(bvh.BVHReader):
         j = FBModelSkeleton(node.name)
         if j:
             j.Parent = parent
-            #node.RotationOrder = order
+            node.RotationOrder = order
+            print order
             #j.RotationOrder = order
             # set local node offset
             
-            j.SetVector(FBVector3d(node.offset), FBModelTransformationType.kModelTranslation, True)
+            #j.SetVector(FBVector3d(node.offset), FBModelTransformationType.kModelTranslation, True)
             
             j.Translation.SetAnimated(True)
             j.Rotation.SetAnimated(True)
+            j.Translation = FBVector3d(node.offset)
             
             j.Show = True
             
@@ -175,10 +195,70 @@ class BVHReader(bvh.BVHReader):
             res = m[resStr]
         return res
 
-#######################################
+####################################### UI ############
 
-importer = BVHReader("C:\\Work\\BVH\\test_01_01.bvh")
-importer.read()
+def OnButtonImport(control, event):
 
+    lDialog = FBFilePopup()
+    lDialog.Caption = "Please choose a file to import"
+    lDialog.Filter = "*.bvh"
+    lDialog.Style = FBFilePopupStyle.kFBFilePopupOpen
+    
+    if lDialog.Execute():
+
+        importer = BVHReader(lDialog.FullFilename)
+        importer.read()
+    
+def OnButtonExport(control, event):
+
+    lDialog = FBFilePopup()
+    lDialog.Caption = "Please choose a file to export"
+    lDialog.Filter = "*.bvh"
+    lDialog.Style = FBFilePopupStyle.kFBFilePopupSave
+    
+    if lDialog.Execute():
+        
+        print lDialog.FullFilename
+
+def PopulateTool(t):
+    
+    # Create Main region frame:
+    x = FBAddRegionParam(5,FBAttachType.kFBAttachLeft,"")
+    y = FBAddRegionParam(5,FBAttachType.kFBAttachTop,"")
+    w = FBAddRegionParam(-5,FBAttachType.kFBAttachRight,"")
+    h = FBAddRegionParam(-5,FBAttachType.kFBAttachBottom,"")
+    
+    main = FBVBoxLayout()
+    t.AddRegion("main","main", x, y, w, h)
+    t.SetControl("main",main)
+
+    #
+    b = FBButton()
+    b.Caption = "Import BVH..."
+    b.OnClick.Add(OnButtonImport)
+    main.Add(b, 35)
+
+    #
+    b = FBButton()
+    b.Caption = "Export BVH..."
+    b.OnClick.Add(OnButtonExport)
+    main.Add(b, 35)
+
+
+def CreateTool():
+    t = None
+    try:
+        t = FBCreateUniqueTool("BVH Tool")
+    except NameError:
+        t = CreateUniqueTool("BVH Tool")
+        print "supporting MoBu 2010"
+        
+    if t:
+        t.StartSizeX = 200
+        t.StartSizeY = 400
+        PopulateTool(t)
+        ShowTool(t)
+        
+CreateTool()
 
         
