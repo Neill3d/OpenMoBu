@@ -16,6 +16,7 @@
 
 from pyfbsdk import *
 from pyfbsdk_additions import *
+import os
 import sys
 import bvh
 import math
@@ -34,7 +35,137 @@ def AxisAngleToQuaternion( ax, ay, az, angle ):
     return FBVector4d(qx, qy, qz, qw)
 
 # BVHWriter
-
+class BVHWriter:
+    
+    def __init__(self, filename, root):
+        self.filename = filename
+        self.root = root
+        self.motionChannels = []
+        
+    def write(self):
+        
+        self.fhandle = file(self.filename, 'w')
+        
+        self.writeHeirarchy()
+        self.writeMotion()
+        
+        self.fhandle.close()
+        
+    def writeHeirarchy(self):
+        self.fhandle.write("HIERARCHY\n")
+        
+        self.writeNode(self.root, 0, False)
+    
+    def checkChannels(self, animNode):
+        
+        if animNode and len(animNode.Nodes) == 3:
+            
+            xAnimNode = animNode.Nodes[0]
+            yAnimNode = animNode.Nodes[1]
+            zAnimNode = animNode.Nodes[2]
+            
+            return (xAnimNode.KeyCount > 0 or yAnimNode.KeyCount > 0 or zAnimNode.KeyCount > 0)
+        
+        return False
+        
+    def writeTabLevel(self, level):
+        
+        for i in range(level):
+            self.fhandle.write('\t')
+    
+    def writeNode(self, node, level, onlyOneChildren):
+        
+        IsEndSite = False
+        
+        # write name
+        
+        self.writeTabLevel(level)
+        if level == 0:
+            self.fhandle.write("ROOT " + node.Name + '\n')
+        elif onlyOneChildren and (len(node.Children) == 0):
+            self.fhandle.write("End Site\n")
+            IsEndSite = True
+        else:
+            self.fhandle.write("JOINT " + node.Name + '\n')
+        
+        self.writeTabLevel(level)
+        self.fhandle.write("{" + '\n')
+        
+        level += 1
+        
+        # write offset
+        offset = FBVector3d()
+        node.GetVector(offset, FBModelTransformationType.kModelTranslation, False)
+        
+        self.writeTabLevel(level)
+        self.fhandle.write("OFFSET %.5f %.5f %.5f\n" % (offset[0], offset[1], offset[2]) )
+        
+        # write channels
+            
+        if IsEndSite == False:
+        
+            numberOfChannels = 0
+            channels = []
+        
+            if self.checkChannels(node.Translation.GetAnimationNode()):
+                numberOfChannels += 3
+                channels += ["Xposition", "Yposition", "Zposition"]
+    
+                animNode = node.Translation.GetAnimationNode()
+                self.motionChannels += [animNode.Nodes[0], animNode.Nodes[1], animNode.Nodes[2]]
+            
+            if self.checkChannels(node.Rotation.GetAnimationNode()):
+                numberOfChannels += 3
+                channels += ["Zrotation", "Yrotation", "Xrotation"]
+            
+                animNode = node.Rotation.GetAnimationNode()
+                self.motionChannels += [animNode.Nodes[2], animNode.Nodes[1], animNode.Nodes[0]]
+            
+            self.writeTabLevel(level)
+            self.fhandle.write("CHANNELS " + str(numberOfChannels))
+            for ch in channels:
+                self.fhandle.write( " " + ch )
+            
+            self.fhandle.write( '\n' )
+        
+        # write all children
+        onlyOneChildren = len(node.Children) == 1
+        for obj in node.Children:
+            self.writeNode(obj, level, onlyOneChildren)
+        
+        level -= 1
+        if level < 0: level = 0
+        
+        self.writeTabLevel(level)
+        self.fhandle.write("}\n")
+    
+    def writeMotion(self):
+        self.fhandle.write("MOTION\n")
+        
+        lControl = FBPlayerControl()
+        startFrame = lControl.ZoomWindowStart.GetFrame()
+        stopFrame = lControl.ZoomWindowStop.GetFrame()
+        
+        numberOfFrames = stopFrame - startFrame + 1
+        frameTime = FBTime(0,0,0, 1).GetSecondDouble()
+        
+        self.fhandle.write("Frames: " + str(numberOfFrames) + '\n')
+        self.fhandle.write("Frame Time: %.7f\n" % (frameTime) )
+        
+        for iFrame in range(numberOfFrames):
+            self.writeMotionFrame(iFrame)
+            self.fhandle.write('\n')
+    
+    def writeMotionFrame(self, iFrame):
+        
+        currTime = FBTime(0,0,0, iFrame)
+        
+        for animNode in self.motionChannels:
+            if animNode.FCurve:
+                value = animNode.FCurve.Evaluate(currTime)
+                self.fhandle.write("%.4f " % (value) )
+        
+    
 # BVHReader
 
 class BVHReader(bvh.BVHReader):
@@ -216,9 +347,15 @@ def OnButtonExport(control, event):
     lDialog.Filter = "*.bvh"
     lDialog.Style = FBFilePopupStyle.kFBFilePopupSave
     
-    if lDialog.Execute():
+    l = FBModelList()
+    FBGetSelectedModels(l)
+    
+    if len(l) > 0 and lDialog.Execute():
         
-        print lDialog.FullFilename
+        root = l[0]
+        
+        exporter = BVHWriter(lDialog.FullFilename, root)
+        exporter.write()
 
 def PopulateTool(t):
     
@@ -255,7 +392,7 @@ def CreateTool():
         
     if t:
         t.StartSizeX = 200
-        t.StartSizeY = 400
+        t.StartSizeY = 120
         PopulateTool(t)
         ShowTool(t)
         
