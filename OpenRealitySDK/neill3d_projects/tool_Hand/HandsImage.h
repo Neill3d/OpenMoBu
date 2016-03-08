@@ -97,8 +97,8 @@ public:
 
 	void FillHandLeftFinger( int n, float x, float y, bool selected=false, FBModel *pModel=NULL );
 	void FillHandRightFinger( int n, float x, float y, bool selected=false, FBModel *pModel=NULL );
-	void FillHandLeftModels( FBModel *pHandModel );
-	void FillHandRightModels( FBModel *pHandModel );
+	void FillHandModels( FBModel *pHandModel, bool leftHand );
+	
 	void ResetSelection(void);									// clear scene selection
 	void CheckHandsSelection(void);
 	bool IsLeftBodyPartSelected(int n);

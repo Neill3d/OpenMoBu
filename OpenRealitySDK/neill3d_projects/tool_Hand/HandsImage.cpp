@@ -249,71 +249,36 @@ void CHandsImage::CleanUP()
 	}
 }
 
-void CHandsImage::FillHandLeftModels( FBModel *pHandModel )
+void CHandsImage::FillHandModels( FBModel *pHandModel, bool leftHand )
 {
-	if (pHandModel == NULL)
-	{
-		for (int i=0; i<FINGERS_COUNT; i++)
-			mHandLeft[i].mModel = NULL;
-	}
-	else
-	if ( pHandModel->Children.GetCount() != 0 )
-	{
-		mHandLeft[0].mModel = pHandModel;
-		//-- index
-		mHandLeft[1].mModel = pHandModel->Children[1];
-		mHandLeft[2].mModel = pHandModel->Children[1]->Children[0];
-		mHandLeft[3].mModel = pHandModel->Children[1]->Children[0]->Children[0];
-		//-- middle
-		mHandLeft[4].mModel = pHandModel->Children[2];
-		mHandLeft[5].mModel = pHandModel->Children[2]->Children[0];
-		mHandLeft[6].mModel = pHandModel->Children[2]->Children[0]->Children[0];
-		//-- ring
-		mHandLeft[7].mModel = pHandModel->Children[3];
-		mHandLeft[8].mModel = pHandModel->Children[3]->Children[0];
-		mHandLeft[9].mModel = pHandModel->Children[3]->Children[0]->Children[0];
-		//-- pinky
-		mHandLeft[10].mModel = pHandModel->Children[4];
-		mHandLeft[11].mModel = pHandModel->Children[4]->Children[0];
-		mHandLeft[12].mModel = pHandModel->Children[4]->Children[0]->Children[0];
-		//-- thumb
-		mHandLeft[13].mModel = pHandModel->Children[0];
-		mHandLeft[14].mModel = pHandModel->Children[0]->Children[0];
-		mHandLeft[15].mModel = pHandModel->Children[0]->Children[0]->Children[0];
-	}
-}
+	CFingerImage *mHandData = (leftHand) ? &mHandLeft[0] : &mHandRight[0];
 
-void CHandsImage::FillHandRightModels( FBModel *pHandModel )
-{
-	if (pHandModel == NULL)
+	if (pHandModel == nullptr)
 	{
 		for (int i=0; i<FINGERS_COUNT; i++)
-			mHandRight[i].mModel = NULL;
+			mHandData[i].mModel = nullptr;
 	}
 	else
 	if ( pHandModel->Children.GetCount() != 0 )
 	{
-		mHandRight[0].mModel = pHandModel;
-		//-- index
-		mHandRight[1].mModel = pHandModel->Children[1];
-		mHandRight[2].mModel = pHandModel->Children[1]->Children[0];
-		mHandRight[3].mModel = pHandModel->Children[1]->Children[0]->Children[0];
-		//-- middle
-		mHandRight[4].mModel = pHandModel->Children[2];
-		mHandRight[5].mModel = pHandModel->Children[2]->Children[0];
-		mHandRight[6].mModel = pHandModel->Children[2]->Children[0]->Children[0];
-		//-- ring
-		mHandRight[7].mModel = pHandModel->Children[3];
-		mHandRight[8].mModel = pHandModel->Children[3]->Children[0];
-		mHandRight[9].mModel = pHandModel->Children[3]->Children[0]->Children[0];
-		//-- pinky
-		mHandRight[10].mModel = pHandModel->Children[4];
-		mHandRight[11].mModel = pHandModel->Children[4]->Children[0];
-		mHandRight[12].mModel = pHandModel->Children[4]->Children[0]->Children[0];
-		//-- thumb
-		mHandRight[13].mModel = pHandModel->Children[0];
-		mHandRight[14].mModel = pHandModel->Children[0]->Children[0];
-		mHandRight[15].mModel = pHandModel->Children[0]->Children[0]->Children[0];
+		mHandData[0].mModel = pHandModel;
+
+		for (int i=0, count=pHandModel->Children.GetCount(); i<5 && i<count; ++i)
+		{
+			FBModel *pFinger = (i==4) ? pHandModel->Children[0] : pHandModel->Children[i+1];
+			
+			// index, middle, rign, pinky, thumb
+			mHandData[i*3 + 1].mModel = pFinger;
+			if (pFinger->Children.GetCount() > 0)
+			{
+				mHandData[i*3 + 2].mModel = pFinger->Children[0];
+				if (pFinger->Children[0]->Children.GetCount() > 0)
+				{
+					mHandData[i*3 + 3].mModel = pFinger->Children[0]->Children[0];
+				}
+			}
+			
+		}
 	}
 }
 
@@ -368,10 +333,13 @@ void CHandsImage::CheckHandsSelection(void)
 {
 	if (mHandLeft[0].mModel)
 		for (int i=0; i<FINGERS_COUNT; i++)
-			mHandLeft[i].selected = mHandLeft[i].mModel->Selected;
+			if (mHandLeft[i].mModel)
+				mHandLeft[i].selected = mHandLeft[i].mModel->Selected;
+
 	if (mHandRight[0].mModel)
 		for (int i=0; i<FINGERS_COUNT; i++)
-			mHandRight[i].selected = mHandRight[i].mModel->Selected;
+			if (mHandRight[i].mModel)
+				mHandRight[i].selected = mHandRight[i].mModel->Selected;
 
 	FBView::Refresh( true );
 }

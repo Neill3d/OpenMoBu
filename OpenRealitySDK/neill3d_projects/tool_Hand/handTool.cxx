@@ -125,13 +125,29 @@ CFinger::~CFinger()
  ************************************************/
 void CFinger::AddPropertyToModel( FBModel *pCtrlRigModel, FBModel *pModel )
 {
+	mFinger[0] = mFinger[1] = mFinger[2] = nullptr;
+	mSkeletFinger[0] = mSkeletFinger[1] = mSkeletFinger[2] = nullptr;
+
 	mFinger[0] = pCtrlRigModel;
-	mFinger[1] = pCtrlRigModel->Children[0];
-	mFinger[2] = pCtrlRigModel->Children[0]->Children[0];
+	if (pCtrlRigModel && pCtrlRigModel->Children.GetCount() > 0)
+	{
+		mFinger[1] = pCtrlRigModel->Children[0];
+
+		if (pCtrlRigModel->Children[0]->Children.GetCount() > 0)
+		{
+			mFinger[2] = pCtrlRigModel->Children[0]->Children[0];
+		}
+	}
 
 	mSkeletFinger[0] = pModel;
-	mSkeletFinger[1] = pModel->Children[0];
-	mSkeletFinger[2] = pModel->Children[0]->Children[0];
+	if (pModel && pModel->Children.GetCount() > 0)
+	{
+		mSkeletFinger[1] = pModel->Children[0];
+		if (pModel->Children[0]->Children.GetCount() > 0)
+		{
+			mSkeletFinger[2] = pModel->Children[0]->Children[0];
+		}
+	}
 
 	if (pCtrlRigModel)
 	{
@@ -1327,6 +1343,9 @@ void CFinger::AddRelationBoxes( int n, int ThumbAxis, FBConstraintRelation *pCon
 	//---------------------------- create boxes needed for this finger
 	for (int i=0; i<FINGER_ELEMS_COUNT; i++)
 	{
+		if (mFinger[i] == nullptr || mSkeletFinger[i] == nullptr)
+			continue;
+
 		mFingerBoxSrc[i]	= pConstraint->SetAsSource( mFinger[i] );
 		mSkeletFingerSrc[i] = pConstraint->SetAsSource( mSkeletFinger[i] );
 		mFingerBox[i]		= pConstraint->ConstrainObject( mFinger[i] );
@@ -1461,11 +1480,14 @@ void CFinger::MakeConnections()
 {
 	for (int i=0; i<FINGER_ELEMS_COUNT; i++)
 	{
-		
+		if (mFinger[i] == nullptr)
+			continue;
+
 		if (mLocalMode)
 		{
 			mRotationSrc[i] = NULL;
-			mRotationSrc[i] = mFingerBoxSrc[i]->AnimationNodeOutGet()->Nodes.Find( "Lcl Rotation" );
+			if (mFingerBoxSrc[i])
+				mRotationSrc[i] = mFingerBoxSrc[i]->AnimationNodeOutGet()->Nodes.Find( "Lcl Rotation" );
 			if (!mRotationSrc[i]) continue;	// skip if failed to find a rotation source
 		}
 		
@@ -1569,7 +1591,8 @@ void CHand::AddPropertyToModel( FBModel *pCtrlRigModel, FBModel *pModel )
 		//-- fingers property list (hold in first fk marker)
 		for (int i=0; i<HAND_FINGERS_COUNT; i++)
 		{
-			mFingers[i].AddPropertyToModel( mModel->Children[i], pModel->Children[i] );
+			if (mModel->Children.GetCount() > i && pModel->Children.GetCount() > i)
+				mFingers[i].AddPropertyToModel( mModel->Children[i], pModel->Children[i] );
 		}
 	}
 	else
@@ -2815,9 +2838,12 @@ void HandCtrlTool::EventButtonPrevClick( HISender pSender, HKEvent pEvent )
 	bool		bLeftHand;
 	bool		bRightHand;
 
-	if ( !(bLeftHand=mHandLeft.GetPrevKeyTime( startTime, currTime, lLeftHand )) )
+	bLeftHand=mHandLeft.GetPrevKeyTime( startTime, currTime, lLeftHand );
+	if (false == bLeftHand)
 		lLeftHand = currTime;
-	if ( !(bRightHand=mHandRight.GetPrevKeyTime( startTime, currTime, lRightHand )) )
+
+	bRightHand=mHandRight.GetPrevKeyTime( startTime, currTime, lRightHand );
+	if (false == bRightHand)
 		lRightHand = currTime;
 
 	if (bLeftHand)
@@ -2854,9 +2880,12 @@ void HandCtrlTool::EventButtonNextClick( HISender pSender, HKEvent pEvent )
 	bool	bLeftHand;
 	bool	bRightHand;
 
-	if ( !(bLeftHand=mHandLeft.GetNextKeyTime( stopTime, currTime, lLeftHand )) )
+	bLeftHand=mHandLeft.GetNextKeyTime( stopTime, currTime, lLeftHand );
+	if (false == bLeftHand)
 		lLeftHand = currTime;
-	if ( !(bRightHand=mHandRight.GetNextKeyTime( stopTime, currTime, lRightHand )) )
+
+	bRightHand=mHandRight.GetNextKeyTime( stopTime, currTime, lRightHand );
+	if (false == bRightHand)
 		lRightHand = currTime;
 
 	if (bLeftHand)
@@ -2923,12 +2952,13 @@ void HandCtrlTool::Disconnect()
 		//-- disconnect LEFT hand
 		FBModel *pCtrlRigModel = mApp.CurrentCharacter->GetCtrlRigModel( kFBLeftWristNodeId );
 		FBModel *pModel	= mApp.CurrentCharacter->GetModel( kFBLeftWristNodeId );
-
+/*
 #ifdef OLD_CONSTRAINT_MANAGER
 		FBConstraintManager lConstraintManager;
 #else
 		FBConstraintManager	&lConstraintManager = FBConstraintManager::TheOne();
 #endif
+		*/
 		if ( pCtrlRigModel && pModel ) 
 		{
 
@@ -3124,8 +3154,8 @@ void HandCtrlTool::EventIdleAnim( HISender pSender, HKEvent pEvent )
 
 void HandCtrlTool::EventNew( HISender pSender, HKEvent pEvent )
 {
-	mHandsImage.FillHandLeftModels( NULL );
-	mHandsImage.FillHandRightModels( NULL );
+	mHandsImage.FillHandModels( NULL, true );
+	mHandsImage.FillHandModels( NULL, false );
 
 	mLastCharacter = NULL;
 
@@ -3134,8 +3164,8 @@ void HandCtrlTool::EventNew( HISender pSender, HKEvent pEvent )
 
 void HandCtrlTool::EventFileExit( HISender pSender, HKEvent pEvent )
 {
-	mHandsImage.FillHandLeftModels( NULL );
-	mHandsImage.FillHandRightModels( NULL );
+	mHandsImage.FillHandModels( NULL, true );
+	mHandsImage.FillHandModels( NULL, false );
 
 	mLastCharacter = NULL;
 
@@ -3194,8 +3224,8 @@ void HandCtrlTool::EventOpenCompleted( HISender pSender, HKEvent pEvent )
 {
 	if (mApp.CurrentCharacter && mApp.CurrentCharacter->IsCtrlSetReady() )
 	{
-		mHandsImage.FillHandLeftModels( mApp.CurrentCharacter->GetCtrlRigModel( kFBLeftWristNodeId ) );
-		mHandsImage.FillHandRightModels( mApp.CurrentCharacter->GetCtrlRigModel( kFBRightWristNodeId ) );
+		mHandsImage.FillHandModels( mApp.CurrentCharacter->GetCtrlRigModel( kFBLeftWristNodeId ), true );
+		mHandsImage.FillHandModels( mApp.CurrentCharacter->GetCtrlRigModel( kFBRightWristNodeId ), false );
 
 		mLastCharacter = mApp.CurrentCharacter;
 	} 
@@ -3233,8 +3263,8 @@ void HandCtrlTool::EventToolIdle( HISender pSender, HKEvent pEvent )
 		}
 		else
 		{
-			mHandsImage.FillHandLeftModels( pChar->GetCtrlRigModel( kFBLeftWristNodeId ) );
-			mHandsImage.FillHandRightModels( pChar->GetCtrlRigModel( kFBRightWristNodeId ) );
+			mHandsImage.FillHandModels( pChar->GetCtrlRigModel( kFBLeftWristNodeId ), true );
+			mHandsImage.FillHandModels( pChar->GetCtrlRigModel( kFBRightWristNodeId ), false );
 		}
 	}
 }

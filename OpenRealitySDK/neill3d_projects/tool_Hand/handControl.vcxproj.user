@@ -12,4 +12,11 @@
     <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2016|x64'">
+    <LocalDebuggerCommand>C:\Program Files\Autodesk\MotionBuilder 2016\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2016|x64'">
+    <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>
