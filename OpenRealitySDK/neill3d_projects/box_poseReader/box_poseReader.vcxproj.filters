@@ -44,7 +44,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="PoseReader_LOG.txt" />
     <None Include="LICENSE.txt" />
+    <None Include="README.txt" />
   </ItemGroup>
 </Project>

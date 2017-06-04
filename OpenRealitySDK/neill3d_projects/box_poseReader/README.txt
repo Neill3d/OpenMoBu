@@ -10,3 +10,6 @@ LOG
 
 	02.04.2014
 	- update plugin to make one source compiled for all MoBu versions
+
+	03.06.2017
+	- compiled for mobu 2015, 2017
