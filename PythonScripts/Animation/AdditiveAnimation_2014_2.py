@@ -52,12 +52,12 @@ def GrabInitTM(initList):
     
     matrix = FBMatrix()
     
-    for i in range(len(gModels)):
+    for model, listElem in zip(gModels, initList):
     
-        gModels[i].GetVector(v, FBModelTransformationType.kModelTranslation, False)
-        gModels[i].GetVector(r, FBModelTransformationType.kModelRotation, False)
+        model.GetVector(v, FBModelTransformationType.kModelTranslation, False)
+        model.GetVector(r, FBModelTransformationType.kModelRotation, False)
 
-        FBTRSToMatrix(initList[i], FBVector4d(v[0], v[1], v[2], 1.0), r, s)
+        FBTRSToMatrix(listElem, FBVector4d(v[0], v[1], v[2], 1.0), r, s)
     
     '''
     for model, matrix in zip(gModels, gInitTM):
