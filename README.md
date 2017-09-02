@@ -50,7 +50,7 @@ copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2
 ---
   Contact
   
-  Sergey Solohin (Neill3d)
+  Sergey Solokhin (Neill3d)
   e-mail to: s@neill3d.com
 
   www.neill3d.com
