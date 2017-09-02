@@ -1,7 +1,0 @@
-Config File Version 1
-
-[IMPORT]
-scale = 100.0
-
-[MNM_PATH]
-DEFAULT = D:\\

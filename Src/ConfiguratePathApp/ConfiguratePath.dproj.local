@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.301,C:\Work\MOPLUGS\Projects\ConfiguratePathApp\ConfiguratePath.dproj=C:\Documents\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.166,=C:\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.619,C:\Work\MOPLUGS\Projects\ConfiguratePathApp\UnitMain.dfm=C:\Documents\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.619,C:\Work\MOPLUGS\Projects\ConfiguratePathApp\UnitMain.pas=C:\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>

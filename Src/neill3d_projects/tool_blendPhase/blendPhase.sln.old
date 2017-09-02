@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blendPhase", "blendPhase.vcproj", "{C31F0464-7832-46B5-8BC1-D5C6F105A75C}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug.ActiveCfg = Debug|Win32
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Debug.Build.0 = Debug|Win32
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release.ActiveCfg = Release|Win32
+		{C31F0464-7832-46B5-8BC1-D5C6F105A75C}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
