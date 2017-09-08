@@ -2,20 +2,23 @@
 '''
     libAdditiveAnimation
 
+    Sergey Solokhin (Neill3d) 2017
+        s@neill3d.com   
+        www.neill3d.com
 '''
 
 from pyfbsdk import *
 
 class CAdditiveAnimation():
 
-    mVersion = 100
+    mVersion = 101
 
     mSystem = FBSystem()
     mApp = FBApplication()
     mPlayer = FBPlayerControl()
     
     mModels = []
-    mTargetTM = []
+    #mTargetTM = []
     
     #
     mAnimTakeIndex = 0
@@ -52,21 +55,28 @@ class CAdditiveAnimation():
     
     def ClearLists(self):
         self.mModels[:] = []
-        self.mTargetTM[:] = []
+        #self.mTargetTM[:] = []
     
     def appendModelList( self, pModel ):
         
         self.mModels.append(pModel)
-        self.mTargetTM.append( FBMatrix() )
+        #self.mTargetTM.append( FBMatrix() )
         
         for child in pModel.Children:
             self.appendModelList( child )
     
     
-    def GrabTM(self, tmList):
+    def GrabTM(self):
     
-        for model, listElem in zip(self.mModels, tmList):
-            model.GetMatrix(listElem, FBModelTransformationType.kModelTransformation, False)
+        newList = []
+    
+        for model in self.mModels:
+            m = FBMatrix()
+            model.GetMatrix(m, FBModelTransformationType.kModelTransformation, True)
+            
+            newList.append(m)
+            
+        return newList
     
     def SetResult(self, tmList):
     
@@ -75,29 +85,34 @@ class CAdditiveAnimation():
         
         for model, theMatrix in zip(self.mModels, tmList):
      
-            model.SetMatrix(theMatrix, FBModelTransformationType.kModelTransformation, False)
-            
+            model.SetMatrix(theMatrix, FBModelTransformationType.kModelTransformation, True)
+            '''
+            m = FBMatrix()
+            model.GetMatrix(m, FBModelTransformationType.kModelTransformation, False)
+                        
             t = FBVector4d()
             r = FBVector3d()
             s = FBSVector()
         
-            FBMatrixToTRS(t, r, s, theMatrix)
-            
+            FBMatrixToTRS(t, r, s, m)
+            '''
             # rotation part
             lAnimProp = model.Rotation
             lRotNode = lAnimProp.GetAnimationNode()
                     
             if lRotNode is not None:
-                for i in range(3):
-                    lRotNode.Nodes[i].KeyAdd( pTime, r[i] )
+                lRotNode.KeyCandidate()
+                #for i in range(3):
+                #    lRotNode.Nodes[i].KeyAdd( pTime, r[i] )
         
             # translation part
             lAnimProp = model.Translation
             lMoveNode = lAnimProp.GetAnimationNode()
         
             if lMoveNode is not None:
-                for i in range(3):
-                    lMoveNode.Nodes[i].KeyAdd( pTime, t[i] )
+                lMoveNode.KeyCandidate()
+                #for i in range(3):
+                #    lMoveNode.Nodes[i].KeyAdd( pTime, t[i] )
     
     def EvalOneFrame(self, lTime):
         
@@ -109,7 +124,8 @@ class CAdditiveAnimation():
         currTake.SetCurrentLayer(0)
         self.mSystem.Scene.Evaluate()
     
-        self.GrabTM(self.mTargetTM)
+        goalTransforms = []
+        goalTransforms = self.GrabTM()
         
         # go back to additive take and additive layer
         currTake = self.mSystem.Scene.Takes[self.mOutputTakeIndex]
@@ -117,9 +133,10 @@ class CAdditiveAnimation():
         currTake.SetCurrentLayer(1)
         self.mSystem.Scene.Evaluate()                
         
-        self.SetResult(self.mTargetTM)
+        self.SetResult(goalTransforms)
         
         # our models are already selected 
+        self.mSystem.Scene.Evaluate()
         self.mPlayer.Key()
         
     def CheckTakeIndex(self):
@@ -180,7 +197,7 @@ class CAdditiveAnimation():
     
                 if 1 == userId:
                     take.FBDelete()
-                
+                    
                 break
         
         if outputTake is None:
@@ -280,6 +297,11 @@ class CAdditiveAnimation():
         t = FBVector3d(0.0, 0.0, 0.0)
         r = FBVector3d(0.0, 0.0, 0.0)
         
+        selModels = FBModelList()
+        FBGetSelectedModels(selModels)
+        for model in selModels:
+            model.Selected = False
+        
         # put a zero key
         for model in self.mModels:
             
@@ -298,7 +320,12 @@ class CAdditiveAnimation():
             if lMoveNode is not None:
                 for i in range(3):
                     lMoveNode.Nodes[i].KeyAdd( lTime, t[i] )
-            
+                    
+            model.Selected = True
+        
+        stepTime = FBTime(0,0,0,1)
+        newTake.PlotTakeOnSelected(stepTime)
+        
         #newTake.MergeLayers(FBAnimationLayerMergeOptions.kFBAnimLayerMerge_AllLayers_CompleteScene, True, FBMergeLayerMode.kFBMergeLayerModeAutomatic )
 
         return True
