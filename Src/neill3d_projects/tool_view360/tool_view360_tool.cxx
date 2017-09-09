@@ -11,7 +11,6 @@
 
 //--- Class declaration
 #include "tool_view360_tool.h"
-#include "utils.h"
 
 //--- Registration defines
 #define ORTOOLVIEW360__CLASS	ORTOOLVIEW360__CLASSNAME
@@ -59,9 +58,6 @@ bool ORToolView360::FBCreate()
 	mLastWidth = 640;
 	mLastHeight = 480;
 
-	//
-	PrepViewerComponents();
-
 	return true;
 }
 
@@ -78,14 +74,8 @@ void ORToolView360::UICreate()
 	AddRegion( "ViewPane0", "ViewPane0",
 										0,	kFBAttachLeft,	"",	1.0,
 										0,	kFBAttachTop,	"",	1.0,
-										100,kFBAttachNone,	"",	1.0,
-										0,kFBAttachBottom,"",	1.0 );
-
-	AddRegion( "ViewPane1", "ViewPane1",
-										0,	kFBAttachRight,	"ViewPane0",	1.0,
-										0,	kFBAttachTop,	"",	1.0,
-										0,kFBAttachRight,	"",	1.0,
-										0,kFBAttachBottom,"",	1.0 );
+										0,	kFBAttachRight,	"",	1.0,
+										0,	kFBAttachBottom,"",	1.0 );
 
 	AddRegion( "temp", "temp",
 										-lS,	kFBAttachNone,	"",	1.0,
@@ -95,8 +85,6 @@ void ORToolView360::UICreate()
 
 	// Assign regions
 	SetView		( "ViewPane0",				mView );
-	//SetView		( "ViewPane1",				mView1 );
-
 	SetControl( "temp", mQtHolder );
 }
 void ORToolView360::UIConfigure()
@@ -126,17 +114,6 @@ void ORToolView360::FBDestroy()
  ************************************************/
 void ORToolView360::EventToolIdle( HISender pSender, HKEvent pEvent )
 {
-	int paneCount=0;
-	FBCamera *pCameraPane0=nullptr;
-	FBCamera *pCameraPane1=nullptr;
-	GetViewerPaneInfo(paneCount, pCameraPane0, pCameraPane1);
-
-	if (paneCount != mLastPaneCount)
-	{
-		EventToolResize(nullptr, nullptr);
-		mLastPaneCount = paneCount;
-	}
-
 	RefreshView();
 }
 
@@ -199,31 +176,6 @@ void ORToolView360::EventToolResize( HISender pSender, HKEvent pEvent )
 	//
 	mLastWidth = pW;
 	mLastHeight = pH;
-
-	//
-	//
-
-	int paneCount=0;
-	FBCamera *pCameraPane0=nullptr;
-	FBCamera *pCameraPane1=nullptr;
-	GetViewerPaneInfo(paneCount, pCameraPane0, pCameraPane1);
-
-	if (paneCount <= 1)
-	{
-		ClearControl("ViewPane1");
-		mUseView1 = false;
-	}
-	else
-	{
-		pW = pW / 2;
-		//SetView( "ViewPane1", mView1 );
-		mUseView1 = true;
-	}
-
-	SizeRegion("ViewPane0", pW, 0);
-	Restructure(false);
-
-	RefreshView();
 }
 
 /************************************************

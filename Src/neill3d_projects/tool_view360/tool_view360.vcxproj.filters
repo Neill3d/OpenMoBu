@@ -9,12 +9,12 @@
       <UniqueIdentifier>{a1883f4d-6373-4bf9-a805-b2830e2b5098}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
+    <Filter Include="MotionCodeLibrary">
+      <UniqueIdentifier>{9a90d3f0-0af7-4114-961b-d51b38b329c2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="QtWindowProc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tool_view360.cxx">
@@ -26,12 +26,15 @@
     <ClCompile Include="tool_view360_view.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\Framebuffer.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\glslShader.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tool_view360_tool.h">
@@ -39,6 +42,12 @@
     </ClInclude>
     <ClInclude Include="tool_view360_view.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\Framebuffer.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\glslShader.h">
+      <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

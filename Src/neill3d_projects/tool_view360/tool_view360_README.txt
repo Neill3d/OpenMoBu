@@ -10,6 +10,8 @@
   - save timeline image sequence
   - open in fullscreen
 
+ In code I'm using a framebuffer wrapper from Alex V. Boreskoff <alexboreskoff@mtu-net.ru>, <steps3d@narod.ru>
+
 
  == CONTACT INFORMATION ==
 

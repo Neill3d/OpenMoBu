@@ -12,6 +12,8 @@
 	#include <windows.h>
 #endif
 
+#include <GL\glew.h>
+
 //--- Library declaration.
 FBLibraryDeclare( ortoolview360 )
 {
@@ -25,6 +27,7 @@ FBLibraryDeclareEnd;
 bool FBLibrary::LibInit()		{ return true; }
 bool FBLibrary::LibOpen()		
 { 	
+	glewInit();
 	return true; 
 }
 bool FBLibrary::LibReady()		{ return true; }

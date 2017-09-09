@@ -12,8 +12,10 @@
 
 //--- SDK include
 #include <fbsdk/fbsdk.h>
-
 #include <vector>
+
+#include "Framebuffer.h"
+#include "glslShader.h"
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,4 +47,33 @@ private:
 	int				mPaneId;
 	bool			mIsMaximized;
 	int				mScaleDown;
+
+	enum
+	{
+		TEXTURE_DEPTH,
+		TEXTURE_PANO,
+		TEXTURE_COUNT
+
+	};
+
+	GLuint			mTextureCube;
+	GLuint			mTextures[TEXTURE_COUNT];	// 6 color side, share one depth and output pano color
+
+	std::auto_ptr<FrameBuffer>		mFramebuffer;
+	std::auto_ptr<GLSLShader>		mShader;	// compose 6 sides into a panorama
+
+	HdlFBPlugTemplate<FBCamera>		mCameraFront;
+	HdlFBPlugTemplate<FBCamera>		mCameraBack;
+	HdlFBPlugTemplate<FBCamera>		mCameraLeft;
+	HdlFBPlugTemplate<FBCamera>		mCameraRight;
+	HdlFBPlugTemplate<FBCamera>		mCameraTop;
+	HdlFBPlugTemplate<FBCamera>		mCameraBottom;
+
+	bool	PrepCameraSet(FBCamera *pCamera);
+
+	bool	PrepFramebuffer(const int width, const int height);
+	bool	PrepShader();
+
+	void	AllocTextures(const int widht, const int height);
+	void	FreeTextures();
 };
