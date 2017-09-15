@@ -34,8 +34,8 @@ bool	FrameBuffer :: create ()
 	if ( width <= 0 || height <= 0 )
 		return false;
 
-	glGenFramebuffersEXT ( 1, &frameBuffer );
-	glBindFramebufferEXT ( GL_FRAMEBUFFER_EXT, frameBuffer );
+	glGenFramebuffers ( 1, &frameBuffer );
+	glBindFramebuffer ( GL_FRAMEBUFFER, frameBuffer );
 
 	int	depthFormat   = 0;
 	int stencilFormat = 0;
@@ -64,23 +64,23 @@ bool	FrameBuffer :: create ()
 
 	if ( depthFormat != 0 )
 	{
-		glGenRenderbuffersEXT        ( 1, &depthBuffer );
-		glBindRenderbufferEXT        ( GL_RENDERBUFFER_EXT, depthBuffer );
-		glRenderbufferStorageEXT     ( GL_RENDERBUFFER_EXT, depthFormat, width, height );
-		glFramebufferRenderbufferEXT ( GL_FRAMEBUFFER_EXT,  GL_DEPTH_ATTACHMENT_EXT,
-		                               GL_RENDERBUFFER_EXT, depthBuffer );
+		glGenRenderbuffers        ( 1, &depthBuffer );
+		glBindRenderbuffer        ( GL_RENDERBUFFER, depthBuffer );
+		glRenderbufferStorage     ( GL_RENDERBUFFER, depthFormat, width, height );
+		glFramebufferRenderbuffer ( GL_FRAMEBUFFER,  GL_DEPTH_ATTACHMENT,
+		                               GL_RENDERBUFFER, depthBuffer );
 	}
 
 	if ( stencilFormat != 0 )
 	{
-		glGenRenderbuffersEXT        ( 1, &stencilBuffer );
-		glBindRenderbufferEXT        ( GL_RENDERBUFFER_EXT, stencilBuffer );
-		glRenderbufferStorageEXT     ( GL_RENDERBUFFER_EXT, stencilFormat, width, height );
-		glFramebufferRenderbufferEXT ( GL_FRAMEBUFFER_EXT,  GL_STENCIL_ATTACHMENT_EXT,
-		                               GL_RENDERBUFFER_EXT, stencilBuffer );
+		glGenRenderbuffers        ( 1, &stencilBuffer );
+		glBindRenderbuffer        ( GL_RENDERBUFFER, stencilBuffer );
+		glRenderbufferStorage     ( GL_RENDERBUFFER, stencilFormat, width, height );
+		glFramebufferRenderbuffer ( GL_FRAMEBUFFER,  GL_STENCIL_ATTACHMENT,
+		                               GL_RENDERBUFFER, stencilBuffer );
 	}
 
-	GLenum status = glCheckFramebufferStatusEXT ( GL_FRAMEBUFFER_EXT );
+	GLenum status = glCheckFramebufferStatus ( GL_FRAMEBUFFER );
 	
 	for (int i=0; i<numberOfColorTextures; ++i)
 	{
@@ -91,9 +91,9 @@ bool	FrameBuffer :: create ()
 		//attachColorTexture( GL_TEXTURE_RECTANGLE_ARB, id, i );
 	}
 
-	glBindFramebufferEXT ( GL_FRAMEBUFFER_EXT, 0 );
+	glBindFramebuffer ( GL_FRAMEBUFFER, 0 );
 
-	return status == GL_FRAMEBUFFER_COMPLETE_EXT;
+	return status == GL_FRAMEBUFFER_COMPLETE;
 }
 
 void FrameBuffer::cleanup()
@@ -107,19 +107,19 @@ void FrameBuffer::cleanup()
 
 	if ( depthBuffer != 0 )
 	{
-		glDeleteRenderbuffersEXT ( 1, &depthBuffer );
+		glDeleteRenderbuffers ( 1, &depthBuffer );
 		depthBuffer = 0;
 	}
 
 	if ( stencilBuffer != 0 )
 	{
-		glDeleteRenderbuffersEXT ( 1, &stencilBuffer );
+		glDeleteRenderbuffers ( 1, &stencilBuffer );
 		stencilBuffer = 0;
 	}
 
 	if ( frameBuffer != 0 )
 	{
-		glDeleteFramebuffersEXT ( 1, &frameBuffer );
+		glDeleteFramebuffers ( 1, &frameBuffer );
 		frameBuffer = 0;
 	}
 }
@@ -145,25 +145,25 @@ bool	FrameBuffer :: isOk () const
 {
 	GLint	currentFb;
 
-	glGetIntegerv ( GL_FRAMEBUFFER_BINDING_EXT, &currentFb );
+	glGetIntegerv ( GL_FRAMEBUFFER_BINDING, &currentFb );
 
 	if ( currentFb != frameBuffer )
 	{
-		glBindFramebufferEXT ( GL_FRAMEBUFFER_EXT, frameBuffer );
-		glReadBuffer         ( GL_COLOR_ATTACHMENT0_EXT );
+		glBindFramebuffer ( GL_FRAMEBUFFER, frameBuffer );
+		glReadBuffer         ( GL_COLOR_ATTACHMENT0 );
 	}
 
-	int	 status = glCheckFramebufferStatusEXT ( GL_FRAMEBUFFER_EXT );
+	int	 status = glCheckFramebufferStatus ( GL_FRAMEBUFFER );
 
-	if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
+	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
 		printf( "test framebuffer\n" );
 	}
 
 	if ( currentFb != frameBuffer )
-		glBindFramebufferEXT ( GL_FRAMEBUFFER_EXT, currentFb );
+		glBindFramebuffer ( GL_FRAMEBUFFER, currentFb );
 
-	return 	status == GL_FRAMEBUFFER_COMPLETE_EXT;
+	return 	status == GL_FRAMEBUFFER_COMPLETE;
 }
 
 bool	FrameBuffer :: bind ()
@@ -175,9 +175,9 @@ bool	FrameBuffer :: bind ()
 								// save current viewport
 	//glGetIntegerv        ( GL_VIEWPORT, saveViewport );
 	//printf ( "viewport %d, %d, %d, %d\n", saveViewport[0], saveViewport[1], saveViewport[2], saveViewport[3] );
-	glBindFramebufferEXT ( GL_FRAMEBUFFER_EXT, frameBuffer );
-	glReadBuffer         ( GL_COLOR_ATTACHMENT0_EXT );
-	glDrawBuffer         ( GL_COLOR_ATTACHMENT0_EXT );
+	glBindFramebuffer ( GL_FRAMEBUFFER, frameBuffer );
+	glReadBuffer         ( GL_COLOR_ATTACHMENT0 );
+	glDrawBuffer         ( GL_COLOR_ATTACHMENT0 );
 	//glViewport           ( 0, 0, getWidth (), getHeight () );
 
 	return true;
@@ -186,7 +186,7 @@ bool	FrameBuffer :: bind ()
 bool	FrameBuffer :: bindFace ( int face )
 {
 //	glBindTexture             ( GL_TEXTURE_CUBE_MAP_ARB, colorBuffer [0]  );
-	glFramebufferTexture2DEXT ( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + face, colorBuffer [0], 0 );
+	glFramebufferTexture2D ( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, colorBuffer [0], 0 );
 
 	return bind ();
 }
@@ -199,9 +199,9 @@ bool	FrameBuffer :: unbind ( bool genMipmaps, GLenum target )
 	glFlush ();
 
 	if ( genMipmaps )
-		glGenerateMipmapEXT ( target );
+		glGenerateMipmap ( target );
 
-	glBindFramebufferEXT ( GL_FRAMEBUFFER_EXT, 0 );
+	glBindFramebuffer ( GL_FRAMEBUFFER, 0 );
 	//glViewport           ( saveViewport [0], saveViewport [1], saveViewport [2], saveViewport [3] );
 
 	return true;
@@ -212,11 +212,12 @@ bool	FrameBuffer :: attachColorTexture ( GLenum target, unsigned texId, int no )
 	if ( frameBuffer == 0 )
 		return false;
 
-	if ( target != GL_TEXTURE_2D && target != GL_TEXTURE_RECTANGLE_ARB && (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB || target > GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB) )
+	if ( target != GL_TEXTURE_2D && target != GL_TEXTURE_RECTANGLE && (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X || target > GL_TEXTURE_CUBE_MAP_NEGATIVE_Z) )
 		return false;
 
-	glBindTexture             ( target, colorBuffer [no] = texId );
-	glFramebufferTexture2DEXT ( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + no, target, texId, 0 );
+	colorBuffer [no] = texId;
+	//glBindTexture             ( target, colorBuffer [no] = texId );
+	glFramebufferTexture2D ( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + no, target, texId, 0 );
 
 	return true;
 }
@@ -227,7 +228,7 @@ bool	FrameBuffer :: attach3DTextureSlice ( unsigned texId, int zOffs, int no )
 		return false;
 
 	glBindTexture             ( GL_TEXTURE_3D, colorBuffer [no] = texId );
-	glFramebufferTexture3DEXT ( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + no, GL_TEXTURE_3D, texId, 0, zOffs );
+	glFramebufferTexture3D ( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + no, GL_TEXTURE_3D, texId, 0, zOffs );
 
 	return true;
 }
@@ -237,7 +238,8 @@ bool	FrameBuffer :: attachDepthTexture ( GLenum target, unsigned texId )
 	if ( frameBuffer == 0 )
 		return false;
 
-	glFramebufferTexture2DEXT ( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, target, depthBuffer = texId, 0 );
+	depthBuffer = texId;
+	glFramebufferTexture2D ( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, texId, 0 );
 
 	return true;
 }
@@ -292,32 +294,32 @@ unsigned	FrameBuffer :: createCubemapTexture ( GLuint *ptex, int width, int heig
 	else
 		glGenTextures   ( 1, &tex );
 
-    glBindTexture   ( GL_TEXTURE_CUBE_MAP_ARB, tex );
+    glBindTexture   ( GL_TEXTURE_CUBE_MAP, tex );
     glPixelStorei   ( GL_UNPACK_ALIGNMENT, 1 );                         // set 1-byte alignment
-    glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_S, clamp );
-    glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_T, clamp );
-    glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_R, clamp );
+    glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, clamp );
+    glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, clamp );
+    glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, clamp );
 	
     for ( int side = 0; side < 6; side++ )
-        glTexImage2D ( GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB + side, 0, internalFormat,
+        glTexImage2D ( GL_TEXTURE_CUBE_MAP_POSITIVE_X + side, 0, internalFormat,
                        width, height, 0, format, GL_UNSIGNED_BYTE, NULL );
 	
 	if ( filter == filterNearest )
 	{
-		glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-		glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	}
 	else
 	if ( filter == filterLinear )
 	{
-		glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	}
 	else
 	if ( filter == filterMipmap )
 	{
-		glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexParameteri ( GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri ( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 	}
 	
     return tex;
@@ -389,7 +391,7 @@ int		FrameBuffer :: maxColorAttachemnts ()
 {
     GLint n;
 
-    glGetIntegerv ( GL_MAX_COLOR_ATTACHMENTS_EXT, &n );
+    glGetIntegerv ( GL_MAX_COLOR_ATTACHMENTS, &n );
 
 	return n;
 }
@@ -398,7 +400,7 @@ int		FrameBuffer :: maxSize ()
 {
     GLint sz;
 
-    glGetIntegerv ( GL_MAX_RENDERBUFFER_SIZE_EXT, &sz );
+    glGetIntegerv ( GL_MAX_RENDERBUFFER_SIZE, &sz );
 
 	return sz;
 }

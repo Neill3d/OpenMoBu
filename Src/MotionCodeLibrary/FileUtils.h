@@ -1,4 +1,6 @@
 
+#pragma once
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 // Licensed under the "New" BSD License. 
@@ -11,15 +13,14 @@
 //		www.neill3d.com
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+//--- SDK include
+#include <fbsdk/fbsdk.h>
 
-#include <windows.h>
+/////////////////////////////////////////////////////////////
 
-// call this on dll init
-void InitResourceUtils();
-HMODULE		GetThisModuleHandle();
+bool IsFileExists ( const char *filename );
 
-const char *LoadStringFromResource1(int id);
-const char *LoadStringFromResource2(int id);
-
-const char *LoadVersionFromResource();
+//
+// search first of all in mobu config folder, then in all plugins folders
+//
+bool FindEffectLocation(const char *effect, FBString &out_path, FBString &out_fullname);

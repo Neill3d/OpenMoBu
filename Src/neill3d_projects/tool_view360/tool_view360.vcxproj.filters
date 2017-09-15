@@ -32,6 +32,9 @@
     <ClCompile Include="..\..\MotionCodeLibrary\glslShader.cpp">
       <Filter>MotionCodeLibrary</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -47,6 +50,9 @@
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
     <ClInclude Include="..\..\MotionCodeLibrary\glslShader.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h">
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,16 @@
 
 /**	\file	ortoolview360_tool.cxx
 
+	Tool with a custom FBView to render panorama
+	
+	Also tool has a hack to save itself QWidget pointer
+	Later you can use the pointer to switch windowed / fullscreen mode 
+
+// Licensed under the "New" BSD License. 
+//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
+
+	GitHub repo - https://github.com/Neill3d/MoBu
+
 	Author Sergey Solokhin (Neill3d)
 	 e-mail to: s@neill3d.com
 	  www.neill3d.com
@@ -120,9 +130,6 @@ void ORToolView360::EventToolIdle( HISender pSender, HKEvent pEvent )
 void ORToolView360::RefreshView()
 {
 	mView.Refresh(false);
-
-	//if (true == mUseView1)
-	//	mView1.Refresh(false);
 }
 
 /************************************************

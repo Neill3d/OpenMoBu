@@ -1,8 +1,18 @@
 
 #include <stdio.h>
 #include "glslShader.h"
-//#include "compositemaster_common.h"
-//#include "utils\CheckGLError.h"
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+// Licensed under the "New" BSD License. 
+//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
+//
+// GitHub repository - https://github.com/Neill3d/MoBu
+//
+// Author Sergey Solokhin (Neill3d) 2014-2017
+//  e-mail to: s@neill3d.com
+//		www.neill3d.com
+/////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                            GLSLShader
@@ -275,7 +285,7 @@ bool GLSLShader::LoadShader( GLhandleARB shader, const char *source )
     memcpy( &buffer[0], &mHeaderText[0], sizeof(char) * headerLen );
   void *buf = (void*)&buffer[headerLen];
   
-  strcpy( (char*) buf, source );
+  strcpy_s( (char*) buf, sizeof(char) * len, source );
 
   len = len + headerLen;
   glShaderSourceARB( shader, 1, &bufferARB, &len );

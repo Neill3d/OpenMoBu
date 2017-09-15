@@ -2,11 +2,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 // Licensed under the "New" BSD License. 
-//		License page - https://code.google.com/p/motioncodelibrary/wiki/LICENSE
+//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
 //
 // GitHub repository - https://github.com/Neill3d/MoBu
 //
-// Author Sergey Solohin (Neill3d) 2014
+// Author Sergey Solokhin (Neill3d) 2014-2017
 //  e-mail to: s@neill3d.com
 //		www.neill3d.com
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +30,11 @@ char szBufferVersion[RESOURCE_STRING_BUFFER_SIZE];
 char szModulePath[MAX_PATH];
 
 ////////////////////////////////////////////
+
+HMODULE	GetThisModuleHandle()
+{
+	return gInstance;
+}
 
 void localFunc()
 {

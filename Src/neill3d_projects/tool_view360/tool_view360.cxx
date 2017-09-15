@@ -1,8 +1,15 @@
 
 /**	\file	tool_view360.cxx
-*	Library declarations.
-*	Contains the basic routines to declare the DLL as a loadable
-*	library.
+
+// Licensed under the "New" BSD License. 
+//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
+
+	GitHub repo - https://github.com/Neill3d/MoBu
+
+	Author Sergey Solokhin (Neill3d)
+	 e-mail to: s@neill3d.com
+	  www.neill3d.com
+
 */
 
 //--- SDK include
@@ -33,10 +40,3 @@ bool FBLibrary::LibOpen()
 bool FBLibrary::LibReady()		{ return true; }
 bool FBLibrary::LibClose()		{ return true; }
 bool FBLibrary::LibRelease()	{ return true; }
-
-/**
-*	\mainpage	Tool Template
-*	\section	intro	Introduction
-*	Template showing what needs to be done
-*	in order to create a new tool.
-*/

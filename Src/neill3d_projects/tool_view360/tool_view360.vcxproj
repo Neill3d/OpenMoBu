@@ -80,13 +80,13 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">true</LinkIncremental>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2014_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\Qt\4.8.2\include;..\..\glm-0.9.5.3\glm;..\..\glew-1.11.0\include;D:\Work\OpenSubdiv-master\opensubdiv;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">D:\Qt\4.8.5\include;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\Work\MoPlugs\glew-1.11.0\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">D:\Qt\4.8.5\include;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\Work\MoPlugs\glew-1.11.0\include;D:\Work\MOPLUGS\glm-0.9.6.3\glm;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\lib\$(Platform);D:\PROGRAMMING\Qt\4.8.2\lib;..\..\glew-1.11.0\lib\Debug\x64;D:\Work\OpenSubdiv-master\lib\Debug;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;D:\Work\MoPlugs\glew-1.11.0\lib\Debug\x64;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\lib\$(Platform);D:\PROGRAMMING\Qt\4.8.2\lib;$(LibraryPath)</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;D:\Work\OpenSubdiv-master\lib\Release;..\..\glew-1.11.0\lib\Release\x64;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;D:\Work\MoPlugs\glew-1.11.0\lib\Release\x64;$(LibraryPath)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2014_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\PROGRAMMING\Qt\4.8.2\include;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\Qt\4.8.5\include;D:\Work\OpenSubdiv-master\opensubdiv;..\..\glm-0.9.5.3\glm;..\..\glew-1.11.0\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">D:\Qt\4.8.5\include;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\Work\MoPlugs\glew-1.11.0\include;D:\Work\MOPLUGS\glm-0.9.6.3\glm;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -180,7 +180,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;QtCore4.lib;QtGui4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;QtCore4.lib;QtGui4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -263,7 +263,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;GLEW_STATIC;NOMINMAX;OPENSUBDIV_VERSION_STRING="3.0.0.alpha";and=&amp;&amp;;_USE_QT;MOBU2015;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;GLEW_STATIC;NOMINMAX;USE_QT;MOBU2015;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
@@ -301,6 +301,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp" />
     <ClCompile Include="..\..\MotionCodeLibrary\Framebuffer.cpp" />
     <ClCompile Include="..\..\MotionCodeLibrary\glslShader.cpp" />
     <ClCompile Include="tool_view360.cxx" />
@@ -309,6 +310,7 @@
     <ClCompile Include="QtWindowProc.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h" />
     <ClInclude Include="..\..\MotionCodeLibrary\Framebuffer.h" />
     <ClInclude Include="..\..\MotionCodeLibrary\glslShader.h" />
     <ClInclude Include="tool_view360_tool.h" />
