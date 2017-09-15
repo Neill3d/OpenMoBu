@@ -194,8 +194,7 @@
       <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy "$(ProjectDir)\GLSL" "$(ADSK_MOBU_2015_64)\bin\x64\plugins\GLSL" /e /y /i /r</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -299,6 +298,9 @@
       <ImportLibrary>$(ADSK_MOBU_2015_64)/bin\$(Platform)/plugins/$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)\GLSL" "$(ADSK_MOBU_2015_64)\bin\x64\plugins\GLSL" /e /y /i /r</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp" />
@@ -318,8 +320,12 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="GLSL\cube2Pan.frag" />
+    <None Include="GLSL\cube2Pan.vert" />
+    <None Include="GLSL\equirectangularsphere.frag" />
+    <None Include="GLSL\equirectangularsphere.vert" />
     <None Include="LICENSE.txt" />
-    <None Include="tool_view360_README.txt" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="tool_view360.rc" />

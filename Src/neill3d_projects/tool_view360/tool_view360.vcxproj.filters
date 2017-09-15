@@ -12,6 +12,9 @@
     <Filter Include="MotionCodeLibrary">
       <UniqueIdentifier>{9a90d3f0-0af7-4114-961b-d51b38b329c2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GLSL">
+      <UniqueIdentifier>{673900f1-a05c-4654-8b9a-2bb1fa250d95}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="QtWindowProc.cpp">
@@ -58,7 +61,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="LICENSE.txt" />
-    <None Include="tool_view360_README.txt" />
+    <None Include="README.md" />
+    <None Include="GLSL\cube2Pan.frag">
+      <Filter>GLSL</Filter>
+    </None>
+    <None Include="GLSL\cube2Pan.vert">
+      <Filter>GLSL</Filter>
+    </None>
+    <None Include="GLSL\equirectangularsphere.frag">
+      <Filter>GLSL</Filter>
+    </None>
+    <None Include="GLSL\equirectangularsphere.vert">
+      <Filter>GLSL</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="tool_view360.rc">
