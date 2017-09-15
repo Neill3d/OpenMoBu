@@ -22,6 +22,7 @@ There are three features:
 * tool_renderAdvance - tool to render up to 4 views in a frame
 * tool_SplitStyle - example of making a splitter control between two UI regions
 * tool_UIBuilder - tool for faster making a UI for c++ and python
+* tool_ViewTwoPanes - an example to render 2 different cameras into 2 panes. That could be a start point for doing your VR experiment
 * tool_windowsmenu_sample - sample for MoBU under 2011. using winApi for making a context menu
 
 How to compile
@@ -59,6 +60,6 @@ copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2
 6) I'm using one MotionCodeLibrary for compiling all the projects. In each project I have added a relative path to that folder. Right now this library is a colletion of header and source files, it's not a static or dynamic library. That means to compile your project you should not only include needed headers but also add corresponding source code files to your project.
 
 ---
-  Sergey Solohin (Neill3d) 2014
+  Sergey Solokhin (Neill3d) 2014-2017
 	e-mail to: s@neill3d.com
 		www.neill3d.com
