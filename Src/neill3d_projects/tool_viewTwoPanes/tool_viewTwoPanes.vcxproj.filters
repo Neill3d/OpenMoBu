@@ -47,7 +47,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="tool_viewTwoPanes_README.txt" />
     <None Include="LICENSE.txt" />
+    <None Include="README.txt" />
   </ItemGroup>
 </Project>

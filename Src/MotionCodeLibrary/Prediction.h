@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 // Licensed under the "New" BSD License. 
-//		License page - https://code.google.com/p/motioncodelibrary/wiki/LICENSE
+//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
 //
 // GitHub repository - https://github.com/Neill3d/MoBu
 //

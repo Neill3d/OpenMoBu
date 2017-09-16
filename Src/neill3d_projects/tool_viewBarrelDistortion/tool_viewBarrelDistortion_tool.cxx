@@ -1,12 +1,12 @@
 
-/**	\file	tool_viewTwoPanes_tool.cxx
+/**	\file	tool_viewStereoDistortion_tool.cxx
 
 // Licensed under the "New" BSD License. 
 //		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
 
 	GitHub repo - https://github.com/Neill3d/MoBu
 
-	Author Sergey Solohin (Neill3d)
+	Author Sergey Solokhin (Neill3d)
 	 e-mail to: s@neill3d.com
 	  www.neill3d.com
 
@@ -15,21 +15,21 @@
 
 
 //--- Class declaration
-#include "tool_viewTwoPanes_tool.h"
+#include "tool_viewBarrelDistortion_tool.h"
 #include "utils.h"
 
 //--- Registration defines
-#define ORTOOLVIEWTWOPANES__CLASS	ORTOOLVIEWTWOPANES__CLASSNAME
-#define ORTOOLVIEWTWOPANES__LABEL	"View Two Panes Tool"
-#define ORTOOLVIEWTWOPANES__DESC	"View Two Panes Tool"
+#define ORTOOLVIEWSTEREO__CLASS	ORTOOLVIEWSTEREO__CLASSNAME
+#define ORTOOLVIEWSTEREO__LABEL	"View Barrel Distortion Tool"
+#define ORTOOLVIEWSTEREO__DESC	"View Barrel Distortion Tool"
 
 
 
 //--- Implementation and registration
-FBToolImplementation(	ORTOOLVIEWTWOPANES__CLASS	);
-FBRegisterTool		(	ORTOOLVIEWTWOPANES__CLASS,
-						ORTOOLVIEWTWOPANES__LABEL,
-						ORTOOLVIEWTWOPANES__DESC,
+FBToolImplementation(	ORTOOLVIEWSTEREO__CLASS	);
+FBRegisterTool		(	ORTOOLVIEWSTEREO__CLASS,
+						ORTOOLVIEWSTEREO__LABEL,
+						ORTOOLVIEWSTEREO__DESC,
 						FB_DEFAULT_SDK_ICON	);	// Icon filename (default=Open Reality icon)
 
 extern QWidget* CreateQtTestWidget( QWidget* pParent );
@@ -38,7 +38,7 @@ extern void ToggleMaximize(const bool maximized);
 /************************************************
  *	Constructor.
  ************************************************/
-bool ORToolViewTwoPanes::FBCreate()
+bool ORToolViewBarrelDistortion::FBCreate()
 {
 	
 	StartSize[0] = 640;
@@ -50,16 +50,17 @@ bool ORToolViewTwoPanes::FBCreate()
 	UIReset		();
 
 	// Add tool callbacks
-	OnShow.Add	( this, (FBCallback) &ORToolViewTwoPanes::EventToolShow		);
-	//OnIdle.Add	( this, (FBCallback) &ORToolViewDistored::EventToolIdle		);
-	OnResize.Add( this, (FBCallback) &ORToolViewTwoPanes::EventToolResize		);
-	OnPaint.Add	( this, (FBCallback) &ORToolViewTwoPanes::EventToolPaint		);
-	OnInput.Add	( this, (FBCallback) &ORToolViewTwoPanes::EventToolInput		);
+	OnShow.Add	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolShow		);
+	//OnIdle.Add	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolIdle		);
+	OnResize.Add( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolResize		);
+	OnPaint.Add	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolPaint		);
+	OnInput.Add	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolInput		);
 
 	mQtHolder.SetCreator( CreateQtTestWidget );
 
 	mUseView1 = false;
 	mLastPaneCount = 1;
+	mLastCamera = nullptr;
 
 	mLastWidth = 640;
 	mLastHeight = 480;
@@ -73,7 +74,7 @@ bool ORToolViewTwoPanes::FBCreate()
 /************************************************
  *	Create, configure & reset UI.
  ************************************************/
-void ORToolViewTwoPanes::UICreate()
+void ORToolViewBarrelDistortion::UICreate()
 {
 
 	// Tool options
@@ -99,29 +100,29 @@ void ORToolViewTwoPanes::UICreate()
 										lS,		kFBAttachNone,"",	1.0 );
 
 	// Assign regions
-	SetView		( "ViewPane0",				mView );
-	//SetView		( "ViewPane1",				mView1 );
+	SetView		( "ViewPane0",				mViewLeft );
+	//SetView		( "ViewPane1",				mViewRight );
 
 	SetControl( "temp", mQtHolder );
 }
-void ORToolViewTwoPanes::UIConfigure()
+void ORToolViewBarrelDistortion::UIConfigure()
 {
 }
-void ORToolViewTwoPanes::UIReset()
+void ORToolViewBarrelDistortion::UIReset()
 {
 }
 
 /************************************************
  *	Destruction function.
  ************************************************/
-void ORToolViewTwoPanes::FBDestroy()
+void ORToolViewBarrelDistortion::FBDestroy()
 {
 	// Remove tool callbacks
-	OnShow.Remove	( this, (FBCallback) &ORToolViewTwoPanes::EventToolShow	);
-	OnIdle.Remove	( this, (FBCallback) &ORToolViewTwoPanes::EventToolIdle	);
-	OnPaint.Remove	( this, (FBCallback) &ORToolViewTwoPanes::EventToolPaint	);
-	OnInput.Remove	( this, (FBCallback) &ORToolViewTwoPanes::EventToolInput	);
-	OnResize.Remove	( this, (FBCallback) &ORToolViewTwoPanes::EventToolResize	);
+	OnShow.Remove	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolShow	);
+	OnIdle.Remove	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolIdle	);
+	OnPaint.Remove	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolPaint	);
+	OnInput.Remove	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolInput	);
+	OnResize.Remove	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolResize	);
 
 	// Free user allocated memory
 }
@@ -129,34 +130,36 @@ void ORToolViewTwoPanes::FBDestroy()
 /************************************************
  *	UI Idle callback.
  ************************************************/
-void ORToolViewTwoPanes::EventToolIdle( HISender pSender, HKEvent pEvent )
+void ORToolViewBarrelDistortion::EventToolIdle( HISender pSender, HKEvent pEvent )
 {
-	int paneCount=0;
-	FBCamera *pCameraPane0=nullptr;
-	FBCamera *pCameraPane1=nullptr;
-	GetViewerPaneInfo(paneCount, pCameraPane0, pCameraPane1);
+	int paneCount=1;
+	FBCamera *pCameraPane0 = mSystem.Renderer->CurrentCamera;
+	//FBCamera *pCameraPane1=nullptr;
+	//GetViewerPaneInfo(paneCount, pCameraPane0, pCameraPane1);
 
-	if (paneCount != mLastPaneCount)
+	if (paneCount != mLastPaneCount || mLastCamera != pCameraPane0)
 	{
 		EventToolResize(nullptr, nullptr);
+
 		mLastPaneCount = paneCount;
+		mLastCamera = pCameraPane0;
 	}
 
 	RefreshView();
 }
 
-void ORToolViewTwoPanes::RefreshView()
+void ORToolViewBarrelDistortion::RefreshView()
 {
-	mView.Refresh(false);
+	mViewLeft.Refresh(false);
 
 	if (true == mUseView1)
-		mView1.Refresh(false);
+		mViewRight.Refresh(false);
 }
 
 /************************************************
  *	Handle tool activation (selection/unselection).
  ************************************************/
-void ORToolViewTwoPanes::EventToolShow( HISender pSender, HKEvent pEvent )
+void ORToolViewBarrelDistortion::EventToolShow( HISender pSender, HKEvent pEvent )
 {
 	FBEventShow lEvent( pEvent );
 
@@ -164,12 +167,12 @@ void ORToolViewTwoPanes::EventToolShow( HISender pSender, HKEvent pEvent )
 	{
 		// Reset the UI here.
 		//FBSystem::TheOne().Renderer->CloneViewAdd( &mView );
-		OnIdle.Add	( this, (FBCallback) &ORToolViewTwoPanes::EventToolIdle		);
+		OnIdle.Add	( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolIdle		);
 	}
 	else
 	{
 		//FBSystem::TheOne().Renderer->CloneViewRemove( &mView );
-		OnIdle.Remove ( this, (FBCallback) &ORToolViewTwoPanes::EventToolIdle		);
+		OnIdle.Remove ( this, (FBCallback) &ORToolViewBarrelDistortion::EventToolIdle		);
 	}
 }
 
@@ -177,7 +180,7 @@ void ORToolViewTwoPanes::EventToolShow( HISender pSender, HKEvent pEvent )
 /************************************************
  *	Paint callback for tool (on expose).
  ************************************************/
-void ORToolViewTwoPanes::EventToolPaint( HISender pSender, HKEvent pEvent )
+void ORToolViewBarrelDistortion::EventToolPaint( HISender pSender, HKEvent pEvent )
 {
 	RefreshView();
 }
@@ -185,7 +188,7 @@ void ORToolViewTwoPanes::EventToolPaint( HISender pSender, HKEvent pEvent )
 /************************************************
  *	Tool resize callback.
  ************************************************/
-void ORToolViewTwoPanes::EventToolResize( HISender pSender, HKEvent pEvent )
+void ORToolViewBarrelDistortion::EventToolResize( HISender pSender, HKEvent pEvent )
 {
 	int pW = mLastWidth;
 	int pH = mLastHeight;
@@ -209,9 +212,18 @@ void ORToolViewTwoPanes::EventToolResize( HISender pSender, HKEvent pEvent )
 	//
 
 	int paneCount=0;
-	FBCamera *pCameraPane0=nullptr;
+	FBCamera *pCameraPane0 = mSystem.Renderer->CurrentCamera;
 	FBCamera *pCameraPane1=nullptr;
-	GetViewerPaneInfo(paneCount, pCameraPane0, pCameraPane1);
+	//GetViewerPaneInfo(paneCount, pCameraPane0, pCameraPane1);
+
+	if ( nullptr != pCameraPane0 && FBIS(pCameraPane0, FBCameraStereo) )
+	{
+		FBCameraStereo *pStereo = (FBCameraStereo*) pCameraPane0;
+
+		paneCount = 2;
+		pCameraPane0 = pStereo->LeftCamera;
+		pCameraPane1 = pStereo->RightCamera;
+	}
 
 	if (paneCount <= 1)
 	{
@@ -221,7 +233,7 @@ void ORToolViewTwoPanes::EventToolResize( HISender pSender, HKEvent pEvent )
 	else
 	{
 		pW = pW / 2;
-		SetView( "ViewPane1", mView1 );
+		SetView( "ViewPane1", mViewRight );
 		mUseView1 = true;
 	}
 
@@ -234,14 +246,14 @@ void ORToolViewTwoPanes::EventToolResize( HISender pSender, HKEvent pEvent )
 /************************************************
  *	Handle input into the tool.
  ************************************************/
-void ORToolViewTwoPanes::EventToolInput( HISender pSender, HKEvent pEvent )
+void ORToolViewBarrelDistortion::EventToolInput( HISender pSender, HKEvent pEvent )
 {
 }
 
 /************************************************
  *	FBX Storage.
  ************************************************/
-bool ORToolViewTwoPanes::FbxStore	( FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat )
+bool ORToolViewBarrelDistortion::FbxStore	( FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat )
 {
 	return true;
 }
@@ -249,7 +261,7 @@ bool ORToolViewTwoPanes::FbxStore	( FBFbxObject* pFbxObject, kFbxObjectStore pSt
 /************************************************
  *	FBX Retrieval.
  ************************************************/
-bool ORToolViewTwoPanes::FbxRetrieve( FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat )
+bool ORToolViewBarrelDistortion::FbxRetrieve( FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat )
 {
 	return true;
 }

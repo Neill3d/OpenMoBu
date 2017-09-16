@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{915633C2-9C23-4130-8D20-4DBC17B0F975}</ProjectGuid>
-    <ProjectName>tool_viewTwoPanes</ProjectName>
+    <ProjectGuid>{5DE346BC-5E8E-4CB3-8E93-B308C1AA3C6C}</ProjectGuid>
+    <ProjectName>tool_viewBarrelDistortion</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -80,9 +80,9 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">true</LinkIncremental>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2014_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\Qt\4.8.2\include;..\..\glm-0.9.5.3\glm;..\..\glew-1.11.0\include;D:\Work\OpenSubdiv-master\opensubdiv;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">D:\Qt\4.8.5\include;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;..\..\glm-0.9.5.3\glm;..\..\glew-1.11.0\include;D:\Work\OpenSubdiv-master\opensubdiv;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">D:\Qt\4.8.5\include;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\Work\MoPlugs\glew-1.11.0\include;D:\Work\MOPLUGS\glm-0.9.6.3\glm;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\lib\$(Platform);D:\PROGRAMMING\Qt\4.8.2\lib;..\..\glew-1.11.0\lib\Debug\x64;D:\Work\OpenSubdiv-master\lib\Debug;$(LibraryPath)</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;..\..\glew-1.11.0\lib\Debug\x64;D:\Work\OpenSubdiv-master\lib\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;D:\Work\MoPlugs\glew-1.11.0\lib\Debug\x64;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\lib\$(Platform);D:\PROGRAMMING\Qt\4.8.2\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;D:\Work\OpenSubdiv-master\lib\Release;..\..\glew-1.11.0\lib\Release\x64;$(LibraryPath)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2014_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;D:\PROGRAMMING\Qt\4.8.2\include;$(IncludePath)</IncludePath>
@@ -263,7 +263,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;GLEW_STATIC;NOMINMAX;_USE_QT;MOBU2015;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;GLEW_STATIC;NOMINMAX;USE_QT;MOBU2015;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
@@ -299,26 +299,37 @@
       <ImportLibrary>$(ADSK_MOBU_2015_64)/bin\$(Platform)/plugins/$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)\GLSL" "$(ADSK_MOBU_2015_64)\bin\x64\plugins\GLSL" /e /y /i /r</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="tool_viewTwoPanes.cxx" />
-    <ClCompile Include="tool_viewTwoPanes_tool.cxx" />
-    <ClCompile Include="tool_viewTwoPanes_view.cxx" />
+    <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\Framebuffer.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\glslShader.cpp" />
+    <ClCompile Include="tool_viewBarrelDistortion.cxx" />
+    <ClCompile Include="tool_viewBarrelDistortion_tool.cxx" />
+    <ClCompile Include="tool_viewBarrelDistortion_view.cxx" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="QtWindowProc.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="tool_viewTwoPanes_tool.h" />
-    <ClInclude Include="tool_viewTwoPanes_view.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\Framebuffer.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\glslShader.h" />
+    <ClInclude Include="tool_viewBarrelDistortion_tool.h" />
+    <ClInclude Include="tool_viewBarrelDistortion_view.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="tool_viewTwoPanes.rc" />
+    <None Include="GLSL\barrelDistortion.frag" />
+    <None Include="GLSL\barrelDistortion.vert" />
+    <None Include="LICENSE.txt" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="LICENSE.txt" />
-    <None Include="README.txt" />
+    <ResourceCompile Include="tool_viewBarrelDistortion.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

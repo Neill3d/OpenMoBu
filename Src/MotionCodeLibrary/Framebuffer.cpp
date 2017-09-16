@@ -41,13 +41,13 @@ bool	FrameBuffer :: create ()
 	int stencilFormat = 0;
 
 	if ( flags & depth16 )
-		depthFormat = GL_DEPTH_COMPONENT16_ARB;
+		depthFormat = GL_DEPTH_COMPONENT16;
 	else
 	if ( flags & depth24 )
-		depthFormat = GL_DEPTH_COMPONENT24_ARB;
+		depthFormat = GL_DEPTH_COMPONENT24;
 	else
 	if ( flags & depth32 )
-		depthFormat = GL_DEPTH_COMPONENT32_ARB;
+		depthFormat = GL_DEPTH_COMPONENT32;
 
 	if ( flags & stencil1 )
 		stencilFormat = GL_STENCIL_INDEX1_EXT;

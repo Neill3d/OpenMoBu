@@ -1,5 +1,5 @@
 
-/**	\file	tool_viewTwoPanes_view.cxx
+/**	\file	ortoolview3d_view.cxx
 
 // Licensed under the "New" BSD License. 
 //		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
@@ -13,19 +13,115 @@
 */
 
 //--- Class declaration
-#include "tool_viewTwoPanes_view.h"
+#include "tool_viewBarrelDistortion_view.h"
 #include <math.h>
 #include "utils.h"
+#include "FileUtils.h"
 
-FBClassImplementation( ORViewPane );
+FBClassImplementation( ORViewPaneWithDistortion );
 
 extern void ToggleMaximize(const bool maximized);
 
 
+////////////////////////
+// global view processing instance
+
+CViewProcessing		gViewProcessing;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// CViewProcessing
+
+CViewProcessing::CViewProcessing()
+{
+	mViewCounter = 0;
+	mTryToLoadShader = true;
+}
+
+void CViewProcessing::ReloadShaders()
+{
+	mTryToLoadShader = true;
+}
+
+bool CViewProcessing::PrepFrameBuffer(const int width, const int height)
+{
+	if ( nullptr == mFrameBuffer.get() )
+	{
+		mFrameBuffer.reset( new FrameBuffer(width, height, FrameBuffer::depth32, 1) );
+	}
+	
+	mFrameBuffer->resize(width, height);
+	return true;
+}
+
+bool CViewProcessing::PrepShader()
+{
+	if ( nullptr == mShader.get() && true == mTryToLoadShader )
+	{
+		mTryToLoadShader = false;
+		GLSLShader *pNewShader = nullptr;
+		
+		try
+		{
+			pNewShader = new GLSLShader();
+
+			FBString out_path, out_fullname;
+			if (false == FindEffectLocation( "\\GLSL\\barrelDistortion.frag", out_path, out_fullname ) )
+				throw std::exception( "failed to locate shaders" );
+		
+			if (false == pNewShader->LoadShaders( FBString(out_path, "\\GLSL\\barrelDistortion.vert"), FBString(out_path, "\\GLSL\\barrelDistortion.frag") ) )
+				throw std::exception( "failed to load shaders" );
+
+			pNewShader->Bind();
+			pNewShader->setUniformUINT( "texSampler", 0 );
+			pNewShader->UnBind();
+		}
+		catch (const std::exception &e)
+		{
+			delete pNewShader;
+			pNewShader = nullptr;
+			FBMessageBox( "View Barrel Distortion Tool", e.what(), "Ok" );
+		}
+
+		mShader.reset(pNewShader);
+	}
+	return (mShader.get() != nullptr);
+}
+
+void CViewProcessing::IncView()
+{
+	mViewCounter += 1;
+}
+
+void CViewProcessing::DecView()
+{
+	mViewCounter -= 1;
+
+	if (mViewCounter <= 0)
+	{
+		mFrameBuffer.reset(nullptr);
+		mShader.reset(nullptr);
+	}
+}
+
+FrameBuffer *CViewProcessing::GetFrameBufferPtr(const int width, const int height)
+{
+	PrepFrameBuffer(width, height);
+	return mFrameBuffer.get();
+}
+
+GLSLShader *CViewProcessing::GetShaderPtr()
+{
+	PrepShader();
+	return mShader.get();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// ORViewPaneWithDistortion
+
 /************************************************
  *	Constructor
  ************************************************/
-ORViewPane::ORViewPane(const int paneId) 
+ORViewPaneWithDistortion::ORViewPaneWithDistortion(const int paneId) 
 	: mRender(nullptr)
 	, mPaneId(paneId)
 {
@@ -34,20 +130,23 @@ ORViewPane::ORViewPane(const int paneId)
 	mIsMaximized = false;	
 	mScaleDown = 1;
 
+	gViewProcessing.IncView();
 }
 
 /************************************************
  *	Constructor
  ************************************************/
-void ORViewPane::FBDestroy()
+void ORViewPaneWithDistortion::FBDestroy()
 {
 	delete mRender;
+
+	gViewProcessing.DecView();
 }
 
 /************************************************
  *	Refresh callback
  ************************************************/
-void ORViewPane::Refresh(bool pNow)
+void ORViewPaneWithDistortion::Refresh(bool pNow)
 {
 	FBView::Refresh(pNow);
 }
@@ -201,8 +300,39 @@ void ComputeViewport(FBCamera *pCamera, const int regionWidth, const int regionH
 	y = (regionHeight - height) / 2;
 }
 
+void drawOrthoQuad2d(const int w, const int h, const float angle)
+{
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0, w, 0.0, h, -1.0, 1.0); 
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	//-------------------------
+	
+	glPushMatrix();
+	glTranslatef(-0.5f * w, -0.5f * w, 0.0f);
+	glRotatef(angle, 0.0f, 0.0f, 1.0f);
+	glTranslatef(0.5f * w, 0.5f * w, 0.0f);
 
-void ORViewPane::ViewExpose()
+	glColor3d(1.0, 1.0, 1.0);
+	glBegin(GL_QUADS);
+
+	glTexCoord2d(0.0,		0.0);
+		glVertex2d(0.0,			0.0);
+	glTexCoord2d(1.0,		0.0);
+		glVertex2d(w,	0.0);
+	glTexCoord2d(1.0,		1.0);
+		glVertex2d(w,	h);
+	glTexCoord2d(0.0,		1.0);
+		glVertex2d(0.0,			h);
+
+	glEnd();
+
+	glPopMatrix();
+}
+
+void ORViewPaneWithDistortion::ViewExpose()
 {
 	if ( nullptr == mRender ) 
 		return;
@@ -211,12 +341,21 @@ void ORViewPane::ViewExpose()
 	FBCamera *pCameraPane0 = mSystem.Renderer->CurrentCamera;
 	FBCamera *pCameraPane1 = nullptr;
 
-	GetViewerPaneInfo( paneCount, pCameraPane0, pCameraPane1 );
+	if (nullptr != pCameraPane0 && FBIS(pCameraPane0, FBCameraStereo) )
+	{
+		FBCameraStereo *pStereo = (FBCameraStereo*) pCameraPane0;
+		pCameraPane0 = pStereo->LeftCamera;
+		pCameraPane1 = pStereo->RightCamera;
+	}
 
-	mRender->CurrentCamera = (mPaneId > 0) ? pCameraPane1 : mSystem.Renderer->CurrentCamera;
-	FBCamera *pCamera = mRender->CurrentCamera;
+	//GetViewerPaneInfo( paneCount, pCameraPane0, pCameraPane1 );
+
+	FBCamera *pCamera = (mPaneId > 0) ? pCameraPane1 : pCameraPane0;
 	if (pCamera == nullptr) 
 		return;
+
+	mRender->CurrentCamera = pCamera;
+	
 
 	// DONE: resize frame buffer, bind and output alpha with simple shader
 	// region is like a window size
@@ -226,8 +365,19 @@ void ORViewPane::ViewExpose()
 	int x=0, y=0, width=1, height=1;
 	ComputeViewport( pCamera, regionWidth, regionHeight, mScaleDown, x, y, width, height );
 
+	GLSLShader *pShader = gViewProcessing.GetShaderPtr();
+	if (nullptr == pShader)
+		return;
+	FrameBuffer *pFrameBuffer = gViewProcessing.GetFrameBufferPtr(width, height);
+	if (nullptr == pShader)
+		return;
 
 	mRender->SetViewingOptions( *mSystem.Renderer->GetViewingOptions() );
+
+	pFrameBuffer->bind();
+
+	glEnable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 	if(mRender->RenderBegin(0, 0, width, height))
 	{
@@ -237,9 +387,31 @@ void ORViewPane::ViewExpose()
 		mRender->Render();
 		mRender->RenderEnd();
 	}
+
+	pFrameBuffer->unbind();
+
+	// apply barrel distortion
+	glDisable(GL_DEPTH_TEST);
+
+	pShader->Bind();
+
+	pShader->setUniformVector2f( "centre", 0.0f, 0.0f );
+
+	glBindTexture(GL_TEXTURE_2D, pFrameBuffer->getColorBuffer() );
+	drawOrthoQuad2d(regionWidth, regionHeight, 0.0f);
+
+	pShader->UnBind();
 }
 
 
-void ORViewPane::ViewInput(int pMouseX,int pMouseY,FBInputType pAction,int pButtonKey,int pModifier)
+void ORViewPaneWithDistortion::ViewInput(int pMouseX,int pMouseY,FBInputType pAction,int pButtonKey,int pModifier)
 {
+	if (kFBButtonDoubleClick == pAction)
+	{
+		mIsMaximized = ~mIsMaximized;
+		ToggleMaximize( mIsMaximized );
+	}
 }
+
+
+

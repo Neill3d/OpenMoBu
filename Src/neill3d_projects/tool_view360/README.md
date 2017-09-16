@@ -31,5 +31,5 @@ Author Sergey Solokhin (Neill3d) 2014-2017
  14.09.2017
   + start adding stereo side by side preview mode for VR experience
 
- 26.08.2017
+ 10.09.2017
  + first public release

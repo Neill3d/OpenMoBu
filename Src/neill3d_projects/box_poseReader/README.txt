@@ -2,7 +2,7 @@
 
 	Box Pose Reader plugin for Autodesk MotionBuilder
 
-Author of the plugin port - Sergey Solohin (Neill3d)
+Author of the plugin port - Sergey Solokhin (Neill3d)
  e-mail to: s@neill3d.com
    www.neill3d.com
 

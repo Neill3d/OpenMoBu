@@ -1,7 +1,7 @@
 
 #pragma once
 
-/**	\file	ortoolview3d_view.h
+/**	\file	tool_viewStereoDistortion_view.h
 *	Tool with 3D viewer.
 
 // Licensed under the "New" BSD License. 
@@ -20,20 +20,53 @@
 
 #include <vector>
 
+#include "FrameBuffer.h"
+#include "GLSLShader.h"
+
+// share framebuffer and shader between views
+
+class CViewProcessing
+{
+public:
+	//! a constructor
+	CViewProcessing();
+
+	//
+	void	IncView();	// if any view registered, let's allocate resources
+	void	DecView();	// let's check if view count is zero, free resources
+
+	GLSLShader		*GetShaderPtr();
+	FrameBuffer		*GetFrameBufferPtr(const int width, const int height);
+
+	void	ReloadShaders();
+
+protected:
+
+	int		mViewCounter;
+	bool	mTryToLoadShader;
+
+	std::auto_ptr<GLSLShader>	mShader;
+	std::auto_ptr<FrameBuffer>	mFrameBuffer;
+
+	bool	PrepShader();
+	bool	PrepFrameBuffer(const int width, const int height);
+
+};
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**	View 3D class.
 */
-class ORViewPane : public FBView
+class ORViewPaneWithDistortion : public FBView
 {
-	FBClassDeclare( ORViewPane, FBView );
+	FBClassDeclare( ORViewPaneWithDistortion, FBView );
   private:
     FBSystem    mSystem;
 	FBRenderer*	mRender;	//!< Renderer object.
 
   public:
 	//! Constructor.
-	ORViewPane(const int paneId);
+	ORViewPaneWithDistortion(const int paneId);
 	//! Destructor
 	virtual void FBDestroy();
 
@@ -50,4 +83,5 @@ private:
 	int				mPaneId;
 	bool			mIsMaximized;
 	int				mScaleDown;
+
 };

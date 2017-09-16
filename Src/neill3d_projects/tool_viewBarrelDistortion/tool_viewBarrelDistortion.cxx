@@ -1,8 +1,15 @@
 
-/**	\file	tool_viewTwoPanes.cxx
-*	Library declarations.
-*	Contains the basic routines to declare the DLL as a loadable
-*	library.
+/**	\file	tool_viewBarrelDistortion.cxx
+
+// Licensed under the "New" BSD License. 
+//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
+
+	GitHub repo - https://github.com/Neill3d/MoBu
+
+	Author Sergey Solokhin (Neill3d)
+	 e-mail to: s@neill3d.com
+	  www.neill3d.com
+
 */
 
 //--- SDK include
@@ -12,10 +19,12 @@
 	#include <windows.h>
 #endif
 
+#include <GL\glew.h>
+
 //--- Library declaration.
-FBLibraryDeclare( ortoolviewtwopanes )
+FBLibraryDeclare( ortoolviewbarreldistortion )
 {
-	FBLibraryRegister( ORToolViewTwoPanes );
+	FBLibraryRegister( ORToolViewBarrelDistortion );
 }
 FBLibraryDeclareEnd;
 
@@ -25,6 +34,7 @@ FBLibraryDeclareEnd;
 bool FBLibrary::LibInit()		{ return true; }
 bool FBLibrary::LibOpen()		
 { 	
+	glewInit();
 	return true; 
 }
 bool FBLibrary::LibReady()		{ return true; }
