@@ -21,6 +21,8 @@
 * ADSK_MOBU_2013_64
 * ADSK_MOBU_2014_64
 * ADSK_MOBU_2015_64
+* ADSK_MOBU_2016_64
+* ADSK_MOBU_2017_64
  
  2) On my machine I have put 32 bits version of MoBu into the 64 bits folders. They share the same files except folders bin/win32 and bin/x64.
 
