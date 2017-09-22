@@ -12,7 +12,7 @@
     <Filter Include="MotionCodeLibrary">
       <UniqueIdentifier>{4ca1d110-823b-4fad-a9a9-ad17a042608b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="GLSL">
+    <Filter Include="GLSL_CS">
       <UniqueIdentifier>{701c3321-aab6-4cb9-9022-29c4627694d9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -68,14 +68,14 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\..\Work\MOPLUGS\_Plugins\GLSL_CS\recomputeNormals.cs">
-      <Filter>GLSL</Filter>
+    <None Include="GLSL_CS\recomputeNormals.cs">
+      <Filter>GLSL_CS</Filter>
     </None>
-    <None Include="..\..\..\..\..\..\Work\MOPLUGS\_Plugins\GLSL_CS\recomputeNormalsZero.cs">
-      <Filter>GLSL</Filter>
+    <None Include="GLSL_CS\recomputeNormalsNorm.cs">
+      <Filter>GLSL_CS</Filter>
     </None>
-    <None Include="..\..\..\..\..\..\Work\MOPLUGS\_Plugins\GLSL_CS\recomputeNormalsNorm.cs">
-      <Filter>GLSL</Filter>
+    <None Include="GLSL_CS\recomputeNormalsZero.cs">
+      <Filter>GLSL_CS</Filter>
     </None>
   </ItemGroup>
 </Project>

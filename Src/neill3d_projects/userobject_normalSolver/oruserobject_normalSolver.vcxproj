@@ -44,9 +44,9 @@
     <ResourceCompile Include="solver_calculateNormals.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\..\Work\MOPLUGS\_Plugins\GLSL_CS\recomputeNormals.cs" />
-    <None Include="..\..\..\..\..\..\Work\MOPLUGS\_Plugins\GLSL_CS\recomputeNormalsNorm.cs" />
-    <None Include="..\..\..\..\..\..\Work\MOPLUGS\_Plugins\GLSL_CS\recomputeNormalsZero.cs" />
+    <None Include="GLSL_CS\recomputeNormals.cs" />
+    <None Include="GLSL_CS\recomputeNormalsNorm.cs" />
+    <None Include="GLSL_CS\recomputeNormalsZero.cs" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6BD0817A-76DD-4ECC-AE4D-AB6E6BF210EC}</ProjectGuid>
