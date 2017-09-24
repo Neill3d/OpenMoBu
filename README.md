@@ -3,7 +3,10 @@
 
  Here I'm sharing some C++ and Python code samples for Autodesk MotionBuilder.
  For more information please visit my blog - http://www.neill3d.com
- 
+
+---
+ Note! Please have a look at the repository Wiki pages for more information about setup and scripts/plugins
+
 ---
  Binaries
  
