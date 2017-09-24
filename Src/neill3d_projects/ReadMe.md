@@ -1,12 +1,12 @@
 
 ## PLUGINS
 
-* box_poseReader
-* box_rayIntersect
-* box_spring
+* box_poseReader - this is a conversion of original Comet's PoseReader plugin for Maya
+* box_rayIntersect - relation constraint box that helps to project ray on a mesh and get a contact point and normal
+* box_spring - relation constraint box to simulate simple spring
 * constraint_driven - animate properties which are non-animatable by default
 * constraint_NewtonPhysics - old physics constraint based on Newton physics engine
-* filter_extrapolate
+* filter_extrapolate - pre and post animation curve extrapolation (based on hermite splines)
 * impexp_csm - character studio marker format support
 * impexp_csv - optitrack text format support
 * manager_AutoSave - plugin for 2009 MoBu. 
@@ -22,8 +22,11 @@ There are three features:
 * tool_renderAdvance - tool to render up to 4 views in a frame
 * tool_SplitStyle - example of making a splitter control between two UI regions
 * tool_UIBuilder - tool for faster making a UI for c++ and python
+* tool_view360 - real-time render into a equirectangular panorama
+* tool_viewBarelDistortion - stereo camera 2 panes side by side render with barel distortion post-effect
 * tool_ViewTwoPanes - an example to render 2 different cameras into 2 panes. That could be a start point for doing your VR experiment
 * tool_windowsmenu_sample - sample for MoBU under 2011. using winApi for making a context menu
+* userobject_normalsSolver - solver for real-time computing soft normals for models. Could be useful to improve visual quality for skeleton binded and blendshape animated meshes
 
 ### How to compile
 
@@ -66,5 +69,7 @@ Note! In some plugins I'm using post-build commands to copy GLSL shaders from pr
 ### Contact
 
   Sergey Solokhin (Neill3d) 2014-2017
+  
 	e-mail to: s@neill3d.com
+	
 		www.neill3d.com
