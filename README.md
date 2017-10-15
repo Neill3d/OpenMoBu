@@ -10,8 +10,8 @@
 
 ## Binaries
  
- You can find some precompiled files here - https://drive.google.com/open?id=0B83XZ3TC_S6PcFZtSTJXZGk4NzQ&authuser=0
- 
+ Pre-compiled files you can find in "bin" folder.
+ To setup custom plugins and scripts path, try please configuration application - https://github.com/Neill3d/MoBu_ConfigApp
 
 ## How to compile
  
