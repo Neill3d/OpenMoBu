@@ -1,16 +1,19 @@
- Welcome to the Neill3d code repository!
-====
+# Welcome to the Neill3d code repository!
+
 
  Here I'm sharing some C++ and Python code samples for Autodesk MotionBuilder.
  For more information please visit my blog - http://www.neill3d.com
- 
+
 ---
- Binaries
+ Note! Please have a look at the repository Wiki pages for more information about setup and scripts/plugins
+
+
+## Binaries
  
  You can find some precompiled files here - https://drive.google.com/open?id=0B83XZ3TC_S6PcFZtSTJXZGk4NzQ&authuser=0
  
----
- How to compile
+
+## How to compile
  
  Note! Projects and MoBu solution are created in VisualStudio 2010.
  
@@ -49,8 +52,8 @@ copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2
 6) I'm using one MotionCodeLibrary for compiling all the projects. In each project I have added a relative path to that folder. Right now this library is a colletion of header and source files, it's not a static or dynamic library. That means to compile your project you should not only include needed headers but also add corresponding source code files to your project.
 
  
----
-  Contact
+
+## Contact
   
   Sergey Solokhin (Neill3d)
   e-mail to: s@neill3d.com
