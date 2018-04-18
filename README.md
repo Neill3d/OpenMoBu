@@ -3,7 +3,7 @@
  It's a set of C++ and Python code for Autodesk MotionBuilder that I have developed while taking part in several projects.
  Another big set of plugins and scripts for Autodesk MotionBuilder you can find in MoPlugs repository.
 
- For more information please visit my blog - http://www.neill3d.com
+ For more information please visit my blog - http://neill3d.com/en/
 
 ---
  Note! Please have a look at the repository Wiki pages for more information about setup and scripts/plugins
@@ -61,4 +61,4 @@ copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2
   Sergei Solokhin (Neill3d)
   e-mail to: s@neill3d.com
 
-  www.neill3d.com
+  http://neill3d.com/en/
