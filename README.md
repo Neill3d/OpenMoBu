@@ -1,5 +1,7 @@
-# Welcome to the Neill3d code repository!
+# OpenMoBu code repository!
 
+ It's a set of C++ and Python code for Autodesk MotionBuilder that I have developed while taking part in several projects.
+ Another big set of plugins and scripts for Autodesk MotionBuilder you can find in MoPlugs repository.
 
  Here I'm sharing some C++ and Python code samples for Autodesk MotionBuilder.
  For more information please visit my blog - http://www.neill3d.com
@@ -11,11 +13,11 @@
 ## Binaries
  
  Pre-compiled files you can find in "bin" folder.
- To setup custom plugins and scripts path, try please configuration application - https://github.com/Neill3d/MoBu_ConfigApp
+ To setup custom plugins and scripts path, please, try a configuration application - https://github.com/Neill3d/MoBu_ConfigApp
 
 ## How to compile
  
- Note! Projects and MoBu solution are created in VisualStudio 2010.
+ Note! Some old Projects and MoBu solution are created in VisualStudio 2010, the latest projects I've developed in VS 2013.
  
   1) Specify env variables with the path to your motionbuilder folder
 * ADSK_MOBU_2010_64
@@ -29,7 +31,7 @@
  
  2) On my machine I have put 32 bits version of MoBu into the 64 bits folders. They share the same files except folders bin/win32 and bin/x64.
 
-3) For supporting older version of MoBu in different projects I'm using these predefines
+3) For supporting older version of MoBu in different projects I'm using these pre-defines
 
 * OLD_FBEVALUATE_LOCALTIME - MoBu 2010 doesn't support recieving system and local time from the evaluation variable FBEvaluateInfo
 * OLD_FBTIME_SETFRAME - in old SetFrame function (MoBu 2010) you need to specify a bool parameter as an argument
@@ -51,11 +53,13 @@ copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2
 
 6) I'm using one MotionCodeLibrary for compiling all the projects. In each project I have added a relative path to that folder. Right now this library is a colletion of header and source files, it's not a static or dynamic library. That means to compile your project you should not only include needed headers but also add corresponding source code files to your project.
 
- 
+## Special Thanks
+
+ Big thanks to Les Androids Associes! They gave me a permission to share my development to the public.
 
 ## Contact
   
-  Sergey Solokhin (Neill3d)
+  Sergei Solokhin (Neill3d)
   e-mail to: s@neill3d.com
 
   www.neill3d.com
