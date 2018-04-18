@@ -3,7 +3,6 @@
  It's a set of C++ and Python code for Autodesk MotionBuilder that I have developed while taking part in several projects.
  Another big set of plugins and scripts for Autodesk MotionBuilder you can find in MoPlugs repository.
 
- Here I'm sharing some C++ and Python code samples for Autodesk MotionBuilder.
  For more information please visit my blog - http://www.neill3d.com
 
 ---
