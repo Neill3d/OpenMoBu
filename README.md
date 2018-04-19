@@ -3,6 +3,8 @@
  It's a set of C++ and Python code for Autodesk MotionBuilder that I have developed while taking part in several projects.
  Another big set of plugins and scripts for Autodesk MotionBuilder you can find in MoPlugs repository.
 
+[![MoPlugs](https://github.com/Neill3d/MoBu/blob/master/Documentation/Images/superLightingShader.jpg)]()
+
  For more information please visit my blog - http://neill3d.com/en/
 
 ---
