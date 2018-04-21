@@ -4,7 +4,7 @@
 #define MyAppName "OpenMoBu for Autodesk® MotionBuilder®"
 #define MyAppVersion "0.5a"
 #define MyAppPublisher "Neill3d"
-#define MyAppURL "https://github.com/Neill3d/MoBu"
+#define MyAppURL "https://github.com/Neill3d/OpenMoBu"
 #define MyAppExeName "Setup_OpenMoBu_05a"
 
 [Languages]
@@ -28,9 +28,9 @@ OutputBaseFilename={#MyAppExeName}
 Compression=lzma
 SolidCompression=yes
 AppCopyright=Copyright (C) 2018 Neill3d
-;WizardImageFile=Neill3d2.jpg
+WizardImageFile=Neill3d2.bmp
 WizardImageStretch=no
-;WizardSmallImageFile=Neill3d2.jpg
+WizardSmallImageFile=Neill3d_sm.bmp
 DisableWelcomePage=no
 
 [Types]
@@ -47,11 +47,40 @@ Name: "MotionBuilder2018"; Description: "MotionBuilder 2018 plugins"; Types: ful
 [Files]
 
 ; 2017
+
+Source: "..\bin\x64\plugins_2017\autoInterpPatch.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\box_poseReader.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\box_rayIntersect.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\box_spring.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\device_projectTango.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\driven_constraint.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
 Source: "..\bin\x64\plugins_2017\manip_lockcamera.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\post_processing.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\references_manager.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\SuperDynamicLighting.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\FBX\FBXExtension_References.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\GLSL\*"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2017-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2017-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2017}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2017
 
 ; 2018
-Source: "..\bin\x64\plugins_2018\manip_lockcamera.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
 
+;Source: "..\bin\x64\plugins_2018\autoInterpPatch.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\box_poseReader.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\box_rayIntersect.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\box_spring.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\device_projectTango.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\driven_constraint.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\manip_lockcamera.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\post_processing.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\references_manager.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\SuperDynamicLighting.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\FBX\FBXExtension_References.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\GLSL\*"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2018}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2018
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

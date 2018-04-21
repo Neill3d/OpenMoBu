@@ -6,4 +6,4 @@
 ---
   Best regards, Sergei Solokhin (Neill3d)
 
-  OpenMoBu homepage: https://github.com/Neill3d/MoBu
+  OpenMoBu homepage: https://github.com/Neill3d/OpenMoBu

@@ -10,18 +10,29 @@ Plugins
 * relation box - poseReader
 * relation box - ray Intersect
 * relation box - spring
+* device - project Tango
+* constraint - driven
 * manager - view camera locker
 * manager - auto interpolation patch
 * manager - post processing
+* manager - references
 * shader - super lighting
+* fbx extension references
 
-Scripts
-- SetUV name
+Scripts\Neill3d
+- AssignUVSet
+- GlobalSceneRetiming
+- MakeCircle
 
-Script Tools
+Script Startup Tools
+- additive animation tool
 - post processing tool
+- cleanup manager
+- reference advanced tool
+- restructuring
+- stay on floor
 
 ==  Contact ==
   
   Sergei Solokhin (Neill3d)
-  OpenMoBu homepage: https://github.com/Neill3d/MoBu
+  OpenMoBu homepage: https://github.com/Neill3d/OpenMoBu

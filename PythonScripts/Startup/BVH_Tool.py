@@ -3,14 +3,13 @@
 ##
 ## BVH Import\Export Tool for Autodesk MotionBuilder
 ##
-##  MoBu project on GitHub - https://github.com/Neill3d/MoBu
+##  OpenMoBu project on GitHub - https://github.com/Neill3d/OpenMoBu
 ##
-## Author Sergey Solohin (Neill3d) 2014
+## Author Sergei Solokhin (Neill3d) 2014-2018
 ##  e-mail to: s@neill3d.com
 ##        www.neill3d.com
 ##
-##
-##  Lisenced under the "New" BSD License - https://github.com/Neill3d/MoBu/blob/master/LICENSE
+##  Lisenced under the "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 ##
 #########################################################################################
 
