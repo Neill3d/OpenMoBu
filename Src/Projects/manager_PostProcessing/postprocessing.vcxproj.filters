@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{d187747e-e1c4-4680-96a8-6fbeb5c5f64b}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{1fa45335-80c2-4ddc-9ccd-9da82cd9b1db}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="MotionCodeLibrary">
+      <UniqueIdentifier>{9b37b9c2-0625-4b3c-9760-f13e60ad0faa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rg_ETC1">
+      <UniqueIdentifier>{37c27cfa-945c-45de-8083-f03cfe999081}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Freetype_gl">
+      <UniqueIdentifier>{81026d93-66d1-4068-a3b0-965ee848ea36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{2588e793-5493-4dea-a7f7-624d660e8a36}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="MAIN.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_data.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_manager.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_tool.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_effectChain.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_association.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_ini.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_effectSSAO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_manip.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_hudelement.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rg_etc1\rg_etc1.cpp">
+      <Filter>rg_ETC1</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_effectDisplacement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mat4.c">
+      <Filter>Freetype_gl</Filter>
+    </ClCompile>
+    <ClCompile Include="shader.c">
+      <Filter>Freetype_gl</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_fonts.cpp">
+      <Filter>Freetype_gl</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessing_effectMotionBlur.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\Assert2.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\CheckGLError.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\fpTexture.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\Framebuffer.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\glslShader.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\nv_math.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\OGL_Utils.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics_framebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="postprocessing_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_tool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_effectChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_association.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_ini.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_effectSSAO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_manip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_hudelement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rg_etc1\rg_etc1.h">
+      <Filter>rg_ETC1</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_effectDisplacement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mat4.h">
+      <Filter>Freetype_gl</Filter>
+    </ClInclude>
+    <ClInclude Include="shader.h">
+      <Filter>Freetype_gl</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_fonts.h">
+      <Filter>Freetype_gl</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessing_effectMotionBlur.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\Assert2.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\CheckGLError.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\fpTexture.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\Framebuffer.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\glslShader.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_algebra.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_math.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_mathdecl.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\OGL_Utils.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics_framebuffer.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+    <Text Include="UserGuide.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GLSL\blur.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\color.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\depthLinearize.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\displacement.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\displacement.vsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\dof.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\downscale.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\downscale.vsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\filmGrain.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\fishEye.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\fishEye.vsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\lensFlare.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\mix.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\motionblur.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simple.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simple.vsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\ssao.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\ssao_linearize.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\text.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\text.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\vignetting.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>

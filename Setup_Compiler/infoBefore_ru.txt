@@ -1,0 +1,27 @@
+
+ == Open MoBu ==
+
+ Скрипты и подключаемые модули для Autodesk MotionBuilder.
+
+Поддерживаемые версии
+- 2017, 2018
+
+Плагины
+* relation box - poseReader
+* relation box - ray Intersect
+* relation box - spring
+* manager - view camera locker
+* manager - auto interpolation patch
+* manager - post processing
+* shader - super lighting
+
+Скрипты действия
+- SetUV name
+
+Скрипты утилиты
+- post processing tool
+
+== Об авторе и проекте ==
+  
+  Sergei Solokhin (Neill3d)
+  OpenMoBu homepage: https://github.com/Neill3d/MoBu

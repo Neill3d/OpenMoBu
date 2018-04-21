@@ -1,0 +1,68 @@
+
+#pragma once
+
+// postprocessing_effectDisplacement.h
+/*
+Sergei <Neill3d> Solokhin 2018
+
+GitHub page - https://github.com/Neill3d/OpenMoBu
+Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+*/
+
+#include "postprocessing_effectChain.h"
+#include <random>
+
+///////////////////////////////////////////////////////////////////////////////////////
+// PostEffectDisplacement
+
+struct PostEffectDisplacement : public PostEffectBase
+{
+public:
+
+	//! a constructor
+	PostEffectDisplacement();
+
+	//! a destructor
+	virtual ~PostEffectDisplacement();
+
+	virtual const char *GetName() override;
+	virtual const char *GetVertexFname() override;
+	virtual const char *GetFragmentFname() override;
+
+	virtual bool PrepUniforms() override;
+	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
+
+	virtual void Bind() override;
+	virtual void UnBind() override;
+
+protected:
+
+	FBSystem		mSystem;
+
+	// shader locations
+	enum { LOCATIONS_COUNT = 9 };
+	union 
+	{
+		struct
+		{
+			// locations
+
+			GLint		upperClip;
+			GLint		lowerClip;
+
+			GLint		iTime;
+			GLint		iSpeed;
+
+			GLint		useQuakeEffect;
+
+			GLint		xDistMag;
+			GLint		yDistMag;
+
+			GLint		xSineCycles;
+			GLint		ySineCycles;
+		};
+
+		GLint		arr[LOCATIONS_COUNT];
+	} mLoc;
+
+};

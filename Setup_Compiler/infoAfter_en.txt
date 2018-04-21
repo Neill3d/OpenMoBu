@@ -1,0 +1,9 @@
+
+ Plugins are succesfully installed. Hope they'll be usefull for you!
+
+ For any questions and suggestions, feel free to ask. 
+
+---
+  Best regards, Sergei Solokhin (Neill3d)
+
+  OpenMoBu homepage: https://github.com/Neill3d/MoBu

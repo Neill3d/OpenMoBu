@@ -1,18 +1,16 @@
 
+/*
+Sergei <Neill3d> Solokhin 2018
+		class is based on http://steps3d.narod.ru library
+		Thanks for Alex Boreskov
+
+GitHub page - https://github.com/Neill3d/OpenMoBu
+Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+*/
+
 #include <stdio.h>
 #include "glslShader.h"
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-// Licensed under the "New" BSD License. 
-//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
-//
-// GitHub repository - https://github.com/Neill3d/MoBu
-//
-// Author Sergey Solokhin (Neill3d) 2014-2017
-//  e-mail to: s@neill3d.com
-//		www.neill3d.com
-/////////////////////////////////////////////////////////////////////////////////////////
+#include "CheckGLError.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                            GLSLShader
@@ -75,53 +73,6 @@ bool GLSLShader::ReCompileShaders( const char* vertex_file, const char* fragment
 	return true;
 }
 
-bool GLSLShader::LoadShadersSource( const char* vertex_text, const char* fragment_text )
-{
-	Free();
-
-	if (vertex_text)
-	{
-		vertex = glCreateShaderObjectARB( GL_VERTEX_SHADER_ARB );
-		LoadShader( vertex, vertex_text );
-	}
-	
-	if (fragment_text)
-	{
-		fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
-		LoadShader( fragment, fragment_text );
-	}
-	
-
-	if (vertex > 0 && fragment > 0)
-	{
-
-	  programObj = glCreateProgramObjectARB();
-	  // check for errors
-	  //if ( checkopenglerror ) return false;
-	  // attach shader to program object
-	  glAttachObjectARB( programObj, vertex );
-	  // attach shader to program object
-	  glAttachObjectARB( programObj, fragment );
-
-	  GLint linked;
-	  // link the program object and print out the info log
-	  glLinkProgramARB( programObj );
-	/*
-	  if (checkopenglerror() == false)
-	{
-		printf( "opengl error\n" );
-	}
-	  //if ( checkopenglerror ) return false;
-	  */
-	  glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
-	  loadlog( programObj );
-
-	  return (linked != 0);
-	}
-
-	return false;
-}
-
 bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file )
 {
 	Free();
@@ -162,7 +113,7 @@ bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file
 	  // link the program object and print out the info log
 	  glLinkProgramARB( programObj );
 	
-	  //CHECK_GL_ERROR();
+	  CHECK_GL_ERROR();
 	  //if ( checkopenglerror ) return false;
 
 	  glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
@@ -267,46 +218,6 @@ bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
   return (compileStatus != 0);
 }
 
-bool GLSLShader::LoadShader( GLhandleARB shader, const char *source )
-{
-  size_t headerLen = strlen(mHeaderText); // number of bytes in header
-  
-  size_t fileLen = strlen(source);
-
-  char  *buffer = new char[ headerLen + fileLen + 1 ];
-  const GLcharARB*  bufferARB = buffer;
-
-  GLint   len = fileLen;
-  GLint   compileStatus;
-
-  // read shader from file
-  memset( &buffer[0], 0, sizeof(char)*(headerLen + len + 1) );
-  if (headerLen)
-    memcpy( &buffer[0], &mHeaderText[0], sizeof(char) * headerLen );
-  void *buf = (void*)&buffer[headerLen];
-  
-  strcpy_s( (char*) buf, sizeof(char) * len, source );
-
-  len = len + headerLen;
-  glShaderSourceARB( shader, 1, &bufferARB, &len );
-  // compile shader
-  glCompileShaderARB( shader );
-
-  //if ( checkopenglerror ) return false;
-
-  glGetObjectParameterivARB ( shader, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus );
-
-  loadlog ( shader );
-
-  if (buffer) {
-    delete[] buffer;
-    buffer = NULL;
-  }
-
-  return (compileStatus != 0);
-}
-
-
 void GLSLShader::loadlog( GLhandleARB object )
 {
     GLint       logLength     = 0;
@@ -337,22 +248,23 @@ void GLSLShader::loadlog( GLhandleARB object )
 
     glGetInfoLogARB ( object, logLength, &charsWritten, infoLog );
 
+#ifdef _DEBUG
 	if ( strlen(infoLog) > 0 )
 	{
 		printf( infoLog );
 	}
-
+#endif
     if ( infoLog != buffer )
         free ( infoLog );
 }
 
-void GLSLShader::Bind()
+void GLSLShader::Bind() const
 {
   if (programObj)
     glUseProgramObjectARB( programObj );
 }
 
-void GLSLShader::UnBind()
+void GLSLShader::UnBind() const
 {
   glUseProgramObjectARB( 0 );
 }
@@ -369,11 +281,11 @@ void GLSLShader::Free()
   fragment = 0;
 }
 
-const GLint GLSLShader::findLocation( const char *name )
+const GLint GLSLShader::findLocation( const char *name ) const
 {
 	if (!programObj) return -1;
 	int loc = glGetUniformLocationARB( programObj, name );
-	loadlog( programObj );
+	//loadlog( programObj );
 	return loc;
 }
 

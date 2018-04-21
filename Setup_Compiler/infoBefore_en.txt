@@ -1,0 +1,27 @@
+
+ == Open MoBu ==
+
+ Plugins and scripts for Autodesk MotionBuilder.
+
+Supported versions
+- 2017, 2018
+
+Plugins
+* relation box - poseReader
+* relation box - ray Intersect
+* relation box - spring
+* manager - view camera locker
+* manager - auto interpolation patch
+* manager - post processing
+* shader - super lighting
+
+Scripts
+- SetUV name
+
+Script Tools
+- post processing tool
+
+==  Contact ==
+  
+  Sergei Solokhin (Neill3d)
+  OpenMoBu homepage: https://github.com/Neill3d/MoBu

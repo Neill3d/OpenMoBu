@@ -1,0 +1,49 @@
+
+ === Post Processing ===
+
+//
+//	Sergei <Neill3d> Solokhin 2018
+//
+//	GitHub page - https://github.com/Neill3d/OpenMoBu
+//	Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+//
+
+ == Default Configuration
+
+  Default values for the properties are stored in My Documents \ MB \ 20xx-x64 \ config
+  Name of a configuration file is < PC Name >.PostProcessing.txt
+
+  == Post Processing Data
+
+  Data User Model is located in Assets / Templates / Shading Elements
+
+Data supportes drag'n'drop operations:
+ * if you drag camera / light / null, they will connected into Data Camera / Lens Flare Light / DOF Focus Object
+ * if you drag one data into another, the values from on data will be copied into another one
+
+ * if Camera is assigned, then post processing effect become a local, just for a specified camera
+
+ * Post procesing effect applies only on user camera and skip any system camera and Perspective as well
+
+ * Better to not combine Camera Effects (Antialiasing, Depth Of Field) with post processing effects
+For Antialiasing better to use render option. BUT the option conflicts with Reflection shader, so will not see reflections!
+
+  == Effects
+
+  = Common Notes
+
+   DOF and SSAO and any other effect which is using depth buffer could be sensible to camera near/far planes
+GLSL Shader stores value in single float, so please take care about too big values for the far plane
+
+  = DOF
+  
+   In DOF Effect you can manually specify a focal distance.
+   If Null is assigned in the Focus Object Property, Focal distance will be computed automatically
+
+   When Use Camera DOF Properties is on, then Focal Distance and Focal Range will be taken from Camera Real-Time effects
+
+   To increase a quality of DOF, try to insrease values for Samples and Rings
+
+   = Lens Flare
+
+   PosX and PosY are percent of screen size (widht and height)
