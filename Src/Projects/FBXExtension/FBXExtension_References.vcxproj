@@ -15,9 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E6A70929-425D-47E9-AE6E-4FF9ABDCFB05}</ProjectGuid>
-    <RootNamespace>ortoolqttest</RootNamespace>
-    <ProjectName>autoInterpPatch</ProjectName>
+    <ProjectGuid>{FC07C855-6038-43E4-8CC1-D0F0788F27D7}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -55,30 +53,30 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\bin\$(Platform)\plugins_2017\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2017\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\bin\$(Platform)\plugins_2017\FBX\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\FBX\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">true</IgnoreImportLibrary>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\$(Platform)\plugins\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\$(Platform)\plugins\FBX\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</IgnoreImportLibrary>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Qt\4.8.6\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Qt\4.8.6\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\miscellaneous\manager_References;..\..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\..\bin\x64\plugins;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ADSK_MOBU_2017_64)/OpenRealitySDK/Include;D:\Qt\4.8.5\include;D:\Qt\4.8.5\bin;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ADSK_MOBU_2017_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;D:\Qt\4.8.5\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\MotionCodeLibrary;$(ADSK_MOBU_2017_64)\OpenRealitySDK\include;$(ADSK_MOBU_2017_64)\OpenRealitySDK\include\fbsdk;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ADSK_MOBU_2017_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">
-    <IncludePath>$(ADSK_MOBU_2017_64)/OpenRealitySDK/Include;D:\Qt\4.8.5\include;D:\Qt\4.8.5\bin;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ADSK_MOBU_2017_64)\OpenRealitySDK\lib\$(Platform);D:\Qt\4.8.5\lib;D:\Qt\4.8.5\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\MotionCodeLibrary;$(ADSK_MOBU_2018_64)\OpenRealitySDK\include;$(ADSK_MOBU_2018_64)\OpenRealitySDK\include\fbsdk;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ADSK_MOBU_2018_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -86,7 +84,8 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>../../../../../bin\$(Platform)/plugins/ortoolqttest.tlb</TypeLibraryName>
+      <TypeLibraryName>
+      </TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -94,11 +93,12 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;FBXSDK_SHARED;FBXSDK_NEW_API;TIXML_USE_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>../../../../../obj/ortoolqttest/ortoolqttest.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>
       </AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
@@ -110,28 +110,27 @@
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CompileAs>Default</CompileAs>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;QtCore4.lib;QtGui4.lib;QtOpenGL4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fbsdk.lib;fbxsdk.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <ProgramDatabaseFile>
-      </ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\$(TargetName).dll"</Command>
+      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\FBX\$(TargetName).dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">
@@ -140,7 +139,8 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>../../../../../bin\$(Platform)/plugins/ortoolqttest.tlb</TypeLibraryName>
+      <TypeLibraryName>
+      </TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -148,11 +148,12 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;FBXSDK_SHARED;FBXSDK_NEW_API;TIXML_USE_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>../../../../../obj/ortoolqttest/ortoolqttest.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>
       </AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
@@ -164,28 +165,27 @@
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CompileAs>Default</CompileAs>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;QtCore4.lib;QtGui4.lib;QtOpenGL4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fbsdk.lib;fbxsdk.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <ProgramDatabaseFile>
-      </ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\$(TargetName).dll"</Command>
+      <Command>start xcopy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\FBX\$(TargetName).dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -194,17 +194,19 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>../../../../../bin\$(Platform)/plugins/ortoolqttest.tlb</TypeLibraryName>
+      <TypeLibraryName>
+      </TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\include;..\..\..\include\fbxsdk;$(FB_QT_INCLUDE_DIR);..\..\..\..\src\Components\ExternalLibraries\qt4.8.6\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;testlib;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;FBXSDK_SHARED;FBXSDK_NEW_API;TIXML_USE_STL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>../../../../../obj/ortoolqttest/ortoolqttest.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>
       </AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
@@ -217,17 +219,16 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;QtCore4.lib;QtGui4.lib;QtOpenGL4.lib;QtTest4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fbsdk.lib;fbxsdk.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\..\..\lib\$(Platform);..\..\..\..\platform\$(Platform)\Components\ExternalLibraries\qt4.8.6\lib\;..\..\..\..\bin\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>
       </ProgramDatabaseFile>
@@ -240,50 +241,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="autoKeyPatch.cxx" />
-    <ClCompile Include="autoKeyPatch_manager.cxx" />
-    <ClCompile Include="qttestwidget.cxx" />
-    <ClCompile Include="moc\moc_qttestwidget.cxx" />
+    <ClInclude Include="..\..\MotionCodeLibrary\tinystr.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\tinyxml.h" />
+    <ClInclude Include="mbextension.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="qttestwidget.h">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Moccing qttestwidget.h</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\$(Platform)\moc qttestwidget.h -o moc/moc_qttestwidget.cxx
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">moc/moc_qttestwidget.cxx;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Moccing qttestwidget.h</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">Moccing qttestwidget.h</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\bin\$(Platform)\moc qttestwidget.h -o moc/moc_qttestwidget.cxx
-</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\..\bin\$(Platform)\moc qttestwidget.h -o moc/moc_qttestwidget.cxx
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">moc/moc_qttestwidget.cxx;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">moc/moc_qttestwidget.cxx;%(Outputs)</Outputs>
-    </CustomBuild>
-    <ClInclude Include="autoKeyPatch_manager.h" />
-    <ClInclude Include="ui_qttestwidget.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="qttest.ui">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Uic qttest.ui</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\$(Platform)\uic qttest.ui -o ui_qttestwidget.h
-</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ui_qttestwidget.h;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ui_qttestwidget.h;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Uic qttest.ui</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">Uic qttest.ui</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\bin\$(Platform)\uic qttest.ui -o ui_qttestwidget.h
-</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\..\bin\$(Platform)\uic qttest.ui -o ui_qttestwidget.h
-</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ui_qttestwidget.h;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">ui_qttestwidget.h;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ui_qttestwidget.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">ui_qttestwidget.h;%(Outputs)</Outputs>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
+    <ClCompile Include="..\..\MotionCodeLibrary\tinystr.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxml.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxmlerror.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxmlparser.cpp" />
+    <ClCompile Include="mbreferencesplugin.cxx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
