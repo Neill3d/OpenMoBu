@@ -479,8 +479,8 @@ copy "$(ProjectDir)Shaders\LightingPS.cg" "$(OutDir)LightingPS.cg"
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

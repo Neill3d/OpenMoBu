@@ -137,6 +137,7 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 			FBTrace("Failed to initialize a super lighting effect!\n");
 			delete mpLightShader;
 			mpLightShader = nullptr;
+			mSkipRendering = true;
 			Enable = false;
             return;
         }

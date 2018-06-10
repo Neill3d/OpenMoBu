@@ -380,11 +380,11 @@ void main (void)
 	
 	float difFactor = clamp(materialBuffer.mat.diffuseColor.w, 0.0, 1.0);
 	vec3 ambientColor = materialBuffer.mat.ambientColor.rgb * globalAmbientLight.rgb * materialBuffer.mat.ambientColor.w;
-	//difColor += vec4(ambientColor, theShader->transparency);
-	color *= vec4(ambientColor + lResult.diffContrib * difFactor, materialBuffer.mat.shaderTransparency); // ambientColor +
+	vec3 emissiveColor = materialBuffer.mat.emissiveColor.a * materialBuffer.mat.emissiveColor.rgb;
+	vec3 difColor = mix(lResult.diffContrib * difFactor, materialBuffer.mat.emissiveColor.rgb, materialBuffer.mat.emissiveColor.w);
 	
-	//
-	/*theMaterial->emissiveColor.w * theMaterial->emissiveColor.xyz +*/
+	color *= vec4(ambientColor + difColor, materialBuffer.mat.shaderTransparency); // ambientColor +
+	
 	
 	float specularFactor = materialBuffer.mat.specularColor.w;
 	
@@ -408,7 +408,7 @@ void main (void)
 	if (switchAlbedoTosRGB > 0.0)
 	{
 		// linear to sRGB
-		outColor.rgb =  pow( outColor.rgb, vec3(1.0 / 2.2));
+		color.rgb =  pow( color.rgb, vec3(1.0 / 2.2));
 	}
 	
 	// apply fog

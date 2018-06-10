@@ -160,3 +160,43 @@ public:
     }
 };
 
+#ifdef OGL_UTIL_CUBEMAP
+
+///////////////////////////////////////////////////////////////////////////////
+// CubeMap
+
+class OGLCubeMap
+{
+
+public:
+
+	//! a constructor
+	OGLCubeMap();
+	//! a destructor
+	~OGLCubeMap();
+
+	//
+	void Clear();
+	bool LoadCubeMap(const char *filename);
+	void GenerateMipMaps();
+
+	void Bind();
+	void UnBind();
+
+	const GLuint GetCubeMapId() const {
+		return cubeId;
+	}
+
+protected:
+
+	GLuint				cubeId;
+
+	// information about load status
+	unsigned int		memorySize;
+	unsigned int		dimention;
+	bool				isCompressed;
+	unsigned int		numberOfMipLevels;
+	unsigned int		format;
+};
+
+#endif

@@ -301,7 +301,7 @@ namespace Graphics
 
 		TTransform					mLastTransform;
 
-		// TODO:: SSBO for transform and global settings, material, lights
+		// DONE:: SSBO for transform and global settings, material, lights
 		CGPUBufferSSBO				mBufferTransform;
 		CGPUBufferSSBO				mBufferMaterial;
 

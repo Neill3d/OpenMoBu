@@ -94,6 +94,7 @@ namespace Graphics {
 		FBColor lReflectionColor = pMaterial->Reflection;
 		double shin = pMaterial->Shininess;
 
+		double lEmissiveFactor = pMaterial->EmissiveFactor;
 		double lDiffuseFactor = pMaterial->DiffuseFactor;
 		double lAmbientFactor = pMaterial->AmbientFactor;
 		double lSpecularFactor = pMaterial->SpecularFactor;
@@ -113,6 +114,7 @@ namespace Graphics {
 
 		mat.specExp = shin;
 
+		mat.emissiveColor[3] = (float)lEmissiveFactor;
 		mat.diffuseColor[3] = (float)lDiffuseFactor;
 		mat.ambientColor[3] = (float)lAmbientFactor;
 		mat.specularColor[3] = (float)lSpecularFactor;
