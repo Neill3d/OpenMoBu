@@ -13,7 +13,9 @@
 
 ## Binaries
  
- Pre-compiled files you can find in "bin" folder.
+ There is an installation package in "Release" section of the repository.
+ 
+ Also some old binaries you can find in "bin" folder.
  To setup custom plugins and scripts path, please, try a configuration application - https://github.com/Neill3d/MoBu_ConfigApp
 
 ## How to compile
