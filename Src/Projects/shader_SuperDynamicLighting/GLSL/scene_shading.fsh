@@ -397,7 +397,7 @@ void main (void)
 	color.rgb =  color.rgb + specularFactor * materialBuffer.mat.specularColor.rgb * lResult.specContrib;
 	
 	//color = vec4(1.0, 0.0, 0.0, 1.0);
-	color.rgb = lResult.diffContrib * color.rgb;
+	//color.rgb = lResult.diffContrib * color.rgb;
 	
 	ApplyRim(Nn, inPw, rimOptions, rimColor, color);
 	

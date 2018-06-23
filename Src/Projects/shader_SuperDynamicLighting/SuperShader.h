@@ -226,9 +226,9 @@ namespace Graphics
 		bool BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList);
 		void EndShading(FBRenderOptions *pRenderOptions=nullptr);
 
-		void SwitchMaterial(FBRenderOptions* pRenderOptions, FBShaderModelInfo* pShaderModelInfo, FBMaterial* pMaterial, double pShaderTransparencyFactor);
+		void SwitchMaterial(FBRenderOptions* pRenderOptions, FBShaderModelInfo* pShaderModelInfo, FBMaterial* pMaterial, double pShaderTransparencyFactor, bool forceUpdate);
 
-		void ShaderPassModelDraw(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo);
+		void ShaderPassModelDraw(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo, bool forceUpdateTextures);
 
 		void UploadModelViewMatrixArrayForDrawInstanced(const double* pModelViewMatrixArray, int pCount);
 
@@ -330,6 +330,7 @@ namespace Graphics
 		bool			mLastUseDisplacement;
 		double			mLastDispMult;
 		double			mLastDispCenter;
+		FBMatrix		mLastDispMatrix;
 
 	public:
 
@@ -349,7 +350,7 @@ namespace Graphics
 
 		void SetDisplacementInfo(bool useDisp, double dispMult, double dispCenter);
 		void UploadDisplacementInfo(bool useDisp);
-		void UploadDisplacementInfo(bool useDisp, double dispMult, double dispCenter);
+		void UploadDisplacementInfo(bool useDisp, double dispMult, double dispCenter, const	double *dispMatrix);
 
 		void SetMatCap(GLuint texId);
 

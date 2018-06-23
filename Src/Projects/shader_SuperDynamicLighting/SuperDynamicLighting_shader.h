@@ -144,6 +144,7 @@ public:
 
 	//
 	FBPropertyBool				SwitchAlbedoTosRGB;
+	FBPropertyBool				ForceUpdateTextures;
 
 	// Rim lighting
 	FBPropertyAnimatableDouble			UseRim;
@@ -175,6 +176,7 @@ protected:
 
 	bool						mSkipRendering;
 	bool								mNeedUpdateLightsList;
+	bool								mNeedUpdateTextures;	// we should update textures after change a context
 
 	std::vector<FBLight*>							mLightsPtr;
 	std::auto_ptr<Graphics::CGPUShaderLights>		mShaderLights;

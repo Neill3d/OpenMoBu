@@ -679,7 +679,7 @@ namespace Graphics {
 	}
 
 	
-	GLuint GetTextureId(FBMaterial *pMaterial, const FBMaterialTextureType textureType)
+	GLuint GetTextureId(FBMaterial *pMaterial, const FBMaterialTextureType textureType, bool forceUpdate)
 	{
 		GLuint texId = 0;
 		FBTexture *pTexture = pMaterial->GetTexture(textureType);
@@ -687,7 +687,7 @@ namespace Graphics {
 		if (nullptr != pTexture)
 		{
 			texId = pTexture->TextureOGLId;
-			if (0 == texId)
+			if (0 == texId || true == forceUpdate)
 			{
 				pTexture->OGLInit();
 				texId = pTexture->TextureOGLId;
@@ -697,7 +697,7 @@ namespace Graphics {
 		return texId;
 	}
 
-	void SuperShader::SwitchMaterial(FBRenderOptions* pRenderOptions, FBShaderModelInfo* pShaderModelInfo, FBMaterial* pMaterial, double pShaderTransparencyFactor)
+	void SuperShader::SwitchMaterial(FBRenderOptions* pRenderOptions, FBShaderModelInfo* pShaderModelInfo, FBMaterial* pMaterial, double pShaderTransparencyFactor, bool forceUpdate)
 	{
 		GLuint ambId = 0;
 		GLuint difId = 0;
@@ -714,12 +714,12 @@ namespace Graphics {
 			if (pShaderModelInfo->GetOriginalTextureFlag())
 			{
 				//ambId = GetTextureId(pMaterial, kFBMaterialTextureAmbient);
-				difId = GetTextureId(pMaterial, kFBMaterialTextureDiffuse);
-				transId = GetTextureId(pMaterial, kFBMaterialTextureTransparent);
-				specId = GetTextureId(pMaterial, kFBMaterialTextureSpecular);
-				reflId = GetTextureId(pMaterial, kFBMaterialTextureReflection);
-				dispId = GetTextureId(pMaterial, kFBMaterialTextureDisplacementColor);
-				normId = GetTextureId(pMaterial, kFBMaterialTextureNormalMap);
+				difId = GetTextureId(pMaterial, kFBMaterialTextureDiffuse, forceUpdate);
+				transId = GetTextureId(pMaterial, kFBMaterialTextureTransparent, forceUpdate);
+				specId = GetTextureId(pMaterial, kFBMaterialTextureSpecular, forceUpdate);
+				reflId = GetTextureId(pMaterial, kFBMaterialTextureReflection, forceUpdate);
+				dispId = GetTextureId(pMaterial, kFBMaterialTextureDisplacementColor, forceUpdate);
+				normId = GetTextureId(pMaterial, kFBMaterialTextureNormalMap, forceUpdate);
 			}
 		}
 
@@ -744,7 +744,9 @@ namespace Graphics {
 					glBindTexture(GL_TEXTURE_2D, dispId);
 
 					FBColor dispColor = pMaterial->DisplacementColor;
-					UploadDisplacementInfo(true, (double)lMaterial.useDisplacement, dispColor[0]);
+					const double *dispMatrix = pMaterial->GetTexture(kFBMaterialTextureDisplacementColor)->GetMatrix();
+
+					UploadDisplacementInfo(true, (double)lMaterial.useDisplacement, dispColor[0], dispMatrix);
 				}
 				else
 				{
@@ -809,8 +811,10 @@ namespace Graphics {
 	}
 
 
-	void SuperShader::ShaderPassModelDraw(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo)
+	void SuperShader::ShaderPassModelDraw(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo, bool forceUpdateTextures)
 	{
+		CHECK_GL_ERROR();
+
 		FBModel *pModel = pInfo->GetFBModel();
 		GLuint lightmapId = 0;
 		double transparency = 0.0;
@@ -836,7 +840,7 @@ namespace Graphics {
 					if (kFBTextureUseSphericalReflexionMap == useType)
 					{
 						lightmapId = pTexture->TextureOGLId;
-						if (0 == lightmapId)
+						if (0 == lightmapId || true == forceUpdateTextures)
 						{
 							pTexture->OGLInit();
 							lightmapId = pTexture->TextureOGLId;
@@ -993,11 +997,11 @@ namespace Graphics {
 	{
 		if (useDisp != mLastUseDisplacement)
 		{
-			UploadDisplacementInfo(useDisp, mLastDispMult, mLastDispCenter);
+			UploadDisplacementInfo(useDisp, mLastDispMult, mLastDispCenter, mLastDispMatrix);
 		}
 	}
 
-	void SuperShader::UploadDisplacementInfo(bool useDisp, double dispMult, double dispCenter)
+	void SuperShader::UploadDisplacementInfo(bool useDisp, double dispMult, double dispCenter, const double *dispMatrix)
 	{
 		if (useDisp != mLastUseDisplacement || dispMult != mLastDispMult || dispCenter != mLastDispCenter)
 		{
@@ -1010,12 +1014,19 @@ namespace Graphics {
 				else
 				{
 					glUniform4f(mShadingLoc.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
+
+					float m[16];
+					for (int i = 0; i < 16; ++i)
+						m[i] = (float)dispMatrix[i];
+
+					glUniformMatrix4fv(mShadingLoc.displacementMatrix, 1, GL_FALSE, m);
 				}
 			}
 
 			mLastUseDisplacement = useDisp;
 			mLastDispCenter = dispCenter;
 			mLastDispMult = dispMult;
+			mLastDispMatrix = dispMatrix;
 		}
 	}
 

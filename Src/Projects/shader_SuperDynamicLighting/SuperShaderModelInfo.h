@@ -46,6 +46,8 @@ public:
 	void	Bind();
 	void	UnBind();
 
+	//void	ChangeContext();
+
 	// only uv buffer
 	void	BindUVBuffer(const GLuint locationId);
 	void	UnBindUVBuffer();

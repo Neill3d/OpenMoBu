@@ -55,6 +55,9 @@ bool SuperDynamicLighting::FBCreate()
 	FBPropertyPublish(this, SwitchAlbedoTosRGB, "Switch Albedo To sRGB", nullptr, nullptr);
 	SwitchAlbedoTosRGB = false;
 
+	FBPropertyPublish(this, ForceUpdateTextures, "Force Update Textures", nullptr, nullptr);
+	ForceUpdateTextures = false;
+
 	// rim lighting
 
 	FBPropertyPublish(this, UseRim, "Use Rim Lighting", nullptr, nullptr);
@@ -87,6 +90,7 @@ bool SuperDynamicLighting::FBCreate()
 
 	UseSceneLights = false;
 	mNeedUpdateLightsList = true;
+	mNeedUpdateTextures = true;
 	mSkipRendering = false;
 
     return true;
@@ -143,6 +147,7 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
         }
     }
 
+
 	StoreCullMode(mCullFaceInfo);
 	mLastCullingMode = kFBCullingOff;
 
@@ -160,6 +165,9 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 	}
 
 	mSkipRendering = false;
+
+	if (ForceUpdateTextures)
+		mNeedUpdateTextures = true;
 }
 
 void SuperDynamicLighting::ShaderPassTypeEnd(FBRenderOptions* pRenderOptions, FBRenderingPass pPass)
@@ -171,6 +179,8 @@ void SuperDynamicLighting::ShaderPassTypeEnd(FBRenderOptions* pRenderOptions, FB
 	mpLightShader->EndShading();
 
 	FetchCullMode(mCullFaceInfo);
+
+	mNeedUpdateTextures = false;
 }
 
 void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass)
@@ -201,7 +211,7 @@ void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptio
 		{
 			FBTexture *pTexture = (FBTexture*)MatCapTexture.GetAt(0);
 			GLuint texId = pTexture->TextureOGLId;
-			if (0 == texId)
+			if (0 == texId || true == mNeedUpdateTextures)
 			{
 				pTexture->OGLInit();
 				texId = pTexture->TextureOGLId;
@@ -232,7 +242,7 @@ void SuperDynamicLighting::ShaderPassMaterialBegin(FBRenderOptions* pRenderOptio
 	if (true == mSkipRendering)
 		return;
 
-    mpLightShader->SwitchMaterial(pRenderOptions, pInfo, pInfo->GetFBMaterial(), TransparencyFactor);
+    mpLightShader->SwitchMaterial(pRenderOptions, pInfo, pInfo->GetFBMaterial(), TransparencyFactor, mNeedUpdateTextures);
 }
 
 void SuperDynamicLighting::ShaderPassMaterialEnd(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo)
@@ -272,7 +282,7 @@ void SuperDynamicLighting::ShaderPassModelDraw(FBRenderOptions* pRenderOptions, 
 		}
 	}
 
-	mpLightShader->ShaderPassModelDraw(pRenderOptions, pPass, pInfo);
+	mpLightShader->ShaderPassModelDraw(pRenderOptions, pPass, pInfo, mNeedUpdateTextures);
 
 	// bind vertex buffers
 
@@ -418,8 +428,12 @@ void SuperDynamicLighting::DoReloadShaders()
 void SuperDynamicLighting::DetachDisplayContext(FBRenderOptions* pOptions, FBShaderModelInfo* pInfo)
 {
 	// TODO:
+	DoReloadShaders();
+
 	if (mShaderLights.get())
 		mShaderLights.reset(nullptr);
+	mNeedUpdateLightsList = true;
+	mNeedUpdateTextures = true;
 }
 
 bool SuperDynamicLighting::PlugDataNotify(FBConnectionAction pAction, FBPlug* pThis, void* pData, void* pDataOld, int pDataSize)
