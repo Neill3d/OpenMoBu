@@ -682,12 +682,22 @@ namespace Graphics {
 	GLuint GetTextureId(FBMaterial *pMaterial, const FBMaterialTextureType textureType, bool forceUpdate)
 	{
 		GLuint texId = 0;
-		FBTexture *pTexture = pMaterial->GetTexture(textureType);
+		bool lForceUpdate = forceUpdate;
 
-		if (nullptr != pTexture)
+		if (FBTexture *pTexture = pMaterial->GetTexture(textureType))
 		{
+			FBVideo* pVideo = pTexture->Video;
+			if (FBIS(pVideo, FBVideoClipImage))
+			{
+				FBVideoClipImage* clipImage = (FBVideoClipImage*)pVideo;
+				if (true == clipImage->ImageSequence)
+				{
+					lForceUpdate = true;
+				}
+			}
+
 			texId = pTexture->TextureOGLId;
-			if (0 == texId || true == forceUpdate)
+			if (0 == texId || true == lForceUpdate)
 			{
 				pTexture->OGLInit();
 				texId = pTexture->TextureOGLId;
