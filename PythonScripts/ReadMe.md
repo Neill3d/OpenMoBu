@@ -12,7 +12,7 @@
 * FinalizeOnSkeleton.py - plot on skeleton and remove a control rig
 * MoveCharToZero.py - move character to the world zero
 * ReCreateRig.py - plot on skeleton, remove control rig, create a new control rig and plot animation on it
-
+* HardPlot.py - script to plot selected model transformation frame by frame, evaluation scene and deformations. That's needed when working with attachment constraint
 
 #### HUDext
 
