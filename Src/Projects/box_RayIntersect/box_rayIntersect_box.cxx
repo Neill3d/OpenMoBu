@@ -203,8 +203,9 @@ bool Box_RayIntersect::FBCreate()
 		
 		// Create the output nodes
 		mIntersectPoint	= AnimationNodeOutCreate(	3, "Point", ANIMATIONNODE_TYPE_VECTOR );
-		mUVCoords[0]	= AnimationNodeOutCreate(	4, "U", ANIMATIONNODE_TYPE_NUMBER );
-		mUVCoords[1]	= AnimationNodeOutCreate(	5, "V", ANIMATIONNODE_TYPE_NUMBER );
+		mIntersectNormal= AnimationNodeOutCreate(	4, "Normal", ANIMATIONNODE_TYPE_VECTOR);
+		mUVCoords[0]	= AnimationNodeOutCreate(	5, "U", ANIMATIONNODE_TYPE_NUMBER );
+		mUVCoords[1]	= AnimationNodeOutCreate(	6, "V", ANIMATIONNODE_TYPE_NUMBER );
 
 		return true;
 	}
@@ -577,16 +578,16 @@ bool Box_RayIntersect::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBE
 
 	FBVector3d		lMeshVector, lPos, lDir;
 
-
-	bool			lStatus;	// Status of input node
-
 	// Read the input nodes.
-	if (!mNodeMesh->ReadData( lMeshVector, pEvaluateInfo ) ) return false;
-	if (!mRayStart->ReadData( lPos, pEvaluateInfo ) ) return false;
-	if (!mRayDirection->ReadData( lDir, pEvaluateInfo ) ) return false;
+	if (!mNodeMesh->ReadData( lMeshVector, pEvaluateInfo ) ) 
+		return false;
+	if (!mRayStart->ReadData( lPos, pEvaluateInfo ) ) 
+		return false;
+	if (!mRayDirection->ReadData( lDir, pEvaluateInfo ) ) 
+		return false;
 
 	// If the read was not from a dead node.
-	int count = mNodeMesh->GetSrcCount();
+	const int count = mNodeMesh->GetSrcCount();
 	for (int i=0; i<count; ++i)
 	{
 		FBPlug *pPlug = mNodeMesh->GetSrc(i);
@@ -597,10 +598,35 @@ bool Box_RayIntersect::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBE
 			FBModelPlaceHolder *pPlaceHolder = (FBModelPlaceHolder*) pPlug;
 			FBModel *pModel = pPlaceHolder->Model;
 
-			FBGeometry *pGeom = pModel->Geometry;
+			// let's use a native mobu method for a ray casting
+			FBTVector pos4(lPos[0], lPos[1], lPos[2]);
+			FBTVector dir4(lDir[0], lDir[1], lDir[2]);
+			FBTVector intersectPos, intersectNormal;
 
-			FBString name = pModel->Name;
-			printf( "%s\n", name );
+			FBMatrix tm, invtm;
+			pModel->GetMatrix(tm, kModelTransformation_Geometry);
+			pModel->GetMatrix(invtm, kModelInverse_Transformation_Geometry);
+			FBVectorMatrixMult(pos4, invtm, pos4);
+			FBVectorMatrixMult(dir4, invtm, dir4);
+
+			if (nullptr != pModel && true == pModel->ClosestRayIntersection(pos4, dir4, intersectPos, (FBNormal&)intersectNormal))
+			{
+				FBVectorMatrixMult(intersectPos, tm, intersectPos);
+
+				tm[12] = tm[13] = tm[14] = 0.0;
+				FBVectorMatrixMult(intersectNormal, tm, intersectNormal);
+				if (FBLength(intersectNormal) > 0.0)
+				{
+					FBMult(intersectNormal, intersectNormal, 1.0 / FBLength(intersectNormal));
+				}
+
+				mIntersectPoint->WriteData(intersectPos, pEvaluateInfo);
+				mIntersectNormal->WriteData(intersectNormal, pEvaluateInfo);
+				return true;
+			}
+
+			/*
+			FBGeometry *pGeom = pModel->Geometry;
 
 			RayIntersector ray(lPos, lDir);
 			if (ray.intersectModel(pModel) )
@@ -608,10 +634,10 @@ bool Box_RayIntersect::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBE
 				mIntersectPoint->WriteData( ray.info.point, pEvaluateInfo );
 				return true;
 			}
+			*/
 		}
 	}
 	
-
 	return false;
 }
 

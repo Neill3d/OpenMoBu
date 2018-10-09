@@ -63,7 +63,7 @@ public:
 };
 
 
-/**	Template for FBBox class.
+/**	Box_RayIntersect
 */
 class Box_RayIntersect : public FBBox
 {
@@ -93,8 +93,12 @@ private:
 	FBAnimationNode		*mRayDirection;	//!> input - ray direction point
 
 	FBAnimationNode		*mIntersectPoint;	//!> output - mesh intersection world point
+	FBAnimationNode		*mIntersectNormal;	//!> output - mesh intersection normal
 	FBAnimationNode		*mUVCoords[2];		//!> output - intersection u,v points		
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Box SphereCoords
 
 class Box_SphereCoords : public FBBox
 {

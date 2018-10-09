@@ -276,8 +276,8 @@ bool CConstraintAttachment::FBCreate()
 	Deformer = true;
 
 	// Create reference groups
+	mGroupConstrain = ReferenceGroupAdd("Constrain", 1);
 	mGroupSource	= ReferenceGroupAdd( "Source Object",	1 );
-	mGroupConstrain	= ReferenceGroupAdd( "Constrain",		1 );
 
 	mSourceTranslation		= NULL;
 	mConstrainedTranslation = NULL;
@@ -456,9 +456,9 @@ void CConstraintAttachment::FreezeSuggested()
 	mFirstTime = true;
 	FBConstraint::FreezeSuggested();
 
-	if( ReferenceGet( 0,0 ) )
+	if( ReferenceGet( mGroupSource,0 ) )
 	{
-		FreezeSRT( (FBModel*)ReferenceGet( 0, 0), true, true, true );
+		FreezeSRT( (FBModel*)ReferenceGet( mGroupSource, 0), true, true, true );
 	}
 }
 
