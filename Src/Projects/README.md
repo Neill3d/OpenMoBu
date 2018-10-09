@@ -3,6 +3,7 @@ OpenMoBu plugins, source code
 * box_poseReader - box node for relation constraint, ported from Maya Comet's plugin PoseReader
 * box_RayIntersect - box node for relation constraint, returs nearest intersect point between mesh and ray
 * box_Spring - box node for relation constraint, simple spring dynamics
+* constraint_attachment - constraint that makes one object to stick to surface of an another object
 * constraint_driven - constraint that helps to organize animatable behaviour of non-animatable properties
 * manager_autoKeyPatch - patch for motionbuilder to set key interpolation to auto by pressing "D" key button on timeline bar
 * manager_PostProcessing - post processing on top of renderer frame, some cool fx like DOF, SSAO, Lens Flare, Deformations, etc.
