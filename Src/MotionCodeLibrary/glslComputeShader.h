@@ -1,12 +1,11 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
-// Licensed under the "New" BSD License. 
-//		License page - https://github.com/Neill3d/MoBu/blob/master/LICENSE
+// License page - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 //
-// GitHub repository - https://github.com/Neill3d/MoBu
+// GitHub repository - https://github.com/Neill3d/OpenMoBu
 //
-// Author Sergey Solokhin (Neill3d) 2014-2017
+// Author Sergey Solokhin (Neill3d) 2014-2018
 //  e-mail to: s@neill3d.com
 //		www.neill3d.com
 /////////////////////////////////////////////////////////////////////////////////////////

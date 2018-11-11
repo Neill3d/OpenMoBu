@@ -801,7 +801,11 @@ void Device_ProjectTango::OnRenderEvent(HIRegister pSender, HKEvent pEvent)
 		// DONE: use sync rate to grab image with a specified period
 
 		FBScene *pScene = mSystem.Scene;
+#if (K_KERNEL_VERSION > 16000)
 		FBTime sysTime(lEvent.GetEvaluateInfo()->GetSystemTime());
+#else
+		FBTime sysTime(mSystem.SystemTime);
+#endif
 		const double sysTimeSecs = sysTime.GetSecondDouble();
 		const double syncStep = (1.0 / ImageFrameRate);
 
@@ -1054,7 +1058,11 @@ void Device_ProjectTango::OnUIIdleEvent(HIRegister pSender, HKEvent pEvent)
 		}
 		else if (PACKET_COMMAND_SPEED_NDX == cmd.command)
 		{
-			mPlayerControl.SetPlaySpeedMode((FBTransportPlaySpeed)cmd.value);
+#if (K_KERNEL_VERSION >= 16000)
+			mPlayerControl.SetPlaySpeedMode(static_cast<FBTransportPlaySpeed>(cmd.value));
+#else
+			mPlayerControl.SetPlaySpeed((FBTransportPlaySpeed)cmd.value);
+#endif
 		}
 		else if (PACKET_COMMAND_TAKE_NDX == cmd.command)
 		{
@@ -1150,9 +1158,11 @@ void Device_ProjectTango::OnUIIdleEvent(HIRegister pSender, HKEvent pEvent)
 
 		syncState.takeCount = (unsigned char)mSystem.Scene->Takes.GetCount();
 		syncState.take = (unsigned char)mSystem.Scene->Takes.Find(mSystem.CurrentTake);
-
+#if (K_KERNEL_VERSION > 16000)
 		syncState.speed = (unsigned char)(int)mPlayerControl.GetPlaySpeedMode();
-
+#else
+		syncState.speed = (unsigned char)(int)mPlayerControl.GetPlaySpeed();
+#endif
 		//mHardware.SendSyncState(timestamp, syncState);
 		ExchangeWriteSyncState(timestamp, syncState);
 	}
@@ -1196,9 +1206,12 @@ void Device_ProjectTango::SwitchToCamera(const int cameraId)
 
 			if (cameraId == totalCount)
 			{
+#if (K_KERNEL_VERSION > 16000)
 				int paneId = pRenderer->GetSelectedPaneIndex();
 				pRenderer->SetCameraInPane(pCamera, paneId);
-
+#else
+				pRenderer->CurrentCamera = pCamera;
+#endif
 				break;
 			}
 

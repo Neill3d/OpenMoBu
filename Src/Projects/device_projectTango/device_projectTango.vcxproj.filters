@@ -29,26 +29,15 @@
     <ClCompile Include="device_projectTango_layout.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Users\AN35\Documents\GitHub\tango-examples-c\cpp_motion_tracking_example\app\src\main\jni\NetworkTango.cpp">
-      <Filter>NetworkShared</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\Users\AN35\Documents\GitHub\tango-examples-c\cpp_motion_tracking_example\app\src\main\jni\NetworkUtils.cc">
-      <Filter>NetworkShared</Filter>
-    </ClCompile>
-    <ClCompile Include="encoder.c">
-      <Filter>Streaming</Filter>
-    </ClCompile>
-    <ClCompile Include="MemPool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DataExchange.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common_Tango\NetworkTango.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common_Tango\NetworkUtils.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\Tango\include\tango_client_api.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="device_projectTango_device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -58,19 +47,13 @@
     <ClInclude Include="device_projectTango_layout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\..\Users\AN35\Documents\GitHub\tango-examples-c\cpp_motion_tracking_example\app\src\main\jni\NetworkTango.h">
-      <Filter>NetworkShared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\..\Users\AN35\Documents\GitHub\tango-examples-c\cpp_motion_tracking_example\app\src\main\jni\NetworkUtils.h">
-      <Filter>NetworkShared</Filter>
-    </ClInclude>
-    <ClInclude Include="encoder.h">
-      <Filter>Streaming</Filter>
-    </ClInclude>
-    <ClInclude Include="MemPool.h">
+    <ClInclude Include="DataExchange.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DataExchange.h">
+    <ClInclude Include="..\Common_Tango\NetworkTango.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common_Tango\NetworkUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

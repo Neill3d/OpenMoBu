@@ -47,8 +47,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2013\x86\release;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2013\x86\release;$(LibraryPath)</LibraryPath>
+    <OutDir>..\..\..\bin\$(Platform)\</OutDir>
+    <IntDir>..\..\..\..\obj\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -85,20 +87,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\MotionCodeLibrary\tinystr.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxml.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxmlerror.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxmlparser.cpp" />
     <ClCompile Include="..\Common_FBXSDK\Common.cxx" />
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinystr.cpp" />
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxml.cpp" />
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxmlerror.cpp" />
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxmlparser.cpp" />
     <ClCompile Include="desc_bake.cpp" />
     <ClCompile Include="desc_misc.cpp" />
     <ClCompile Include="main.cxx" />
     <ClCompile Include="desc_write.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\MotionCodeLibrary\tinystr.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\tinyxml.h" />
     <ClInclude Include="..\Common_FBXSDK\Common.h" />
-    <ClInclude Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinystr.h" />
-    <ClInclude Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxml.h" />
     <ClInclude Include="desc.h" />
   </ItemGroup>
   <ItemGroup>

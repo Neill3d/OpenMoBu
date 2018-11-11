@@ -9,7 +9,7 @@
 
 ****************************************************************************************/
 
-#include "../Common/Common.h"
+#include "Common.h"
 
 #ifdef IOS_REF
 	#undef  IOS_REF

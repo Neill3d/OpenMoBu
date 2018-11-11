@@ -2,35 +2,35 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cxx" />
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinystr.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxml.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxmlerror.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxmlparser.cpp">
-      <Filter>tinyxml</Filter>
-    </ClCompile>
     <ClCompile Include="desc_write.cpp" />
     <ClCompile Include="desc_misc.cpp" />
     <ClCompile Include="desc_bake.cpp" />
     <ClCompile Include="..\Common_FBXSDK\Common.cxx">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\tinystr.cpp">
+      <Filter>tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxml.cpp">
+      <Filter>tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxmlerror.cpp">
+      <Filter>tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\tinyxmlparser.cpp">
+      <Filter>tinyxml</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinystr.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Program Files\Autodesk\MotionBuilder 2017\OpenRealitySDK\MotionCodeLibrary\tinyxml.h">
-      <Filter>tinyxml</Filter>
-    </ClInclude>
     <ClInclude Include="desc.h" />
     <ClInclude Include="..\Common_FBXSDK\Common.h">
       <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\tinystr.h">
+      <Filter>tinyxml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\tinyxml.h">
+      <Filter>tinyxml</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
