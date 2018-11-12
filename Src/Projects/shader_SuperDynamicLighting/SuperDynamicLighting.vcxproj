@@ -203,7 +203,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\bin\$(Platform)\plugins_2017\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2014|x64'">..\..\..\bin\$(Platform)\plugins_2014\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2016|x64'">..\..\..\bin\$(Platform)\plugins_2016\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">..\..\..\bin\$(Platform)\plugins_2014\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">..\..\..\bin\$(Platform)\plugins_2015\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2014|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
@@ -594,6 +594,7 @@ copy "$(ProjectDir)Shaders\LightingPS.cg" "$(OutDir)LightingPS.cg"
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(TargetDir)\GLSL"
 start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -650,6 +651,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2017_64)\bin\x64\plugins\G
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2014_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(TargetDir)\GLSL"
 start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2014_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -706,6 +708,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2014_64)\bin\x64\plugins\G
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2016_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(TargetDir)\GLSL"
 start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2016_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -762,6 +765,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2016_64)\bin\x64\plugins\G
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2015_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(TargetDir)\GLSL"
 start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2015_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -818,6 +822,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2015_64)\bin\x64\plugins\G
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(TargetDir)\GLSL\"
 xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\GLSL\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
