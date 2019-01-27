@@ -14,6 +14,8 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include <fbsdk.h>
 #include <vector>
 
+#include <memory>
+
 #define kMaxDrawInstancedSize  100
 
 namespace Graphics
@@ -308,8 +310,8 @@ namespace Graphics
 		CGPUBufferSSBO				mBufferDirLights;
 		CGPUBufferSSBO				mBufferLights;
 
-		std::auto_ptr<GLSLShader>	mShaderBufferId;
-		std::auto_ptr<GLSLShader>	mShaderShading;
+		std::unique_ptr<GLSLShader>	mShaderBufferId;
+		std::unique_ptr<GLSLShader>	mShaderShading;
 
 		CCameraInfoCache			mCameraCache;
 
@@ -321,7 +323,7 @@ namespace Graphics
 		std::vector<FBLight*>					mUsedInfiniteLights;
 		std::vector<FBLight*>					mUsedPointLights;
 
-		std::auto_ptr<CGPUShaderLights>			mGPUSceneLights;
+		std::unique_ptr<CGPUShaderLights>			mGPUSceneLights;
 
 		// last lights for a frame - default if no lights, scene lights if no composition override
 		CGPUShaderLights					*mLastLightsBinded;

@@ -40,6 +40,7 @@ Name: "2015"; Description: "MotionBuilder 2015"
 Name: "2016"; Description: "MotionBuilder 2016"
 Name: "2017"; Description: "MotionBuilder 2017"
 Name: "2018"; Description: "MotionBuilder 2018"
+Name: "2019"; Description: "MotionBuilder 2019"
 
 Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
@@ -49,6 +50,7 @@ Name: "MotionBuilder2015"; Description: "MotionBuilder 2015 plugins"; Types: ful
 Name: "MotionBuilder2016"; Description: "MotionBuilder 2016 plugins"; Types: full 2016 custom;
 Name: "MotionBuilder2017"; Description: "MotionBuilder 2017 plugins"; Types: full 2017 custom;
 Name: "MotionBuilder2018"; Description: "MotionBuilder 2018 plugins"; Types: full 2018 custom;
+Name: "MotionBuilder2019"; Description: "MotionBuilder 2019 plugins"; Types: full 2019 custom;
 
 [Files]
 
@@ -98,6 +100,16 @@ Source: "..\bin\x64\plugins_2018\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2018}\b
 Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2018}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2018
+
+; 2019
+
+Source: "..\bin\x64\plugins_2019\*.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\bin\x64\plugins_2019\FBX\*.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\bin\x64\plugins_2019\GLSL\*"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\bin\x64\plugins_2019\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2019-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2019-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2019}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2019
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

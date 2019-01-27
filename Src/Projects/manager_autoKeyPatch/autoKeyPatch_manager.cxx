@@ -10,7 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "qttestwidget.h"
-#include "orcustommanager_template_manager.h"
+#include "autoKeyPatch_manager.h"
 
 #include <Windows.h>
 

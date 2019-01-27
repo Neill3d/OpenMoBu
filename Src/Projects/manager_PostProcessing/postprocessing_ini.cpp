@@ -32,7 +32,7 @@ double ConfigHelper::getOrSetDouble(FBConfigFile &lConfigFile, char *buffer, con
 {
 	sprintf_s(buffer, sizeof(char)* 256, "%.2lf", defValue);
 	const char *lbuffer = buffer;
-	bool lStatus = lConfigFile.GetOrSet(section, name, lbuffer, comment);
+	lConfigFile.GetOrSet(section, name, lbuffer, comment);
 
 	return atof(lbuffer);
 };

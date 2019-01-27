@@ -180,11 +180,11 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 
 	// radius
 
-	float meters2viewspace = 1.0f;
-	float R = (float)pData->SSAO_Radius * meters2viewspace;
-	float R2 = R * R;
-	float negInvR2 = -1.0f / R2;
-	float RadiusToScreen = R * 0.5f * projScale;
+//	float meters2viewspace = 1.0f;
+//	float R = (float)pData->SSAO_Radius * meters2viewspace;
+//	float R2 = R * R;
+//	float negInvR2 = -1.0f / R2;
+//	float RadiusToScreen = R * 0.5f * projScale;
 
 	// resolution
 	int quarterWidth = ((w + 3) / 4);

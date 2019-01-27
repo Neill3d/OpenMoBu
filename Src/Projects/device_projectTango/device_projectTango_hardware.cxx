@@ -80,6 +80,8 @@ bool Connect(int sd, const char *address, unsigned int port)
 {
 	struct sockaddr_in server;
 
+
+
 	if (inet_addr(address) == -1)
 	{
 		struct hostent *he;
@@ -236,7 +238,7 @@ bool ProcessClientStream(int sd, int startlength, int &bufferOffset, Network::CH
 				{
 					//LOGI("received a control %.2f\n", lHeader.timestamp);
 
-					Network::CDeviceData *pData = (Network::CDeviceData*) curptr;
+//					Network::CDeviceData *pData = (Network::CDeviceData*) curptr;
 					//ExchangeWriteDeviceData((float)lHeader.timestamp, *pData);
 					
 					curpos += sizeof(Network::CDeviceData);
@@ -293,7 +295,7 @@ void MainClientLoop()
 	double lastImageStamp = 0.0;
 	Network::CImageHeader imageHeader;
 
-	double lastCameraInfoStamp = 0.0;
+//	double lastCameraInfoStamp = 0.0;
 	Network::CCameraInfo cameraInfoHeader;
 
 	double lastSyncStamp = 0.0;

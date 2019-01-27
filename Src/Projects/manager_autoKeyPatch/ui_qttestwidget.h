@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'qttest.ui'
 **
-** Created by: Qt User Interface Compiler version 4.8.6
+** Created by: Qt User Interface Compiler version 5.6.3
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -10,18 +10,18 @@
 #define UI_QTTESTWIDGET_H
 
 #include <QtCore/QVariant>
-#include <QtGui/QAction>
-#include <QtGui/QApplication>
-#include <QtGui/QButtonGroup>
-#include <QtGui/QDial>
-#include <QtGui/QFrame>
-#include <QtGui/QGroupBox>
-#include <QtGui/QHeaderView>
-#include <QtGui/QLabel>
-#include <QtGui/QPushButton>
-#include <QtGui/QSlider>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QWidget>
+#include <QtWidgets/QAction>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QDial>
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QHeaderView>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QWidget>
 
 QT_BEGIN_NAMESPACE
 
@@ -40,26 +40,26 @@ public:
     void setupUi(QFrame *QtTestWidget)
     {
         if (QtTestWidget->objectName().isEmpty())
-            QtTestWidget->setObjectName(QString::fromUtf8("QtTestWidget"));
+            QtTestWidget->setObjectName(QStringLiteral("QtTestWidget"));
         QtTestWidget->resize(183, 312);
         QtTestWidget->setFrameShape(QFrame::NoFrame);
         QtTestWidget->setFrameShadow(QFrame::Raised);
         groupBox = new QGroupBox(QtTestWidget);
-        groupBox->setObjectName(QString::fromUtf8("groupBox"));
+        groupBox->setObjectName(QStringLiteral("groupBox"));
         groupBox->setGeometry(QRect(0, 0, 181, 311));
         verticalLayoutWidget = new QWidget(groupBox);
-        verticalLayoutWidget->setObjectName(QString::fromUtf8("verticalLayoutWidget"));
+        verticalLayoutWidget->setObjectName(QStringLiteral("verticalLayoutWidget"));
         verticalLayoutWidget->setGeometry(QRect(10, 20, 160, 281));
         verticalLayout = new QVBoxLayout(verticalLayoutWidget);
-        verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
+        verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
         verticalLayout->setContentsMargins(0, 0, 0, 0);
         createCubeBtn = new QPushButton(verticalLayoutWidget);
-        createCubeBtn->setObjectName(QString::fromUtf8("createCubeBtn"));
+        createCubeBtn->setObjectName(QStringLiteral("createCubeBtn"));
 
         verticalLayout->addWidget(createCubeBtn);
 
         label = new QLabel(verticalLayoutWidget);
-        label->setObjectName(QString::fromUtf8("label"));
+        label->setObjectName(QStringLiteral("label"));
         QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
@@ -70,7 +70,7 @@ public:
         verticalLayout->addWidget(label);
 
         rotateCubeDial = new QDial(verticalLayoutWidget);
-        rotateCubeDial->setObjectName(QString::fromUtf8("rotateCubeDial"));
+        rotateCubeDial->setObjectName(QStringLiteral("rotateCubeDial"));
         QSizePolicy sizePolicy1(QSizePolicy::Preferred, QSizePolicy::Preferred);
         sizePolicy1.setHorizontalStretch(0);
         sizePolicy1.setVerticalStretch(1);
@@ -80,13 +80,13 @@ public:
         verticalLayout->addWidget(rotateCubeDial);
 
         label_2 = new QLabel(verticalLayoutWidget);
-        label_2->setObjectName(QString::fromUtf8("label_2"));
+        label_2->setObjectName(QStringLiteral("label_2"));
         label_2->setAlignment(Qt::AlignCenter);
 
         verticalLayout->addWidget(label_2);
 
         scaleCubeSlider = new QSlider(verticalLayoutWidget);
-        scaleCubeSlider->setObjectName(QString::fromUtf8("scaleCubeSlider"));
+        scaleCubeSlider->setObjectName(QStringLiteral("scaleCubeSlider"));
         scaleCubeSlider->setOrientation(Qt::Horizontal);
 
         verticalLayout->addWidget(scaleCubeSlider);
@@ -99,11 +99,11 @@ public:
 
     void retranslateUi(QFrame *QtTestWidget)
     {
-        QtTestWidget->setWindowTitle(QApplication::translate("QtTestWidget", "Frame", 0, QApplication::UnicodeUTF8));
-        groupBox->setTitle(QApplication::translate("QtTestWidget", "This is a native Qt Widget", 0, QApplication::UnicodeUTF8));
-        createCubeBtn->setText(QApplication::translate("QtTestWidget", "Create Ultimate Cube", 0, QApplication::UnicodeUTF8));
-        label->setText(QApplication::translate("QtTestWidget", "Rotation", 0, QApplication::UnicodeUTF8));
-        label_2->setText(QApplication::translate("QtTestWidget", "Uniform scaling", 0, QApplication::UnicodeUTF8));
+        QtTestWidget->setWindowTitle(QApplication::translate("QtTestWidget", "Frame", Q_NULLPTR));
+        groupBox->setTitle(QApplication::translate("QtTestWidget", "This is a native Qt Widget", Q_NULLPTR));
+        createCubeBtn->setText(QApplication::translate("QtTestWidget", "Create Ultimate Cube", Q_NULLPTR));
+        label->setText(QApplication::translate("QtTestWidget", "Rotation", Q_NULLPTR));
+        label_2->setText(QApplication::translate("QtTestWidget", "Uniform scaling", Q_NULLPTR));
     } // retranslateUi
 
 };

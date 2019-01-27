@@ -108,9 +108,9 @@ size_t CompressImageBegin(unsigned char *stream, int imagewidth, int imageheight
 	//
 	// launch a group of threads
 
-	int blockw = imagewidth / 4;
-	int blockh = imageheight / 4 / num_threads;
-	int blockStreamOffset = 8 * blockw * blockh;
+	//int blockw = imagewidth / 4;
+	//int blockh = imageheight / 4 / num_threads;
+	//int blockStreamOffset = 8 * blockw * blockh;
 
 	for (int i = 0; i < num_threads; ++i)
 	{
@@ -145,9 +145,9 @@ size_t RgEtc1_CompressSingleImage(unsigned char *stream, int imagewidth, int ima
 
 	// launch a group of threads
 
-	int blockw = imagewidth / 4;
-	int blockh = imageheight / 4 / num_threads;
-	int blockStreamOffset = 8 * blockw * blockh;
+	//int blockw = imagewidth / 4;
+	//int blockh = imageheight / 4 / num_threads;
+	//int blockStreamOffset = 8 * blockw * blockh;
 
 	for (int i = 0; i < num_threads; ++i)
 	{

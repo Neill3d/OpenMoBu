@@ -47,7 +47,7 @@
 // important to include all Qt file BEFORE sdk file. This will remove lots
 // of useless warnings/errors.
 #include "ui_qttestwidget.h"
-#include <QtGui/QFrame>
+#include <QtWidgets/QFrame>
 
 #include <fbsdk/fbsdk.h>
 

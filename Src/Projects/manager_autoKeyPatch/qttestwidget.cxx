@@ -43,7 +43,7 @@
 #include "qttestwidget.h"
 #include <QtCore\QDebug>
 #include <QtCore\QCoreApplication>
-#include <QtGui\QMenu>
+#include <QtWidgets\QMenu>
 #include <QtGui\QMouseEvent>
 #include <QtGui\QInputEvent>
 #include <QtOpenGL\QGLWidget>
@@ -313,7 +313,7 @@ void SetAutoInterpolation()
 void SetAutoInterpolationSuper(FBTime selStart, FBTime selStop)
 {
 
-	FBPlayerControl &lPlayer = FBPlayerControl::TheOne();
+//	FBPlayerControl &lPlayer = FBPlayerControl::TheOne();
 
 	FBSystem::TheOne().Scene->CandidateEvaluationAndResolve();
 	FBSystem::TheOne().Scene->Evaluate();
@@ -529,7 +529,7 @@ bool QtTestWidget::eventFilter(QObject *obj, QEvent *event){
 
 	if (event->type() == QEvent::Show)
 	{
-		QShowEvent *mEvent = static_cast<QShowEvent*>(event);
+	//	QShowEvent *mEvent = static_cast<QShowEvent*>(event);
 
 		plastmenu = nullptr;
 		const char *classname = obj->metaObject()->className();
@@ -637,7 +637,7 @@ QtTestWidget::QtTestWidget( QWidget* gParent )
     setupUi(this);
 
 	//
-	bool maximized = true;
+//	bool maximized = true;
 	if (gParent)
 	{
 		QWidget *pParent = gParent->parentWidget();

@@ -899,8 +899,8 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 				}
 			}
 
-			int x = pCamera->CameraViewportX;
-			int y = pCamera->CameraViewportY;
+			//int x = pCamera->CameraViewportX;
+			//int y = pCamera->CameraViewportY;
 			int w = pCamera->CameraViewportWidth;
 			int h = pCamera->CameraViewportHeight;
 
@@ -1183,7 +1183,7 @@ void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh,
 	
 
 	FBScene *pScene = mSystem.Scene;
-	FBRenderer *pRenderer = mSystem.Renderer;
+	//FBRenderer *pRenderer = mSystem.Renderer;
 
 	//glPushAttrib(GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT | GL_TRANSFORM_BIT | GL_DEPTH_BUFFER_BIT);
 	{
@@ -1319,7 +1319,7 @@ void Manager_PostProcessing::DrawHUDRect(FBHUDRectElement *pRect, int panex, int
 {
 	bool posPer = pRect->PositionByPercent;
 	bool sclPer = pRect->ScaleByPercent;
-	bool sclAsp = pRect->ScaleUniformly;
+	//bool sclAsp = pRect->ScaleUniformly;
 
 	double posx = pRect->X;
 	double posy = pRect->Y;
@@ -1413,7 +1413,7 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 
 	bool posPer = pRect->PositionByPercent;
 	bool sclPer = pRect->ScaleByPercent;
-	bool sclAsp = pRect->ScaleUniformly;
+	//bool sclAsp = pRect->ScaleUniformly;
 
 	double posx = pRect->X;
 	double posy = pRect->Y;
@@ -1564,8 +1564,8 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 	else if (fontHei > 300.0)
 		fontHei = 300.0;
 
-	int lfHeight = -MulDiv((int)fontHei, GetDeviceCaps(wglGetCurrentDC(), LOGPIXELSY), 72);
-	int lfWidth = -MulDiv((int)fontWid, GetDeviceCaps(wglGetCurrentDC(), LOGPIXELSX), 72);
+	//int lfHeight = -MulDiv((int)fontHei, GetDeviceCaps(wglGetCurrentDC(), LOGPIXELSY), 72);
+	//int lfWidth = -MulDiv((int)fontWid, GetDeviceCaps(wglGetCurrentDC(), LOGPIXELSX), 72);
 
 	// TODO: i'm not tracking font name changes !!
 	/*
@@ -1602,12 +1602,12 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 	// draw text
 	glColor4dv(lColor);
 	
-	float rasterWidth = 0.0f;
-	float rasterHeight = 0.0f;
+	//float rasterWidth = 0.0f;
+	//float rasterHeight = 0.0f;
 
 	//mFont->ComputeDimensions(buffer, strlen(buffer), rasterWidth, rasterHeight);
 
-	float scalef = 1.0f * (float)wid / rasterWidth;
+	//float scalef = 1.0f * (float)wid / rasterWidth;
 
 	//pFont->PositionText(posx + 0.5 * fontWid, posy + 0.25 * hei);
 	//pFont->glDrawText(buffer, strlen(buffer));
@@ -1615,7 +1615,7 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 	pFont->Resize(panew, paneh);
 
 	pFont->TextClear();
-	pFont->TextAdd(posx, posy, 0.75f * (float)hei, wid, hei, buffer, strlen(buffer));
+	pFont->TextAdd(posx, posy, 0.75f * (float)hei, wid, hei, buffer, static_cast<uint32_t>(strlen(buffer)));
 
 	pFont->Display();
 
