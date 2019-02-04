@@ -92,7 +92,7 @@ class FileReferenceTool(FBTool):
 gToolName = "File Reference Advanced Tool"
 
 #Development? - need to recreate each time!!
-gDEVELOPMENT = True
+gDEVELOPMENT = False
 
 if gDEVELOPMENT:
     FBDestroyToolByName(gToolName)

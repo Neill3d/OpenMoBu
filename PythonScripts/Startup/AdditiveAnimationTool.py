@@ -154,7 +154,7 @@ def PopulateLayout(mainLyt):
     b.OnClick.Add( OnButtonAboutClick )
     main.Add(b, 24)
     
-gDEVELOPMENT = True
+gDEVELOPMENT = False
     
 def CreateTool():    
     print "create tool"

@@ -18,7 +18,7 @@ from pyfbsdk import *
 from pyfbsdk_additions import *
 
 TOOL_TITLE = 'Post Processing Tool'
-gDEVELOPMENT = True
+gDEVELOPMENT = False
 DATA_CLASSNAME = 'PostPersistentData' # PostPersistentData
 DATA_DEFAULT_NAME = 'Post Processing'
 DATA_CLASSID = 55
