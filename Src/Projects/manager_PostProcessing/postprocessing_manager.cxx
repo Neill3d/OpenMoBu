@@ -508,6 +508,14 @@ void Manager_PostProcessing::RenderBeforeRender(const bool processCompositions, 
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	}
+	/*
+	else if (mMainFrameBuffer.GetAttachedFBO() > 0)
+	{
+		mMainFrameBuffer.BeginRender();
+
+		glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+		glEnable(GL_DEPTH_TEST);
+	}*/
 	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -774,7 +782,7 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 	FBEventEvalGlobalCallback lFBEvent(pEvent);
 
 	// check for a context change here
-	if (mEnterId < 1)
+	if (mEnterId < 1 && lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender)
 	{
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
 

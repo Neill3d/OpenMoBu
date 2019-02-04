@@ -2,10 +2,10 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenMoBu for Autodesk® MotionBuilder®"
-#define MyAppVersion "1.2.0a"
+#define MyAppVersion "1.3.0b"
 #define MyAppPublisher "Neill3d"
 #define MyAppURL "https://github.com/Neill3d/OpenMoBu"
-#define MyAppExeName "Setup_OpenMoBu_1_2_0a"
+#define MyAppExeName "Setup_OpenMoBu_1_3_0b"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile:"infoBefore_en.txt"; InfoAfterFile: "infoAfter_en.txt"
@@ -57,8 +57,8 @@ Name: "MotionBuilder2019"; Description: "MotionBuilder 2019 plugins"; Types: ful
 ; 2014
 
 Source: "..\bin\x64\plugins_2014\*.dll"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2014
-Source: "..\bin\x64\plugins_2014\GLSL\*"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2014
-Source: "..\bin\x64\plugins_2014\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2014
+;Source: "..\bin\x64\plugins_2014\GLSL\*"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2014
+;Source: "..\bin\x64\plugins_2014\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2014
 Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2014-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2014
 Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2014-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2014
 Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2014}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2014
@@ -66,8 +66,8 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2014}\bin\conf
 ; 2015
 
 Source: "..\bin\x64\plugins_2015\*.dll"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2015
-Source: "..\bin\x64\plugins_2015\GLSL\*"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2015
-Source: "..\bin\x64\plugins_2015\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2015
+;Source: "..\bin\x64\plugins_2015\GLSL\*"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2015
+;Source: "..\bin\x64\plugins_2015\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2015
 Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2015-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2015
 Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2015-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2015
 Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2015}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2015
@@ -75,8 +75,8 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2015}\bin\conf
 ; 2016
 
 Source: "..\bin\x64\plugins_2016\*.dll"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2016
-Source: "..\bin\x64\plugins_2016\GLSL\*"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2016
-Source: "..\bin\x64\plugins_2016\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2016
+;Source: "..\bin\x64\plugins_2016\GLSL\*"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2016
+;Source: "..\bin\x64\plugins_2016\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2016
 Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2016-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2016
 Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2016-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2016
 Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2016}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2016
@@ -86,7 +86,7 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2016}\bin\conf
 Source: "..\bin\x64\plugins_2017\*.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
 Source: "..\bin\x64\plugins_2017\FBX\*.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2017
 Source: "..\bin\x64\plugins_2017\GLSL\*"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\bin\x64\plugins_2017\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2017
+;Source: "..\bin\x64\plugins_2017\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2017
 Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2017-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017
 Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2017-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2017
 Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2017}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2017
@@ -96,7 +96,7 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2017}\bin\conf
 Source: "..\bin\x64\plugins_2018\*.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\bin\x64\plugins_2018\FBX\*.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\bin\x64\plugins_2018\GLSL\*"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\bin\x64\plugins_2018\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2018
+;Source: "..\bin\x64\plugins_2018\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\PythonScripts\Startup\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2018}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2018

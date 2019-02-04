@@ -4,7 +4,7 @@
  Plugins and scripts for Autodesk MotionBuilder.
 
 Supported versions
-- 2014, 2015, 2016, 2017, 2018
+- 2014, 2015, 2016, 2017, 2018, 2019
 
 Plugins
 * relation box - poseReader
@@ -13,12 +13,12 @@ Plugins
 * relation box - RBF Interpolation
 * device - project Tango
 * constraint - driven
-* manager - view camera locker (only 2017, 2018)
-* manager - auto interpolation patch (only 2017, 2018)
-* manager - post processing (only 2017, 2018)
-* manager - references (only 2017, 2018)
+* manager - view camera locker (starting from 2017)
+* manager - auto interpolation patch (starting from 2017)
+* manager - post processing (starting from 2017)
+* manager - references (starting from 2017)
 * shader - super lighting
-* fbx extension references (only 2017, 2018)
+* fbx extension references (starting from 2017)
 * solver - auto compute normals
 
 Scripts\Neill3d
