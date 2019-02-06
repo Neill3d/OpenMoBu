@@ -101,7 +101,7 @@ double getOrSetDouble(FBConfigFile &lConfigFile, char *buffer, const char *secti
 {
 	sprintf_s(buffer, sizeof(char)* 256, "%.2lf", defValue);
 	const char *lbuffer = buffer;
-	bool lStatus = lConfigFile.GetOrSet(section, name, lbuffer, comment);
+	lConfigFile.GetOrSet(section, name, lbuffer, comment);
 
 	return atof(lbuffer);
 };
@@ -252,7 +252,7 @@ bool Manip_LockCamera::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, 
 		{
 			FBRenderer *pRenderer = mSystem.Renderer;
 			unsigned int currPane = pRenderer->GetSelectedPaneIndex();
-			unsigned int numberOfPanes = pRenderer->GetPaneCount();
+			pRenderer->GetPaneCount();
 
 
 			// Mouse button clicked.

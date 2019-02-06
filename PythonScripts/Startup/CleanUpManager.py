@@ -36,7 +36,7 @@ from StringIO import StringIO
 import sys
 import math
 
-gDEVELOPMENT = True
+gDEVELOPMENT = False
 
 CLEANUP_MANAGER_VERSION = 0.62
 

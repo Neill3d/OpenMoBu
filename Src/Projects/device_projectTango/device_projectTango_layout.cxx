@@ -147,7 +147,7 @@ void Device_ProjectTango_Layout::UICreateLayout1()
 	int lSx		= 10;
 	int lSy		= 15;
 
-	int lW		= 90;
+//	int lW		= 90;
 	int lH		= 18;
 	int lHlr2	= 80;
 	int lWlr	= 230;

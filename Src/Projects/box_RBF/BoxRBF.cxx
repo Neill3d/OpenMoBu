@@ -152,8 +152,6 @@ bool BoxRBF3::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInf
 			poseVec << pose[0], pose[1], pose[2], pose[3];
 		}
 		
-		double poseNorm = poseVec.norm();
-
 		
 		for (int i = 0; i < NUMBER_OF_TARGETS; ++i)
 		{

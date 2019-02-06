@@ -17,6 +17,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "postprocessing_data.h"
 
+// for back compatibility
+extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
+
 //--- Library declaration
 FBLibraryDeclare( manager_postprocessing )
 {

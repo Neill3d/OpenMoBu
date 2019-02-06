@@ -274,7 +274,7 @@ bool SuperShaderModelInfo::PrepareUVSets()
 				}
 				else
 				{
-					for (unsigned int j=0; j<dublicatedCount; ++j)
+					for (int j=0; j<dublicatedCount; ++j)
 					{
 						if ( (dublicatedIndices[j] == idx) && (dubFlags[j] == 0) )
 						{

@@ -20,6 +20,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "glslShader.h"
 #include "Framebuffer.h"
 
+#include <memory>
+
 //////////////////////////////
 
 enum
@@ -454,13 +456,13 @@ public:
 protected:
 
 	// DONE: double local buffer
-	std::auto_ptr<FrameBuffer>			mBufferPost0;
-	std::auto_ptr<FrameBuffer>			mBufferPost1;
+	std::unique_ptr<FrameBuffer>			mBufferPost0;
+	std::unique_ptr<FrameBuffer>			mBufferPost1;
 
-	std::auto_ptr<FrameBuffer>			mBufferDepth;	// buffer to store a linearize depth
-	std::auto_ptr<FrameBuffer>			mBufferBlur;
+	std::unique_ptr<FrameBuffer>			mBufferDepth;	// buffer to store a linearize depth
+	std::unique_ptr<FrameBuffer>			mBufferBlur;
 
-	std::auto_ptr<FrameBuffer>			mBufferDownscale;	// output for a preview
+	std::unique_ptr<FrameBuffer>			mBufferDownscale;	// output for a preview
 
 	// last local buffers resize
 	int								mWidth;
@@ -532,22 +534,22 @@ protected:
 	HdlFBPlugTemplate<PostPersistentData>	mSettings;
 	FBCamera								*mLastCamera;
 	// instances of each effect
-	std::auto_ptr<PostEffectBase>		mFishEye;
-	std::auto_ptr<PostEffectBase>		mColor;
-	std::auto_ptr<PostEffectBase>		mVignetting;
-	std::auto_ptr<PostEffectBase>		mFilmGrain;
-	std::auto_ptr<PostEffectBase>		mLensFlare;
-	std::auto_ptr<PostEffectBase>		mSSAO;
-	std::auto_ptr<PostEffectBase>		mDOF;
-	std::auto_ptr<PostEffectBase>		mDisplacement;
-	std::auto_ptr<PostEffectBase>		mMotionBlur;
+	std::unique_ptr<PostEffectBase>		mFishEye;
+	std::unique_ptr<PostEffectBase>		mColor;
+	std::unique_ptr<PostEffectBase>		mVignetting;
+	std::unique_ptr<PostEffectBase>		mFilmGrain;
+	std::unique_ptr<PostEffectBase>		mLensFlare;
+	std::unique_ptr<PostEffectBase>		mSSAO;
+	std::unique_ptr<PostEffectBase>		mDOF;
+	std::unique_ptr<PostEffectBase>		mDisplacement;
+	std::unique_ptr<PostEffectBase>		mMotionBlur;
 
 	// shared shaders
 	
-	std::auto_ptr<GLSLShader>			mShaderDepthLinearize;	// linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
-	std::auto_ptr<GLSLShader>			mShaderBlur;	// needed for SSAO
-	std::auto_ptr<GLSLShader>			mShaderMix;		// needed for SSAO
-	std::auto_ptr<GLSLShader>			mShaderDownscale;
+	std::unique_ptr<GLSLShader>			mShaderDepthLinearize;	// linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
+	std::unique_ptr<GLSLShader>			mShaderBlur;	// needed for SSAO
+	std::unique_ptr<GLSLShader>			mShaderMix;		// needed for SSAO
+	std::unique_ptr<GLSLShader>			mShaderDownscale;
 
 	// order execution chain
 	std::vector<PostEffectBase*>		mChain;

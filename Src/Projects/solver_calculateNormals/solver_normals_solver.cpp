@@ -140,7 +140,7 @@ bool KNormalSolverAssociation::MenuAction( int pMenuId, FBComponent* pFocusedObj
 
 			if (nullptr != pSolver)
 			{
-				pSolver->AffectedModels.Add(pFocusedObject);
+				pSolver->AffectedModels.Add(pModel);
 			}
 		}
 	}

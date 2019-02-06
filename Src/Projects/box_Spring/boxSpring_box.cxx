@@ -363,7 +363,7 @@ bool CBoxSpring::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBEvaluat
 		
 		if (lTimeDt == 0.0) lTimeDt = 30.0;
 		else
-		if (lTimeDt < 0.0) lTimeDt = abs(lTimeDt);
+		if (lTimeDt < 0.0) lTimeDt = fabsl(lTimeDt);
 
 		if (lTimeDt > 200.0) lTimeDt = 200.0;
 
