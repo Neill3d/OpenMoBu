@@ -2,7 +2,12 @@
 // Vertex shader - Model Phong Shading 
 //
 //	Post Processing Toolkit
-//	 Created by Sergey <Neill3d> Solokhin (c) 2018
+//
+// Sergei <Neill3d> Solokhin 2018
+//
+// GitHub page - https://github.com/Neill3d/OpenMoBu
+// Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+//
 //	Special for Les Androids Associes
 //
 
@@ -89,7 +94,8 @@ void main(void)
 	
 	if (displacementOption.x > 0.0)
 	{
-		offset = inNormal.xyz * (texture2D(samplerDisplacement, inTexCoords.st).r - displacementOption.y);
+		vec2 dispUV = (displacementMatrix * vec4(inTexCoords.st, 0.0, 1.0)).xy;
+		offset = inNormal.xyz * (texture2D(samplerDisplacement, dispUV.st).r - displacementOption.y);
 		offset *= displacementOption.x;
 	}
 	vec4 vertex = vec4(inPosition.xyz + offset, 1.0);

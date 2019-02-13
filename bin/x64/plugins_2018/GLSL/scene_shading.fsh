@@ -2,7 +2,12 @@
 // Fragment shader - Model Phong Shading 
 //
 //	Post Processing Toolkit
-//	 Created by Sergey <Neill3d> Solokhin (c) 2018
+//
+// Sergei <Neill3d> Solokhin 2018
+//
+// GitHub page - https://github.com/Neill3d/OpenMoBu
+// Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+//
 //	Special for Les Androids Associes
 //
 
@@ -375,11 +380,11 @@ void main (void)
 	
 	float difFactor = clamp(materialBuffer.mat.diffuseColor.w, 0.0, 1.0);
 	vec3 ambientColor = materialBuffer.mat.ambientColor.rgb * globalAmbientLight.rgb * materialBuffer.mat.ambientColor.w;
-	//difColor += vec4(ambientColor, theShader->transparency);
-	color *= vec4(ambientColor + lResult.diffContrib * difFactor, materialBuffer.mat.shaderTransparency); // ambientColor +
+	vec3 emissiveColor = materialBuffer.mat.emissiveColor.a * materialBuffer.mat.emissiveColor.rgb;
+	vec3 difColor = mix(lResult.diffContrib * difFactor, materialBuffer.mat.emissiveColor.rgb, materialBuffer.mat.emissiveColor.w);
 	
-	//
-	/*theMaterial->emissiveColor.w * theMaterial->emissiveColor.xyz +*/
+	color *= vec4(ambientColor + difColor, materialBuffer.mat.shaderTransparency); // ambientColor +
+	
 	
 	float specularFactor = materialBuffer.mat.specularColor.w;
 	
@@ -392,7 +397,7 @@ void main (void)
 	color.rgb =  color.rgb + specularFactor * materialBuffer.mat.specularColor.rgb * lResult.specContrib;
 	
 	//color = vec4(1.0, 0.0, 0.0, 1.0);
-	color.rgb = lResult.diffContrib * color.rgb;
+	//color.rgb = lResult.diffContrib * color.rgb;
 	
 	ApplyRim(Nn, inPw, rimOptions, rimColor, color);
 	
@@ -403,7 +408,7 @@ void main (void)
 	if (switchAlbedoTosRGB > 0.0)
 	{
 		// linear to sRGB
-		outColor.rgb =  pow( outColor.rgb, vec3(1.0 / 2.2));
+		color.rgb =  pow( color.rgb, vec3(1.0 / 2.2));
 	}
 	
 	// apply fog
