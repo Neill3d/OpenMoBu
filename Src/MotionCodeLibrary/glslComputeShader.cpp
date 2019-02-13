@@ -107,10 +107,12 @@ bool CComputeProgram::PrepProgram(const char *filename)
 				Clear();
 				return false;
 			}
+
+			return true;
 		}
 	}
 
-	return true;
+	return false;
 }
 
 void CComputeProgram::Bind()

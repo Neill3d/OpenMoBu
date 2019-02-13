@@ -63,15 +63,7 @@ bool KNormalSolverAssociation::MenuBuild( FBAMMenu* pAMMenu, FBComponent* pFocus
 
 	if(pFocusedObject)
 	{
-		if( FBIS(pFocusedObject, FBTexture) )
-		{
-			pAMMenu->AddOption( "" );
-			mAddTextureProps = pAMMenu->AddOption("Add Sprite Sheet Properties", -1, true);
-			
-			pAMMenu->AddOption( "" );
-			return true;
-		}
-		else if (FBIS(pFocusedObject, FBModel) )
+		if (FBIS(pFocusedObject, FBModel) )
 		{
 			FBModelVertexData *pData = ((FBModel*) pFocusedObject)->ModelVertexData;
 
@@ -165,7 +157,7 @@ SolverCalculateNormals::SolverCalculateNormals(const char *pName)
 {
 	FBClassInit;
 	
-	mNeedProgramReload = false;
+	mNeedProgramReload = true;
 
 	for (int i=0; i<100; ++i)
 		mBuffersId[i] = 0;
@@ -359,22 +351,30 @@ bool SolverCalculateNormals::LoadShaders()
 		mProgramZero.Clear();
 		mProgramNorm.Clear();
 		mProgramRecomputeNormals.Clear();
-		mNeedProgramReload = false;
 	}
 
 	// check for a compute shader
 	FBString lPath;
 
 	lPath = FBSystem::TheOne().ApplicationPath;
-	lPath += "/plugins/GLSL/";
+	int delim_pos = std::max(lPath.ReverseFind('/'), lPath.ReverseFind('\\'));
+	if (delim_pos > 0)
+	{
+		lPath = lPath.Left(delim_pos);
+	}
+	lPath += "/x64/plugins";
 
-	if (false == mProgramZero.PrepProgram(FBString(lPath, "\\GLSL_CS\\recomputeNormalsZero.cs")) )
+	constexpr const char* shader_normals_zero = "/GLSL_CS/recomputeNormalsZero.cs";
+	constexpr const char* shader_recompute_normals = "/GLSL_CS/recomputeNormals.cs";
+	constexpr const char* shader_normals_norm = "/GLSL_CS/recomputeNormalsNorm.cs";
+
+	if (false == mProgramZero.PrepProgram(shader_normals_zero) )
 		return false;
 
-	if (false == mProgramRecomputeNormals.PrepProgram(FBString(lPath, "\\GLSL_CS\\recomputeNormals.cs")) )
+	if (false == mProgramRecomputeNormals.PrepProgram(shader_recompute_normals) )
 		return false;
 	
-	if (false == mProgramNorm.PrepProgram(FBString(lPath, "\\GLSL_CS\\recomputeNormalsNorm.cs")) )
+	if (false == mProgramNorm.PrepProgram(shader_normals_norm) )
 		return false;
 		
 	if (0 == mProgramZero.GetProgramId() )
@@ -490,12 +490,13 @@ bool SolverCalculateNormals::LoadShaders()
 		}
 	}
 
+	mNeedProgramReload = false;
 	return true;
 }
 
 bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 {
-	if (false == LoadShaders() )
+	if (mNeedProgramReload && false == LoadShaders() )
 		return false;
 	
 	//
