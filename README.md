@@ -10,6 +10,11 @@ Please post issues and feature requests to this [github repository issues sectio
 ---
  Note! Please have a look at the repository Wiki pages for more information about setup and scripts/plugins
 
+## Introduction webinars
+* Part 1 - https://youtu.be/sgzunIbNcp4
+* Part 2 - https://youtu.be/5By9h3KO6JE
+* Part 3 - https://youtu.be/OcH3vusjros
+* Part 4 - https://youtu.be/qNmFzHt0O0w
 
 ## Binaries
  
