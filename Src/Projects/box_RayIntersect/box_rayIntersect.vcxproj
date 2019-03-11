@@ -189,6 +189,7 @@
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">
     <PlatformToolset>v141</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release 2019|Win32'">
     <PlatformToolset>v141</PlatformToolset>
@@ -359,6 +360,12 @@
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2017|x64'">$(ADSK_MOBU_2017_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">$(ADSK_MOBU_2018_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">
+    <OutDir>..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
+    <IntDir>..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
+    <IncludePath>$(ADSK_MOBU_2019_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2019_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -1124,6 +1131,14 @@
       </DataExecutionPrevention>
       <ImportLibrary>$(ADSK_MOBU_2010_64)/bin\$(Platform)/plugins/$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

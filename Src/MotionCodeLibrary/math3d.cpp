@@ -848,7 +848,7 @@ bool PlaneIntersection( const FBVector4d &plane1, const FBVector4d &plane2, FBVe
 	n11 = VectorLength( normal2 );
 	det = n00 * n11 - n01 * n01;
 
-	if ( abs(det) < 1e-6f ) {
+	if ( fabs(det) < 1e-6f ) {
 		return false;
 	}
 
@@ -1284,13 +1284,13 @@ void linSolve(unsigned m, double *&A, double *&B, double *&c)
 			B[j] = B[j] - B[i] * d;
 		}
 	// backward
-	for (int j=0; j<m; j++)
+	for (uint32_t j=0; j<m; j++)
 	{
 		assert( A[j*m+j] != 0.0 );
 		c[j] = B[j] / A[j*m+j];
 	}
 
-	for (int j=m-1; j>=0; j--)
+	for (uint32_t j=m-1; j>=0; j--)
 	{
 		//c[j]=B[j] / A[j,j];
 		double s = 0.0;
