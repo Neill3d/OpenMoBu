@@ -1,3 +1,5 @@
+[![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019)
+
 # OpenMoBu code repository!
 
  It's a set of C++ and Python code for Autodesk MotionBuilder that I have developed while taking part in several projects.
