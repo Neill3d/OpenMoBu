@@ -663,6 +663,7 @@ namespace Graphics {
 			glDisableVertexAttribArray(0);		// position
 			glDisableVertexAttribArray(1);		// uv
 			glDisableVertexAttribArray(2);		// normal
+			glDisableVertexAttribArray(3);		// tangent
 
 			for (int i = 5; i >= 0; --i)
 			{

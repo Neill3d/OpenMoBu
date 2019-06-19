@@ -237,7 +237,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2014|x64'">..\..\..\bin\$(Platform)\plugins_2014\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2016|x64'">..\..\..\bin\$(Platform)\plugins_2016\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">..\..\..\bin\$(Platform)\plugins_2015\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\..\..\..\..\..\Program Files\Autodesk\MotionBuilder 2018\bin\x64\plugins</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2014|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
