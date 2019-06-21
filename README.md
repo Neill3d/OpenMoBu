@@ -18,11 +18,14 @@ Please post issues and feature requests to this [github repository issues sectio
 * Part 3 - https://youtu.be/OcH3vusjros
 * Part 4 - https://youtu.be/qNmFzHt0O0w
 
+## Installation Package
+
+ There are some ready to use installation packages, you can find them in a ["Release" section of the repository](https://github.com/Neill3d/OpenMoBu/releases).
+
 ## Binaries
  
- There is an installation package in "Release" section of the repository.
+ If you want to install manually or copy just updated binary, you can find precompiled binaries in the "bin" folder.
  
- Also some old binaries you can find in "bin" folder.
  To setup custom plugins and scripts path, please, try a configuration application - https://github.com/Neill3d/MoBu_ConfigApp
 
 ## How to compile
