@@ -149,6 +149,46 @@ static void Volume_About(HIObject pObject, bool value) {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////// PROCS
+
+void ModelVolumeCalculator::AddPropertyView(const char* pPropertyName, const char* pHierarchy, bool pIsFolder)
+{
+	FBPropertyViewManager::TheOne().AddPropertyView(ORMODELCUSTOMDISPLAY__CLASSSTR, pPropertyName, pHierarchy);
+}
+void ModelVolumeCalculator::AddPropertiesToPropertyViewManager()
+{
+	AddPropertyView("Switch To Camera", "");
+	AddPropertyView("Resolution presets", "");
+	AddPropertyView("Lens presets", "");
+
+	AddPropertyView("Length", "");
+	AddPropertyView("Width", "");
+	AddPropertyView("Height", "");
+	AddPropertyView("Show room", "");
+	AddPropertyView("Show Zone", "");
+	AddPropertyView("Circle Zone", "");
+
+	AddPropertyView("Zone X Offset", "");
+	AddPropertyView("Zone Z Offset", "");
+	AddPropertyView("Zone Length", "");
+	AddPropertyView("Zone Width", "");
+	AddPropertyView("Show points", "");
+	AddPropertyView("Step", "");
+	AddPropertyView("Min Coverage", "");
+	AddPropertyView("Marker", "");
+	AddPropertyView("Cameras", "");
+	AddPropertyView("Solve", "");
+	AddPropertyView("Marks", "");
+
+	AddPropertyView("", "Display Settings", true);
+	AddPropertyView("Room Color", "Display Settings");
+	AddPropertyView("Zone Color", "Display Settings");
+	AddPropertyView("Point Color", "Display Settings");
+	AddPropertyView("Ray Color", "Display Settings");
+
+	AddPropertyView("About", "");
+}
+
 /************************************************
  *	Constructor.
  ************************************************/
@@ -174,6 +214,11 @@ ModelVolumeCalculator::ModelVolumeCalculator( const char* pName, HIObject pObjec
 	FBPropertyPublish( this, Solve, "Solve", NULL, Volume_Solve );
 	FBPropertyPublish( this, Marks, "Marks", NULL, NULL );
 
+	FBPropertyPublish(this, RoomColor, "Room Color", nullptr, nullptr);
+	FBPropertyPublish(this, ZoneColor, "Zone Color", nullptr, nullptr);
+	FBPropertyPublish(this, PointColor, "Point Color", nullptr, nullptr);
+	FBPropertyPublish(this, RayColor, "Ray Color", nullptr, nullptr);
+
 	FBPropertyPublish( this, SwitchToCamera, "Switch To Camera", NULL, Volume_SwitchToCamera );
 	FBPropertyPublish( this, Presets, "Resolution presets", NULL, Volume_SetPreset );
 	FBPropertyPublish( this, LensPresets, "Lens presets", NULL, Volume_SetLensPreset );
@@ -196,6 +241,11 @@ ModelVolumeCalculator::ModelVolumeCalculator( const char* pName, HIObject pObjec
 	SolveStep = 50.0;
 	CameraCoverage = 3;
 	Marks = 0;
+
+	RoomColor = FBColor(0.8, 0.8, 0.8);
+	ZoneColor = FBColor(0.9, 0.9, 0.9);
+	PointColor = FBColor(0.5, 0.5, 0.5);
+	RayColor = FBColor(1.0, 0.0, 0.0);
 }
 
 /************************************************
@@ -218,7 +268,7 @@ void ModelVolumeCalculator::FBDestroy()
 // X axis is a width
 // Z axis is a length
 
-void DrawRoom(double l, double w, double h)
+void ModelVolumeCalculator::DrawRoom(double l, double w, double h, const bool is_pick)
 {
 	const double hl = l * 0.5;
 	const double hw = w * 0.5;
@@ -231,8 +281,13 @@ void DrawRoom(double l, double w, double h)
 	glEnd();
 
 	glLineWidth(2.0f);
-	glColor3f(0.8, 0.8, 0.8);
 
+	if (!is_pick)
+	{
+		const FBColor room_color = RoomColor;
+		glColor3dv(room_color);
+	}
+	
 	glBegin(GL_LINE_LOOP);
 	glVertex3d( -hw, h, hl );
 	glVertex3d( -hw, h, -hl );
@@ -241,14 +296,18 @@ void DrawRoom(double l, double w, double h)
 	glEnd();
 }
 
-void ModelVolumeCalculator::DrawActiveZone()
+void ModelVolumeCalculator::DrawActiveZone(const bool is_pick)
 {
 	double hl = Length * 0.5;
 	double hw = Width * 0.5;
 	//double hh = h * 0.5;
 
-	glColor3f(0.9, 0.9, 0.9);
-
+	if (!is_pick)
+	{
+		const FBColor zone_color = ZoneColor;
+		glColor3dv(zone_color);
+	}
+	
 	glBegin(GL_LINES);
 	glVertex3d( -hw, 0.0, 0.0);
 	glVertex3d( hw, 0.0, 0.0);
@@ -292,11 +351,18 @@ void ModelVolumeCalculator::DrawActiveZone()
 	}
 }
 
-void ModelVolumeCalculator::DrawVolumePoints()
+void ModelVolumeCalculator::DrawVolumePoints(const bool is_pick)
 {
 	if (!mPoints.size() ) return;
 
 	glPointSize(3.0f);
+
+	if (!is_pick)
+	{
+		const FBColor point_color = PointColor;
+		glColor3dv(point_color);
+	}
+	
 	glBegin(GL_POINTS);
 	for (size_t i=0; i<mPoints.size(); ++i)
 		glVertex3dv(mPoints[i]);
@@ -313,56 +379,48 @@ void ModelVolumeCalculator::CustomModelDisplay( FBCamera* pCamera, FBModelShadin
 
   glLineWidth(4.0f);
 
-	bool lIsPick = (pRenderPass == kFBModelRenderPassPick);
+	const bool is_pick = (pRenderPass == kFBModelRenderPassPick);
+	const bool is_selected = Selected.AsInt() > 0;
 
-	if ((bool)Selected) {
+	if (is_selected) {
 		glColor3d(0.0,1.0,0.0);
 	} else {
-		glColor3d(1.0,1.0,1.0);
+		const FBColor room_color = RoomColor;
+		glColor3dv(room_color);
+	}
+
+	if (is_pick)
+	{
+		const FBColor color_id = UniqueColorId;
+		glColor3dv(color_id);
 	}
 
 	FBVector3d T = Translation;
 	glTranslated(T[0],T[1],T[2]);
 
-	if (lIsPick) { 
-		glLoadName(1);
-	}
-	glBegin(GL_LINES);
-		glVertex3d(0,0,0);
-		glVertex3d(100,100,100);
-	glEnd();
-
-	if (lIsPick) { 
-		glLoadName(2);
-	}
-	glBegin(GL_LINES);
-		glVertex3d(0,0,0);
-		glVertex3d(-100,100,100);
-	glEnd();
-
 	// show the room
 	if (DisplayRoom)
 	{
-		if (lIsPick) glLoadName(3);
-		DrawRoom(Length, Width, Height);
+		if (is_pick) glLoadName(3);
+		DrawRoom(Length, Width, Height, is_pick);
 	}
 
 	if (DisplayZone)
 	{
-		if (lIsPick) glLoadName(4);
+		if (is_pick) glLoadName(4);
 		glPushMatrix();
 		glTranslatef( ZoneX, 0.0, ZoneZ );
-		DrawActiveZone();
+		DrawActiveZone(is_pick);
 		glPopMatrix();
 	}
 
 	if (DisplayPoints)
 	{
-		DrawVolumePoints();
+		DrawVolumePoints(is_pick);
 	}
 
 	glLineWidth(1.0f);
-	DrawMarkerRays();
+	DrawMarkerRays(is_pick);
 
 	glLineWidth(1.0f);
 }
@@ -613,7 +671,7 @@ void ModelVolumeCalculator::PrepareVolumePoints(double l, double w, double h, do
 	if (index < count) mPoints.resize(index);
 }
 
-void ModelVolumeCalculator::DrawMarkerRays()
+void ModelVolumeCalculator::DrawMarkerRays(const bool is_pick)
 {
 	if (!Marker.GetCount() ) return;
 
@@ -633,7 +691,12 @@ void ModelVolumeCalculator::DrawMarkerRays()
 		}
 	}
 
-	glColor3f(1.0, 0.0, 0.0);
+	if (!is_pick)
+	{
+		const FBColor ray_color = RayColor;
+		glColor3dv(ray_color);
+	}
+	
 	glBegin(GL_LINES);
 
 	for (size_t i=0; i<cameras.size(); ++i)

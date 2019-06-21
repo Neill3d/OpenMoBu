@@ -18,6 +18,8 @@
 	#include <windows.h>
 #endif
 
+#include "volume_calculator_model_display.h"
+
 //--- Library declaration.
 FBLibraryDeclare( ModelVolumeCalculator )
 {
@@ -30,7 +32,10 @@ FBLibraryDeclareEnd;
  *	Library functions.
  ************************************************/
 bool FBLibrary::LibInit()		{ return true; }
-bool FBLibrary::LibOpen()		{ return true; }
+bool FBLibrary::LibOpen()		{ 
+	ModelVolumeCalculator::AddPropertiesToPropertyViewManager();
+	return true; 
+}
 bool FBLibrary::LibReady()		{ return true; }
 bool FBLibrary::LibClose()		{ return true; }
 bool FBLibrary::LibRelease()	{ return true; }

@@ -78,6 +78,12 @@ public:
 	virtual bool FbxStore(FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat);
 	virtual bool FbxRetrieve(FBFbxObject *pFbxObject, kFbxObjectStore pStoreWhat);
 
+	/** Override to reuse regular object type's property viewSet.
+	*/
+	virtual bool UseCustomPropertyViewSet() const override { return true; }
+	static void AddPropertyView(const char* pPropertyName, const char* pHierarchy, bool pIsFolder = false);
+	static void AddPropertiesToPropertyViewManager();
+
 public:
 	// some user properties
 	FBPropertyDouble	Length;				// room length
@@ -113,16 +119,23 @@ public:
 	FBPropertyBaseEnum<kCECameraPresets> Presets;		//!< setup camera from the preset
 	FBPropertyBaseEnum<kCELensPresets> LensPresets;		//!< setup camera from the lens preset
 
+	FBPropertyColor		RoomColor;
+	FBPropertyColor		ZoneColor;
+	FBPropertyColor		PointColor;
+	FBPropertyColor		RayColor;
+
 public:
 
 	void	DoVolumeSolve();
 
 private:
 	void	PrepareVolumePoints(double l, double w, double h, double step);
-	void	DrawVolumePoints();
-	void	DrawMarkerRays();
+	void	DrawVolumePoints(const bool is_pick);
+	void	DrawMarkerRays(const bool is_pick);
 
-	void	DrawActiveZone();
+	void	DrawActiveZone(const bool is_pick);
+
+	void DrawRoom(double l, double w, double h, const bool is_pick);
 
 	std::vector<FBVector3d>		mPoints;	// volume points array
 };
