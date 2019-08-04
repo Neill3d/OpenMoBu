@@ -60,6 +60,10 @@ public:
 	virtual bool PrepUniforms();
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera);		// grab main UI values for the effect
 
+	// new feature to have several passes for a specified effect
+	virtual const int GetNumberOfPasses() const;
+	virtual bool PrepPass(const int pass);
+
 	virtual void Bind();
 	virtual void UnBind();
 
@@ -132,11 +136,14 @@ public:
 protected:
 
 	// shader locations
-	enum { LOCATIONS_COUNT = 4 };
+	enum { LOCATIONS_COUNT = 6 };
 	union
 	{
 		struct
 		{
+			GLint		mResolution;
+			GLint		mChromaticAberration;
+
 			GLint		mUpperClip;
 			GLint		mLowerClip;
 
@@ -259,12 +266,21 @@ public:
 	virtual bool PrepUniforms() override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
+	virtual const int GetNumberOfPasses() const override;
+	virtual bool PrepPass(const int pass) override;
+
 protected:
 
 	FBSystem		mSystem;
 
+	int				m_NumberOfPasses;
+	float			m_DepthAttenuation;
+
+	std::vector<FBVector3d>	m_LightPositions; // window xy and depth (for attenuation)
+	std::vector<FBColor>	m_LightColors;
+
 	// shader locations
-	enum { LOCATIONS_COUNT = 14 };
+	enum { LOCATIONS_COUNT = 13 };
 	union
 	{
 		struct
@@ -280,8 +296,7 @@ protected:
 
 			GLint		timer;
 
-			GLint		posX; 
-			GLint		posY; 
+			GLint		light_pos;
 
 			GLint		tint;
 			GLint		inner;

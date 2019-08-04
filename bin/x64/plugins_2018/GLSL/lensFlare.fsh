@@ -26,8 +26,7 @@ uniform float textureWidth;
 uniform float textureHeight;
 
 uniform float iTime;
-uniform float posX;
-uniform float posY;
+uniform vec4  light_pos;
 
 uniform vec4  tint;
 uniform float	inner;
@@ -144,7 +143,7 @@ void main (void)
 	
 	vec2 fragCoord = gl_FragCoord.xy;
 	vec2 iResolution = vec2(textureWidth, textureHeight);
-	vec3 iMouse = vec3(posX * textureWidth, posY * textureHeight, 1.0);
+	vec3 iMouse = vec3(light_pos.x * textureWidth, light_pos.y * textureHeight, light_pos.z);
 	
 	vec2 uv = fragCoord.xy / iResolution.xy - 0.5;
 	uv.x *= iResolution.x/iResolution.y; //fix aspect ratio
@@ -165,11 +164,11 @@ void main (void)
 	
 	if (fadeToBorders > 0.0)
 	{
-		float distToBorder = posX + borderWidth;
-		distToBorder = min(distToBorder, width + borderWidth - posX);
+		float distToBorder = light_pos.x + borderWidth;
+		distToBorder = min(distToBorder, width + borderWidth - light_pos.x);
 	
-		distToBorder = min(distToBorder, posY + borderWidth);
-		distToBorder = min(distToBorder, height + borderWidth - posY);
+		distToBorder = min(distToBorder, light_pos.y + borderWidth);
+		distToBorder = min(distToBorder, height + borderWidth - light_pos.y);
 	
 		distToBorder *= 0.01;
 		distToBorder = clamp(distToBorder, 0.0, 1.0);

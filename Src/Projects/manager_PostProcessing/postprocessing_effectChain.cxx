@@ -133,6 +133,15 @@ bool PostEffectBase::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 	return false;
 }
 
+const int PostEffectBase::GetNumberOfPasses() const
+{
+	return 1;
+}
+bool PostEffectBase::PrepPass(const int pass)
+{
+	return true;
+}
+
 void PostEffectBase::Bind()
 {
 	if (nullptr != mShader)
@@ -292,6 +301,9 @@ bool PostEffectColor::PrepUniforms()
 		if (loc >= 0)
 			glUniform1i(loc, 0);
 
+		mResolution = mShader->findLocation("gResolution");
+		mChromaticAberration = mShader->findLocation("gCA");
+
 		mUpperClip = mShader->findLocation("upperClip");
 		mLowerClip = mShader->findLocation("lowerClip");
 
@@ -313,12 +325,15 @@ bool PostEffectColor::CollectUIValues(PostPersistentData *pData, int w, int h, F
 	const double upperClip = pData->UpperClip;
 	const double lowerClip = pData->LowerClip;
 
+	const float chromatic_aberration = (pData->ChromaticAberration) ? 1.0f : 0.0f;
+	const FBVector2d ca_dir = pData->ChromaticAberrationDirection;
+
 	double saturation = 1.0 + 0.01 * pData->Saturation;
 	double brightness = 1.0 + 0.01 * pData->Brightness;
 	double contrast = 1.0 + 0.01 * pData->Contrast;
 	double gamma = 0.01 * pData->Gamma;
 
-	double inverse = (pData->Inverse) ? 1.0 : 0.0;
+	const float inverse = (pData->Inverse) ? 1.0f : 0.0f;
 	double hue = 0.01 * pData->Hue;
 	double hueSat = 0.01 * pData->HueSaturation;
 	double lightness = 0.01 * pData->Lightness;
@@ -326,6 +341,16 @@ bool PostEffectColor::CollectUIValues(PostPersistentData *pData, int w, int h, F
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
+
+		if (mResolution >= 0)
+		{
+			glUniform2f(mResolution, static_cast<float>(w), static_cast<float>(h));
+		}
+
+		if (mChromaticAberration >= 0)
+		{
+			glUniform4f(mChromaticAberration, static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
+		}
 
 		if (mUpperClip >= 0)
 			glUniform1f(mUpperClip, 0.01f * (float)upperClip);
@@ -337,7 +362,7 @@ bool PostEffectColor::CollectUIValues(PostPersistentData *pData, int w, int h, F
 			glUniform4f(mLocCSB, (float)contrast, (float)saturation, (float)brightness, (float)gamma);
 
 		if (mLocHue >= 0)
-			glUniform4f(mLocHue, (float)hue, (float)hueSat, (float)lightness, (float)inverse);
+			glUniform4f(mLocHue, (float)hue, (float)hueSat, (float)lightness, inverse);
 
 		mShader->UnBind();
 
@@ -572,6 +597,8 @@ PostEffectLensFlare::PostEffectLensFlare()
 {
 	for (int i = 0; i < LOCATIONS_COUNT; ++i)
 		mLocations[i] = -1;
+
+	m_NumberOfPasses = 1;
 }
 
 //! a destructor
@@ -615,8 +642,7 @@ bool PostEffectLensFlare::PrepUniforms()
 
 		timer = mShader->findLocation("iTime");
 
-		posX = mShader->findLocation("posX");
-		posY = mShader->findLocation("posY");
+		light_pos = mShader->findLocation("light_pos");
 
 		tint = mShader->findLocation("tint");
 		inner = mShader->findLocation("inner");
@@ -637,6 +663,7 @@ bool PostEffectLensFlare::PrepUniforms()
 bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
 	bool lSuccess = false;
+	m_NumberOfPasses = 1;
 
 	const double _upperClip = pData->UpperClip;
 	const double _lowerClip = pData->LowerClip;
@@ -652,36 +679,50 @@ bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int 
 	double timerMult = pData->FlareTimeSpeed;
 	double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
 
-	double _posX = 0.01 * pData->FlarePosX;
-	double _posY = 0.01 * pData->FlarePosY;
+	double _pos[3] = { 0.01 * pData->FlarePosX, 0.01 * pData->FlarePosY, 1.0 };
 
-	double _fadeToBorders = (pData->FlareFadeToBorders) ? 1.0 : 0.0;
+	const float _fadeToBorders = (pData->FlareFadeToBorders) ? 1.0f : 0.0f;
 	double _borderWidth = pData->FlareBorderWidth;
 	double _feather = pData->FlareBorderFeather;
+
+	m_DepthAttenuation = (pData->FlareDepthAttenuation) ? 1.0f : 0.0f;
 
 	// TODO: track light position in screen space
 	if (pData->UseFlareLightObject && pData->FlareLight.GetCount() > 0)
 	{
-		FBLight *pLight = (FBLight*)pData->FlareLight.GetAt(0);
+		m_NumberOfPasses = pData->FlareLight.GetCount();
+		m_LightPositions.resize(m_NumberOfPasses);
+		m_LightColors.resize(m_NumberOfPasses);
 
-		FBVector3d v;
-		pLight->GetVector(v);
+		for (int i = 0; i < m_NumberOfPasses; ++i)
+		{
+			FBLight *pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(i));
 
-		FBMatrix mvp;
-		pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
+			FBVector3d v;
+			pLight->GetVector(v);
 
-		FBVector4d v4;
-		FBVectorMatrixMult(v4, mvp, FBVector4d(v[0], v[1], v[2], 1.0));
+			FBMatrix mvp;
+			pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
 
-		v4[0] = w * 0.5 * (v4[0] + 1.0);
-		v4[1] = h * 0.5 * (v4[1] + 1.0);
+			FBVector4d v4;
+			FBVectorMatrixMult(v4, mvp, FBVector4d(v[0], v[1], v[2], 1.0));
 
-		_posX = v4[0] / w;
-		_posY = v4[1] / h;
+			v4[0] = w * 0.5 * (v4[0] + 1.0);
+			v4[1] = h * 0.5 * (v4[1] + 1.0);
+			
 
+			_pos[0] = v4[0] / w;
+			_pos[1] = v4[1] / h;
+			_pos[2] = v4[2]; // pCamera->FarPlaneDistance;
+
+			m_LightPositions[i].Set(_pos);
+			const FBColor color(pLight->DiffuseColor);
+			m_LightColors[i].Set(color);
+		}
+		
 		// relative coords to a screen size
-		pData->FlarePosX = 100.0 * _posX / w;
-		pData->FlarePosY = 100.0 * _posY / h;
+		pData->FlarePosX = 100.0 * _pos[0] / w;
+		pData->FlarePosY = 100.0 * _pos[2]; // _pos[1] / h;
 	}
 
 	if (nullptr != mShader)
@@ -705,10 +746,10 @@ bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int 
 		if (timer >= 0)
 			glUniform1f(timer, (float)_timer);
 		
-		if (posX >= 0)
-			glUniform1f(posX, (float)_posX);
-		if (posY >= 0)
-			glUniform1f(posY, (float)_posY);
+		if (light_pos >= 0)
+		{
+			glUniform4f(light_pos, static_cast<float>(_pos[0]), static_cast<float>(_pos[1]), static_cast<float>(_pos[2]), 0.0f);
+		}
 
 		if (tint >= 0)
 			glUniform4f(tint, (float)_tint[0], (float)_tint[1], (float)_tint[2], 1.0f);
@@ -719,7 +760,7 @@ bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int 
 			glUniform1f(outer, 0.01f * (float)_outer);
 
 		if (fadeToBorders >= 0)
-			glUniform1f(fadeToBorders, (float)_fadeToBorders);
+			glUniform1f(fadeToBorders, _fadeToBorders);
 		if (borderWidth >= 0)
 			glUniform1f(borderWidth, (float)_borderWidth);
 		if (feather >= 0)
@@ -733,6 +774,25 @@ bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int 
 	return lSuccess;
 }
 
+const int PostEffectLensFlare::GetNumberOfPasses() const
+{
+	return m_NumberOfPasses;
+}
+
+bool PostEffectLensFlare::PrepPass(const int pass)
+{
+	// shader must be binded
+	if (light_pos >= 0 && pass < static_cast<int>(m_LightPositions.size()))
+	{
+		const FBVector3d pos(m_LightPositions[pass]);
+		glUniform4f(light_pos, static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), m_DepthAttenuation);
+
+		const FBColor _tint(m_LightColors[pass]);
+		glUniform4f(tint, (float)_tint[0], (float)_tint[1], (float)_tint[2], 1.0f);
+		return true;
+	}
+	return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 // post DOF
@@ -1651,6 +1711,7 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	count = 0;
 
 	int blurAndMix = -1;
+	int blurAndMix2 = -1;
 
 	// ordering HERE
 
@@ -1659,7 +1720,9 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		mChain[count] = mSSAO.get();
 
 		if (mSettings->SSAO_Blur)
+		{
 			blurAndMix = count;
+		}
 		count += 1;
 	}
 	if (mSettings->MotionBlur)
@@ -1675,6 +1738,10 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	if (mSettings->ColorCorrection)
 	{
 		mChain[count] = mColor.get();
+		if (mSettings->Bloom)
+		{
+			blurAndMix2 = count;
+		}
 		count += 1;
 	}
 	if (mSettings->LensFlare)
@@ -1786,35 +1853,42 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		
 		for (int i = 0; i < count; ++i)
 		{
-			texid = buffers->GetSrcBufferPtr()->GetColorObject();
-			glBindTexture(GL_TEXTURE_2D, texid);
-
-			if (generateMips)
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			}
-			else
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			}
-
-			buffers->GetDstBufferPtr()->Bind();
 			mChain[i]->Bind();
 
-			drawOrthoQuad2d(w, h);
+			for (int j = 0; j < mChain[i]->GetNumberOfPasses(); ++j)
+			{
+				mChain[i]->PrepPass(j);
+
+				texid = buffers->GetSrcBufferPtr()->GetColorObject();
+				glBindTexture(GL_TEXTURE_2D, texid);
+
+				if (generateMips)
+				{
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				}
+				else
+				{
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				}
+
+				buffers->GetDstBufferPtr()->Bind();
+
+				drawOrthoQuad2d(w, h);
+
+				buffers->GetDstBufferPtr()->UnBind(generateMips);
+
+				//
+				buffers->SwapBuffers();
+			}
 
 			mChain[i]->UnBind();
-			buffers->GetDstBufferPtr()->UnBind(generateMips);
-
-			//
-			buffers->SwapBuffers();
 
 			// if we need more passes, blur and mix for SSAO
-			if (i == blurAndMix)
+			if (i == blurAndMix || i == blurAndMix2)
 			{
-				if (false == mSettings->OnlyAO)
+				if (false == mSettings->OnlyAO || (i == blurAndMix2))
 				{
 					// Bilateral Blur Pass
 
@@ -1829,6 +1903,9 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 					if (mLocBlurRes >= 0)
 						glUniform2f(mLocBlurRes, invRes[0], invRes[1]);
 
+					const float color_shift = (mSettings->Bloom) ? static_cast<float>(0.01 * mSettings->BloomMinBright) : 0.0f;
+					mShaderBlur->setUniformFloat("g_ColorShift", color_shift);
+					
 					drawOrthoQuad2d(w, h);
 
 					mShaderBlur->UnBind();
@@ -1848,6 +1925,15 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 					buffers->GetDstBufferPtr()->Bind();
 					mShaderMix->Bind();
+
+					if (mSettings->Bloom)
+					{
+						mShaderMix->setUniformVector("gBloom", static_cast<float>(0.01 * mSettings->BloomTone), static_cast<float>(0.01 * mSettings->BloomStretch), 0.0f, 1.0f);
+					}
+					else
+					{
+						mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 0.0f, 0.0f);
+					}
 
 					drawOrthoQuad2d(w, h);
 
@@ -1927,7 +2013,9 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 				if (true == buffers->PreviewOpenGLCompress(mSettings->OutputCompression, compressionCode))
 				{
 					mSettings->SetPreviewTextureId(buffers->GetPreviewCompressedColor(), ratio, previewW, previewH,
-						buffers->GetUnCompressedSize(), buffers->GetCompressedSize(), compressionCode, systime);
+						static_cast<int32_t>(buffers->GetUnCompressedSize()), 
+						static_cast<int32_t>(buffers->GetCompressedSize()), 
+						compressionCode, systime);
 
 					mIsCompressedDataReady = true;
 				}
@@ -1939,7 +2027,9 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 				GLint compressionCode = GL_RGB8;
 
 				mSettings->SetPreviewTextureId(buffers->GetPreviewColor(), ratio, previewW, previewH,
-					buffers->GetUnCompressedSize(), buffers->GetUnCompressedSize(), compressionCode, systime);
+					static_cast<int32_t>(buffers->GetUnCompressedSize()),
+					static_cast<int32_t>(buffers->GetCompressedSize()), 
+					compressionCode, systime);
 					
 			}
 			

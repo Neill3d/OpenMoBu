@@ -104,6 +104,9 @@ public: // PROPERTIES
 	// color correction props here
 	FBPropertyAnimatableBool	ColorCorrection;
 	
+	FBPropertyBool					ChromaticAberration;	// ca
+	FBPropertyAnimatableVector2d	ChromaticAberrationDirection;
+
 	FBPropertyAnimatableDouble		Contrast;
 	FBPropertyAnimatableDouble		Brightness;
 	FBPropertyAnimatableDouble		Saturation;
@@ -111,6 +114,11 @@ public: // PROPERTIES
 	FBPropertyAnimatableDouble		Gamma;
 
 	FBPropertyBool					Inverse;	// inverse colors
+
+	FBPropertyBool					Bloom;
+	FBPropertyAnimatableDouble		BloomMinBright;
+	FBPropertyAnimatableDouble		BloomTone;
+	FBPropertyAnimatableDouble		BloomStretch;
 
 	FBPropertyAnimatableDouble		Hue;
 	FBPropertyAnimatableDouble		HueSaturation;
@@ -148,6 +156,7 @@ public: // PROPERTIES
 	FBPropertyAction				FlareLightSelect;
 
 	FBPropertyAnimatableDouble		FlareAmount;
+	FBPropertyBool					FlareDepthAttenuation;
 	FBPropertyAnimatableDouble		FlarePosX;
 	FBPropertyAnimatableDouble		FlarePosY;
 

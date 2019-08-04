@@ -17,13 +17,16 @@ uniform	sampler2D		sampler0;
 uniform float	upperClip;
 uniform float	lowerClip;
 
+uniform vec2	gResolution;
+
 // contrast, saturation, brightness, gamma
 uniform vec4			gCSB;	
 
 // hue, saturation, lightness, inverse state
 uniform vec4			gHue;
 
-
+// chromatic aberration
+uniform vec4			gCA; // x-dir x; y-dir y; w-use chromatic aberration
 
 /*
 ** Copyright (c) 2012, Romain Dura romain@shazbits.com
@@ -286,7 +289,21 @@ vec3 BlendLuminosity(vec3 base, vec3 blend)
 #define LevelsControlOutputRange(color, minOutput, maxOutput) 			mix(vec3(minOutput), vec3(maxOutput), color)
 #define LevelsControl(color, minInput, gamma, maxInput, minOutput, maxOutput) 	LevelsControlOutputRange(LevelsControlInput(color, minInput, gamma, maxInput), minOutput, maxOutput)
 
+// source from https://github.com/DOWNPOURDIGITAL/glsl-chromatic-aberration/blob/master/ca.glsl
+vec4 ca( in sampler2D image, in vec2 uv, in vec2 resolution, in vec2 direction ) 
+{
+	vec4 col = vec4( 0.0 );
+	vec2 off = vec2( 1.3333333333333333 ) * direction;
 
+	col.ra = texture2D( image, uv ).ra;
+	col.g = texture2D( image, uv - ( off / resolution ) ).g;
+	col.b = texture2D( image, uv - 2. * ( off / resolution ) ).b;
+
+	return col;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// main
 
 void main (void)
 {
@@ -300,6 +317,11 @@ void main (void)
 	}
 	
 	vec4 srccolor = texture2D ( sampler0, tx );
+
+	if (gCA.w > 0.0)
+	{
+		srccolor = ca(sampler0, tx, gResolution, gCA.st);
+	}
 
 	float gamma = gCSB.w;
 	vec3 color = ContrastSaturationBrightness( srccolor.xyz, gCSB.z, gCSB.y, gCSB.x );

@@ -17,13 +17,19 @@ uniform sampler2D 	sampler0;
 uniform sampler2D 	linearDepthSampler;
 
 uniform float 	g_Sharpness;
+uniform float	g_ColorShift;
 uniform vec2	g_InvResolutionDirection; // either set x to 1/width or y to 1/height
 
 //-------------------------------------------------------------------------
 
+vec4 ShiftColor(vec4 color)
+{
+	return max(vec4(0.0), color - vec4(g_ColorShift));
+}
+
 vec4 BlurFunction(vec2 uv, float r, vec4 center_c, float center_d, inout float w_total)
 {
-  vec4  c = texture2D( sampler0, uv );
+  vec4  c = ShiftColor(texture2D( sampler0, uv ));
   float d = texture2D( linearDepthSampler, uv).x;
   
   const float BlurSigma = float(KERNEL_RADIUS) * 0.5;
@@ -36,11 +42,12 @@ vec4 BlurFunction(vec2 uv, float r, vec4 center_c, float center_d, inout float w
   return c*w;
 }
 
+
 void main (void)
 {
 	vec2 texCoord = gl_TexCoord [0].st;
 	
-	vec4  center_c = texture2D( sampler0, texCoord );
+	vec4  center_c = ShiftColor(texture2D( sampler0, texCoord ));
 	float center_d = texture2D( linearDepthSampler, texCoord).x;
   
 	vec4  c_total = center_c;
@@ -60,5 +67,5 @@ void main (void)
 
 	vec4 out_Color = c_total/w_total;
 	
-	gl_FragData [0] =  out_Color;
+	gl_FragData [0] = out_Color;
 }

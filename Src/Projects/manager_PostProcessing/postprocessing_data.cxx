@@ -298,12 +298,21 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	//
 	AddPropertyView("Color Correction Setup", "", true);
+
+	AddPropertyView("Chromatic Aberration", "Color Correction Setup");
+	AddPropertyView("Chromatic Aberration Direction", "Color Correction Setup");
+
 	AddPropertyView("Contrast", "Color Correction Setup");
 	AddPropertyView("Brightness", "Color Correction Setup");
 	AddPropertyView("Saturation", "Color Correction Setup");
 
 	AddPropertyView("Gamma", "Color Correction Setup");
 	AddPropertyView("Inverse", "Color Correction Setup");
+
+	AddPropertyView("Bloom", "Color Correction Setup");
+	AddPropertyView("Bloom Min Bright", "Color Correction Setup");
+	AddPropertyView("Bloom Tone", "Color Correction Setup");
+	AddPropertyView("Bloom Stretch", "Color Correction Setup");
 
 	AddPropertyView("Hue", "Color Correction Setup");
 	AddPropertyView("Hue Saturation", "Color Correction Setup");
@@ -322,6 +331,7 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Select A Flare Light", "Lens Flare Setup.Flare Light");
 
 	AddPropertyView("Lens Flare Amount", "Lens Flare Setup");
+	AddPropertyView("Flare Depth Attenuation", "Lens Flare Setup");
 	AddPropertyView("Lens Flare X", "Lens Flare Setup");
 	AddPropertyView("Lens Flare Y", "Lens Flare Setup");
 
@@ -491,6 +501,9 @@ bool PostPersistentData::FBCreate()
 
 	FBPropertyPublish(this, ColorCorrection, "Color Correction", nullptr, nullptr);
 
+	FBPropertyPublish(this, ChromaticAberration, "Chromatic Aberration", nullptr, nullptr);
+	FBPropertyPublish(this, ChromaticAberrationDirection, "Chromatic Aberration Direction", nullptr, nullptr);
+
 	FBPropertyPublish(this, Contrast, "Contrast", nullptr, nullptr);
 	FBPropertyPublish(this, Brightness, "Brightness", nullptr, nullptr);
 	FBPropertyPublish(this, Saturation, "Saturation", nullptr, nullptr);
@@ -498,6 +511,11 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, Gamma, "Gamma", nullptr, nullptr);
 	FBPropertyPublish(this, Inverse, "Inverse", nullptr, nullptr);
 
+	FBPropertyPublish(this, Bloom, "Bloom", nullptr, nullptr);
+	FBPropertyPublish(this, BloomMinBright, "Bloom Min Bright", nullptr, nullptr);
+	FBPropertyPublish(this, BloomTone, "Bloom Tone", nullptr, nullptr);
+	FBPropertyPublish(this, BloomStretch, "Bloom Stretch", nullptr, nullptr);
+	
 	FBPropertyPublish(this, Hue, "Hue", nullptr, nullptr);
 	FBPropertyPublish(this, HueSaturation, "Hue Saturation", nullptr, nullptr);
 	FBPropertyPublish(this, Lightness, "Lightness", nullptr, nullptr);
@@ -516,6 +534,7 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, FlareLightSelect, "Select A Flare Light", nullptr, ActionFlareLightSelect);
 
 	FBPropertyPublish(this, FlareAmount, "Lens Flare Amount", nullptr, nullptr);
+	FBPropertyPublish(this, FlareDepthAttenuation, "Flare Depth Attenuation", nullptr, nullptr);
 	FBPropertyPublish(this, FlarePosX, "Lens Flare X", nullptr, nullptr);
 	FBPropertyPublish(this, FlarePosY, "Lens Flare Y", nullptr, nullptr);
 
@@ -640,6 +659,10 @@ bool PostPersistentData::FBCreate()
 
 	Gamma.SetMinMax(-200.0, 300.0, true, true);
 
+	BloomMinBright.SetMinMax(0.0, 100.0);
+	BloomTone.SetMinMax(0.0, 100.0);
+	BloomStretch.SetMinMax(0.0, 100.0);
+
 	Hue.SetMinMax(-100.0, 100.0, true, true);
 	HueSaturation.SetMinMax(-100.0, 100.0, true, true);
 	Lightness.SetMinMax(-100.0, 100.0, true, true);
@@ -662,7 +685,7 @@ bool PostPersistentData::FBCreate()
 	FlareOuter.SetMinMax(0.0, 100.0);
 
 	FlareLight.SetFilter(FBLight::GetInternalClassId());
-	FlareLight.SetSingleConnect(true);
+	FlareLight.SetSingleConnect(false);
 
 	//
 	FocusObject.SetSingleConnect(true);
@@ -709,13 +732,19 @@ void PostPersistentData::DefaultValues()
 	FishEyeLensRadius = 3.0;
 	FishEyeSignCurvature = 3.8;
 	FishEyeOrder = 0;
-
+	
 	ColorCorrection = false;
+	ChromaticAberration = false;
+	ChromaticAberrationDirection = FBVector2d(1.0, 1.0);
 	Contrast = 0.0;
 	Saturation = 0.0;
 	Brightness = 0.0;
 	Gamma = 100.0;
 	Inverse = false;
+	Bloom = false;
+	BloomMinBright = 50.0;
+	BloomTone = 100.0;
+	BloomStretch = 100.0;
 	Hue = 0.0;
 	HueSaturation = 0.0;
 	Lightness = 0.0;
@@ -747,6 +776,7 @@ void PostPersistentData::DefaultValues()
 	UseFlareLightObject = true;
 
 	FlareAmount = 100.0;
+	FlareDepthAttenuation = true;
 	FlarePosX = 50.0;
 	FlarePosY = 50.0;
 
@@ -1285,44 +1315,19 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 		break;
 	case ePostActionFlareCreate:
 	{
-		bool createALight = true;
+		FBLight *pNewLight = new FBLight("Lens Flare Light");
+		pNewLight->Show = true;
+		FlareLight.Add(pNewLight);
 
-		if (FlareLight.GetCount() > 0)
-		{
-			int userChooise = FBMessageBox("Post Processing", "Light is already assigned.\n What do you want to do with existing?", "Delete", "Disconnect", "Cancel");
-			if (1 == userChooise)
-			{
-				FBModel *pModel = (FBModel*)FlareLight.GetAt(0);
-				FlareLight.RemoveAll();
-				pModel->FBDelete();
-				pModel = nullptr;
-			}
-			else if (2 == userChooise)
-			{
-				FlareLight.RemoveAll();
-			}
-			else
-			{
-				createALight = false;
-			}
-		}
-
-		if (true == createALight)
-		{
-			FBLight *pNewLight = new FBLight("Lens Flare Light");
-			pNewLight->Show = true;
-			FlareLight.Add(pNewLight);
-
-			FBVector3d v;
-			ComputePointInFront(v);
-			pNewLight->SetVector(v);
-		}
+		FBVector3d v;
+		ComputePointInFront(v);
+		pNewLight->SetVector(v);
 	}
 		break;
 	case ePostActionFlareSelect:
-		if (FlareLight.GetCount() > 0)
+		for (int i=0; i<FlareLight.GetCount(); ++i)
 		{
-			FlareLight.GetAt(0)->Selected = true;
+			FlareLight.GetAt(i)->Selected = true;
 		}
 		break;
 	}
