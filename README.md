@@ -70,6 +70,7 @@ copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2
 
  Big thanks to Les Androids Associes! They gave me a permission to share my development to the public.
 
+
 ## Contact
   
   Sergei Solokhin (Neill3d)
