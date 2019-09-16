@@ -398,6 +398,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
   <ItemGroup>
     <ClCompile Include="..\..\MotionCodeLibrary\Assert2.cpp" />
     <ClCompile Include="..\..\MotionCodeLibrary\CheckGLError.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp" />
     <ClCompile Include="..\..\MotionCodeLibrary\fpTexture.cpp" />
     <ClCompile Include="..\..\MotionCodeLibrary\Framebuffer.cpp" />
     <ClCompile Include="..\..\MotionCodeLibrary\glslShader.cpp" />
@@ -443,6 +444,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
   <ItemGroup>
     <ClInclude Include="..\..\MotionCodeLibrary\Assert2.h" />
     <ClInclude Include="..\..\MotionCodeLibrary\CheckGLError.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h" />
     <ClInclude Include="..\..\MotionCodeLibrary\fpTexture.h" />
     <ClInclude Include="..\..\MotionCodeLibrary\Framebuffer.h" />
     <ClInclude Include="..\..\MotionCodeLibrary\glslShader.h" />

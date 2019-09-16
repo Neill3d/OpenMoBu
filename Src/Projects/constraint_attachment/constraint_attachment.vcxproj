@@ -127,7 +127,7 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\bin\$(Platform)\plugins_2017\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2017\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2014|x64'">..\..\..\bin\$(Platform)\plugins_2014\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2016|x64'">..\..\..\bin\$(Platform)\plugins_2016\</OutDir>

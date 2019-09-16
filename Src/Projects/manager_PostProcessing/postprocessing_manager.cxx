@@ -835,24 +835,7 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 
 			if (w <= 0 || h <= 0)
 				continue;
-			/*
-			// next line could change current fbo
-			switch (i)
-			{
-			case 0:
-				mEffectBuffers0.ReSize(w, h);
-				break;
-			case 1:
-				mEffectBuffers1.ReSize(w, h);
-				break;
-			case 2:
-				mEffectBuffers2.ReSize(w, h);
-				break;
-			case 3:
-				mEffectBuffers3.ReSize(w, h);
-				break;
-			}
-			*/
+			
 			//
 			if (kFBFrameSizeWindow == pCamera->FrameSizeMode)
 			{
@@ -907,8 +890,6 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 				}
 			}
 
-			//int x = pCamera->CameraViewportX;
-			//int y = pCamera->CameraViewportY;
 			int w = pCamera->CameraViewportWidth;
 			int h = pCamera->CameraViewportHeight;
 
@@ -1034,17 +1015,60 @@ void Manager_PostProcessing::OnVideoFrameRendering(HISender pSender, HKEvent pEv
 	}
 }
 
+const bool Manager_PostProcessing::CheckShadersPath(const char* path) const
+{
+	const char* test_shaders[] = {
+		SHADER_SIMPLE_VERTEX,
+		SHADER_SIMPLE_FRAGMENT
+	};
+
+	for (const char* shader_path : test_shaders)
+	{
+		FBString full_path(path, shader_path);
+
+		if (!IsFileExists(full_path))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool Manager_PostProcessing::LoadShaders()
 {
-
 	if (nullptr != mShaderSimple.get())
+	{
 		return true;
+	}
+	
+	FBString shaders_path(mSystem.ApplicationPath);
+	shaders_path = shaders_path + "\\plugins";
 
-	bool lSuccess = true;
-	FBString appPath;
+	bool status = true;
 
-	appPath = mSystem.ApplicationPath;
-	appPath = appPath + "\\plugins";
+	if (!CheckShadersPath(shaders_path))
+	{
+		status = false;
+
+		const FBStringList& plugin_paths = mSystem.GetPluginPath();
+
+		for (int i = 0; i < plugin_paths.GetCount(); ++i)
+		{
+			if (CheckShadersPath(plugin_paths[i]))
+			{
+				shaders_path = plugin_paths[i];
+				status = true;
+				break;
+			}
+		}
+	}
+
+	if (status == false)
+	{
+		FBTrace("[PostProcessing] Failed to find simple shaders!\n");
+		return false;
+	}
 
 	GLSLShader *pNewShader = nullptr;
 
@@ -1057,8 +1081,8 @@ bool Manager_PostProcessing::LoadShaders()
 			throw std::exception("failed to allocate memory for the simple shader");
 		}
 
-		FBString vertex_path(appPath, SHADER_SIMPLE_VERTEX);
-		FBString fragment_path(appPath, SHADER_SIMPLE_FRAGMENT);
+		FBString vertex_path(shaders_path, SHADER_SIMPLE_VERTEX);
+		FBString fragment_path(shaders_path, SHADER_SIMPLE_FRAGMENT);
 
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
@@ -1078,15 +1102,17 @@ bool Manager_PostProcessing::LoadShaders()
 	}
 	catch (const std::exception &e)
 	{
+		FBTrace("Post Processing Simple Shader: %s\n", e.what());
+
 		delete pNewShader;
 		pNewShader = nullptr;
 
-		lSuccess = false;
+		status = false;
 	}
 
 	mShaderSimple.reset(pNewShader);
 
-	return lSuccess;
+	return status;
 }
 
 void Manager_PostProcessing::FreeShaders()

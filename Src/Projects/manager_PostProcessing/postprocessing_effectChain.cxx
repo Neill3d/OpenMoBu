@@ -2123,24 +2123,78 @@ PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shade
 	return newEffect;
 }
 
+const bool PostEffectChain::CheckShadersPath(const char* path) const
+{
+	const char* test_shaders[] = {
+		SHADER_DEPTH_LINEARIZE_VERTEX,
+		SHADER_DEPTH_LINEARIZE_FRAGMENT,
+
+		SHADER_BLUR_VERTEX,
+		SHADER_BLUR_FRAGMENT,
+
+		SHADER_MIX_VERTEX,
+		SHADER_MIX_FRAGMENT,
+
+		SHADER_DOWNSCALE_VERTEX,
+		SHADER_DOWNSCALE_FRAGMENT	
+	};
+
+	for (const char* shader_path : test_shaders)
+	{
+		FBString full_path(path, shader_path);
+
+		if (!IsFileExists(full_path))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool PostEffectChain::LoadShaders()
 {
 	FreeShaders();
 
-	FBString appPath;
+	FBString shaders_path(mSystem.ApplicationPath);
+	shaders_path = shaders_path + "\\plugins";
 
-	appPath = mSystem.ApplicationPath;
-	appPath = appPath + "\\plugins";
+	bool status = true;
+
+	if (!CheckShadersPath(shaders_path))
+	{
+		status = false;
+		
+		const FBStringList& plugin_paths = mSystem.GetPluginPath();
+
+		for (int i = 0; i < plugin_paths.GetCount(); ++i)
+		{
+			if (CheckShadersPath(plugin_paths[i]))
+			{
+				shaders_path = plugin_paths[i];
+				status = true;
+				break;
+			}
+		}
+	}
+
+	if (status == false)
+	{
+		FBTrace("[PostProcessing] Failed to find shaders location!\n");
+		return false;
+	}
 	
-	mFishEye.reset(ShaderFactory(SHADER_TYPE_FISHEYE, appPath));
-	mColor.reset(ShaderFactory(SHADER_TYPE_COLOR, appPath));
-	mVignetting.reset(ShaderFactory(SHADER_TYPE_VIGNETTE, appPath));
-	mFilmGrain.reset(ShaderFactory(SHADER_TYPE_FILMGRAIN, appPath));
-	mLensFlare.reset(ShaderFactory(SHADER_TYPE_LENSFLARE, appPath));
-	mSSAO.reset(ShaderFactory(SHADER_TYPE_SSAO, appPath));
-	mDOF.reset(ShaderFactory(SHADER_TYPE_DOF, appPath));
-	mDisplacement.reset(ShaderFactory(SHADER_TYPE_DISPLACEMENT, appPath));
-	mMotionBlur.reset(ShaderFactory(SHADER_TYPE_MOTIONBLUR, appPath));
+	FBTrace("[PostProcessing] Shaders Location - %s\n", shaders_path);
+
+	mFishEye.reset(ShaderFactory(SHADER_TYPE_FISHEYE, shaders_path));
+	mColor.reset(ShaderFactory(SHADER_TYPE_COLOR, shaders_path));
+	mVignetting.reset(ShaderFactory(SHADER_TYPE_VIGNETTE, shaders_path));
+	mFilmGrain.reset(ShaderFactory(SHADER_TYPE_FILMGRAIN, shaders_path));
+	mLensFlare.reset(ShaderFactory(SHADER_TYPE_LENSFLARE, shaders_path));
+	mSSAO.reset(ShaderFactory(SHADER_TYPE_SSAO, shaders_path));
+	mDOF.reset(ShaderFactory(SHADER_TYPE_DOF, shaders_path));
+	mDisplacement.reset(ShaderFactory(SHADER_TYPE_DISPLACEMENT, shaders_path));
+	mMotionBlur.reset(ShaderFactory(SHADER_TYPE_MOTIONBLUR, shaders_path));
 
 	// load shared shaders (blur, mix)
 
@@ -2160,8 +2214,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a depth linearize shader");
 		}
 
-		FBString vertex_path(appPath, SHADER_DEPTH_LINEARIZE_VERTEX);
-		FBString fragment_path(appPath, SHADER_DEPTH_LINEARIZE_FRAGMENT);
+		FBString vertex_path(shaders_path, SHADER_DEPTH_LINEARIZE_VERTEX);
+		FBString fragment_path(shaders_path, SHADER_DEPTH_LINEARIZE_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -2190,8 +2244,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a blur shader");
 		}
 
-		vertex_path = FBString(appPath, SHADER_BLUR_VERTEX);
-		fragment_path = FBString(appPath, SHADER_BLUR_FRAGMENT);
+		vertex_path = FBString(shaders_path, SHADER_BLUR_VERTEX);
+		fragment_path = FBString(shaders_path, SHADER_BLUR_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -2225,8 +2279,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a mix shader");
 		}
 
-		vertex_path = FBString(appPath, SHADER_MIX_VERTEX);
-		fragment_path = FBString(appPath, SHADER_MIX_FRAGMENT);
+		vertex_path = FBString(shaders_path, SHADER_MIX_VERTEX);
+		fragment_path = FBString(shaders_path, SHADER_MIX_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -2257,8 +2311,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a downscale shader");
 		}
 
-		vertex_path = FBString(appPath, SHADER_DOWNSCALE_VERTEX);
-		fragment_path = FBString(appPath, SHADER_DOWNSCALE_FRAGMENT);
+		vertex_path = FBString(shaders_path, SHADER_DOWNSCALE_VERTEX);
+		fragment_path = FBString(shaders_path, SHADER_DOWNSCALE_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{

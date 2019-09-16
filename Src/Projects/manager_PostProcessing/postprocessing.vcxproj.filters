@@ -98,6 +98,9 @@
     <ClCompile Include="graphics_framebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="postprocessing_data.h">
@@ -176,6 +179,9 @@
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
     <ClInclude Include="graphics_framebuffer.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h">
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
   </ItemGroup>

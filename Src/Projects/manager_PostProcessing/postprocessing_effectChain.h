@@ -583,6 +583,8 @@ protected:
 	bool LoadShaders();
 	void FreeShaders();
 
+private:
+	const bool CheckShadersPath(const char* path) const;
 
 };
 
