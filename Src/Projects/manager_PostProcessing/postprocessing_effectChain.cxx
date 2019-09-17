@@ -1,7 +1,7 @@
 
 /**	\file	postprocessing_effect.cxx
 
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2019
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE

@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{87e36afa-b34c-4ad8-a25c-c33700c4e95a}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{3d5a5123-fc00-4e25-989d-7b1c8a089530}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="tinyosc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="device_facecap_layout.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="device_facecap_hardware.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="device_facecap_device.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="device_facecap.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="tinyosc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="device_facecap_layout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="device_facecap_hardware.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="device_facecap_device.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadME.txt" />
+  </ItemGroup>
+</Project>

@@ -17,6 +17,9 @@
 
 LOG
 
+17.09.2019
+ + fixed depth attenuation for multi lights lens flare
+
 09.04.2018
  + motion blur effect
 
