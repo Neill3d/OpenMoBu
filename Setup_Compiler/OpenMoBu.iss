@@ -2,10 +2,10 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenMoBu for Autodesk® MotionBuilder®"
-#define MyAppVersion "2019.0.1b"
+#define MyAppVersion "2019.1.0b"
 #define MyAppPublisher "Neill3d"
 #define MyAppURL "https://github.com/Neill3d/OpenMoBu"
-#define MyAppExeName "Setup_OpenMoBu_2019_0_1b"
+#define MyAppExeName "Setup_OpenMoBu_2019_1_0b"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile:"infoBefore_en.txt"; InfoAfterFile: "infoAfter_en.txt"

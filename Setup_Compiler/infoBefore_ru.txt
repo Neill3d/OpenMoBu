@@ -4,7 +4,7 @@
  Скрипты и подключаемые модули для Autodesk MotionBuilder.
 
 Поддерживаемые версии
-- 2014, 2015, 2016, 2017, 2018
+- 2014, 2015, 2016, 2017, 2018, 2019
 
 Plugins
 * relation box - poseReader
@@ -12,14 +12,17 @@ Plugins
 * relation box - spring
 * relation box - RBF Interpolation
 * device - project Tango
+* device - Connection with a FaceCap iPhone App
+* constraint - attachment
 * constraint - driven
-* manager - view camera locker (only 2017, 2018)
-* manager - auto interpolation patch (only 2017, 2018)
-* manager - post processing (only 2017, 2018)
-* manager - references (only 2017, 2018)
-* shader - super lighting
-* fbx extension references (only 2017, 2018)
+* manipulator - view camera locker (starting from 2017)
+* manager - auto interpolation patch (starting from 2017)
+* manager - post processing (starting from 2017)
+* manager - references (starting from 2017)
+* shader - super dynamic lighting
+* fbx extension references (starting from 2017)
 * solver - auto compute normals
+* misc - optical MoCap volume calculator
 
 Scripts\Neill3d
 - AssignUVSet
