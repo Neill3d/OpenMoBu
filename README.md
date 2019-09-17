@@ -1,3 +1,4 @@
+[![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019.1/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019.1)
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019)
 
 # OpenMoBu code repository!
