@@ -1,5 +1,7 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "box_spring", "box_Spring\boxSpring.vcxproj", "{ADFDDC4F-2C44-476D-AC7E-8ABAED9ABE5D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "box_poseReader", "box_poseReader\box_poseReader.vcxproj", "{B410F911-002C-426B-AE49-F6DA743626FC}"
@@ -1177,12 +1179,12 @@ Global
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2017|Win32.Build.0 = Release 2015|Win32
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2017|x64.ActiveCfg = Release 2017|x64
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2017|x64.Build.0 = Release 2017|x64
-		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|Mixed Platforms.ActiveCfg = Release 2015|x64
-		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|Mixed Platforms.Build.0 = Release 2015|x64
+		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|Mixed Platforms.ActiveCfg = Release 2018|x64
+		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|Mixed Platforms.Build.0 = Release 2018|x64
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|Win32.ActiveCfg = Release 2015|Win32
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|Win32.Build.0 = Release 2015|Win32
-		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|x64.ActiveCfg = Release 2017|x64
-		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|x64.Build.0 = Release 2017|x64
+		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|x64.ActiveCfg = Release 2018|x64
+		{72745073-0493-4CC8-8F13-889810F3A192}.Release 2018|x64.Build.0 = Release 2018|x64
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release|Mixed Platforms.ActiveCfg = Release 2016|x64
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release|Mixed Platforms.Build.0 = Release 2016|x64
 		{72745073-0493-4CC8-8F13-889810F3A192}.Release|Win32.ActiveCfg = Release 2015|x64
@@ -1797,5 +1799,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7A01441C-26C3-4E0A-866B-C7B87BEF5589}
 	EndGlobalSection
 EndGlobal

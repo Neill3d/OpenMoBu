@@ -115,9 +115,8 @@ bool CHandWeight1::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBEvalu
 	}
 
 	// Calculate result.
-	if (lW > 0.0)
-		lR	= 100.0 - abs(lW);
-	else lR  = 100.0;
+	lR = (lW > 0.0) ? 100.0 - fabs(lW) : 100.0;
+	
 	lR	*= lV[0]*0.01;
 	lR	*= 0.01;
 
@@ -206,7 +205,7 @@ bool CHandWeight2::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBEvalu
 	}
 
 	// Calculate result.
-	lR	= 100.0f - abs(lW);
+	lR	= 100.0f - fabs(lW);
 	lR	*= lV[1]*0.01;
 	lR	*= 0.01;
 
@@ -296,9 +295,8 @@ bool CHandWeight3::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBEvalu
 	}
 
 	// Calculate result.
-	if (lW < 0.0)
-		lR	= 100.0f - abs(lW);
-	else lR = 100.0;
+	lR = (lW < 0.0) ? 100.0f - fabs(lW) : 100.0;
+	
 	lR	*= lV[2]*0.01;
 	lR	*= 0.01;
 
