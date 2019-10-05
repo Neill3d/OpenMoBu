@@ -45,6 +45,25 @@ const char * FBPropertyBaseEnum<EFunctionType>::mStrings[] = {
 	"Inverse Multiquadratic",
 	0 };
 
+const int ReadCountFromConfig()
+{
+	FBConfigFile	lConfig("@OpenMoBu.txt");
+
+	char buffer[64] = { 0 };
+	sprintf_s(buffer, sizeof(char) * 64, "6");
+	const char *cbuffer = buffer;
+	bool lStatusAuto = lConfig.GetOrSet("Box RBF", "Number Of Connectors", cbuffer, "How many input targets box rbf will have");
+
+	int count = 6;
+
+	if (true == lStatusAuto)
+	{
+		count = atoi(cbuffer);
+	}
+
+	return count;
+}
+
 /************************************************
  *	Creation
  ************************************************/
@@ -64,29 +83,42 @@ bool BoxRBF3::FBCreate()
 	Sigma = 10.0;
 	RotationMultiply = 100.0;
 
+	m_NumberOfTargets = ReadCountFromConfig();
+
+	m_NumberOfTargets = std::max(m_NumberOfTargets, MIN_NUMBER_OF_TARGETS);
+	m_NumberOfTargets = std::min(m_NumberOfTargets, MAX_NUMBER_OF_TARGETS);
+
+	m_Pose = nullptr;
+	m_OutInterpolate = nullptr;
+	for (int i = 0; i < MAX_NUMBER_OF_TARGETS; ++i)
+	{
+		m_Targets[i] = nullptr;
+		m_OutScale[i] = nullptr;
+	}
+
 	// Input Node
 
 	const int dim = GetPlugDim();
 
-	mPose = AnimationNodeInCreate(0, "Pose", (dim == 3) ? ANIMATIONNODE_TYPE_VECTOR : ANIMATIONNODE_TYPE_VECTOR_4);
+	m_Pose = AnimationNodeInCreate(0, "Pose", (dim == 3) ? ANIMATIONNODE_TYPE_VECTOR : ANIMATIONNODE_TYPE_VECTOR_4);
 
 	char buffer[64];
 
-	for (int i = 0; i < NUMBER_OF_TARGETS; ++i)
+	for (int i = 0; i < m_NumberOfTargets; ++i)
 	{
 		sprintf_s(buffer, sizeof(char)* 64, "Target %i", i);
-		mTargets[i] = AnimationNodeInCreate(i+i, buffer, (dim==3) ? ANIMATIONNODE_TYPE_VECTOR : ANIMATIONNODE_TYPE_VECTOR_4);
+		m_Targets[i] = AnimationNodeInCreate(i+i, buffer, (dim==3) ? ANIMATIONNODE_TYPE_VECTOR : ANIMATIONNODE_TYPE_VECTOR_4);
 	}
 
 	// Output Nodes
 
-	for (int i = 0; i < NUMBER_OF_TARGETS; ++i)
+	for (int i = 0; i < m_NumberOfTargets; ++i)
 	{
 		sprintf_s(buffer, sizeof(char)* 64, "OutScale %i", i);
-		mOutScale[i] = AnimationNodeOutCreate(i+1, buffer, ANIMATIONNODE_TYPE_NUMBER);
+		m_OutScale[i] = AnimationNodeOutCreate(i+1, buffer, ANIMATIONNODE_TYPE_NUMBER);
 	}
 
-    mOutInterpolate = AnimationNodeOutCreate ( 0, "OutInterpolate", ANIMATIONNODE_TYPE_NUMBER );
+    m_OutInterpolate = AnimationNodeOutCreate ( 0, "OutInterpolate", ANIMATIONNODE_TYPE_NUMBER );
 
 	return true;
 }
@@ -106,7 +138,7 @@ void BoxRBF3::FBDestroy()
 bool BoxRBF3::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo)
 {
 	double	pose[4];	// Transferring vector
-	double targets[NUMBER_OF_TARGETS][4];
+	double targets[MAX_NUMBER_OF_TARGETS][4];
 	bool	lStatus;	// Status of input node
 
 	short ftype;
@@ -128,7 +160,7 @@ bool BoxRBF3::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInf
 
 	// Read the data from the input node
 
-	lStatus = mPose->ReadData( pose, pEvaluateInfo );
+	lStatus = m_Pose->ReadData( pose, pEvaluateInfo );
 
 	// compute connected targets
 	unsigned int count = 0;
@@ -153,13 +185,16 @@ bool BoxRBF3::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInf
 		}
 		
 		
-		for (int i = 0; i < NUMBER_OF_TARGETS; ++i)
+		for (int i = 0; i < MAX_NUMBER_OF_TARGETS; ++i)
 		{
-			lStatus = mTargets[i]->ReadData(targets[count], pEvaluateInfo);
-
-			if (lStatus)
+			if (m_Targets[i])
 			{
-				count += 1;
+				lStatus = m_Targets[i]->ReadData(targets[count], pEvaluateInfo);
+
+				if (lStatus)
+				{
+					count += 1;
+				}
 			}
 		}
 		
@@ -231,7 +266,7 @@ bool BoxRBF3::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInf
 				mtx(i, j) = val;
 			}
 
-			mOutScale[i]->WriteData(&rbf_scale, pEvaluateInfo);
+			m_OutScale[i]->WriteData(&rbf_scale, pEvaluateInfo);
 		}
 
 		// Solve linear system with colPivHouseholderQr()
@@ -247,7 +282,7 @@ bool BoxRBF3::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInf
 			sum += rbf;
 		}
 
-		mOutInterpolate->WriteData(&sum, pEvaluateInfo);
+		m_OutInterpolate->WriteData(&sum, pEvaluateInfo);
 		AnimationNodesOutDisableIfNotWritten(pEvaluateInfo);
 	    return true;
 	}

@@ -27,7 +27,8 @@
 #define	BOXRBF4__CLASSNAME		BoxRBF4
 #define BOXRBF4__CLASSSTR		"BoxRBF4"
 
-#define NUMBER_OF_TARGETS	6
+#define MIN_NUMBER_OF_TARGETS	6
+#define MAX_NUMBER_OF_TARGETS	36
 
 enum EFunctionType
 {
@@ -60,15 +61,17 @@ public:
 
 private:
 
-	FBAnimationNode*	mPose;
-	FBAnimationNode*	mTargets[NUMBER_OF_TARGETS];
+	FBAnimationNode*	m_Pose;
+	FBAnimationNode*	m_Targets[MAX_NUMBER_OF_TARGETS];
 
-	FBAnimationNode*	mOutScale[NUMBER_OF_TARGETS];
-	FBAnimationNode*	mOutInterpolate;
+	FBAnimationNode*	m_OutScale[MAX_NUMBER_OF_TARGETS];
+	FBAnimationNode*	m_OutInterpolate;
 
 	double RBF(const double &r, const double &height, const double &sigma, const short &ftype);
 
 protected:
+
+	int								m_NumberOfTargets;
 
 	std::vector<double>				norms_;
 	std::vector<Eigen::VectorXd>	vecs_;
