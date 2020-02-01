@@ -117,11 +117,9 @@ private:
 	PostEffectBuffers					mEffectBuffers2;
 	PostEffectBuffers					mEffectBuffers3;
 
-	//std::auto_ptr<WGLFont>				mFont;
-
-	//CFontManager						mFontManager;
-
+#if defined(HUD_FONT)
 	std::vector<CFont*>					mElemFonts;
+#endif
 	std::vector<FBHUDRectElement*>		mRectElements;
 	std::vector<FBHUDTextElement*>		mTextElements;
 
@@ -182,8 +180,9 @@ public:
 
 	void	DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh);
 	void	DrawHUDRect(FBHUDRectElement *pElem, int panex, int paney, int panew, int paneh, int vieww, int viewh);
+#if defined(HUD_FONT)
 	void	DrawHUDText(FBHUDTextElement *pElem, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh);
-
+#endif
 	void	FreeFonts();
 
 	void PrepVideoClipsTimeWrap();

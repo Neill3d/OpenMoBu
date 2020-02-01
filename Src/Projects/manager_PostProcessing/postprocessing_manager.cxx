@@ -1208,27 +1208,14 @@ bool Manager_PostProcessing::EmptyGLErrorStack()
 
 void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
-	/*
-	const int panex = GetPanePosX();
-	const int paney = GetPanePosY();
-	const int panew = GetPaneWidth();
-	const int paneh = GetPaneHeight();
-	*/
-	
-
 	FBScene *pScene = mSystem.Scene;
-	//FBRenderer *pRenderer = mSystem.Renderer;
-
-	//glPushAttrib(GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT | GL_TRANSFORM_BIT | GL_DEPTH_BUFFER_BIT);
+	
 	{
 
 		glViewport(panex, paney, panew, paneh);
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-
-		//const double lViewPortDim = 1.0;
-		//gluOrtho2D(-lViewPortDim, lViewPortDim, -lViewPortDim, lViewPortDim);
 
 		glOrtho(0.0, panew, 0.0, paneh, -1.0, 1.0);
 
@@ -1300,21 +1287,11 @@ void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh,
 			}
 		}
 
-		//static bool firstFontUse = true;
-
 		// prep text fonts
 		if (mTextElements.size() > 0)
 		{
-			/*
-			if (firstFontUse)
-			{
-				mFontManager.Init();
-				firstFontUse = false;
-			}
-			*/
-			//mFontManager.Resize(panew, paneh);
-
 			
+#if defined(HUD_FONT)
 			if (mElemFonts.size() != mTextElements.size())
 			{
 				FreeFonts();
@@ -1328,9 +1305,6 @@ void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh,
 					mElemFonts[ii] = pFont;
 				}
 			}
-			
-			
-			//mFontManager.TextClear();
 
 			auto textiter = begin(mTextElements);
 			auto fontiter = begin(mElemFonts);
@@ -1342,11 +1316,9 @@ void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh,
 					DrawHUDText(*textiter,  *fontiter, panex, paney, panew, paneh, vieww, viewh);
 				}
 			}
-
-			//mFontManager.Display();
+#endif
 		}
 	}
-	//glPopAttrib();
 }
 
 void Manager_PostProcessing::DrawHUDRect(FBHUDRectElement *pRect, int panex, int paney, int panew, int paneh, int vieww, int viewh)
@@ -1439,7 +1411,7 @@ void Manager_PostProcessing::DrawHUDRect(FBHUDRectElement *pRect, int panex, int
 
 	glDisable(GL_BLEND);
 }
-
+#if defined(HUD_FONT)
 void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
 //	if (nullptr == pFont)
@@ -1598,20 +1570,6 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 	else if (fontHei > 300.0)
 		fontHei = 300.0;
 
-	//int lfHeight = -MulDiv((int)fontHei, GetDeviceCaps(wglGetCurrentDC(), LOGPIXELSY), 72);
-	//int lfWidth = -MulDiv((int)fontWid, GetDeviceCaps(wglGetCurrentDC(), LOGPIXELSX), 72);
-
-	// TODO: i'm not tracking font name changes !!
-	/*
-	if ( (abs((float)lfHeight - pFont->GetHeight()) > 0.1f) 
-		|| (abs((float)lfWidth - pFont->GetWidth()) > 0.1f))
-	{
-		FBString font(pRect->Font);
-
-		pFont->FreeFont();
-		pFont->InitFont(wglGetCurrentDC(), font, lfHeight, lfWidth);
-	}
-	*/
 	glColor4dv(lBackground);
 
 	const bool lUseBlendForBackground = lBackground[3] <= (254.0 / 255);
@@ -1636,33 +1594,18 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 	// draw text
 	glColor4dv(lColor);
 	
-	//float rasterWidth = 0.0f;
-	//float rasterHeight = 0.0f;
-
-	//mFont->ComputeDimensions(buffer, strlen(buffer), rasterWidth, rasterHeight);
-
-	//float scalef = 1.0f * (float)wid / rasterWidth;
-
-	//pFont->PositionText(posx + 0.5 * fontWid, posy + 0.25 * hei);
-	//pFont->glDrawText(buffer, strlen(buffer));
-
 	pFont->Resize(panew, paneh);
 
 	pFont->TextClear();
 	pFont->TextAdd(posx, posy, 0.75f * (float)hei, wid, hei, buffer, static_cast<uint32_t>(strlen(buffer)));
 
 	pFont->Display();
-
-	//mFontManager.TextAdd(posx, posy + 0.95f * hei, 0.75f * (float)hei, buffer, strlen(buffer));
-
 }
+#endif
 
 void Manager_PostProcessing::FreeFonts()
 {
-
-	//mFontManager.Free();
-
-	
+#if defined(HUD_FONT)	
 	for (auto iter = begin(mElemFonts); iter != end(mElemFonts); ++iter)
 	{
 		CFont *pFont = *iter;
@@ -1674,7 +1617,7 @@ void Manager_PostProcessing::FreeFonts()
 	}
 
 	mElemFonts.clear();
-	
+#endif
 }
 
 void Manager_PostProcessing::PrepVideoClipsTimeWrap()

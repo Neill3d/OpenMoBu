@@ -51,6 +51,9 @@
     <ClCompile Include="..\..\MotionCodeLibrary\OGL_Utils.cpp">
       <Filter>MotionCodeLibrary</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SuperDynamicLighting_layout.h">
@@ -93,6 +96,9 @@
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
     <ClInclude Include="..\..\MotionCodeLibrary\OGL_Utils.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h">
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
   </ItemGroup>

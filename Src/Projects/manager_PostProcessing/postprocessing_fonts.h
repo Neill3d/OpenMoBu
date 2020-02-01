@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
-//#include <fontconfig/fontconfig.h>
+
+#if defined(HUD_FONT)
 
 #include "freetype-gl.h"
 #include "font-manager.h"
@@ -45,3 +46,5 @@ private:
 	font_manager_t * font_manager;
 	text_buffer_t *buffer;	// store pen position and characters
 };
+
+#endif

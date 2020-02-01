@@ -6,7 +6,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2019|x64'">
-    <LocalDebuggerCommand>C:\Program Files\Autodesk\MotionBuilder 2017\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand>C:\Program Files\Autodesk\MotionBuilder 2019\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>

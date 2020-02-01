@@ -10,7 +10,7 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 // Class declaration
 #include "SuperDynamicLighting_shader.h"
 #include "SuperShaderModelInfo.h"
-
+#include "FileUtils.h"
 #include <math.h>
 
 //--- Registration defines
@@ -120,23 +120,69 @@ void SuperDynamicLighting::FBDestroy()
 /************************************************
 *	Shader functions.
 ************************************************/
+bool CheckShadersPath(const char* path)
+{
+#define SHADER_SHADING_VERTEX		"/GLSL/scene_shading.vsh"
+#define SHADER_SHADING_FRAGMENT		"/GLSL/scene_shading.fsh"
+
+	constexpr const char* test_shaders[] = {
+		SHADER_SHADING_VERTEX,
+		SHADER_SHADING_FRAGMENT
+	};
+
+	for (const char* shader_path : test_shaders)
+	{
+		FBString full_path(path, shader_path);
+
+		if (!IsFileExists(full_path))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass)
 {
     if ( nullptr == mpLightShader )
     {
         // Setup the path to the shader ...
-        FBSystem lSystem;
-        FBString lPath;
-        lPath = lSystem.ApplicationPath ;
+        FBSystem system;
         
-        //	
-        // This is use when you build the Open Reality sample
-        //
-        lPath += "/plugins/GLSL/";
+		FBString shaders_path(system.ApplicationPath);
+		shaders_path = shaders_path + "\\plugins";
+
+		bool status = true;
+
+		if (!CheckShadersPath(shaders_path))
+		{
+			status = false;
+			
+			const FBStringList& plugin_paths = system.GetPluginPath();
+
+			for (int i = 0; i < plugin_paths.GetCount(); ++i)
+			{
+				if (CheckShadersPath(plugin_paths[i]))
+				{
+					shaders_path = plugin_paths[i];
+					status = true;
+					break;
+				}
+			}
+		}
+
+		if (status == false)
+		{
+			FBTrace("[SyperDynamicLighting] Failed to find shaders!\n");
+			return;
+		}
+
+		shaders_path += "/GLSL/";
 
         // Create the lighting shader
         mpLightShader = new Graphics::SuperShader();
-        if( !mpLightShader->Initialize(lPath) )
+        if( !mpLightShader->Initialize(shaders_path) )
         {
 			FBTrace("Failed to initialize a super lighting effect!\n");
 			delete mpLightShader;
@@ -239,9 +285,11 @@ void SuperDynamicLighting::ShaderPassInstanceEnd(FBRenderOptions* pRenderOptions
 
 void SuperDynamicLighting::ShaderPassMaterialBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo)
 {
-	if (true == mSkipRendering)
+	if (true == mSkipRendering || !mpLightShader)
+	{
 		return;
-
+	}
+	
     mpLightShader->SwitchMaterial(pRenderOptions, pInfo, pInfo->GetFBMaterial(), TransparencyFactor, mNeedUpdateTextures);
 }
 
@@ -251,9 +299,11 @@ void SuperDynamicLighting::ShaderPassMaterialEnd(FBRenderOptions* pRenderOptions
 
 void SuperDynamicLighting::ShaderPassModelDraw(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo)
 {
-	if (true == mSkipRendering)
+	if (true == mSkipRendering || !mpLightShader)
+	{
 		return;
-
+	}
+	
 	FBModel *pModel = pInfo->GetFBModel();
 
 	if (nullptr != pModel)

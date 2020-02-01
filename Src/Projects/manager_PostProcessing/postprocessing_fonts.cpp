@@ -4,15 +4,16 @@
 
 #include "postprocessing_fonts.h"
 #include "mat4.h"
+#if defined(HUD_FONT)
 #include "ft2build.h"
-
+#endif
 #include <math.h>
 #include <iostream>
 #include <sstream>
 
 //////////////////////
 //
-
+#if defined(HUD_FONT)
 #define SHADER_VERTEX	"\\GLSL\\text.vert"
 #define SHADER_FRAGMENT	"\\GLSL\\text.frag"
 
@@ -110,6 +111,7 @@ std::string GetSystemFontFile(const std::string &faceName) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+
 
 CFont::CFont()
 {
@@ -300,3 +302,5 @@ void CFont::Resize(int width, int height)
 {
 	mat4_set_orthographic(&projection, 0, width, 0, height, -1, 1);
 }
+
+#endif

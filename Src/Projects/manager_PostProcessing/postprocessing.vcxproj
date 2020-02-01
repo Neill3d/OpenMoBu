@@ -380,7 +380,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;freetype.lib;freetype-gl.lib;bzip2_static.lib;libpng_static.lib;zlibstatic.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;freetype.lib;bzip2_static.lib;libpng_static.lib;zlibstatic.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -439,7 +439,9 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="rg_etc1\rg_etc1.cpp" />
-    <ClCompile Include="shader.c" />
+    <ClCompile Include="shader.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug 2019|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\MotionCodeLibrary\Assert2.h" />
@@ -474,7 +476,9 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="rg_etc1\rg_etc1.h" />
-    <ClInclude Include="shader.h" />
+    <ClInclude Include="shader.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug 2019|x64'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
