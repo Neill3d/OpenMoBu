@@ -1,9 +1,9 @@
 
  References Manager
 
- Main functionality is wraped into python scripts
+ Main functionality is warped into python scripts
 
- Reference Manager also depends on shadingGraph cmd application to extract shaders graph xml from fbx files.
+ Reference Manager also depends on shadingGraph cmd application which extracts shaders graph xml from fbx files.
 
  Sergei <Neill3d> Solokhin 2018
 
