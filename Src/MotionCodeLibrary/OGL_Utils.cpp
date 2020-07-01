@@ -27,14 +27,8 @@ double log2( double n )
 
 void FitImageWithAspect(const int imgWidth, const int imgHeight, const int regionWidth, const int regionHeight, int &x, int &y, int &width, int &height)
 {
-	double imgRatio = 1.0 * imgWidth / imgHeight;
-	double regionRatio = 1.0 * regionWidth / regionHeight;
-
-	x = 0;
-	y = 0;
-	width = 1;
-	height = 1;
-
+	const double imgRatio = 1.0 * imgWidth / imgHeight;
+	const double regionRatio = 1.0 * regionWidth / regionHeight;
 
 	if (regionRatio > imgRatio)
 	{

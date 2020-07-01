@@ -177,6 +177,9 @@ bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
   fseek(file, 0, SEEK_SET);
 
   char  *buffer = new char[ headerLen + fileLen + 1 ];
+  if (!buffer)
+	  return false;
+
   const GLcharARB*  bufferARB = buffer;
 
   GLint   len = (GLint) fileLen;
@@ -210,10 +213,7 @@ bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
 
   loadlog ( shader );
 
-  if (buffer) {
-    delete[] buffer;
-    buffer = NULL;
-  }
+  delete[] buffer;
 
   return (compileStatus != 0);
 }

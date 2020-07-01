@@ -285,10 +285,12 @@ void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight,
 void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeight,
 	FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, vec3 *points)
 {
+	if (!pCamera)
+		return;
+
 	FBMatrix modelview, invmodelview;
 	FBVector3d camerapos;
 
-	pCamera->GetVector(camerapos);
 	if (FBIS(pCamera, FBCamera))
 	{
 		((FBCamera*)pCamera)->GetCameraMatrix(modelview, kFBModelView);
@@ -300,6 +302,8 @@ void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeigh
 		FBMatrixInverse(invmodelview, modelview);
 		FBMatrixTranspose(invmodelview, invmodelview);
 	}
+
+	pCamera->GetVector(camerapos);
 
 	mat4 mvInv4;
 	for (int i = 0; i<16; ++i)

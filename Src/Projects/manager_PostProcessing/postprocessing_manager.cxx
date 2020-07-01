@@ -394,41 +394,6 @@ void Manager_PostProcessing::OnPerFrameSynchronizationCallback(HISender pSender,
 void Manager_PostProcessing::OnPerFrameEvaluationPipelineCallback(HISender pSender, HKEvent pEvent)
 {
 	
-	//
-	// Add custom evaluation tasks here will improve the performance if with 
-	// parallel pipeline (default) because they occur in the background thread.
-	//
-
-	FBEventEvalGlobalCallback lFBEvent(pEvent);
-	switch (lFBEvent.GetTiming())
-	{
-	case kFBGlobalEvalCallbackBeforeDAG:
-		//
-		// We could add custom tasks here before MoBu perform standard evaluation tasks. 
-		//
-
-		break;
-	case kFBGlobalEvalCallbackAfterDAG:
-	{
-										  //
-										  // We could add custom tasks here after MoBu finish standard animation & deformation evaluation tasks. 
-										  //
-
-
-	} break;
-	case kFBGlobalEvalCallbackAfterDeform:
-	{
-											 //
-											 // We could add custom tasks here after MoBu finish standard deformation evaluation tasks 
-											 // (if not use GPU deformation). E.g, update the accelerated spatial scene structure for rendering. 
-											 //
-
-											 //mGPUScene->UpdateAfterDeform();
-
-	} break;
-	default:
-		break;
-	}
 }
 
 
@@ -997,21 +962,20 @@ void Manager_PostProcessing::OnVideoFrameRendering(HISender pSender, HKEvent pEv
 {
 	FBEventVideoFrameRendering levent(pEvent);
 
-	switch (levent.GetState())
+	if (levent.GetState() == FBEventVideoFrameRendering::eBeginRendering)
 	{
-	case FBEventVideoFrameRendering::eBeginRendering:
 		// turn off preview mode and switch quality settings if needed
 		mVideoRendering = true;
 		FreeBuffers();
 
 		// TODO: tweak post processing upper / lower clip
 		PushUpperLowerClipForEffects();
-		break;
-	case FBEventVideoFrameRendering::eEndRendering:
+	}
+	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
+	{
 		// turn on back preview mode and display quality settings
 		mVideoRendering = false;
 		PopUpperLowerClipForEffects();
-		break;
 	}
 }
 
@@ -1375,12 +1339,12 @@ void Manager_PostProcessing::DrawHUDRect(FBHUDRectElement *pRect, int panex, int
 
 	switch (vDock)
 	{
-	case kFBHUDBottom:
+	case FBHUDElementVAlignment::kFBHUDBottom:
 		break;
-	case kFBHUDTop:
+	case FBHUDElementVAlignment::kFBHUDTop:
 		posy += (paneh - hei);
 		break;
-	case kFBHUDCenter:
+	case FBHUDElementVAlignment::kFBHUDVCenter:
 		posy += 0.5 * (paneh - hei);
 		break;
 	}
@@ -1692,6 +1656,8 @@ void Manager_PostProcessing::PrepVideoClipsTimeWrap()
 					case kFBVideoFormat_RGBA_32:
 						glFormat = GL_RGBA;
 						break;
+					default:
+						glFormat = GL_RGB;
 					}
 
 					unsigned char *buffer = pVideoClip->GetImage((int)dvalue);

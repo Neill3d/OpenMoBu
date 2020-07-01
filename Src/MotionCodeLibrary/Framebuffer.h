@@ -219,8 +219,8 @@ protected:
 	int		mWidth;
 	int		mHeight;
 
-	GLuint		mFrameBuffer;
-	GLint		mSaveViewport[4];				// saved viewport setting during bind
+	GLuint		mFrameBuffer{ 0 };
+	GLint		mSaveViewport[4] { 0 };				// saved viewport setting during bind
 
 	// color attachments information
 	int		mNumberOfColorAttachments;

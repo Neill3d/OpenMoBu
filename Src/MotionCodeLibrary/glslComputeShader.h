@@ -161,7 +161,12 @@ protected:
 			fseek(fp, 0, SEEK_SET);
 
 			char  *buffer = new char[ fileLen + 1 ];
-		
+			if (!buffer)
+			{
+				fclose(fp);
+				return false;
+			}
+
 			GLint   len = (GLint) fileLen;
 
 			// read shader from file
@@ -176,6 +181,8 @@ protected:
 			{
 				//ERR("glsl shader file size" );
 				fclose(fp);
+				delete[] buffer;
+
 				return 0;
 			}
 
@@ -184,11 +191,7 @@ protected:
 				lSuccess = true;
 			}
 
-			if (buffer) {
-				delete[] buffer;
-				buffer = NULL;
-			}
-
+			delete[] buffer;
 			fclose(fp);
 		}
 

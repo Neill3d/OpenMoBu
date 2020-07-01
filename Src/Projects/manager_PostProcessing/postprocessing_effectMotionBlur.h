@@ -68,7 +68,7 @@ protected:
 	} mLoc;
 
 	FBMatrix			mLastModelViewProj;
-	float				mLastProj[16];
+	float				mLastProj[16] = { 0.0f };
 
 	FBTime				mLastTime;
 };

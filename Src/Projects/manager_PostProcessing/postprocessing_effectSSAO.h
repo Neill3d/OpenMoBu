@@ -72,7 +72,7 @@ protected:
 
 	GLuint	hbao_random;
 
-	float		mRandom[4];
+	float		mRandom[4]{ 0.0f };
 	
 
 	std::random_device					rd;
