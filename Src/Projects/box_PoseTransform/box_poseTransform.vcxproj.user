@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommand>C:\Program Files\Autodesk\MotionBuilder 2017\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand>C:\Program Files\Autodesk\MotionBuilder 2019\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2019|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">
     <LocalDebuggerCommand>C:\Program Files\Autodesk\MotionBuilder 2019\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">
-    <LocalDebuggerCommand>D:\Program Files\Autodesk\MotionBuilder 2022\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand>C:\Program Files\Autodesk\MotionBuilder 2019\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>

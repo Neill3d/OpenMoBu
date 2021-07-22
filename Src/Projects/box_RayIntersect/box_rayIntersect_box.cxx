@@ -396,7 +396,7 @@ bool RayIntersector::intersectModel(FBModel *pModel)
 		int count = mMesh->PolygonVertexCount(i);
 		if ((count < 3) || (count > MAX_POLY_VERTS)) continue; // skip innormal polys
 
-		double di=0.0, u, v;
+		double di=0.0;
 
 		for (int j=0; j<count; ++j)
 			polyverts[j] = mGeometry->VertexGet( mMesh->PolygonVertexIndex(i,j) );
@@ -488,9 +488,6 @@ double RayIntersector::calcIntersection( FBVector3d R0, FBVector3d R1, FBVector3
 
 bool RayIntersector::checkInside( FBVertex a, FBVertex b, FBVertex c, FBVector3d p )
 {
-	double u0, u1, u2;
-	double v0, v1, v2;
-
 	return false;
 }
 

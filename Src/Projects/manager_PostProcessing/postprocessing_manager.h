@@ -105,7 +105,7 @@ private:
 	//
 	MainFrameBuffer						mMainFrameBuffer;
 
-	std::auto_ptr<GLSLShader>			mShaderSimple;	// for simple blit quads on a screen
+	std::unique_ptr<GLSLShader>			mShaderSimple;	// for simple blit quads on a screen
 	
 	PostEffectChain						mEffectChain;
 	
@@ -174,6 +174,8 @@ private:
 
 public:
 	bool			mLastProcessCompositions;
+
+	void	PreRenderFirstEntry();
 
 	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
 	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);

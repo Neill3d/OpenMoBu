@@ -705,14 +705,14 @@ bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, c
 	}
 	else
 	{
-		/*
+		
 		// offline render
 		if (mAttachedFBO[mEnterId] > 0)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId]);
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 		}
-		*/
+		
 	}
 
 	return lStatus;
@@ -741,6 +741,167 @@ void Manager_PostProcessing::CheckForAContextChange()
 	}
 }
 
+void Manager_PostProcessing::PreRenderFirstEntry()
+{
+
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
+
+	//mPaneId = 0;
+	mFrameId++;
+
+	CheckForAContextChange();
+
+	// grab the whole viewer
+
+	mViewerViewport[0] = mViewerViewport[1] = 0;
+	mViewerViewport[2] = mViewerViewport[3] = 0;
+
+	mSchematicView[0] = mSchematicView[1] = mSchematicView[2] = mSchematicView[3] = false;
+
+	FBRenderer *pRenderer = mSystem.Renderer;
+	const int schematic = pRenderer->GetSchematicViewPaneIndex();
+
+	if (schematic >= 0)
+		mSchematicView[schematic] = true;
+
+	mLastPaneCount = pRenderer->GetPaneCount();
+
+	// DONE: this is strict post effect pane index, should we choose another one ?!
+
+	for (int i = 0; i < mLastPaneCount; ++i)
+	{
+		FBCamera *pCamera = pRenderer->GetCameraInPane(i);
+		if (nullptr == pCamera)
+			continue;
+
+		bool paneSharesCamera = false;
+		for (int j = 0; j < mLastPaneCount; ++j)
+		{
+			if (i != j)
+			{
+				FBCamera *pOtherCamera = pRenderer->GetCameraInPane(j);
+				if (pCamera == pOtherCamera)
+				{
+					paneSharesCamera = true;
+					break;
+				}
+			}
+		}
+
+		int x = pCamera->CameraViewportX;
+		int y = pCamera->CameraViewportY;
+		int w = pCamera->CameraViewportWidth;
+		int h = pCamera->CameraViewportHeight;
+
+		if (w <= 0 || h <= 0)
+			continue;
+
+		//
+		if (kFBFrameSizeWindow == pCamera->FrameSizeMode)
+		{
+			w += x;
+			h += y;
+		}
+		else
+		{
+			w += 2 * x;
+			h += 2 * y;
+		}
+
+		if (true == paneSharesCamera)
+		{
+			w *= 2;
+			h *= 2;
+		}
+
+		if (w > mViewerViewport[2])
+			mViewerViewport[2] = w;
+		if (h > mViewerViewport[3])
+			mViewerViewport[3] = h;
+	}
+
+	//
+	// resize, alloc shaders, etc.
+	LoadShaders();
+
+	PrepPaneSettings();
+
+	//
+	for (int i = 0; i < mLastPaneCount; ++i)
+	{
+		if (nullptr == mPaneSettings[i])
+			continue;
+
+		FBCamera *pCamera = pRenderer->GetCameraInPane(i);
+		if (nullptr == pCamera)
+			continue;
+
+		bool paneSharesCamera = false;
+		for (int j = 0; j < mLastPaneCount; ++j)
+		{
+			if (i != j)
+			{
+				FBCamera *pOtherCamera = pRenderer->GetCameraInPane(j);
+				if (pCamera == pOtherCamera)
+				{
+					paneSharesCamera = true;
+					break;
+				}
+			}
+		}
+
+		int w = pCamera->CameraViewportWidth;
+		int h = pCamera->CameraViewportHeight;
+
+		if (w <= 0 || h <= 0)
+			continue;
+
+		// next line could change current fbo
+
+		bool usePreview = mPaneSettings[i]->OutputPreview;
+		double scaleF = mPaneSettings[i]->OutputScaleFactor;
+
+		switch (i)
+		{
+		case 0:
+			mEffectBuffers0.ReSize(w, h, usePreview, scaleF);
+			break;
+		case 1:
+			mEffectBuffers1.ReSize(w, h, usePreview, scaleF);
+			break;
+		case 2:
+			mEffectBuffers2.ReSize(w, h, usePreview, scaleF);
+			break;
+		case 3:
+			mEffectBuffers3.ReSize(w, h, usePreview, scaleF);
+			break;
+		}
+	}
+
+	//
+
+	if (mAttachedFBO[mEnterId] > 0)
+		mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
+	else
+		mMainFrameBuffer.DetachFBO();
+	/*
+	CHECK_GL_ERROR();
+
+	if (mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
+	{
+		mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
+
+		mMainFrameBuffer.BeginRender();
+		glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+		glEnable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		mMainFrameBuffer.EndRender();
+
+		CHECK_GL_ERROR();
+	}
+	*/
+}
+
 void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent)
 {
 
@@ -749,161 +910,7 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 	// check for a context change here
 	if (mEnterId < 1 && lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender)
 	{
-		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
-
-		//mPaneId = 0;
-		mFrameId++;
-
-		CheckForAContextChange();
-
-		// grab the whole viewer
-
-		mViewerViewport[0] = mViewerViewport[1] = 0;
-		mViewerViewport[2] = mViewerViewport[3] = 0;
-
-		mSchematicView[0] = mSchematicView[1] = mSchematicView[2] = mSchematicView[3] = false;
-
-		FBRenderer *pRenderer = mSystem.Renderer;
-		const int schematic = pRenderer->GetSchematicViewPaneIndex();
-
-		if (schematic >= 0)
-			mSchematicView[schematic] = true;
-
-		mLastPaneCount = pRenderer->GetPaneCount();
-
-		// DONE: this is strict post effect pane index, should we choose another one ?!
-
-		for (int i = 0; i < mLastPaneCount; ++i)
-		{
-			FBCamera *pCamera = pRenderer->GetCameraInPane(i);
-			if (nullptr == pCamera)
-				continue;
-			
-			bool paneSharesCamera = false;
-			for (int j = 0; j < mLastPaneCount; ++j)
-			{
-				if (i != j)
-				{
-					FBCamera *pOtherCamera = pRenderer->GetCameraInPane(j);
-					if (pCamera == pOtherCamera)
-					{
-						paneSharesCamera = true;
-						break;
-					}
-				}
-			}
-
-			int x = pCamera->CameraViewportX;
-			int y = pCamera->CameraViewportY;
-			int w = pCamera->CameraViewportWidth;
-			int h = pCamera->CameraViewportHeight;
-
-			if (w <= 0 || h <= 0)
-				continue;
-			
-			//
-			if (kFBFrameSizeWindow == pCamera->FrameSizeMode)
-			{
-				w += x;
-				h += y;
-			}
-			else
-			{
-				w += 2 * x;
-				h += 2 * y;
-			}
-
-			if (true == paneSharesCamera)
-			{
-				w *= 2;
-				h *= 2;
-			}
-
-			if (w > mViewerViewport[2])
-				mViewerViewport[2] = w;
-			if (h > mViewerViewport[3])
-				mViewerViewport[3] = h;
-		}
-
-		//
-		// resize, alloc shaders, etc.
-		LoadShaders();
-
-		PrepPaneSettings();
-
-		//
-		for (int i = 0; i < mLastPaneCount; ++i)
-		{
-			if (nullptr == mPaneSettings[i])
-				continue;
-
-			FBCamera *pCamera = pRenderer->GetCameraInPane(i);
-			if (nullptr == pCamera)
-				continue;
-
-			bool paneSharesCamera = false;
-			for (int j = 0; j < mLastPaneCount; ++j)
-			{
-				if (i != j)
-				{
-					FBCamera *pOtherCamera = pRenderer->GetCameraInPane(j);
-					if (pCamera == pOtherCamera)
-					{
-						paneSharesCamera = true;
-						break;
-					}
-				}
-			}
-
-			int w = pCamera->CameraViewportWidth;
-			int h = pCamera->CameraViewportHeight;
-
-			if (w <= 0 || h <= 0)
-				continue;
-
-			// next line could change current fbo
-
-			bool usePreview = mPaneSettings[i]->OutputPreview;
-			double scaleF = mPaneSettings[i]->OutputScaleFactor;
-
-			switch (i)
-			{
-			case 0:
-				mEffectBuffers0.ReSize(w, h, usePreview, scaleF);
-				break;
-			case 1:
-				mEffectBuffers1.ReSize(w, h, usePreview, scaleF);
-				break;
-			case 2:
-				mEffectBuffers2.ReSize(w, h, usePreview, scaleF);
-				break;
-			case 3:
-				mEffectBuffers3.ReSize(w, h, usePreview, scaleF);
-				break;
-			}
-		}
-
-		//
-
-		if (mAttachedFBO[mEnterId] > 0)
-			mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
-		else
-			mMainFrameBuffer.DetachFBO();
-
-		CHECK_GL_ERROR();
-
-		if (mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
-		{
-			mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
-
-			mMainFrameBuffer.BeginRender();
-			glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
-			glEnable(GL_DEPTH_TEST);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			mMainFrameBuffer.EndRender();
-
-			CHECK_GL_ERROR();
-		}
+		PreRenderFirstEntry();
 	}
 
 	// nullptr != mPaneSettings[mPaneId] && false == mSchematicView[mPaneId]

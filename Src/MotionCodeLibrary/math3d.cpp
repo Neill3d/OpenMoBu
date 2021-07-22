@@ -437,7 +437,6 @@ FBMatrix	MatrixMult(const FBMatrix &M1, const FBMatrix &M2)
 FBMatrix		MatrixFastInverse(const FBMatrix &in)
 {
 	FBMatrix	M;
-	double     Determinant;
 	/*
 	//
 	// Calculate the determinant.
@@ -518,8 +517,11 @@ FBMatrix MatrixInvert(FBMatrix	&m)
 	return out;
 }
 
-FBVector3d MatrixToEuler( const FBMatrix &matrix)
+FBVector3d MatrixToEuler(const FBMatrix &matrix)
 {
+#if !defined(FLT_EPSILON)
+	constexpr float FLT_EPSILON{ 0.00001f };
+#endif
 	FBVector3d	angles;
 	double		theta;
 	double		cp;
@@ -1154,8 +1156,8 @@ bool MatrixExtract(const GLdouble model[16], const GLdouble proj[16],
 	     GLdouble * objx, GLdouble * objy, GLdouble * objz)
 {
 	/* matrice de transformation */
-   GLdouble m[16], A[16];
-   GLdouble in[4], out[4];
+   GLdouble A[16];
+   //GLdouble in[4], out[4];
 
 	//invert_matrix(model, A);
 
@@ -1255,7 +1257,7 @@ void linBuild(unsigned n, unsigned m, const double *x, const double *y,
 //
 void linSolve(unsigned m, double *&A, double *&B, double *&c)
 {
-	double p;
+	//double p;
 /*
 	for (int i=0; i<m; i++)
 		for (int k=i+1; k<=m; k++)

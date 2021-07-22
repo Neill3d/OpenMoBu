@@ -80,8 +80,6 @@ bool Connect(int sd, const char *address, unsigned int port)
 {
 	struct sockaddr_in server;
 
-
-
 	if (inet_addr(address) == -1)
 	{
 		struct hostent *he;
@@ -296,7 +294,7 @@ void MainClientLoop()
 	Network::CImageHeader imageHeader;
 
 //	double lastCameraInfoStamp = 0.0;
-	Network::CCameraInfo cameraInfoHeader;
+	//Network::CCameraInfo cameraInfoHeader;
 
 	double lastSyncStamp = 0.0;
 	Network::CSyncControl syncControl;

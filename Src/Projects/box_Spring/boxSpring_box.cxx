@@ -166,13 +166,6 @@ struct SpringSettings
 	{}
 };
 
-void checkDouble(const double value)
-{
-	int fpclass = _fpclass(value);
-
-	if (fpclass == _FPCLASS_NINF || fpclass == _FPCLASS_QNAN || fpclass == _FPCLASS_SNAN)
-		printf ("ERROR -INF\n");
-}
 
 bool CalculateSpring( const double dt, const FBVector3d &lV, const FBVector3d &mPos, const FBVector3d &mOldPos, const SpringSettings &settings, FBVector3d &mVel, FBVector3d &outPos )
 {
