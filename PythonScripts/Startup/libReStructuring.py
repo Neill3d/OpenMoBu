@@ -31,7 +31,7 @@ class CRestructuring():
     def __init__(self):
 
         self.lPosIdx = self.prepConstraint()
-        print self.lPosIdx
+        print(self.lPosIdx)
 
     @staticmethod
     def prepConstraint():
@@ -141,11 +141,11 @@ class CRestructuring():
                         self.constraints.append(lConstraint)
                         break
         
-        print self.constraints
+        print(self.constraints)
         
     def Fetch(self):
-        print "fetch"
-        print self.constraints
+        print("fetch")
+        print(self.constraints)
         if len(self.constraints) == 0:
             return
     

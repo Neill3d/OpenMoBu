@@ -185,7 +185,7 @@ class CAdditiveAnimation():
         animTake = self.mSystem.Scene.Takes[self.mAnimTakeIndex] 
         poseTake = self.mSystem.Scene.Takes[self.mBaseTakeIndex]
         
-        print "prepare output take"
+        print("prepare output take")
         
         outputTake = None
         
@@ -234,7 +234,7 @@ class CAdditiveAnimation():
         
         for lFrame in range(lStartFrame, lStopFrame+1):
     
-            print lFrame
+            print(lFrame)
     
             lTime.SetTime( 0,0,0, lFrame)
             self.EvalOneFrame(lTime)

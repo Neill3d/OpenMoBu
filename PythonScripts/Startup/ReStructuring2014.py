@@ -34,14 +34,17 @@ def SetupLibPath(libFilename):
 SetupLibPath(gScriptFileName)
 import libReStructuring
 
-reload(libReStructuring)
-
+if (sys.version_info > (3, 0)):
+    import importlib
+    importlib.reload(libReStructuring)
+else:
+    reload(libReStructuring)
 
 gRestructuring = libReStructuring.CRestructuring()
 
 gLabelStatus = FBLabel()
 
-gFileName = 'D:\Restructuring_temp.fbx'
+gFileName = 'D:/Restructuring_temp.fbx'
 
 #######################################################
 

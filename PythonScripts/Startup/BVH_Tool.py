@@ -253,7 +253,7 @@ class BVHReader(bvh.BVHReader):
                     FBQMult(qres, qy, qres)
                     FBQMult(qres, qz, qres)
                 else:
-                    print "unsupported mode"
+                    print("unsupported mode")
     
                 rotEuler = FBVector3d(0.0, 0.0, 0.0)
                 FBQuaternionToRotation(rotEuler, qres, FBRotationOrder.kFBXYZ)
@@ -285,7 +285,7 @@ class BVHReader(bvh.BVHReader):
         if j:
             j.Parent = parent
             node.RotationOrder = order
-            print order
+            print(order)
             #j.RotationOrder = order
             # set local node offset
             
@@ -387,7 +387,7 @@ def CreateTool():
         t = FBCreateUniqueTool("BVH Tool")
     except NameError:
         t = CreateUniqueTool("BVH Tool")
-        print "supporting MoBu 2010"
+        print("supporting MoBu 2010")
         
     if t:
         t.StartSizeX = 200

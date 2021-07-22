@@ -43,7 +43,7 @@ def InitLOG(filepath):
         filepath = gSystem.ApplicationPath 
         
     gLogFullFilename = filepath + gLogFilename
-    print gLogFullFilename
+    print(gLogFullFilename)
 
 def StartLOG():
     global gLogFullFilename
@@ -139,7 +139,7 @@ def MakeAScreenshot(filename):
     InfoLOG( "\t ... finished" )
 
 def MakeAVideo(filename, antialiasing, numberOfFrames):
-    print "make video"
+    print("make video")
     
     InfoLOG( "Make a video test" )
     
@@ -239,7 +239,7 @@ def MakeABenchmark(filename, numberOfFrames):
     gProfiler.ActiveSampling = False
     
     lSamplesCount = gProfiler.GetEventSampleCount()
-    print "Number of samples collected: %d\n" % lSamplesCount
+    print("Number of samples collected: %d\n" % lSamplesCount)
 
     lMainTaskCycle = FBGetMainThreadTaskCycle()
     lRenderTaskCycle = FBGetRenderingTaskCycle()
@@ -263,7 +263,7 @@ def MakeABenchmark(filename, numberOfFrames):
         
         f.close()
     
-        print "File successfully saved to %s" % filename
+        print("File successfully saved to %s" % filename)
         
     InfoLOG( "\t ... finished" )
     return 1

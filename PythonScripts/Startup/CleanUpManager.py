@@ -32,7 +32,11 @@ from pyfbsdk_additions import *
 from os.path import dirname, basename, splitext, exists, split
 import shutil
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO ## for Python 2
+except ImportError:
+    from io import StringIO ## for Python 3
+
 import sys
 import math
 
@@ -113,11 +117,11 @@ def CompareTextures(texture1, texture2):
     path2 = TextureGetVideoPath(texture2)
     
     if path1 == None: 
-        print "FAILED to find path for texture1"
+        print("FAILED to find path for texture1")
         return False
         
     if path2 == None: 
-        print "FAILED to find path for texture2"
+        print("FAILED to find path for texture2")
         return False
     
     if path1 != path2: return False
@@ -212,7 +216,7 @@ def ReplaceMaterial( srcmat, dstmat ):
             
             for mat in temp:
                 if mat.Name == srcmat.Name:
-                    print "REPLACE " + srcmat.Name + " with " + dstmat.Name 
+                    print("REPLACE " + srcmat.Name + " with " + dstmat.Name)
                     dst.Materials.append(dstmat)                   
                     result = True
                 else:
@@ -405,7 +409,7 @@ def DoCleanUp():
                 
                 textureFlags[i] = True
             else:
-                print "MORE THEN ONE LAYER"
+                print("MORE THEN ONE LAYER")
     
     #CleanUpTexturesUnUsed = True  
     #print textureFlags  
@@ -615,7 +619,7 @@ def ButtonDoItCallback(control, event):
     DoCleanUp()
 
 def ButtonDblClickEvent(control, event):
-    print "DblClick"
+    print("DblClick")
 
 def PopulateVBox(names, justify, box):
     global popupControls

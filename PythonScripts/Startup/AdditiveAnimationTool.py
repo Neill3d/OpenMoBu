@@ -51,14 +51,17 @@ def SetupLibPath(libFilename):
 
 # lib should be one of python startup folders
 SetupLibPath(gScriptFileName)
+
 import libAdditiveAnimation
 
-reload(libAdditiveAnimation)
-
+if (sys.version_info > (3, 0)):
+    import importlib
+    importlib.reload(libAdditiveAnimation)
+else:
+    reload(libAdditiveAnimation)
 
 gAdditiveAnimation = libAdditiveAnimation.CAdditiveAnimation()
 
-    
 ###################################################################
 ## TOOL
 
@@ -157,7 +160,7 @@ def PopulateLayout(mainLyt):
 gDEVELOPMENT = False
     
 def CreateTool():    
-    print "create tool"
+    print("create tool")
     global t
     
     # Tool creation will serve as the hub for all other controls

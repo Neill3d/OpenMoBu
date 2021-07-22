@@ -64,13 +64,13 @@ def UpdateDataList():
     
     for obj in lSystem.Scene.UserObjects:
         if obj.ClassName() == DATA_CLASSNAME:
-            print obj.Name
+            print(obj.Name)
             lListObjects.Items.append(obj.LongName)
     
     if itemIndex < len(lListObjects.Items):
         lListObjects.ItemIndex = itemIndex
 
-    print len(lListObjects.Items)
+    print(len(lListObjects.Items))
 
 def UpdateCurrentData():
     global lSettings
@@ -78,11 +78,11 @@ def UpdateCurrentData():
     lSettings = None
     if lListObjects.ItemIndex >= 0:
         name = lListObjects.Items[lListObjects.ItemIndex]
-        print name
+        print(name)
         for obj in lSystem.Scene.UserObjects:
             if obj.ClassName() == DATA_CLASSNAME and name == obj.LongName:
                 lSettings = obj
-                print name
+                print(name)
     return lSettings
 
 def CreateANewData():
@@ -288,7 +288,7 @@ def OnUIIdleCheckNewNode(control, event):
 
         prop = gNewNode.PropertyList.Find('UniqueClassId')
         if prop is not None and DATA_CLASSID == prop.Data:
-            print 'we have found our node'
+            print('we have found our node')
             # user has been added a new post processing
             UpdateDataList()
             # make new item current
@@ -317,7 +317,7 @@ def OnSceneChange(control, event):
                 
                 prop = event.ChildComponent.PropertyList.Find('UniqueClassId')
                 if prop is not None and DATA_CLASSID == prop.Data:
-                    print 'deleted by a user'
+                    print('deleted by a user')
                     # user has been deleted a new post processing
                     CloseCurrentDataUI()
                     
@@ -369,7 +369,7 @@ def UnBind():
     lSystem.Scene.OnChange.Remove(OnSceneChange)
     
 def OnUnbind(control, event):
-    print "***** ", control, " has been Unbound *****"
+    print("***** ", control, " has been Unbound *****")
     UnBind()
     
 def OnButtonAddClick(control, event):
@@ -591,7 +591,7 @@ def PopulateTool(mainLyt):
     main.AddRelative(hstripes,1.0)
 
 def EventShowTool(control, event):
-    print "shown"
+    print("shown")
     if True == event.Shown:
         Bind()
     else:
