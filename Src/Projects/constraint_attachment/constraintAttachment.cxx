@@ -166,17 +166,17 @@ bool PrepareTriangleList(std::vector<DistancePointTriangleExact::Triangle> &tria
 	//dgMatrix   localMatrix = dgGetIdentityMatrix();
 	
 	//float localMatrix[16];
-	FBMatrix matrix(modelMatrix);
+	//FBMatrix matrix(modelMatrix);
 	//matrix.Identity();
 	//FBMatrixTodMatrix(matrix, localMatrix);
 	
-	int vertexCount = geometry->GetVertexCount();
+	//int vertexCount = geometry->GetVertexCount();
 	//int stride = sizeof(float) * 4;
 	const FBVertex *vertices = (FBVertex*) geometry->GetVertexArray( kFBGeometryArrayID_Point );
 	
-	unsigned int dublicateCount=0;
-	const int *dublicateMap = geometry->GetVertexArrayDuplicationMap( dublicateCount );
-	int originVertexCount = vertexCount - dublicateCount;
+	//unsigned int dublicateCount=0;
+	//const int *dublicateMap = geometry->GetVertexArrayDuplicationMap( dublicateCount );
+	//int originVertexCount = vertexCount - dublicateCount;
 
 	//
 	// iterate the entire geometry an build the collision
@@ -188,6 +188,9 @@ bool PrepareTriangleList(std::vector<DistancePointTriangleExact::Triangle> &tria
 
 	for (int i=0; i<subpatches; ++i)
 	{
+		// continue if the patch size is not divisible by three
+		if (geometry->GetSubPatchIndexSize(i) % 3)
+			continue;
 		totalTris += geometry->GetSubPatchIndexSize(i) / 3;
 	}
 
@@ -201,35 +204,38 @@ bool PrepareTriangleList(std::vector<DistancePointTriangleExact::Triangle> &tria
 		const int offset = geometry->GetSubPatchIndexOffset(i);
 		const int size = geometry->GetSubPatchIndexSize(i);
 
+		// continue if the patch size is not divisible by three
+		if (geometry->GetSubPatchIndexSize(i) % 3)
+			continue;
+
 		for (int j=0; j<size; j+=3)
 		{
 			FBVertexMatrixMult( vertex, modelMatrix, vertices[ indices[offset + j] ] );
 			iter->v[0] = vec3(vertex);
 			iter->index[0] = indices[offset + j];
 
-			if (iter->index[0] >= originVertexCount)
-			{
-				iter->index[0] = dublicateMap[iter->index[0]-originVertexCount];
-			}
+			//if (iter->index[0] >= originVertexCount)
+			//{
+			//	iter->index[0] = dublicateMap[iter->index[0]-originVertexCount];
+			//}
 
 			FBVertexMatrixMult( vertex, modelMatrix, vertices[ indices[offset + j + 1] ] );
 			iter->v[1] = vec3(vertex);
 			iter->index[1] = indices[offset + j + 1];
 			
-			if (iter->index[1] >= originVertexCount)
-			{
-				iter->index[1] = dublicateMap[iter->index[1]-originVertexCount];
-			}
-
+			//if (iter->index[1] >= originVertexCount)
+			//{
+			//	iter->index[1] = dublicateMap[iter->index[1]-originVertexCount];
+			//}
 
 			FBVertexMatrixMult( vertex, modelMatrix, vertices[ indices[offset + j + 2] ] );
 			iter->v[2] = vec3(vertex);
 			iter->index[2] = indices[offset + j + 2];
 			
-			if (iter->index[2] >= originVertexCount)
-			{
-				iter->index[2] = dublicateMap[iter->index[2]-originVertexCount];
-			}
+			//if (iter->index[2] >= originVertexCount)
+			//{
+			//	iter->index[2] = dublicateMap[iter->index[2]-originVertexCount];
+			//}
 
 			iter++;
 		}
