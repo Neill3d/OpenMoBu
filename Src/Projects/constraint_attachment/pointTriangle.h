@@ -230,9 +230,9 @@ DistancePointTriangleExact::Result DistancePointTriangleExact::operator()(
     }
 
     Result result;
-    result.parameter[0] = one - t0 - t1;
-    result.parameter[1] = t0;
-    result.parameter[2] = t1;
+    result.parameter[0] = t0;
+    result.parameter[1] = t1;
+    result.parameter[2] = zero;
     result.closest = triangle.v[0] + t0 * edge0 + t1 * edge1;
     diff = point - result.closest;
 	
