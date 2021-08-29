@@ -1,6 +1,5 @@
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019.1/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019.1)
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019)
-[![Gitter](https://badges.gitter.im/Neill3d/community.svg)](https://gitter.im/Neill3d/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 # OpenMoBu code repository!
 
