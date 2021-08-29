@@ -35,6 +35,11 @@ int						SuperDynamicLighting::mpLightShaderRefCount = 0;
 bool SuperDynamicLighting::FBCreate()
 {
     mpLightShaderRefCount++;
+	if (!mpLightShader)
+	{
+		mpLightShader = new Graphics::SuperShader();
+	}
+	mpLightShader->RegisterShaderObject(this);
 
 	FBPropertyPublish(this, ReloadShaders, "Reload Shaders", nullptr, SetReloadShaders);
 
@@ -50,6 +55,33 @@ bool SuperDynamicLighting::FBCreate()
 	FBPropertyPublish(this, TransparencyFactor, "TransparencyFactor", nullptr, nullptr);
     TransparencyFactor.SetMinMax(0.0, 1.0);
     TransparencyFactor = 1.0;
+
+	FBPropertyPublish(this, Shadows, "Shadows", nullptr, nullptr);
+	Shadows = true;
+
+	FBPropertyPublish(this, ShadowMapSize, "ShadowMapSize", nullptr, nullptr);
+	ShadowMapSize.SetMinMax(128, 8192, true, false);
+	ShadowMapSize = 2048;
+
+	FBPropertyPublish(this, ShadowPCFKernelSize, "ShadowPCFKernelSize", nullptr, nullptr);
+	ShadowPCFKernelSize.SetMinMax(1, 9, true, true);
+	ShadowPCFKernelSize = 9;
+
+	FBPropertyPublish(this, ShadowCasters, "ShadowCasters", nullptr, nullptr);
+	ShadowCasters.SetFilter(FBModel::GetInternalClassId());
+	ShadowCasters.SetSingleConnect(false);
+
+	FBPropertyPublish(this, ShadowStrength, "ShadowStrength", nullptr, nullptr);
+	ShadowStrength.SetMinMax(0.0, 1.0f, true, true);
+	ShadowStrength = 1.0f;
+
+	FBPropertyPublish(this, OffsetScale, "OffsetScale", nullptr, nullptr);
+	OffsetScale.SetMinMax(-10.0, 10.0);
+	OffsetScale = 5.0;
+
+	FBPropertyPublish(this, OffsetBias, "OffsetBias", nullptr, nullptr);
+	OffsetBias.SetMinMax(-100000.0, 100000.0);
+	OffsetBias = 0.0;
 
 	//
 	FBPropertyPublish(this, SwitchAlbedoTosRGB, "Switch Albedo To sRGB", nullptr, nullptr);
@@ -79,8 +111,7 @@ bool SuperDynamicLighting::FBCreate()
 	MatCapTexture.SetSingleConnect(true);
 	MatCapTexture.SetFilter(FBTexture::GetInternalClassId());
 
-    //Set up shader capacity.  It seems cg2.0 has problem regarding INSTNCEID currently.
-    //SetShaderCapacity(FBShaderCapacity(kFBShaderCapacityMaterialEffect | kFBShaderCapacityDrawInstanced), true);
+	//
     SetShaderCapacity(FBShaderCapacity(kFBShaderCapacityMaterialEffect), true);
 
     //Hook up the callback 
@@ -90,6 +121,7 @@ bool SuperDynamicLighting::FBCreate()
 
 	UseSceneLights = false;
 	mNeedUpdateLightsList = true;
+	m_NeedUpdateCastersList = true;
 	mNeedUpdateTextures = true;
 	mSkipRendering = false;
 
@@ -103,6 +135,10 @@ bool SuperDynamicLighting::FBCreate()
 void SuperDynamicLighting::FBDestroy()
 {
     // Delete lighting shader
+	if (mpLightShader)
+	{
+		mpLightShader->UnRegisterShaderObject(this);
+	}
     mpLightShaderRefCount--;
 
     if (mpLightShaderRefCount == 0)
@@ -145,7 +181,7 @@ bool CheckShadersPath(const char* path)
 
 void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass)
 {
-    if ( nullptr == mpLightShader )
+    if (!mpLightShader || !mpLightShader->IsInitialized())
     {
         // Setup the path to the shader ...
         FBSystem system;
@@ -181,12 +217,15 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 		shaders_path += "/GLSL/";
 
         // Create the lighting shader
-        mpLightShader = new Graphics::SuperShader();
+		if (!mpLightShader)
+		{
+			mpLightShader = new Graphics::SuperShader();
+		}
+        
         if( !mpLightShader->Initialize(shaders_path) )
         {
 			FBTrace("Failed to initialize a super lighting effect!\n");
-			delete mpLightShader;
-			mpLightShader = nullptr;
+			
 			mSkipRendering = true;
 			Enable = false;
             return;
@@ -202,15 +241,16 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 	{
 		mSkipRendering = true;
 	}
-	else
-	if (true == pRenderOptions->IsIDBufferRendering() || nullptr == mpLightShader)
+	else if (true == pRenderOptions->IsIDBufferRendering() || nullptr == mpLightShader)
+	{
 		mSkipRendering = true;
+	}
 	else
 	{
 		mSkipRendering = false;
 	}
 
-	mSkipRendering = false;
+	//mSkipRendering = false;
 
 	if (ForceUpdateTextures)
 		mNeedUpdateTextures = true;
@@ -483,6 +523,7 @@ void SuperDynamicLighting::DetachDisplayContext(FBRenderOptions* pOptions, FBSha
 	if (mShaderLights.get())
 		mShaderLights.reset(nullptr);
 	mNeedUpdateLightsList = true;
+	m_NeedUpdateCastersList = true;
 	mNeedUpdateTextures = true;
 }
 
@@ -512,6 +553,19 @@ bool SuperDynamicLighting::PlugNotify(FBConnectionAction pAction, FBPlug* pThis,
 		{
 			DisconnectSrc(pPlug);
 			AskToUpdateLightList();
+		}
+	}
+	else if (pThis == &ShadowCasters)
+	{
+		if (pAction == kFBConnectedSrc)
+		{
+			ConnectSrc(pPlug);
+			m_NeedUpdateCastersList = true;
+		}
+		if (pAction == kFBDisconnectedSrc)
+		{
+			DisconnectSrc(pPlug);
+			m_NeedUpdateCastersList = true;
 		}
 	}
 	else if (pThis == &MatCapTexture)
@@ -545,6 +599,24 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 		&& AffectingLights.GetCount() > 0)
 	{
 		mNeedUpdateLightsList = true;
+	}
+
+	if (m_NeedUpdateCastersList)
+	{
+		if (ShadowCasters.GetCount() > 0)
+		{
+			m_Casters.resize(ShadowCasters.GetCount());
+			for (int i = 0, count = ShadowCasters.GetCount(); i < count; ++i)
+			{
+				m_Casters[i] = static_cast<FBLight*>(ShadowCasters.GetAt(i));
+			}
+		}
+		else
+		{
+			m_Casters.clear();
+		}
+
+		m_NeedUpdateCastersList = false;
 	}
 
 	if (mNeedUpdateLightsList && false == UseSceneLights)

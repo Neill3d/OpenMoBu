@@ -3,7 +3,7 @@
 
 // SuperShader_glsl.h
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2020
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE

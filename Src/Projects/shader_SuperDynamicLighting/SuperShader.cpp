@@ -1,7 +1,7 @@
 
 // SuperShader.cpp
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2021
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -10,6 +10,8 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "SuperShader.h"
 #include "SuperShader_glsl.h"
 #include "CheckGLError.h"
+
+#include "SuperDynamicLighting_shader.h"
 
 #define SHADER_BUFFERID_VERTEX		"scene_bufferid.vsh"
 #define SHADER_BUFFERID_FRAGMENT	"scene_bufferid.fsh"
@@ -35,15 +37,22 @@ namespace Graphics {
 
 	void SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
 	{
-		FBCamera *pCamera = pRenderOptions->GetRenderingCamera();
+		FBCamera *camera = pRenderOptions->GetRenderingCamera();
 
-		FBVector3d	eyePos;
+		if (FBIS(camera, FBCameraSwitcher))
+			camera = ((FBCameraSwitcher*)camera)->CurrentCamera;
+
+		FBVector3d	eyePos(0.0, 0.0, 0.0);
 		FBMatrix lCameraMVMatrix, lCameraVPMatrix, lWorldMatrix;
-		if (nullptr != pCamera)
+
+		lCameraMVMatrix.Identity();
+		lCameraVPMatrix.Identity();
+
+		if (camera != nullptr)
 		{
-			pCamera->GetVector(eyePos);
-			pCamera->GetCameraMatrix(lCameraMVMatrix, kFBModelView);
-			pCamera->GetCameraMatrix(lCameraVPMatrix, kFBProjection);
+			camera->GetVector(eyePos);
+			camera->GetCameraMatrix(lCameraMVMatrix, kFBModelView);
+			camera->GetCameraMatrix(lCameraVPMatrix, kFBProjection);
 		}
 		lWorldMatrix.Identity();
 
@@ -444,13 +453,14 @@ namespace Graphics {
 	//
 
 	SuperShader::SuperShader()
+		: m_ShadowFrameBuffer(1, 1, 0, 0)
 	{
 		mAlpha = 1.0;
 		mLastBinded = nullptr;
 		mLastMaterial = nullptr;
 		mLastModel = nullptr;
 		mLastLightsBinded = nullptr;
-		mGPUSceneLights.reset(new CGPUShaderLights());
+		m_GPUSceneLights.reset(new CGPUShaderLights());
 	}
 
 	SuperShader::~SuperShader()
@@ -581,8 +591,22 @@ namespace Graphics {
 				lSuccess = false;
 			}
 		}
-
+		m_Initialized = true;
 		return lSuccess;
+	}
+
+	void SuperShader::RegisterShaderObject(FBShader* shader)
+	{
+		m_ShaderInstances.push_back(shader);
+	}
+
+	void SuperShader::UnRegisterShaderObject(FBShader* shader)
+	{
+		auto iter = std::find(begin(m_ShaderInstances), end(m_ShaderInstances), shader);
+		if (iter != end(m_ShaderInstances))
+		{
+			m_ShaderInstances.erase(iter);
+		}
 	}
 
 	bool SuperShader::BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList)
@@ -594,10 +618,7 @@ namespace Graphics {
 		{
 			// skip rendering during reflection pass
 
-			if (false == CCameraInfoCachePrep(pRenderOptions->GetRenderingCamera(), mCameraCache) )
-			{
-			//	return false;
-			}
+			CCameraInfoCachePrep(pRenderOptions->GetRenderingCamera(), mCameraCache);
 
 			if (nullptr != mShaderShading.get())
 			{
@@ -614,7 +635,7 @@ namespace Graphics {
 				PrepFBSceneLights();
 				
 				// TODO: bind a default scene light list
-				PrepLightsInViewSpace(mGPUSceneLights.get());
+				PrepLightsInViewSpace(m_GPUSceneLights.get());
 
 				MapLightsOnGPU();
 
@@ -924,15 +945,17 @@ namespace Graphics {
 
 
 
-	bool SuperShader::CCameraInfoCachePrep(FBCamera *pCamera, CCameraInfoCache &cache)
+	bool SuperShader::CCameraInfoCachePrep(FBCamera *cameraModel, CCameraInfoCache &cache)
 	{
-		if (nullptr == pCamera)
+		FBCamera* camera = FBIS(cameraModel, FBCameraSwitcher) ? ((FBCameraSwitcher*)cameraModel)->CurrentCamera : cameraModel;
+
+		if (camera == nullptr)
 			return false;
 
 		FBMatrix mv, p, mvInv;
 
-		pCamera->GetCameraMatrix(mv, kFBModelView);
-		pCamera->GetCameraMatrix(p, kFBProjection);
+		camera->GetCameraMatrix(mv, kFBModelView);
+		camera->GetCameraMatrix(p, kFBProjection);
 
 		
 		FBMatrixInverse(mvInv, mv);
@@ -947,16 +970,15 @@ namespace Graphics {
 		}
 
 		FBVector3d v;
-		pCamera->GetVector(v);
+		camera->GetVector(v);
 		for (int i = 0; i<3; ++i)
 			cache.pos[i] = (float)v[i];
-		//cache.pos = vec4( &cache.mv4.x );
-
-		cache.fov = pCamera->FieldOfView;
-		cache.width = pCamera->CameraViewportWidth;
-		cache.height = pCamera->CameraViewportHeight;
-		cache.nearPlane = pCamera->NearPlaneDistance;
-		cache.farPlane = pCamera->FarPlaneDistance;
+		
+		cache.fov = camera->FieldOfView;
+		cache.width = camera->CameraViewportWidth;
+		cache.height = camera->CameraViewportHeight;
+		cache.nearPlane = camera->NearPlaneDistance;
+		cache.farPlane = camera->FarPlaneDistance;
 
 		return true;
 	}
@@ -1041,4 +1063,300 @@ namespace Graphics {
 		}
 	}
 
+	void SuperShader::SaveFrameBuffer()
+	{
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mLastFramebuffer);
+		if (mLastFramebuffer > 0)
+		{
+			glGetIntegerv(GL_MAX_DRAW_BUFFERS, &mMaxDrawBuffers);
+			GLint lActualUse = 0;
+			for (GLint i = 0; i < mMaxDrawBuffers && i < MAX_DRAW_BUFFERS; i++)
+			{
+				glGetIntegerv(GL_DRAW_BUFFER0 + i, (GLint *)&(mDrawBuffers[i]));
+				if (mDrawBuffers[i] == GL_NONE)
+				{
+					break;
+				}
+				lActualUse++;
+			}
+			mMaxDrawBuffers = lActualUse;
+		}
+		else
+		{
+			mLastFramebuffer = 0;
+		}
+	}
+
+	void SuperShader::RestoreFrameBuffer()
+	{
+		if (mLastFramebuffer > 0)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER_EXT, mLastFramebuffer);
+			if (mMaxDrawBuffers > 0)
+			{
+				glDrawBuffers(mMaxDrawBuffers, &(mDrawBuffers[0]));
+			}
+		}
+	}
+
+	GLuint CreateDepthTexture(const int size, const bool use_hardware_pcf)
+	{
+		GLuint id = 0;
+
+		// Create offscreen textures and FBOs for offscreen shadow map rendering.
+		glGenTextures(1, &id);
+
+		// Specify texture parameters and attach each texture to an FBO.
+		glBindTexture(GL_TEXTURE_2D, id);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, size, size, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+
+		if (use_hardware_pcf)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
+
+		return id;
+	}
+
+	void SuperShader::PrepareShadows()
+	{
+		// compute all variations with
+		//	light, casters, texture size
+		//	allocate memory
+		//  render
+
+		// all casted lights - m_CastShadowLights, m_CastShadowLightsData
+		// all shader instances in the scene - m_ShaderInstances (could have unique lights/custers/size list)
+
+		// compute final amount of combination with unique lights/custers/size
+
+		if (m_ShaderInstances.empty())
+		{
+			return;
+		}
+
+		constexpr int default_map_size = 2048;
+
+		// update list of shadow casters
+		
+		m_CastShadowLights.clear();
+		/*
+		for (auto shader_object : m_ShaderInstances)
+		{
+			SuperDynamicLighting* super_shader = static_cast<SuperDynamicLighting*>(shader_object);
+			auto casters = super_shader->GetCasters();
+
+			for (auto light : casters)
+			{
+				m_CastShadowLights.emplace(light);
+			}
+		}
+		*/
+		if (m_CastShadowLights.empty())
+			return;
+
+		// reset counters
+
+		for (auto shadow_info : m_ShadowCastCombinations)
+		{
+			shadow_info->m_UseCounter = 0;
+			shadow_info->m_UniqueShaders.clear();
+		}
+
+		// prepare combinations
+		int number_of_shadows = 0;
+
+		for (auto shader_instance : m_ShaderInstances)
+		{
+			SuperDynamicLighting* shader = static_cast<SuperDynamicLighting*>(shader_instance);
+
+			if (shader->Shadows)
+			{
+				// TODO: prepare id
+
+				if (shader->UseSceneLights.AsInt() > 0 || shader->AffectingLights.GetCount() == 0)
+				{
+					// use all casted lights
+					for (auto shadow_info : m_ShadowCastCombinations)
+					{
+						shadow_info->m_UseCounter += 1;
+						number_of_shadows += 1;
+
+						if (shader->ShadowMapSize != default_map_size
+							|| shader->ShadowCasters.GetCount() > 0)
+						{
+							shadow_info->m_UniqueShaders.push_back(shader);
+						}
+					}
+				}
+				else
+				if (shader->UseSceneLights.AsInt() == 0 && shader->AffectingLights.GetCount() > 0)
+				{
+					// combination of lights
+
+					for (auto shadow_info : m_ShadowCastCombinations)
+					{
+						if (shader->AffectingLights.Find(shadow_info->m_Light) >= 0)
+						{
+							shadow_info->m_UseCounter += 1;
+							number_of_shadows += 1;
+						}
+					}
+
+				}
+			}
+		}
+
+		if (number_of_shadows == 0)
+		{
+			// TODO: free gpu memory ?!
+			return;
+		}
+
+		SaveFrameBuffer();
+
+		// bind framebuffer
+		m_ShadowFrameBuffer.Bind();
+
+		// TODO:
+		//glDrawBuffer(GL_NONE); //! render only into depth texture
+		//glReadBuffer(GL_FALSE);
+		
+		// render shadow maps
+		for (auto shadow_info : m_ShadowCastCombinations)
+		{
+			// prep light, bind texture for the combination
+			// check if we have unique casters
+
+			int processed_instances = 0;
+
+			for (FBShader* the_shader : shadow_info->m_UniqueShaders)
+			{
+				SuperDynamicLighting* shader = static_cast<SuperDynamicLighting*>(the_shader);
+				const int shadow_map_size = shader->ShadowMapSize.AsInt();
+
+				GLuint id = 0;
+
+				// allocate unique texture if not exist
+				if (processed_instances >= static_cast<int>(shadow_info->m_Textures.size()))
+				{
+					// allocate a new texture
+					id = CreateDepthTexture(shadow_map_size, true);
+				}
+				else if (shadow_info->m_Textures[processed_instances].m_Size != shadow_map_size)
+				{
+					// free and allocate a new texture
+					glDeleteTextures(1, &shadow_info->m_Textures[processed_instances].m_Id);
+					// TODO: ...
+					id = CreateDepthTexture(shadow_map_size, true);
+				}
+				else
+				{
+					id = shadow_info->m_Textures[processed_instances].m_Id;
+				}
+
+				shadow_info->m_Textures[processed_instances].m_Id = id;
+
+				m_ShadowFrameBuffer.AttachTexture(GL_TEXTURE_2D, id, FrameBuffer::eAttachmentTypeDepth);
+
+				// render shader casters into a current texture
+				//
+				const std::vector<FBModel*> casters = shader->GetCasters();
+				if (!casters.empty())
+				{
+					RenderShadowCasters(&casters);
+				}
+				else
+				{
+					RenderShadowCasters(nullptr);
+				}
+				
+				processed_instances += 1;
+			}
+
+			if (processed_instances < shadow_info->m_UseCounter)
+			{
+				// render with default size and casters
+				RenderShadowCasters(nullptr);
+			}
+		}
+
+		m_ShadowFrameBuffer.UnBind();
+
+		RestoreFrameBuffer();
+	}
+
+	void SuperShader::RenderShadowCasters(const std::vector<FBModel*>* shadow_casters)
+	{
+		/*
+		if (shadow_casters)
+		{
+			for (auto model : *shadow_casters)
+			{
+				if (model)
+				{
+					// Set the model matrix
+					FBMatrix model_matrix;
+					model->GetMatrix(model_matrix);
+					cgSetMatrixParameterdc(mParamShadowProjModel, model_matrix);
+
+					// Draw the model
+					RenderShadowCaster(model);
+				}
+			}
+		}
+		else
+		{
+			if (FBRenderer* renderer = FBSystem().Renderer)
+			{
+				for (int i = 0, count = renderer->DisplayableGeometryCount; i<count; i++)
+				{
+					FBModel* model = renderer->GetDisplayableGeometry(i);
+					if (model)
+					{
+						// Set the model matrix
+						FBMatrix model_matrix;
+						model->GetMatrix(model_matrix);
+						cgSetMatrixParameterdc(mParamShadowProjModel, model_matrix);
+
+						// Draw the model
+						RenderShadowCaster(model);
+					}
+				}
+			}
+		}
+		*/
+	}
+
+	void SuperShader::RenderShadowCaster(FBModel* pModel)
+	{
+		FBModelVertexData* vertex_data = pModel->ModelVertexData;
+		if (vertex_data && vertex_data->IsDrawable() /*ACME-2464*/)
+		{
+			const int region_count = vertex_data->GetSubRegionCount();
+			if (region_count)
+			{
+				vertex_data->EnableOGLVertexData();
+
+				for (int index = 0; index < region_count; index++)
+				{
+					vertex_data->DrawSubRegion(index);
+				}
+				
+				vertex_data->DisableOGLVertexData();
+			}
+		}
+	}
 };

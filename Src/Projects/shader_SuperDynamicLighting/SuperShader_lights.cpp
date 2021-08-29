@@ -1,7 +1,7 @@
 
 // SuperShader_lights.cpp
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2021
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -9,15 +9,14 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "SuperShader.h"
 
-#define SHADER_DIR_LIGHTS_UNITID		2
-#define SHADER_POINT_LIGHTS_UNITID		3	
-
-double sDefaultAttenuationNone[3] = { 1.0, 0.0, 0.0 };
-double sDefaultAttenuationLinear[3] = { 0.0, 0.01, 0.0 };
-double sDefaultAttenuationQuadratic[3] = { 0.0, 0.0, 0.0001 };
-
 namespace Graphics
 {
+	constexpr int SHADER_DIR_LIGHTS_UNITID{ 2 };
+	constexpr int SHADER_POINT_LIGHTS_UNITID{ 3 };
+
+	constexpr double sDefaultAttenuationNone[3] = { 1.0, 0.0, 0.0 };
+	constexpr double sDefaultAttenuationLinear[3] = { 0.0, 0.01, 0.0 };
+	constexpr double sDefaultAttenuationQuadratic[3] = { 0.0, 0.0, 0.0001 };
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -106,18 +105,11 @@ namespace Graphics
 		FBVector3d   pos;
 		pLight->GetVector(pos); // Get Global Translation.
 
-		// Convert the ModelView (World) space
-		/*
-		FBVector4d lViewPosition(pos);
-		if (ToEyeSpace)
-		FBVectorMatrixMult(lViewPosition, lViewMatrix, pos);
-		*/
 
 		light.position = vec3((float)pos[0], (float)pos[1], (float)pos[2]);
 		if (ToEyeSpace)
 			mult(light.position, lViewMatrix, vec4(light.position.x, light.position.y, light.position.z, 1.0f));
-		//light.position =  light.position * lViewMatrix;
-
+		
 		// Set whether or not we take the spot factor into consideration in the last position spot ...
 		switch (pLight->LightType)
 		{
@@ -240,27 +232,7 @@ namespace Graphics
 
 	void SuperShader::PrepFBSceneLights()
 	{
-		/*
-		glm::vec3 scale, translation, skew;
-		glm::quat orientation;
-		glm::vec4 perspective;
-		glm::mat4 glmMV;
-
-		for (int i=0; i<4; ++i)
-		for (int j=0; j<4; ++j)
-		glmMV[i][j] = mCameraCache.mv4[i][j];
-
-		glm::decompose(glmMV, scale, orientation, translation, skew, perspective);
-
-		quat camRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
-
-		mat4 camModelView(mCameraCache.mv4);
-		mat4 camRotationMatrix;
-		camRotationMatrix.set_rot(camRotation);
-		//transpose(camRotationMatrix);
-		*/
-
-		FBMatrix pCamMatrix(mCameraCache.mv); // (cameraCache.mv);
+		FBMatrix pCamMatrix(mCameraCache.mv);
 		FBMatrix lViewMatrix(pCamMatrix);
 
 		FBRVector lViewRotation;
@@ -278,21 +250,21 @@ namespace Graphics
 			camRotationMatrix.mat_array[i] = (float)lViewRotationMatrix[i];
 		}
 
-
 		//
 		FBScene *pScene = FBSystem::TheOne().Scene;
-		int numLights = pScene->Lights.GetCount();
+		const int numLights = pScene->Lights.GetCount();
 
-		auto &lights = mGPUSceneLights->GetLightsVector();
-		auto &dirLights = mGPUSceneLights->GetDirLightsVector();
+		auto &lights = m_GPUSceneLights->GetLightsVector();
+		auto &dirLights = m_GPUSceneLights->GetDirLightsVector();
 
 		if (0 == numLights)
 		{
 			// only 2 directional lights and not cluster work
 			dirLights.resize(2);
 			lights.clear();
-			//pLightsManager->mLightCasters.clear();
-			//pLightsManager->mLightCastersDataPtr.clear();
+			
+			m_GPUSceneLights->GetCastShadowLights().clear();
+			m_GPUSceneLights->GetCastShadowLightsData().clear();
 
 			ConstructDefaultLight0(false, camModelView, camRotationMatrix, dirLights[0]);
 			ConstructDefaultLight1(false, camModelView, camRotationMatrix, dirLights[1]);
@@ -301,7 +273,7 @@ namespace Graphics
 		{
 			// process scene lights and enable clustering if some point/spot light exist
 
-			mUsedSceneLights.resize(numLights);
+			m_UsedSceneLights.resize(numLights);
 
 			int numDirLights = 0;
 			int numPointLights = 0;
@@ -310,7 +282,7 @@ namespace Graphics
 			for (int i = 0; i < numLights; ++i)
 			{
 				FBLight *pLight = pScene->Lights[i];
-				mUsedSceneLights[i] = pLight;
+				m_UsedSceneLights[i] = pLight;
 
 				if (pLight->CastLightOnObject)
 				{
@@ -319,27 +291,26 @@ namespace Graphics
 				}
 
 				// lights for shadows
-				// temproary make only one cascaded shadow
-				if (pLight->LightType == kFBLightTypeInfinite && numLightCasters == 0)
+				
+				if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
 				{
-					if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
-						numLightCasters++;
+					numLightCasters++;
 				}
 			}
 
-			mUsedInfiniteLights.resize(numDirLights);
-			mUsedPointLights.resize(numPointLights);
-
+			m_UsedInfiniteLights.resize(numDirLights);
+			m_UsedPointLights.resize(numPointLights);
+			
 			dirLights.resize(numDirLights);
 			lights.resize(numPointLights);
-			//pLightsManager->mLightCasters.resize(numLightCasters);
-			//pLightsManager->mLightCastersDataPtr.resize(numLightCasters);
+			m_GPUSceneLights->GetCastShadowLights().resize(numLightCasters);
+			m_GPUSceneLights->GetCastShadowLightsData().resize(numLightCasters);
 
 			numDirLights = 0;
 			numPointLights = 0;
 			numLightCasters = 0;
 
-			for (auto iter = begin(mUsedSceneLights); iter != end(mUsedSceneLights); ++iter)
+			for (auto iter = begin(m_UsedSceneLights); iter != end(m_UsedSceneLights); ++iter)
 			{
 				FBLight *pLight = *iter;
 				TLight *pLightData = nullptr;
@@ -350,31 +321,27 @@ namespace Graphics
 					{
 						ConstructFromFBLight(false, camModelView, camRotationMatrix, pLight, lights[numPointLights]);
 						pLightData = &lights[numPointLights];
-						mUsedPointLights[numPointLights] = pLight;
+						m_UsedPointLights[numPointLights] = pLight;
 						numPointLights++;
 					}
 					else
 					{
 						ConstructFromFBLight(false, camModelView, camRotationMatrix, pLight, dirLights[numDirLights]);
 						pLightData = &dirLights[numDirLights];
-						mUsedInfiniteLights[numDirLights] = pLight;
+						m_UsedInfiniteLights[numDirLights] = pLight;
 						numDirLights++;
 					}
 				}
-				/*
+				
 				// lights for shadows
-				// temproary make only one cascaded shadow
-				if (pLight->LightType == kFBLightTypeInfinite && numLightCasters == 0)
-				{
+				
 				if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
 				{
-				pLightsManager->mLightCasters[numLightCasters] = pLight;
-				pLightsManager->mLightCastersDataPtr[numLightCasters] = pLightData;
+					m_GPUSceneLights->GetCastShadowLights()[numLightCasters] = pLight;
+					m_GPUSceneLights->GetCastShadowLightsData()[numLightCasters] = pLightData;
 
-				numLightCasters++;
+					numLightCasters++;
 				}
-				}
-				*/
 			}
 		}
 	}
@@ -411,18 +378,6 @@ namespace Graphics
 	void SuperShader::PrepLightsFromFBList(CGPUShaderLights *pShaderLights,
 		const CCameraInfoCache &cameraCache, std::vector<FBLight*> &mobuLights)
 	{
-		/*
-		FBMatrix pCamMatrix;
-		pCamera->GetCameraMatrix( pCamMatrix, kFBModelView );
-		FBMatrix lViewMatrix( pCamMatrix );
-
-		FBRVector lViewRotation;
-		FBMatrixToRotation(lViewRotation, lViewMatrix);
-
-		FBMatrix lViewRotationMatrix;
-		FBRotationToMatrix(lViewRotationMatrix, lViewRotation);
-		*/
-
 		mat4 camModelView, camRotationMatrix;
 		quat camRotation;
 
@@ -431,7 +386,7 @@ namespace Graphics
 		camRotationMatrix.set_rot(camRotation);
 
 		//
-		const int numLights = (int)mobuLights.size();
+		const int numLights = static_cast<int>(mobuLights.size());
 
 		auto &dstLights = pShaderLights->GetLightsVector();
 		auto &dstDirLights = pShaderLights->GetDirLightsVector();
@@ -441,13 +396,11 @@ namespace Graphics
 			// only 2 directional lights and not cluster work
 			dstDirLights.resize(2);
 			dstLights.clear();
-			//pLightsManager->mLightCasters.clear();
-			//pLightsManager->mLightCastersDataPtr.clear();
+			pShaderLights->GetCastShadowLights().clear();
+			pShaderLights->GetCastShadowLightsData().clear();
 
 			ConstructDefaultLight0(false, camModelView, camRotationMatrix, dstDirLights[0]);
 			ConstructDefaultLight1(false, camModelView, camRotationMatrix, dstDirLights[1]);
-
-
 		}
 		else
 		{
@@ -468,26 +421,25 @@ namespace Graphics
 				}
 
 				// lights for shadows
-				// temproary make only one cascaded shadow
-				if (pLight->LightType == kFBLightTypeInfinite && numLightCasters == 0)
+
+				if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
 				{
-					if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
-						numLightCasters++;
+					numLightCasters++;
 				}
 			}
 
 
 			dstDirLights.resize(numDirLights);
 			dstLights.resize(numPointLights);
-			//pLightsManager->mLightCasters.resize(numLightCasters);
-			//pLightsManager->mLightCastersDataPtr.resize(numLightCasters);
+			pShaderLights->GetCastShadowLights().resize(numLightCasters);
+			pShaderLights->GetCastShadowLightsData().resize(numLightCasters);
 
 			numDirLights = 0;
 			numPointLights = 0;
 			numLightCasters = 0;
 
-			auto &srcLights = mGPUSceneLights->GetLightsVector();
-			auto &srcDirLights = mGPUSceneLights->GetDirLightsVector();
+			auto &srcLights = m_GPUSceneLights->GetLightsVector();
+			auto &srcDirLights = m_GPUSceneLights->GetDirLightsVector();
 
 			for (auto iter = begin(mobuLights); iter != end(mobuLights); ++iter)
 			{
@@ -498,9 +450,9 @@ namespace Graphics
 				{
 					if (pLight->LightType != kFBLightTypeInfinite)
 					{
-						for (int i = 0, count = (int)mUsedPointLights.size(); i < count; ++i)
+						for (int i = 0, count = (int)m_UsedPointLights.size(); i < count; ++i)
 						{
-							if (pLight == mUsedPointLights[i])
+							if (pLight == m_UsedPointLights[i])
 							{
 								dstLights[numPointLights] = srcLights[i];
 								pLightData = &dstLights[numPointLights];
@@ -511,9 +463,9 @@ namespace Graphics
 					}
 					else
 					{
-						for (int i = 0, count = (int)mUsedInfiniteLights.size(); i < count; ++i)
+						for (int i = 0, count = (int)m_UsedInfiniteLights.size(); i < count; ++i)
 						{
-							if (pLight == mUsedInfiniteLights[i])
+							if (pLight == m_UsedInfiniteLights[i])
 							{
 								dstDirLights[numDirLights] = srcDirLights[i];
 								pLightData = &dstDirLights[numDirLights];
@@ -523,34 +475,25 @@ namespace Graphics
 						}
 					}
 				}
-				/*
+				
 				// lights for shadows
-				// temproary make only one cascaded shadow
-				if (pLight->LightType == kFBLightTypeInfinite && numLightCasters == 0)
-				{
+				
 				if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
 				{
-				pLightsManager->mLightCasters[numLightCasters] = pLight;
-				pLightsManager->mLightCastersDataPtr[numLightCasters] = pLightData;
-
-				numLightCasters++;
+					pShaderLights->GetCastShadowLights()[numLightCasters] = pLight;
+					pShaderLights->GetCastShadowLightsData()[numLightCasters] = pLightData;
+					
+					numLightCasters++;
 				}
-				}
-				*/
 			}
 		}
 	}
 
 	void SuperShader::MapLightsOnGPU()
 	{
-		// TODO: update only on light changes ?!
-		//PrepFBSceneLights();
-
-		mGPUSceneLights->MapOnGPU();
-		mGPUSceneLights->PrepGPUPtr();
-		
+		m_GPUSceneLights->MapOnGPU();
+		m_GPUSceneLights->PrepGPUPtr();
 	}
-
 
 
 	bool SuperShader::PrepShaderLights(const bool useSceneLights, FBPropertyListObject *AffectingLights,
@@ -573,17 +516,13 @@ namespace Graphics
 		// DONE: don't construct lights, just copy values from scene lights
 		PrepLightsFromFBList(shaderLights, GetCameraCache(), shaderLightsPtr);
 
-		// TODO: reupdate gpu buffer only on changes, not every frame !
-		//shaderLights->MapOnGPU();
-		//shaderLights->PrepGPUPtr();
-
 		return true;
 	}
 
 	bool SuperShader::BindLights(const bool resetLastBind, const CGPUShaderLights *pUserLights)
 	{
 		
-		const CGPUShaderLights *pShaderLights = mGPUSceneLights.get();
+		const CGPUShaderLights *pShaderLights = m_GPUSceneLights.get();
 
 		if (nullptr != pUserLights)
 		{
@@ -613,18 +552,20 @@ namespace Graphics
 		const GLint dirLights = SHADER_DIR_LIGHTS_UNITID; //  loc->GetLocation(Graphics::eCustomLocationDirLights);
 		const GLint lights = SHADER_POINT_LIGHTS_UNITID; // loc->GetLocation(Graphics::eCustomLocationLights);
 
-		if (dirLights >= 0 || lights >= 0)
+		//if (dirLights >= 0 || lights >= 0)
 		{
 			pShaderLights->Bind(mShaderShading->GetFragmentShader(), dirLights, lights);
 			UploadLightingInformation(pShaderLights->GetNumberOfDirLights(), pShaderLights->GetNumberOfLights());
 
 			mLastLightsBinded = (CGPUShaderLights*)pShaderLights;
 		}
+		/*
 		else
 		{
 			UploadLightingInformation(0, 0);
 			return false;
 		}
+		*/
 		return true;
 	}
 

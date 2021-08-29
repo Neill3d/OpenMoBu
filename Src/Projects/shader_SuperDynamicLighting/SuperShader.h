@@ -3,7 +3,7 @@
 
 // SuperShader.h
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2021
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -13,8 +13,10 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "SuperShader_glsl.h"
 #include <fbsdk.h>
 #include <vector>
-
+#include <set>
 #include <memory>
+
+#include "FrameBuffer.h"
 
 #define kMaxDrawInstancedSize  100
 
@@ -137,7 +139,6 @@ namespace Graphics
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	// this is a light version of lights manager !
 	
-
 	class CGPUShaderLights
 	{
 
@@ -182,6 +183,9 @@ namespace Graphics
 			return mTransformedDirLights;
 		}
 
+		std::vector<FBLight*>&	GetCastShadowLights() { return m_CastShadowLights; }
+		std::vector<TLight*>&	GetCastShadowLightsData() { return m_CastShadowLightsData; }
+
 		// prepare lights in a view space
 		void UpdateTransformedLights(const mat4 &modelview, const mat4 &rotation, const mat4 &scaling);
 
@@ -194,6 +198,9 @@ namespace Graphics
 
 		lights_vector					mTransformedDirLights;
 		lights_vector					mTransformedLights;
+
+		std::vector<FBLight*>			m_CastShadowLights;
+		std::vector<TLight*>			m_CastShadowLightsData;
 
 		/// vars for parallel evaluation
 		//int								mNumberOfDirLights;
@@ -224,9 +231,13 @@ namespace Graphics
 
 		// path - where to locate our effect files
 		bool Initialize(const char *path);
+		bool IsInitialized() const { return m_Initialized; }
+
+		void RegisterShaderObject(FBShader* shader);
+		void UnRegisterShaderObject(FBShader* shader);
 
 		bool BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList);
-		void EndShading(FBRenderOptions *pRenderOptions=nullptr);
+		void EndShading(FBRenderOptions *pRenderOptions = nullptr);
 
 		void SwitchMaterial(FBRenderOptions* pRenderOptions, FBShaderModelInfo* pShaderModelInfo, FBMaterial* pMaterial, double pShaderTransparencyFactor, bool forceUpdate);
 
@@ -238,59 +249,37 @@ namespace Graphics
 
 		struct BufferIdLocations
 		{
+			GLint		colorId{ -1 };
+			GLint		useDiffuseSampler{ -1 };
 
-			GLint		colorId;
-			GLint		useDiffuseSampler;
-
-			//
+			//! a constructor
 			BufferIdLocations()
-			{
-				colorId = -1;
-				useDiffuseSampler = -1;
-			}
+			{}
 
 		} mBufferIdLoc;
 
 		struct ShadingLocations
 		{
-			GLint		displacementOption;
-			GLint		displacementMatrix;
+			GLint		displacementOption{ -1 };
+			GLint		displacementMatrix{ -1 };
 
-			GLint		numberOfDirLights;
-			GLint		numberOfPointLights;
+			GLint		numberOfDirLights{ -1 };
+			GLint		numberOfPointLights{ -1 };
 
-			GLint		globalAmbientLight;
+			GLint		globalAmbientLight{ -1 };
 
-			GLint		fogColor;
-			GLint		fogOptions;
+			GLint		fogColor{ -1 };
+			GLint		fogOptions{ -1 };
 
-			GLint		switchAlbedoTosRGB;
-			GLint		useMatCap;
-			GLint		useLightmap;
-			GLint		rimOptions;
-			GLint		rimColor;
+			GLint		switchAlbedoTosRGB{ -1 };
+			GLint		useMatCap{ -1 };
+			GLint		useLightmap{ -1 };
+			GLint		rimOptions{ -1 };
+			GLint		rimColor{ -1 };
 
-			//
+			//! a constructor
 			ShadingLocations()
-			{
-				displacementOption = -1;
-				displacementMatrix = -1;
-
-				numberOfDirLights = -1;
-				numberOfPointLights = -1;
-
-				globalAmbientLight = -1;
-
-				fogColor = -1;
-				fogOptions = -1;
-
-				rimOptions = -1;
-				rimColor = -1;
-
-				switchAlbedoTosRGB = -1;
-				useMatCap = -1;
-				useLightmap = -1;
-			}
+			{}
 
 		} mShadingLoc;
 
@@ -319,11 +308,13 @@ namespace Graphics
 		//
 
 		// list of used lights, could be exclusive from current composition lights list
-		std::vector<FBLight*>					mUsedSceneLights;
-		std::vector<FBLight*>					mUsedInfiniteLights;
-		std::vector<FBLight*>					mUsedPointLights;
+		std::vector<FBLight*>				m_UsedSceneLights;
+		std::vector<FBLight*>				m_UsedInfiniteLights;
+		std::vector<FBLight*>				m_UsedPointLights;
+		std::set<FBLight*>				m_CastShadowLights;
+		std::vector<TLight*>				m_CastShadowLightsData;
 
-		std::unique_ptr<CGPUShaderLights>			mGPUSceneLights;
+		std::unique_ptr<CGPUShaderLights>		m_GPUSceneLights;
 
 		// last lights for a frame - default if no lights, scene lights if no composition override
 		CGPUShaderLights					*mLastLightsBinded;
@@ -373,10 +364,10 @@ namespace Graphics
 		bool		BindLights(const bool resetLastBind, const CGPUShaderLights *pShaderLights = nullptr);
 
 		const int GetNumberOfUsedLights() const {
-			return (int)mUsedSceneLights.size();
+			return static_cast<int>(m_UsedSceneLights.size());
 		}
 		std::vector<FBLight*> &GetUsedLightsVector() {
-			return mUsedSceneLights;
+			return m_UsedSceneLights;
 		}
 
 		// just prepare gpu buffer (no binding)
@@ -386,8 +377,50 @@ namespace Graphics
 		// TODO: bind a light buffer to the uber shader and update light count
 
 		CGPUShaderLights			*GetGPUSceneLightsPtr() {
-			return mGPUSceneLights.get();
+			return m_GPUSceneLights.get();
 		}
+
+	protected:
+		static constexpr int32_t MAX_DRAW_BUFFERS{ 10 };
+
+		bool		m_Initialized{ false };
+
+		GLenum		mDrawBuffers[MAX_DRAW_BUFFERS];
+		GLint		mMaxDrawBuffers;
+		GLint		mLastFramebuffer;
+
+		std::vector<FBShader*>		m_ShaderInstances;
+
+		struct SShadowCastTextureHandle
+		{
+			GLuint		m_Id;
+			int			m_Size;
+		};
+
+		struct SShadowCastInfo
+		{
+			FBLight*				m_Light;
+			int						m_UseCounter;		//! how many shader instances use the cast info
+			std::vector<FBShader*>	m_UniqueShaders;	//! check if we have unique casters list in some shaders
+			
+			// TODO: gpu texture id ?!
+
+			std::vector<SShadowCastTextureHandle>	m_Textures;		//! shadow maps for all variations for the light
+		};
+
+		std::vector<SShadowCastInfo*>	m_ShadowCastCombinations;
+
+		FrameBuffer		m_ShadowFrameBuffer;
+
+		void SaveFrameBuffer();
+		void RestoreFrameBuffer();
+
+		void PrepareShadows();
+
+		void RenderShadowCasters(const std::vector<FBModel*>* shadow_casters);
+		void RenderShadowCaster(FBModel* pModel);
+
+		void InitializeFrameBuffers();
 	};
 
 };

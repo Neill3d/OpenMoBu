@@ -143,6 +143,15 @@ public:
     FBPropertyAnimatableDouble TransparencyFactor;  
 
 	//
+	FBPropertyBool				Shadows;			//!< flag to enable rendering to offscreen shadow textures
+	FBPropertyInt               ShadowMapSize;
+	FBPropertyInt               ShadowPCFKernelSize;
+	FBPropertyListObject        ShadowCasters;
+	FBPropertyAnimatableDouble  ShadowStrength;
+	FBPropertyAnimatableDouble  OffsetScale;
+	FBPropertyAnimatableDouble  OffsetBias;
+
+	//
 	FBPropertyBool				SwitchAlbedoTosRGB;
 	FBPropertyBool				ForceUpdateTextures;
 
@@ -166,6 +175,8 @@ public:
 	// process lighting list if update task exist
 	void		EventBeforeRenderNotify();
 
+	const std::vector<FBModel*>& GetCasters() const { return m_Casters; }
+
 protected:
     static Graphics::SuperShader*  mpLightShader;
     static int                     mpLightShaderRefCount;
@@ -179,8 +190,12 @@ protected:
 	bool								mNeedUpdateTextures;	// we should update textures after change a context
 
 	std::vector<FBLight*>							mLightsPtr;
-	std::auto_ptr<Graphics::CGPUShaderLights>		mShaderLights;
+	std::unique_ptr<Graphics::CGPUShaderLights>		mShaderLights;
 	
+	// TODO: store vector of caster models
+	bool						m_NeedUpdateCastersList;
+	std::vector<FBModel*>		m_Casters;
+
 	OGLCullFaceInfo			mCullFaceInfo;
 	FBModelCullingMode		mLastCullingMode;
 
