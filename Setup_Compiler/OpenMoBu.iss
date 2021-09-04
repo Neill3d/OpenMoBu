@@ -2,10 +2,10 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenMoBu for Autodesk® MotionBuilder®"
-#define MyAppVersion "2019.1.0b"
+#define MyAppVersion "2021.0"
 #define MyAppPublisher "Neill3d"
 #define MyAppURL "https://github.com/Neill3d/OpenMoBu"
-#define MyAppExeName "Setup_OpenMoBu_2019_1_0b"
+#define MyAppExeName "Setup_OpenMoBu_2021_0"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile:"infoBefore_en.txt"; InfoAfterFile: "infoAfter_en.txt"
@@ -23,18 +23,22 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-CreateAppDir=no
+CreateAppDir=yes
 OutputBaseFilename={#MyAppExeName}
 Compression=lzma
 SolidCompression=yes
-AppCopyright=Copyright (C) 2019 Neill3d
+AppCopyright=Copyright (C) 2019-2021 Neill3d
 WizardImageFile=Neill3d2.bmp
 WizardImageStretch=no
 WizardSmallImageFile=Neill3d_sm.bmp
 DisableWelcomePage=no
+DisableDirPage = auto
+DefaultDirName = {autopf}\OpenMoBu
+AlwaysShowDirOnReadyPage = yes
+ChangesEnvironment=true
 
 [Types]
-Name: "full"; Description: "Full installation"
+;Name: "full"; Description: "Full installation"
 Name: "2014"; Description: "MotionBuilder 2014"
 Name: "2015"; Description: "MotionBuilder 2015"
 Name: "2016"; Description: "MotionBuilder 2016"
@@ -42,15 +46,44 @@ Name: "2017"; Description: "MotionBuilder 2017"
 Name: "2018"; Description: "MotionBuilder 2018"
 Name: "2019"; Description: "MotionBuilder 2019"
 
-Name: "custom"; Description: "Custom installation"; Flags: iscustom
+;Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: "MotionBuilder2014"; Description: "MotionBuilder 2014 plugins"; Types: full 2014 custom;
-Name: "MotionBuilder2015"; Description: "MotionBuilder 2015 plugins"; Types: full 2015 custom;
-Name: "MotionBuilder2016"; Description: "MotionBuilder 2016 plugins"; Types: full 2016 custom;
-Name: "MotionBuilder2017"; Description: "MotionBuilder 2017 plugins"; Types: full 2017 custom;
-Name: "MotionBuilder2018"; Description: "MotionBuilder 2018 plugins"; Types: full 2018 custom;
-Name: "MotionBuilder2019"; Description: "MotionBuilder 2019 plugins"; Types: full 2019 custom;
+Name: "MotionBuilder2014"; Description: "MotionBuilder 2014 plugins"; Types: 2014
+; Types: full 2014 custom;
+Name: "MotionBuilder2015"; Description: "MotionBuilder 2015 plugins"; Types: 2015
+; Types: full 2015 custom;
+Name: "MotionBuilder2016"; Description: "MotionBuilder 2016 plugins"; Types: 2016
+; full 2016 custom;
+Name: "MotionBuilder2017"; Description: "MotionBuilder 2017 plugins"; Types: 2017
+; full 2017 custom;
+Name: "MotionBuilder2018"; Description: "MotionBuilder 2018 plugins"; Types: 2018
+; full 2018 custom;
+Name: "MotionBuilder2019"; Description: "MotionBuilder 2019 plugins"; Types: 2019
+; full 2019 custom;
+
+[Tasks]
+Name: envPath; Description: "Add to PATH variable" 
+Name: relationConstraintBox; GroupDescription: "Plugins:"; Description: "Relation Constraint Boxes";
+Name: relationConstraintBox\poseReader; GroupDescription: "Plugins:"; Description: "Pose Reader";
+Name: relationConstraintBox\boxRBF; GroupDescription: "Plugins:"; Description: "RBF Box";
+Name: relationConstraintBox\rayIntersect; GroupDescription: "Plugins:"; Description: "Ray Intersect";
+Name: relationConstraintBox\boxSpring; GroupDescription: "Plugins:"; Description: "Spring Box";
+Name: constraint; GroupDescription: "Plugins:"; Description: "Constrains";
+Name: constraint\attachmentConstraint; GroupDescription: "Plugins:"; Description: "Attachment Constraint";
+Name: constraint\drivenConstraint; GroupDescription: "Plugins:"; Description: "Driven Constraint";
+Name: device; GroupDescription: "Plugins:"; Description: "Devices";
+Name: device\faceCap; GroupDescription: "Plugins:"; Description: "FaceCap Device";
+Name: device\projectTango; GroupDescription: "Plugins:"; Description: "Project Tango Device";
+Name: shaders; GroupDescription: "Plugins:"; Description: "Shaders";
+Name: shaders\superDynamicLighting; GroupDescription: "Plugins:"; Description: "Super Dynamic Lighting";
+Name: lockCamera; GroupDescription: "Plugins:"; Description: "Lock Camera Manipulator";
+Name: postProcessing; GroupDescription: "Plugins:"; Description: "Post Processing FX";
+Name: references; GroupDescription: "Plugins:"; Description: "References";
+Name: references\manager; GroupDescription: "Plugins:"; Description: "References Manager";
+Name: references\extension; GroupDescription: "Plugins:"; Description: "FBX References Extension";
+Name: calculateNormals; GroupDescription: "Plugins:"; Description: "Calculate Normals Solver";
+Name: volumeCalculator; GroupDescription: "Plugins:"; Description: "Optical MoCap Volume Calculator";
 
 [Files]
 
@@ -108,8 +141,28 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2018}\bin\conf
 
 ; 2019
 
-Source: "..\bin\x64\plugins_2019\*.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019
-Source: "..\bin\x64\plugins_2019\FBX\*.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\bin\x64\plugins_2019\box_poseReader.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\poseReader
+Source: "..\bin\x64\plugins_2019\box_rayIntersect.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\rayIntersect
+Source: "..\bin\x64\plugins_2019\box_RBF.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxRBF
+Source: "..\bin\x64\plugins_2019\box_spring.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxSpring
+
+Source: "..\bin\x64\plugins_2019\constraint_attachment.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\attachmentConstraint
+Source: "..\bin\x64\plugins_2019\driven_constraint.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\drivenConstraint
+
+Source: "..\bin\x64\plugins_2019\device_faceCap.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\faceCap
+Source: "..\bin\x64\plugins_2019\device_projectTango.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\projectTango
+
+Source: "..\bin\x64\plugins_2019\manip_lockcamera.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: lockCamera
+Source: "..\bin\x64\plugins_2019\post_processing.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: postProcessing
+Source: "..\bin\x64\plugins_2019\SuperDynamicLighting.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: shaders\superDynamicLighting
+
+Source: "..\bin\x64\plugins_2019\solver_calculateNormals.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: calculateNormals
+Source: "..\bin\x64\plugins_2019\volume_calculator.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: volumeCalculator
+
+Source: "..\bin\x64\plugins_2019\references_manager.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\manager
+Source: "..\bin\x64\plugins_2019\FBX\FBXExtension_References.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\extension
+
+
 Source: "..\bin\x64\plugins_2019\GLSL\*"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2019
 Source: "..\bin\x64\plugins_2019\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2019
 Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2019-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019
@@ -117,9 +170,89 @@ Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{userdocs}\MB\2019-x64\confi
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2019-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2019
 Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2019}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2019
 
+[Registry]
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
+    ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};C:\foo"; \
+    Check: NeedsAddPath('C:\foo')
+
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Code]
+
+
+const EnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+
+procedure EnvAddPath(Path: string);
+var
+    Paths: string;
+begin
+    { Retrieve current path (use empty string if entry not exists) }
+    if not RegQueryStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths)
+    then Paths := '';
+
+    { Skip if string already found in path }
+    if Pos(';' + Uppercase(Path) + ';', ';' + Uppercase(Paths) + ';') > 0 then exit;
+
+    { App string to the end of the path variable }
+    Paths := Paths + ';'+ Path +';'
+
+    { Overwrite (or create if missing) path environment variable }
+    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths)
+    then Log(Format('The [%s] added to PATH: [%s]', [Path, Paths]))
+    else Log(Format('Error while adding the [%s] to PATH: [%s]', [Path, Paths]));
+end;
+
+procedure EnvRemovePath(Path: string);
+var
+    Paths: string;
+    P: Integer;
+begin
+    { Skip if registry entry not exists }
+    if not RegQueryStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths) then
+        exit;
+
+    { Skip if string not found in path }
+    P := Pos(';' + Uppercase(Path) + ';', ';' + Uppercase(Paths) + ';');
+    if P = 0 then exit;
+
+    { Update path variable }
+    Delete(Paths, P - 1, Length(Path) + 1);
+
+    { Overwrite path environment variable }
+    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths)
+    then Log(Format('The [%s] removed from PATH: [%s]', [Path, Paths]))
+    else Log(Format('Error while removing the [%s] from PATH: [%s]', [Path, Paths]));
+end;
+
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+    if (CurStep = ssPostInstall) and IsTaskSelected('envPath')
+    then EnvAddPath(ExpandConstant('{app}') +'\bin');
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+    if CurUninstallStep = usPostUninstall
+    then EnvRemovePath(ExpandConstant('{app}') +'\bin');
+end;
+
+function NeedsAddPath(Param: string): boolean;
+var
+  OrigPath: string;
+begin
+  if not RegQueryStringValue(HKEY_LOCAL_MACHINE,
+    'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
+    'Path', OrigPath)
+  then begin
+    Result := True;
+    exit;
+  end;
+  { look for the path with leading and trailing semicolon }
+  { Pos() returns 0 if not found }
+  Result := Pos(';' + Param + ';', ';' + OrigPath + ';') = 0;
+end;
 
 function MoBu_Path32(Param: String): String;
 var
