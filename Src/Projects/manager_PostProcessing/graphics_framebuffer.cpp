@@ -527,6 +527,8 @@ bool MainFrameBuffer::ReSize(const int newWidth, const int newHeight, double ssf
 		AttachTexturesToFBO(fbo, textures, 0);
 		
 		CHECK_GL_ERROR();
+
+		FBTrace("> !! RESIZE FBO !!\n");
 	}
 
 	return result;
@@ -619,7 +621,6 @@ void MainFrameBuffer::PrepForPostProcessingInternal(bool drawToBack)
 
 void MainFrameBuffer::ChangeContext()
 {
-	
 	DeleteTextures();
 	DeleteFBO();
 

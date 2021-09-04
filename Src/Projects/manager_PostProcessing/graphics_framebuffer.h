@@ -426,6 +426,15 @@ public:
 		return mainInfo.GetBufferHeight();
 	}
 
+	const int GetExtendedBufferWidth() const
+	{
+		return extendedInfo.GetBufferWidth();
+	}
+	const int GetExtendedBufferHeight() const
+	{
+		return extendedInfo.GetBufferHeight();
+	}
+
 	bool ReSize(const int newWidth, const int newHeight, double ssfact, int _depthSamples, int _coverageSamples);
 
 	void DetachTexturesFromFBO(const GLuint _fbo, const int samples);

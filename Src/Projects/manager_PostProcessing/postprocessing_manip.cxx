@@ -60,17 +60,11 @@ void ORManip_Template::FBDestroy()
  ************************************************/
 void ORManip_Template::ViewExpose()
 {
-	// DONE: stop here
-
 	glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
 
-	bool lStatus = GRenderAfterRender();
+	GRenderAfterRender();
 
 	glPopAttrib();
-
-	if (false == lStatus)
-		return;
-
 }
 
 

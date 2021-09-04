@@ -140,6 +140,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">
     <IncludePath>..\..\..\..\glew\include;..\..\MotionCodeLibrary;..\..\..\..\freetype-gl;..\..\..\..\freetype-gl\windows\freetype;$(ADSK_MOBU_2019_64)\OpenRealitySDK\include;$(ADSK_MOBU_2019_64)\OpenRealitySDK\include\fbsdk;$(IncludePath)</IncludePath>
     <LibraryPath>..\..\..\..\glew\lib\Release\x64;..\..\..\..\freetype-gl\build\Release;..\..\..\..\freetype\build\Release;$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);D:\Anaconda2\Library\lib;$(LibraryPath)</LibraryPath>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">
     <IncludePath>..\..\..\..\glew\include;..\..\MotionCodeLibrary;..\..\..\..\freetype-gl;..\..\..\..\freetype-gl\windows\freetype;$(ADSK_MOBU_2022_64)\OpenRealitySDK\include;$(ADSK_MOBU_2022_64)\OpenRealitySDK\include\fbsdk;$(IncludePath)</IncludePath>
@@ -269,8 +270,8 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       </HeaderFileName>
     </Midl>
     <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
@@ -309,8 +310,8 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\$(TargetName).dll"
-start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\GLSL"</Command>
+      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">
@@ -325,8 +326,8 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       </HeaderFileName>
     </Midl>
     <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>

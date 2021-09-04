@@ -32,8 +32,7 @@ FBRegisterCustomManager(POSTPROCESSING_MANAGER__CLASS);         // Manager class
 #define RENDER_HUD_RECT_TOP				"RectangleTop"
 #define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
 
-// track the state of OpenGL viewport context
-HGLRC	gCurrentContext = 0;
+
 
 Manager_PostProcessing *gManager = nullptr;
 
@@ -41,7 +40,8 @@ bool GRenderAfterRender()
 {
 	if (nullptr != gManager)
 	{
-		return gManager->RenderAfterRender(gManager->mLastProcessCompositions, false);
+		
+		return gManager->RenderAfterRender();
 	}
 
 	return false;
@@ -72,21 +72,7 @@ void DebugOGL_Callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
  ************************************************/
 bool Manager_PostProcessing::FBCreate()
 {
-	//mPaneId = 0;
-	mEnterId = 0;
-	mFrameId = 0;
-	mLastPaneCount = 0;
-
-	//mPropPaneCount = nullptr;
-
-	mVideoRendering = false;
-
-	for (int i = 0; i < 4; ++i)
-	{
-		mViewerViewport[i] = 0;
-		//mLocalViewport[i] = 0;
-		mSchematicView[i] = false;
-	}
+	
 	
 	gManager = this;
 
@@ -104,8 +90,7 @@ bool Manager_PostProcessing::FBCreate()
 	mSocketPort = 8885;
 	mSendAddress.Set(192, 168, 0, 133, 8887);
 #endif
-	//mSettingsMerge = false;
-
+	
 	mSocketSender = nullptr;
 	mSocketRecv = nullptr;
 
@@ -138,8 +123,10 @@ bool Manager_PostProcessing::Init()
 	glDebugMessageCallback(DebugOGL_Callback, nullptr);
 #endif
 
+	CheckForAContextChange();
+
 	//
-	mMainFrameBuffer.InitTextureInternalFormat();
+	//mMainFrameBuffer.InitTextureInternalFormat();
 
     return true;
 }
@@ -337,26 +324,18 @@ bool Manager_PostProcessing::Close()
 
 void Manager_PostProcessing::EventFileNew(HISender pSender, HKEvent pEvent)
 {
-	// clear all pointers (start point)
-
-	//ClearOutputCompositePtr();
-	//mSettings = nullptr;
 }
 
 void Manager_PostProcessing::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
 }
 
 void Manager_PostProcessing::EventFileMerge(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
-	//mSettingsMerge = true;
 }
 
 void Manager_PostProcessing::EventFileOpenComplete(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
 }
 
 
@@ -396,47 +375,25 @@ void Manager_PostProcessing::OnPerFrameEvaluationPipelineCallback(HISender pSend
 	
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// OnPerRenderingPipelineCallback
-
-
 ////////////////////////////////////////////////////////////////////////////////////
 // RenderBeforeRender
-void Manager_PostProcessing::RenderBeforeRender(const bool processCompositions, const bool renderToBuffer)
+void Manager_PostProcessing::SContextData::RenderBeforeRender(const bool processCompositions, const bool renderToBuffer)
 {
-	//FBScene *pScene = mSystem.Scene;
+	mEnterId++;
 
-	//glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
-	/*
-	if (mEnterId < 1)
-	{
-		if (mAttachedFBO[mEnterId] > 0)
-			mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
-		else
-			mMainFrameBuffer.DetachFBO();
-	}
-	*/
-	//if (0 == mPaneId)
-	//{
-		mEnterId++;
-	//}
-	
 	// attachment point
+	FBRenderer* renderer = FBSystem::TheOne().Renderer;
 	if (processCompositions)
 	{
-		
-		// let's run compression threads
-
 		for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
 		{
-			FBCamera *pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+			FBCamera *pCamera = renderer->GetCameraInPane(nPane);
 			if (nullptr == pCamera || true == pCamera->SystemCamera
 				|| true == mVideoRendering || true == mSchematicView[nPane])
 			{
 				continue;
 			}
-			
+
 
 			PostEffectBuffers *currBuffers = nullptr;
 			switch (nPane)
@@ -459,66 +416,45 @@ void Manager_PostProcessing::RenderBeforeRender(const bool processCompositions, 
 		}
 
 		// it will use attached dimentions, if any external buffer is exist
-		//mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
 
-		mViewerViewport[2] = mMainFrameBuffer.GetBufferWidth();
-		mViewerViewport[3] = mMainFrameBuffer.GetBufferHeight();
+		if (mMainFrameBuffer.GetAttachedFBO() > 0)
+		{
+			mViewerViewport[2] = mMainFrameBuffer.GetExtendedBufferWidth();
+			mViewerViewport[3] = mMainFrameBuffer.GetExtendedBufferHeight();
+		}
+		else
+		{
+			mViewerViewport[2] = mMainFrameBuffer.GetBufferWidth();
+			mViewerViewport[3] = mMainFrameBuffer.GetBufferHeight();
+		}
+
 
 		mMainFrameBuffer.BeginRender();
 
-		glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
-
 		glEnable(GL_DEPTH_TEST);
-		//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	}
-	/*
-	else if (mMainFrameBuffer.GetAttachedFBO() > 0)
+	else
 	{
 		mMainFrameBuffer.BeginRender();
-
-		glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
-		glEnable(GL_DEPTH_TEST);
-	}*/
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // RenderAfterRender - post processing work after main scene rendering is finished
 
-
-bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, const bool renderToBuffer)
+bool Manager_PostProcessing::SContextData::RenderAfterRender(const bool processCompositions, const bool renderToBuffer)
 {
 	bool lStatus = false;
 
 	if (mEnterId <= 0)
 		return lStatus;
 
-	//	FBScene *pScene = mSystem.Scene;
-	/*
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-
-	int lviewport[4];
-	glGetIntegerv( GL_VIEWPORT, lviewport );
-	*/
-
-	//mMainFrameBuffer.EndRender();
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
 	/////////////
 	// !!!
 	if (processCompositions && 1 == mEnterId)
 	{
-		/*
-		if ()
-		{
-			FBTrace("entering wrong pane index\n");
-		}
-		*/
+		FBRenderer* renderer = FBSystem::TheOne().Renderer;
+
 
 		glDisable(GL_MULTISAMPLE);
 		glDisable(GL_DEPTH_TEST);
@@ -530,23 +466,22 @@ bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, c
 
 		// this is a hack for Reflection shader (to avoid error overhead on glReadBuffers(GL_BACK) )
 #ifndef _DEBUG
-		EmptyGLErrorStack();
+		Manager_PostProcessing::EmptyGLErrorStack();
 #endif
-		//if (mLastPostPane == mPaneId)
-		//{
 		
-		FBTime sysTime = mSystem.SystemTime;
+		FBTime sysTime = FBSystem::TheOne().SystemTime;
 		const double sysTimeSecs = sysTime.GetSecondDouble();
 
 			for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
-			{
-				int localViewport[4];
-				FBCamera *pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+			{				
+				FBCamera *pCamera = renderer->GetCameraInPane(nPane);
 
-				localViewport[0] = pCamera->CameraViewportX;
-				localViewport[1] = pCamera->CameraViewportY;
-				localViewport[2] = pCamera->CameraViewportWidth;
-				localViewport[3] = pCamera->CameraViewportHeight;
+				int localViewport[4] = {
+					pCamera->CameraViewportX,
+					pCamera->CameraViewportY,
+					pCamera->CameraViewportWidth,
+					pCamera->CameraViewportHeight
+				};
 
 				if (true == pCamera->SystemCamera)
 				{
@@ -558,8 +493,7 @@ bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, c
 					if (true == mSchematicView[nPane])
 						localViewport[2] = 0;
 				}
-				//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+				
 				PostEffectBuffers *currBuffers = nullptr;
 				switch (nPane)
 				{
@@ -654,12 +588,9 @@ bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, c
 				}
 			}
 
-
-
 			if (mAttachedFBO[mEnterId - 1] > 0)
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId - 1]);
-				//glReadBuffer(GL_COLOR_ATTACHMENT0);
 				glDrawBuffer(GL_COLOR_ATTACHMENT0);
 			}
 			else
@@ -667,12 +598,9 @@ bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, c
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			}
 
-			//}
-
 			// DONE: draw a resulted rect
 			// render background
-			if (false == mMainFrameBuffer.isFboAttached()
-				&& nullptr != mShaderSimple.get())
+			if (!mMainFrameBuffer.isFboAttached() && mShaderSimple.get() != nullptr)
 			{
 				mShaderSimple->Bind();
 
@@ -684,81 +612,93 @@ bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, c
 				lStatus = true;
 			}
 		
-
 		CHECK_GL_ERROR();
 	}
-	/*
-	mPaneId = mPaneId + 1;
-	if (mPaneId >= mLastPaneCount)
-		mPaneId = 0;
-*/
-	//if (0 == mPaneId)
-	//{
-		mEnterId--;
-	//}
-
+	
+	mEnterId--;
+	
 	if (mEnterId < 0)
 	{
-		FBTrace("ERROR: wrong entering id!", "Ok");
+		FBTrace("Manager_PostProcessing::RenderAfterRender: wrong entering id!\n", "Ok");
 		mEnterId = 0;
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	else
 	{
-		
 		// offline render
 		if (mAttachedFBO[mEnterId] > 0)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId]);
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 		}
-		
 	}
 
 	return lStatus;
+}
+
+void Manager_PostProcessing::SContextData::Init()
+{
+	mEnterId = 0;
+	mFrameId = 0;
+	mLastPaneCount = 0;
+
+	mVideoRendering = false;
+
+	for (int i = 0; i < 4; ++i)
+	{
+		mViewerViewport[i] = 0;
+		mSchematicView[i] = false;
+	}
+
+	mMainFrameBuffer.InitTextureInternalFormat();
 }
 
 void Manager_PostProcessing::CheckForAContextChange()
 {
 	HGLRC hContext = wglGetCurrentContext();
 
-	if (0 == gCurrentContext)
+	if (0 == mCurrentContext)
 	{
 		// initialize for the first time
-		gCurrentContext = hContext;
+		mCurrentContext = hContext;
 	}
 
-	if (hContext != gCurrentContext)
+	if (mContextDataMap.find(hContext) == end(mContextDataMap))
 	{
-		gCurrentContext = hContext;
+		SContextData* context_data = new SContextData();
+		mContextDataMap.emplace(hContext, context_data);
 
+		context_data->Init();
+	}
+
+	if (hContext != mCurrentContext)
+	{
+		mCurrentContext = hContext;
+		/*
 		mEffectChain.ChangeContext();
 		FreeShaders();
 		FreeBuffers();
 		FreeFonts();
-
+		*/
 		FBTrace("> !! CHANGE CONTEXT !!\n");
 	}
 }
 
-void Manager_PostProcessing::PreRenderFirstEntry()
+void Manager_PostProcessing::SContextData::PreRenderFirstEntry()
 {
-
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
 
-	//mPaneId = 0;
 	mFrameId++;
-
-	CheckForAContextChange();
 
 	// grab the whole viewer
 
 	mViewerViewport[0] = mViewerViewport[1] = 0;
 	mViewerViewport[2] = mViewerViewport[3] = 0;
 
+	glGetIntegerv(GL_VIEWPORT, mViewerViewport);
+
 	mSchematicView[0] = mSchematicView[1] = mSchematicView[2] = mSchematicView[3] = false;
 
-	FBRenderer *pRenderer = mSystem.Renderer;
+	FBRenderer *pRenderer = FBSystem::TheOne().Renderer;
 	const int schematic = pRenderer->GetSchematicViewPaneIndex();
 
 	if (schematic >= 0)
@@ -884,39 +824,42 @@ void Manager_PostProcessing::PreRenderFirstEntry()
 		mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
 	else
 		mMainFrameBuffer.DetachFBO();
-	/*
+	
 	CHECK_GL_ERROR();
 
 	if (mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
 	{
-		mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
-
+		if (mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0))
+		{
+			mMainFrameBuffer.BeginRender();
+			glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+			glEnable(GL_DEPTH_TEST);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			mMainFrameBuffer.EndRender();
+		}
+		/*
 		mMainFrameBuffer.BeginRender();
 		glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		mMainFrameBuffer.EndRender();
-
+		*/
 		CHECK_GL_ERROR();
 	}
-	*/
+	
 }
 
-void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent)
+void Manager_PostProcessing::SContextData::OnRenderCallback(bool isCallbackBeforeRender)
 {
-
-	FBEventEvalGlobalCallback lFBEvent(pEvent);
-
 	// check for a context change here
-	if (mEnterId < 1 && lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender)
+	if (mEnterId < 1 && isCallbackBeforeRender)
 	{
 		PreRenderFirstEntry();
 	}
 
-	// nullptr != mPaneSettings[mPaneId] && false == mSchematicView[mPaneId]
 	bool usePostProcessing = false;
 
-	for (int i = 0; i<mLastPaneCount; ++i)
+	for (int i = 0; i < mLastPaneCount; ++i)
 	{
 		if (nullptr != mPaneSettings[i])
 		{
@@ -930,20 +873,34 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 		usePostProcessing = false;
 	}
 
+	if (isCallbackBeforeRender)
+	{
+		mLastProcessCompositions = usePostProcessing;
+		RenderBeforeRender(usePostProcessing, false);
+	}
+	else
+	{
+		RenderAfterRender(usePostProcessing, false);
+	}
 	
+}
+
+void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent)
+{
+	CheckForAContextChange();
+
+	FBEventEvalGlobalCallback lFBEvent(pEvent);
+	mContextDataMap[mCurrentContext]->OnRenderCallback(lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender);
+
 	switch (lFBEvent.GetTiming())
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
-			mLastProcessCompositions = usePostProcessing;
-			RenderBeforeRender(usePostProcessing, false);
-			
 			if (true == mDoVideoClipTimewrap)
 			{
 				PrepVideoClipsTimeWrap();
 			}
 			
-
 		} break;
 	case kFBGlobalEvalCallbackAfterRender:
 		{
@@ -952,7 +909,7 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 			// User could do some special effect, HUD or buffer download (via PBO) here. 
 			//
 			//if (mVideoRendering)
-				RenderAfterRender(usePostProcessing, false);
+				
 
 		} break;
 
@@ -960,20 +917,20 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 		break;
 	}
 
-	//FBTrace("enter id - %d, pane id - %d, frame id - %d\n", mEnterId, mPaneId, mFrameId);
-
 	CHECK_GL_ERROR();
 }
 
 void Manager_PostProcessing::OnVideoFrameRendering(HISender pSender, HKEvent pEvent)
 {
+	CheckForAContextChange();
+	SContextData* context_data = mContextDataMap[mCurrentContext];
 	FBEventVideoFrameRendering levent(pEvent);
 
 	if (levent.GetState() == FBEventVideoFrameRendering::eBeginRendering)
 	{
 		// turn off preview mode and switch quality settings if needed
-		mVideoRendering = true;
-		FreeBuffers();
+		context_data->mVideoRendering = true;
+		context_data->FreeBuffers();
 
 		// TODO: tweak post processing upper / lower clip
 		PushUpperLowerClipForEffects();
@@ -981,12 +938,12 @@ void Manager_PostProcessing::OnVideoFrameRendering(HISender pSender, HKEvent pEv
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
 	{
 		// turn on back preview mode and display quality settings
-		mVideoRendering = false;
+		context_data->mVideoRendering = false;
 		PopUpperLowerClipForEffects();
 	}
 }
 
-const bool Manager_PostProcessing::CheckShadersPath(const char* path) const
+const bool Manager_PostProcessing::SContextData::CheckShadersPath(const char* path) const
 {
 	const char* test_shaders[] = {
 		SHADER_SIMPLE_VERTEX,
@@ -1006,7 +963,7 @@ const bool Manager_PostProcessing::CheckShadersPath(const char* path) const
 	return true;
 }
 
-bool Manager_PostProcessing::LoadShaders()
+bool Manager_PostProcessing::SContextData::LoadShaders()
 {
 	if (nullptr != mShaderSimple.get())
 	{
@@ -1086,12 +1043,12 @@ bool Manager_PostProcessing::LoadShaders()
 	return status;
 }
 
-void Manager_PostProcessing::FreeShaders()
+void Manager_PostProcessing::SContextData::FreeShaders()
 {
 	mShaderSimple.reset(nullptr);
 }
 
-void Manager_PostProcessing::FreeBuffers()
+void Manager_PostProcessing::SContextData::FreeBuffers()
 {
 	mMainFrameBuffer.ChangeContext();
 
@@ -1101,7 +1058,7 @@ void Manager_PostProcessing::FreeBuffers()
 	mEffectBuffers3.ChangeContext();
 }
 
-bool Manager_PostProcessing::PrepPaneSettings()
+bool Manager_PostProcessing::SContextData::PrepPaneSettings()
 {
 	mPaneSettings.resize(4);
 
@@ -1177,7 +1134,7 @@ bool Manager_PostProcessing::EmptyGLErrorStack()
 }
 
 
-void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh)
+void Manager_PostProcessing::SContextData::DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
 	FBScene *pScene = mSystem.Scene;
 	
@@ -1292,7 +1249,7 @@ void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh,
 	}
 }
 
-void Manager_PostProcessing::DrawHUDRect(FBHUDRectElement *pRect, int panex, int paney, int panew, int paneh, int vieww, int viewh)
+void Manager_PostProcessing::SContextData::DrawHUDRect(FBHUDRectElement *pRect, int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
 	bool posPer = pRect->PositionByPercent;
 	bool sclPer = pRect->ScaleByPercent;
@@ -1574,7 +1531,7 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 }
 #endif
 
-void Manager_PostProcessing::FreeFonts()
+void Manager_PostProcessing::SContextData::FreeFonts()
 {
 #if defined(HUD_FONT)	
 	for (auto iter = begin(mElemFonts); iter != end(mElemFonts); ++iter)
