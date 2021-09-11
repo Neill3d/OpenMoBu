@@ -106,16 +106,41 @@ void CConstraintTwistextraction::SetupAllAnimationNodes()
 
 void CConstraintTwistextraction::SnapSuggested()
 {
-	SetSuggested(false);
+	FBModel* source = ReferenceGet(mGroupSource, 0);
+	FBModel* constrained = ReferenceGet(mGroupConstrain, 0);
+
+	if (source && constrained && (ForwardAxis != axis::None))
+	{
+		mSourceRotationOrder = MapRotationOrder(source->RotationOrder.GetPropertyValue());
+		mConstrainedRotationOrder = MapRotationOrder(constrained->RotationOrder.GetPropertyValue());
+		
+		// store the rotation offset
+		FBQuaternion offsetQ;
+		FBRotationToQuaternion(offsetQ, constrained->Rotation, mConstrainedRotationOrder);
+
+		mOffsetRotation[0] = (nv_scalar)offsetQ[0];
+		mOffsetRotation[1] = (nv_scalar)offsetQ[1];
+		mOffsetRotation[2] = (nv_scalar)offsetQ[2];
+		mOffsetRotation[3] = (nv_scalar)offsetQ[3];
+	}
 }
 
 void CConstraintTwistextraction::FreezeSuggested()
 {
-	SetSuggested(true);
+	FBConstraint::FreezeSuggested();
+
+	if (ReferenceGet(mGroupSource, 0))
+	{
+		FreezeSRT((FBModel*)ReferenceGet(mGroupSource, 0), false, true, false);
+	}
 }
 
 bool CConstraintTwistextraction::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo, FBConstraintInfo* pConstraintInfo)
 {
+	// zero the rotation offset
+	if (pConstraintInfo->GetZeroRequested())
+		SetZero();
+
 	FBRVector rvector;
 	mSourceRotation->ReadData(rvector, pEvaluateInfo);
 
@@ -134,7 +159,7 @@ bool CConstraintTwistextraction::AnimationNodeNotify(FBAnimationNode* pAnimation
 	
 	// subtract shortest arc quat from source quat to find the twist
 	shortestQ = shortestQ.Inverse();
-	fullQ = fullQ * shortestQ;
+	fullQ = shortestQ * fullQ;
 
 	// add twist to offset rotation
 	fullQ = mOffsetRotation * fullQ;
@@ -160,29 +185,13 @@ bool CConstraintTwistextraction::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObject
 }
 
 
-void CConstraintTwistextraction::SetSuggested(bool freeze)
+void CConstraintTwistextraction::SetZero()
 {
-	// store the rotation orders of the source and constrained object
-	// store the constrained objects rotation if 'freeze'
-
-	FBModel* source = ReferenceGet(mGroupSource, 0);
-	FBModel* constrained = ReferenceGet(mGroupConstrain, 0);
-
-	if (source && constrained)
-	{
-		mSourceRotationOrder = MapRotationOrder(source->RotationOrder.GetPropertyValue());
-		mConstrainedRotationOrder = MapRotationOrder(constrained->RotationOrder.GetPropertyValue());
-		FBQuaternion offsetQ;
-		if (freeze)
-			FBRotationToQuaternion(offsetQ, constrained->Rotation, mConstrainedRotationOrder);
-		else
-			offsetQ[0] = 0; offsetQ[1] = 0; offsetQ[2] = 0; offsetQ[3] = 1;
-
-		mOffsetRotation[0] = (nv_scalar)offsetQ[0]; 
-		mOffsetRotation[1] = (nv_scalar)offsetQ[1]; 
-		mOffsetRotation[2] = (nv_scalar)offsetQ[2]; 
-		mOffsetRotation[3] = (nv_scalar)offsetQ[3];
-	}
+	// set the offset rotation to identity
+	mOffsetRotation[0] = 0; 
+	mOffsetRotation[1] = 0; 
+	mOffsetRotation[2] = 0; 
+	mOffsetRotation[3] = 1;
 }
 
 void CConstraintTwistextraction::ShortestArcQuat(const vec3& rotatedVector, const vec3& forwardVector, quat& outQuaternion)

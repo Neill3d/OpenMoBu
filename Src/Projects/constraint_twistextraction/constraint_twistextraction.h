@@ -77,7 +77,7 @@ protected:
 	FBRotationOrder mSourceRotationOrder;
 	FBRotationOrder mConstrainedRotationOrder;
 
-	void SetSuggested(bool freeze);
+	void SetZero();
 
 	static void ShortestArcQuat(const vec3& rotatedVector, const vec3& forwardVector, quat& outQuaternion);
 	static void Orthogonal(const vec3& inVec, vec3& outVec);

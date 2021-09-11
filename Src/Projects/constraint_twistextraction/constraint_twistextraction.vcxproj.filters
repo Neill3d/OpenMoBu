@@ -21,15 +21,21 @@
     <ClCompile Include="main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\MotionCodeLibrary\nv_math.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\MotionCodeLibrary\nv_math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constraint_twistextraction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+	<ClInclude Include="..\..\MotionCodeLibrary\nv_algebra.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_mathdecl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
