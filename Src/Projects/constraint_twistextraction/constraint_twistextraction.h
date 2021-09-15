@@ -65,9 +65,10 @@ public:
 
 	FBPropertyBaseEnum<axis> ForwardAxis;
 
-	FBPropertyVector3d OffsetRotation;
-
 protected:
+
+	FBString mSourceName;
+	FBString mConstrainedName;
 
 	quat mOffsetRotation;
 

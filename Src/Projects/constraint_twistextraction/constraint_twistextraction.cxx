@@ -118,10 +118,10 @@ void CConstraintTwistextraction::SnapSuggested()
 		FBQuaternion offsetQ;
 		FBRotationToQuaternion(offsetQ, constrained->Rotation, mConstrainedRotationOrder);
 
-		mOffsetRotation[0] = (nv_scalar)offsetQ[0];
-		mOffsetRotation[1] = (nv_scalar)offsetQ[1];
-		mOffsetRotation[2] = (nv_scalar)offsetQ[2];
-		mOffsetRotation[3] = (nv_scalar)offsetQ[3];
+		mOffsetRotation.x = (nv_scalar)offsetQ[0];
+		mOffsetRotation.y = (nv_scalar)offsetQ[1];
+		mOffsetRotation.z = (nv_scalar)offsetQ[2];
+		mOffsetRotation.w = (nv_scalar)offsetQ[3];
 	}
 }
 
@@ -165,7 +165,7 @@ bool CConstraintTwistextraction::AnimationNodeNotify(FBAnimationNode* pAnimation
 	fullQ = mOffsetRotation * fullQ;
 	
 	// change back into euler rotation
-	sourceQuat[0] = fullQ[0]; sourceQuat[1] = fullQ[1]; sourceQuat[2] = fullQ[2]; sourceQuat[3] = fullQ[3];
+	sourceQuat[0] = fullQ.x; sourceQuat[1] = fullQ.y; sourceQuat[2] = fullQ.z; sourceQuat[3] = fullQ.w;
 	FBQuaternionToRotation(rvector, sourceQuat, mConstrainedRotationOrder);
 
 	// write to mConstrainedRotation
@@ -176,11 +176,73 @@ bool CConstraintTwistextraction::AnimationNodeNotify(FBAnimationNode* pAnimation
 
 bool CConstraintTwistextraction::FbxStore(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
 {
+	// store attributes
+	if (pStoreWhat & kAttributes)
+	{
+		FBModel* source = ReferenceGet(mGroupSource, 0);
+		FBModel* constrained = ReferenceGet(mGroupConstrain, 0);
+		mSourceName = (source) ? source->Name : "Empty";
+		mConstrainedName = (constrained) ? constrained->Name : "Empty";
+
+		pFbxObject->FieldWriteC("Source", mSourceName);
+		pFbxObject->FieldWriteC("Constrained", mConstrainedName);
+
+		pFbxObject->FieldWriteD("ForwardX", mForwardVector.x);
+		pFbxObject->FieldWriteD("ForwardY", mForwardVector.y);
+		pFbxObject->FieldWriteD("ForwardZ", mForwardVector.z);
+
+		pFbxObject->FieldWriteD("OffsetX", mOffsetRotation.x);
+		pFbxObject->FieldWriteD("OffsetY", mOffsetRotation.y);
+		pFbxObject->FieldWriteD("OffsetZ", mOffsetRotation.z);
+		pFbxObject->FieldWriteD("OffsetW", mOffsetRotation.w);
+	}
+
 	return true;
 }
 
 bool CConstraintTwistextraction::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
 {
+	if (pStoreWhat & kAttributes)
+	{
+		// read the values
+		mSourceName = pFbxObject->FieldReadC("Source");
+		mConstrainedName = pFbxObject->FieldReadC("Constrained");
+
+		mForwardVector.x = pFbxObject->FieldReadD("ForwardX");
+		mForwardVector.y = pFbxObject->FieldReadD("ForwardY");
+		mForwardVector.z = pFbxObject->FieldReadD("ForwardZ");
+
+		mOffsetRotation.x = pFbxObject->FieldReadD("OffsetX");
+		mOffsetRotation.y = pFbxObject->FieldReadD("OffsetY");
+		mOffsetRotation.z = pFbxObject->FieldReadD("OffsetZ");
+		mOffsetRotation.w = pFbxObject->FieldReadD("OffsetW");
+	}
+	else if (pStoreWhat & kCleanup)
+	{
+		// make sure the reference groups are empty
+		ReferenceRemoveAll();
+
+		// try to assign models
+		FBModel* sourcemodel = FBFindModelByLabelName(mSourceName);
+		if (sourcemodel) {
+			ReferenceAdd(mGroupSource, sourcemodel);
+		}
+
+		FBModel* constrainedmodel = FBFindModelByLabelName(mConstrainedName);
+		if (constrainedmodel) {
+			ReferenceAdd(mGroupConstrain, constrainedmodel);
+		}
+
+		// try set forward axis
+		// this is technically not needed since the mForwardVector is already set but I want the property to display the correct axis
+		if (mForwardVector.x > 0)
+			ForwardAxis.SetPropertyValue(axis::X);
+		else if (mForwardVector.y > 0)
+			ForwardAxis.SetPropertyValue(axis::Y);
+		else
+			ForwardAxis.SetPropertyValue(axis::Z);
+	}
+
 	return true;
 }
 
@@ -188,10 +250,10 @@ bool CConstraintTwistextraction::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObject
 void CConstraintTwistextraction::SetZero()
 {
 	// set the offset rotation to identity
-	mOffsetRotation[0] = 0; 
-	mOffsetRotation[1] = 0; 
-	mOffsetRotation[2] = 0; 
-	mOffsetRotation[3] = 1;
+	mOffsetRotation.x = 0; 
+	mOffsetRotation.y = 0; 
+	mOffsetRotation.z = 0; 
+	mOffsetRotation.w = 1;
 }
 
 void CConstraintTwistextraction::ShortestArcQuat(const vec3& rotatedVector, const vec3& forwardVector, quat& outQuaternion)
@@ -208,7 +270,7 @@ void CConstraintTwistextraction::ShortestArcQuat(const vec3& rotatedVector, cons
 	if (cosine > 0.00001) 
 	{
 		cross(xyz, forwardVector, rotatedVector);
-		outQuaternion[0] = xyz[0]; outQuaternion[1] = xyz[1]; outQuaternion[2] = xyz[2]; outQuaternion[3] = cosine;
+		outQuaternion.x = xyz.x; outQuaternion.y = xyz.y; outQuaternion.z = xyz.z; outQuaternion.w = cosine;
 		outQuaternion.Normalize();
 		
 	}
@@ -216,27 +278,27 @@ void CConstraintTwistextraction::ShortestArcQuat(const vec3& rotatedVector, cons
 	{
 		Orthogonal(forwardVector, xyz);
 		xyz.normalize();
-		outQuaternion[0] = xyz[0]; outQuaternion[1] = xyz[1]; outQuaternion[2] = xyz[2]; outQuaternion[3] = 0;
+		outQuaternion.x = xyz.x; outQuaternion.y = xyz.y; outQuaternion.z = xyz.z; outQuaternion.w = 0;
 	}
 }
 
 void CConstraintTwistextraction::Orthogonal(const vec3& inVec, vec3& outVec)
 {
 	vec3 v;
-	if (inVec[0] < inVec[1]) 
+	if (inVec.x < inVec.y) 
 	{
-		if (inVec[0] < inVec[2])
+		if (inVec.x < inVec.z)
 		{
-			v[0] = 1;
+			v.x = 1;
 		}
-		else if (inVec[1] < inVec[2])
+		else if (inVec.y < inVec.z)
 		{
-			v[1] = 1;
+			v.y = 1;
 		}
 	}
 	else
 	{
-		v[2] = 1;
+		v.z = 1;
 	}
 
 	//cross product of the vector and the most orthogonal basis vector
