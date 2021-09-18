@@ -179,14 +179,6 @@ bool CConstraintTwistextraction::FbxStore(FBFbxObject* pFbxObject, kFbxObjectSto
 	// store attributes
 	if (pStoreWhat & kAttributes)
 	{
-		FBModel* source = ReferenceGet(mGroupSource, 0);
-		FBModel* constrained = ReferenceGet(mGroupConstrain, 0);
-		mSourceName = (source) ? source->Name : "Empty";
-		mConstrainedName = (constrained) ? constrained->Name : "Empty";
-
-		pFbxObject->FieldWriteC("Source", mSourceName);
-		pFbxObject->FieldWriteC("Constrained", mConstrainedName);
-
 		pFbxObject->FieldWriteD("ForwardX", mForwardVector.x);
 		pFbxObject->FieldWriteD("ForwardY", mForwardVector.y);
 		pFbxObject->FieldWriteD("ForwardZ", mForwardVector.z);
@@ -204,10 +196,6 @@ bool CConstraintTwistextraction::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObject
 {
 	if (pStoreWhat & kAttributes)
 	{
-		// read the values
-		mSourceName = pFbxObject->FieldReadC("Source");
-		mConstrainedName = pFbxObject->FieldReadC("Constrained");
-
 		mForwardVector.x = pFbxObject->FieldReadD("ForwardX");
 		mForwardVector.y = pFbxObject->FieldReadD("ForwardY");
 		mForwardVector.z = pFbxObject->FieldReadD("ForwardZ");
@@ -219,20 +207,6 @@ bool CConstraintTwistextraction::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObject
 	}
 	else if (pStoreWhat & kCleanup)
 	{
-		// make sure the reference groups are empty
-		ReferenceRemoveAll();
-
-		// try to assign models
-		FBModel* sourcemodel = FBFindModelByLabelName(mSourceName);
-		if (sourcemodel) {
-			ReferenceAdd(mGroupSource, sourcemodel);
-		}
-
-		FBModel* constrainedmodel = FBFindModelByLabelName(mConstrainedName);
-		if (constrainedmodel) {
-			ReferenceAdd(mGroupConstrain, constrainedmodel);
-		}
-
 		// try set forward axis
 		// this is technically not needed since the mForwardVector is already set but I want the property to display the correct axis
 		if (mForwardVector.x > 0)
