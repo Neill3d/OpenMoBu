@@ -85,6 +85,11 @@ Name: references\extension; GroupDescription: "Plugins:"; Description: "FBX Refe
 Name: calculateNormals; GroupDescription: "Plugins:"; Description: "Calculate Normals Solver";
 Name: volumeCalculator; GroupDescription: "Plugins:"; Description: "Optical MoCap Volume Calculator";
 
+Name: scripts; GroupDescription: "Scripts:"; Description: "Scripts";
+Name: scripts\startup; GroupDescription: "Scripts:"; Description: "StartUp Scripts";
+Name: scripts\references; GroupDescription: "Scripts:"; Description: "StartUp References";
+Name: scripts\actions; GroupDescription: "Scripts:"; Description: "Action Scripts";
+
 [Files]
 
 ; 2014
@@ -141,39 +146,39 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2018}\bin\conf
 
 ; 2019
 
-Source: "..\bin\x64\plugins_2019\box_poseReader.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\poseReader
-Source: "..\bin\x64\plugins_2019\box_rayIntersect.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\rayIntersect
-Source: "..\bin\x64\plugins_2019\box_RBF.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxRBF
-Source: "..\bin\x64\plugins_2019\box_spring.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxSpring
+Source: "..\bin\x64\plugins_2019\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\poseReader
+Source: "..\bin\x64\plugins_2019\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\rayIntersect
+Source: "..\bin\x64\plugins_2019\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxRBF
+Source: "..\bin\x64\plugins_2019\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxSpring
 
-Source: "..\bin\x64\plugins_2019\constraint_attachment.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\attachmentConstraint
-Source: "..\bin\x64\plugins_2019\driven_constraint.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\drivenConstraint
+Source: "..\bin\x64\plugins_2019\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\attachmentConstraint
+Source: "..\bin\x64\plugins_2019\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\drivenConstraint
 
-Source: "..\bin\x64\plugins_2019\device_faceCap.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\faceCap
-Source: "..\bin\x64\plugins_2019\device_projectTango.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\projectTango
+;Source: "..\bin\x64\plugins_2019\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\faceCap
+Source: "..\bin\x64\plugins_2019\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\projectTango
 
-Source: "..\bin\x64\plugins_2019\manip_lockcamera.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: lockCamera
-Source: "..\bin\x64\plugins_2019\post_processing.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: postProcessing
-Source: "..\bin\x64\plugins_2019\SuperDynamicLighting.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: shaders\superDynamicLighting
+Source: "..\bin\x64\plugins_2019\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: lockCamera
+Source: "..\bin\x64\plugins_2019\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: postProcessing
+Source: "..\bin\x64\plugins_2019\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: shaders\superDynamicLighting
 
-Source: "..\bin\x64\plugins_2019\solver_calculateNormals.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: calculateNormals
-Source: "..\bin\x64\plugins_2019\volume_calculator.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: volumeCalculator
+Source: "..\bin\x64\plugins_2019\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: calculateNormals
+Source: "..\bin\x64\plugins_2019\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: volumeCalculator
 
-Source: "..\bin\x64\plugins_2019\references_manager.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\manager
-Source: "..\bin\x64\plugins_2019\FBX\FBXExtension_References.dll"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\extension
+Source: "..\bin\x64\plugins_2019\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\manager
+Source: "..\bin\x64\plugins_2019\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\extension
 
 
-Source: "..\bin\x64\plugins_2019\GLSL\*"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2019
-Source: "..\bin\x64\plugins_2019\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2019}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2019
-Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2019-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019
-Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{userdocs}\MB\2019-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019
-Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2019-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2019
-Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2019}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\bin\x64\plugins_2019\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\bin\x64\plugins_2019\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\references
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\actions
 
-[Registry]
-Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
-    ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};C:\foo"; \
-    Check: NeedsAddPath('C:\foo')
+;[Registry]
+;Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
+;    ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};C:\foo"; \
+;    Check: NeedsAddPath('C:\foo')
 
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
@@ -182,34 +187,37 @@ Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environmen
 
 
 const EnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+const MoBuEnvKey = 'MOTIONBUILDER_PLUGIN_PATH';
+const MoBuExtEnvKey = 'MOBU_FBX_EXTENSION_PATH';
+const MoBuPythonEnvKey = 'MOTIONBUILDER_PYTHON_STARTUP';
 
-procedure EnvAddPath(Path: string);
+procedure EnvAddPath(Key:string; Path: string);
 var
     Paths: string;
 begin
     { Retrieve current path (use empty string if entry not exists) }
-    if not RegQueryStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths)
+    if not RegQueryStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, Key, Paths)
     then Paths := '';
 
     { Skip if string already found in path }
     if Pos(';' + Uppercase(Path) + ';', ';' + Uppercase(Paths) + ';') > 0 then exit;
 
     { App string to the end of the path variable }
-    Paths := Paths + ';'+ Path +';'
+    Paths := Paths + ';'+ Path +';';
 
     { Overwrite (or create if missing) path environment variable }
-    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths)
+    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, Key, Paths)
     then Log(Format('The [%s] added to PATH: [%s]', [Path, Paths]))
     else Log(Format('Error while adding the [%s] to PATH: [%s]', [Path, Paths]));
 end;
 
-procedure EnvRemovePath(Path: string);
+procedure EnvRemovePath(Key:string; Path: string);
 var
     Paths: string;
     P: Integer;
 begin
     { Skip if registry entry not exists }
-    if not RegQueryStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths) then
+    if not RegQueryStringValue(HKEY_LOCAL_MACHINE, Key, 'Path', Paths) then
         exit;
 
     { Skip if string not found in path }
@@ -220,22 +228,23 @@ begin
     Delete(Paths, P - 1, Length(Path) + 1);
 
     { Overwrite path environment variable }
-    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths)
+    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, Key, Paths)
     then Log(Format('The [%s] removed from PATH: [%s]', [Path, Paths]))
     else Log(Format('Error while removing the [%s] from PATH: [%s]', [Path, Paths]));
 end;
 
-
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-    if (CurStep = ssPostInstall) and IsTaskSelected('envPath')
-    then EnvAddPath(ExpandConstant('{app}') +'\bin');
+    if (CurStep = ssPostInstall) and WizardIsTaskSelected('envPath')
+    then begin
+      EnvAddPath(MoBuEnvKey, ExpandConstant('{app}') + '\bin\x64\plugins');
+    end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
     if CurUninstallStep = usPostUninstall
-    then EnvRemovePath(ExpandConstant('{app}') +'\bin');
+    then EnvRemovePath(MoBuEnvKey, ExpandConstant('{app}') +'\bin\x64\plugins');
 end;
 
 function NeedsAddPath(Param: string): boolean;
