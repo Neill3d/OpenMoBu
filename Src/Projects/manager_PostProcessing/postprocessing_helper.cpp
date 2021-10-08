@@ -17,6 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <thread>
 
+#include "FileUtils.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -366,4 +367,26 @@ void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeigh
 	points[6] = fc + far_height*up + far_width*right; // up right
 	points[7] = fc - far_height*up + far_width*right; // bottom right
 
+}
+
+//////////////////////////////
+
+bool CheckShadersPath(const char* path, const char* test_vertex, const char* test_fragment )
+{
+	const char* test_shaders[] = {
+		test_vertex,
+		test_fragment
+	};
+	
+	for (const char* shader_path : test_shaders)
+	{
+		FBString full_path(path, shader_path);
+
+		if (!IsFileExists(full_path))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }

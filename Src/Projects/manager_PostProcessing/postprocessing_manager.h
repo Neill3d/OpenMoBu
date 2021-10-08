@@ -147,7 +147,7 @@ private:
 
 		// manager shaders
 		bool	LoadShaders();
-		const bool CheckShadersPath(const char* path) const;
+		
 		void	FreeShaders();
 
 		void	FreeBuffers();

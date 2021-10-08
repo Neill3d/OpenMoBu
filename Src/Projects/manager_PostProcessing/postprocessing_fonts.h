@@ -38,6 +38,8 @@ public:
 
 private:
 
+	bool mFailedToLoad{ false };
+
 	std::string		fontPath;
 	std::string		lasttext;
 	markup_t		normal;

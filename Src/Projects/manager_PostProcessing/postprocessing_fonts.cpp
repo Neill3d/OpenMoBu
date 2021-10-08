@@ -23,6 +23,8 @@
 
 #define ATLAS_SIZE		1024
 
+extern bool CheckShadersPath(const char* path, const char* test_vertex, const char* test_fragment);
+
 //////////////////////////////////
 //
 
@@ -248,15 +250,41 @@ bool CFont::Display()
 		return false;
 
 	// TODO: check if we need to load a glsl shader
-	if (0 == text_shader)
+	if (0 == text_shader && !mFailedToLoad)
 	{
-		FBString appPath;
+		FBString shaders_path;
 
-		appPath = FBSystem::TheOne().ApplicationPath;
-		appPath = appPath + "\\plugins";
+		shaders_path = FBSystem::TheOne().ApplicationPath;
+		shaders_path = shaders_path + "\\plugins";
 
-		FBString vert(appPath, SHADER_VERTEX);
-		FBString frag(appPath, SHADER_FRAGMENT);
+		bool status = true;
+
+		if (!CheckShadersPath(shaders_path, SHADER_VERTEX, SHADER_FRAGMENT))
+		{
+			status = false;
+
+			const FBStringList& plugin_paths = FBSystem::TheOne().GetPluginPath();
+
+			for (int i = 0; i < plugin_paths.GetCount(); ++i)
+			{
+				if (CheckShadersPath(plugin_paths[i], SHADER_VERTEX, SHADER_FRAGMENT))
+				{
+					shaders_path = plugin_paths[i];
+					status = true;
+					break;
+				}
+			}
+		}
+
+		if (status == false)
+		{
+			mFailedToLoad = true;
+			FBTrace("[PostProcessing] Failed to find shaders location!\n");
+			return false;
+		}
+
+		FBString vert(shaders_path, SHADER_VERTEX);
+		FBString frag(shaders_path, SHADER_FRAGMENT);
 
 		text_shader = shader_load(vert, frag);
 	}

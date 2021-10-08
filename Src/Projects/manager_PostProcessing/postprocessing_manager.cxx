@@ -943,26 +943,6 @@ void Manager_PostProcessing::OnVideoFrameRendering(HISender pSender, HKEvent pEv
 	}
 }
 
-const bool Manager_PostProcessing::SContextData::CheckShadersPath(const char* path) const
-{
-	const char* test_shaders[] = {
-		SHADER_SIMPLE_VERTEX,
-		SHADER_SIMPLE_FRAGMENT
-	};
-
-	for (const char* shader_path : test_shaders)
-	{
-		FBString full_path(path, shader_path);
-
-		if (!IsFileExists(full_path))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
 bool Manager_PostProcessing::SContextData::LoadShaders()
 {
 	if (nullptr != mShaderSimple.get())
@@ -975,7 +955,7 @@ bool Manager_PostProcessing::SContextData::LoadShaders()
 
 	bool status = true;
 
-	if (!CheckShadersPath(shaders_path))
+	if (!CheckShadersPath(shaders_path, SHADER_SIMPLE_VERTEX, SHADER_SIMPLE_FRAGMENT))
 	{
 		status = false;
 
@@ -983,7 +963,7 @@ bool Manager_PostProcessing::SContextData::LoadShaders()
 
 		for (int i = 0; i < plugin_paths.GetCount(); ++i)
 		{
-			if (CheckShadersPath(plugin_paths[i]))
+			if (CheckShadersPath(plugin_paths[i], SHADER_SIMPLE_VERTEX, SHADER_SIMPLE_FRAGMENT))
 			{
 				shaders_path = plugin_paths[i];
 				status = true;
@@ -1011,7 +991,6 @@ bool Manager_PostProcessing::SContextData::LoadShaders()
 
 		FBString vertex_path(shaders_path, SHADER_SIMPLE_VERTEX);
 		FBString fragment_path(shaders_path, SHADER_SIMPLE_FRAGMENT);
-
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -1340,7 +1319,7 @@ void Manager_PostProcessing::SContextData::DrawHUDRect(FBHUDRectElement *pRect, 
 	glDisable(GL_BLEND);
 }
 #if defined(HUD_FONT)
-void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh)
+void Manager_PostProcessing::SContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
 //	if (nullptr == pFont)
 //		return;
