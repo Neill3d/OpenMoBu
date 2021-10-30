@@ -277,7 +277,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">..\..\..\bin\$(Platform)\plugins_2022\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2017|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2017|x64'">..\..\..\bin\$(Platform)\plugins_2017\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ADSK_MOBU_2014_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">$(ADSK_MOBU_2013_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2014|x64'">$(ADSK_MOBU_2014_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
@@ -313,14 +313,14 @@
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\MotionCodeLibrary\;$(ADSK_MOBU_2018_64)\OpenRealitySDK\Include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\MotionCodeLibrary\;$(ADSK_MOBU_2019_64)\OpenRealitySDK\Include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">..\..\MotionCodeLibrary\;$(ADSK_MOBU_2022_64)\OpenRealitySDK\Include;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2017|x64'">..\..\MotionCodeLibrary\;$(ADSK_MOBU_2018_64)\OpenRealitySDK\Include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2017|x64'">..\..\MotionCodeLibrary\;$(ADSK_MOBU_2017_64)\OpenRealitySDK\Include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">$(ADSK_MOBU_2013_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2014|x64'">$(ADSK_MOBU_2014_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">$(ADSK_MOBU_2018_64)\OpenRealitySDK\lib\x64;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\x64;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">$(ADSK_MOBU_2022_64)\OpenRealitySDK\lib\x64;$(LibraryPath)</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2017|x64'">$(ADSK_MOBU_2018_64)\OpenRealitySDK\lib\x64;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2017|x64'">$(ADSK_MOBU_2017_64)\OpenRealitySDK\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -822,7 +822,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>$(ADSK_MOBU_2014_64)/bin\$(Platform)/plugins/$(ProjectName).lib</ImportLibrary>
+      <ImportLibrary>$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
@@ -870,7 +870,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>$(ADSK_MOBU_2014_64)/bin\$(Platform)/plugins/$(ProjectName).lib</ImportLibrary>
+      <ImportLibrary>$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
@@ -968,7 +968,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>$(ADSK_MOBU_2014_64)/bin\$(Platform)/plugins/$(ProjectName).lib</ImportLibrary>
+      <ImportLibrary>$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
