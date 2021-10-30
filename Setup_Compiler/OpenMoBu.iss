@@ -39,27 +39,30 @@ ChangesEnvironment=true
 
 [Types]
 ;Name: "full"; Description: "Full installation"
-Name: "2014"; Description: "MotionBuilder 2014"
-Name: "2015"; Description: "MotionBuilder 2015"
-Name: "2016"; Description: "MotionBuilder 2016"
+;Name: "2014"; Description: "MotionBuilder 2014"
+;Name: "2015"; Description: "MotionBuilder 2015"
+;Name: "2016"; Description: "MotionBuilder 2016"
 Name: "2017"; Description: "MotionBuilder 2017"
 Name: "2018"; Description: "MotionBuilder 2018"
-Name: "2019"; Description: "MotionBuilder 2019"
+Name: "2019"; Description: "MotionBuilder 2019-2020"
+Name: "2022"; Description: "MotionBuilder 2022"
 
 ;Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: "MotionBuilder2014"; Description: "MotionBuilder 2014 plugins"; Types: 2014
+;Name: "MotionBuilder2014"; Description: "MotionBuilder 2014 plugins"; Types: 2014
 ; Types: full 2014 custom;
-Name: "MotionBuilder2015"; Description: "MotionBuilder 2015 plugins"; Types: 2015
+;Name: "MotionBuilder2015"; Description: "MotionBuilder 2015 plugins"; Types: 2015
 ; Types: full 2015 custom;
-Name: "MotionBuilder2016"; Description: "MotionBuilder 2016 plugins"; Types: 2016
+;Name: "MotionBuilder2016"; Description: "MotionBuilder 2016 plugins"; Types: 2016
 ; full 2016 custom;
 Name: "MotionBuilder2017"; Description: "MotionBuilder 2017 plugins"; Types: 2017
 ; full 2017 custom;
 Name: "MotionBuilder2018"; Description: "MotionBuilder 2018 plugins"; Types: 2018
 ; full 2018 custom;
-Name: "MotionBuilder2019"; Description: "MotionBuilder 2019 plugins"; Types: 2019
+Name: "MotionBuilder2019"; Description: "MotionBuilder 2019-2020 plugins"; Types: 2019
+; full 2019 custom;
+Name: "MotionBuilder2022"; Description: "MotionBuilder 2022 plugins"; Types: 2022
 ; full 2019 custom;
 
 [Tasks]
@@ -92,57 +95,67 @@ Name: scripts\actions; GroupDescription: "Scripts:"; Description: "Action Script
 
 [Files]
 
-; 2014
-
-Source: "..\bin\x64\plugins_2014\*.dll"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2014
-;Source: "..\bin\x64\plugins_2014\GLSL\*"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2014
-;Source: "..\bin\x64\plugins_2014\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2014}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2014
-Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2014-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2014
-Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{userdocs}\MB\2014-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2014
-Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2014-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2014
-Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2014}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2014
-
-; 2015
-
-Source: "..\bin\x64\plugins_2015\*.dll"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2015
-;Source: "..\bin\x64\plugins_2015\GLSL\*"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2015
-;Source: "..\bin\x64\plugins_2015\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2015}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2015
-Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2015-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2015
-Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{userdocs}\MB\2015-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2015
-Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2015-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2015
-Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2015}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2015
-
-; 2016
-
-Source: "..\bin\x64\plugins_2016\*.dll"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2016
-;Source: "..\bin\x64\plugins_2016\GLSL\*"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2016
-;Source: "..\bin\x64\plugins_2016\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2016}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2016
-Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2016-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2016
-Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{userdocs}\MB\2016-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2016
-Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2016-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2016
-Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2016}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2016
-
 ; 2017
 
-Source: "..\bin\x64\plugins_2017\*.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\bin\x64\plugins_2017\FBX\*.dll"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\bin\x64\plugins_2017\GLSL\*"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\bin\x64\plugins_2017\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2017}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2017-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{userdocs}\MB\2017-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2017-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2017}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseReader
+Source: "..\bin\x64\plugins_2017\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\rayIntersect
+Source: "..\bin\x64\plugins_2017\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxRBF
+Source: "..\bin\x64\plugins_2017\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxSpring
+
+Source: "..\bin\x64\plugins_2017\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\attachmentConstraint
+Source: "..\bin\x64\plugins_2017\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\drivenConstraint
+
+Source: "..\bin\x64\plugins_2017\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: device\faceCap
+Source: "..\bin\x64\plugins_2017\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: device\projectTango
+
+Source: "..\bin\x64\plugins_2017\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: lockCamera
+Source: "..\bin\x64\plugins_2017\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: postProcessing
+Source: "..\bin\x64\plugins_2017\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: shaders\superDynamicLighting
+
+Source: "..\bin\x64\plugins_2017\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: calculateNormals
+Source: "..\bin\x64\plugins_2017\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: volumeCalculator
+
+Source: "..\bin\x64\plugins_2017\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: references\manager
+Source: "..\bin\x64\plugins_2017\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: references\extension
+
+
+Source: "..\bin\x64\plugins_2017\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\bin\x64\plugins_2017\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\references
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\actions
 
 ; 2018
 
-Source: "..\bin\x64\plugins_2018\*.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\bin\x64\plugins_2018\FBX\*.dll"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\bin\x64\plugins_2018\GLSL\*"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\bin\x64\plugins_2018\GLSL_CS\*"; DestDir: "{code:MoBu_Path64|2018}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\PythonScripts\Startup\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{userdocs}\MB\2018-x64\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\PythonScripts\Actions\*"; DestDir: "{code:MoBu_Path64|2018}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\poseReader
+Source: "..\bin\x64\plugins_2018\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\rayIntersect
+Source: "..\bin\x64\plugins_2018\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxRBF
+Source: "..\bin\x64\plugins_2018\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxSpring
+
+Source: "..\bin\x64\plugins_2018\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\attachmentConstraint
+Source: "..\bin\x64\plugins_2018\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\drivenConstraint
+
+Source: "..\bin\x64\plugins_2018\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: device\faceCap
+Source: "..\bin\x64\plugins_2018\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: device\projectTango
+
+Source: "..\bin\x64\plugins_2018\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: lockCamera
+Source: "..\bin\x64\plugins_2018\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: postProcessing
+Source: "..\bin\x64\plugins_2018\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: shaders\superDynamicLighting
+
+Source: "..\bin\x64\plugins_2018\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: calculateNormals
+Source: "..\bin\x64\plugins_2018\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: volumeCalculator
+
+Source: "..\bin\x64\plugins_2018\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: references\manager
+Source: "..\bin\x64\plugins_2018\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: references\extension
+
+
+Source: "..\bin\x64\plugins_2018\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\bin\x64\plugins_2018\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\references
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\actions
 
 ; 2019
 
@@ -154,7 +167,7 @@ Source: "..\bin\x64\plugins_2019\box_spring.dll"; DestDir: "{app}\bin\x64\plugin
 Source: "..\bin\x64\plugins_2019\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\attachmentConstraint
 Source: "..\bin\x64\plugins_2019\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\drivenConstraint
 
-;Source: "..\bin\x64\plugins_2019\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\faceCap
+Source: "..\bin\x64\plugins_2019\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\faceCap
 Source: "..\bin\x64\plugins_2019\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\projectTango
 
 Source: "..\bin\x64\plugins_2019\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: lockCamera
@@ -174,6 +187,37 @@ Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"
 Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\references
 Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\actions
+
+; 2022
+
+Source: "..\bin\x64\plugins_2022\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseReader
+Source: "..\bin\x64\plugins_2022\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\rayIntersect
+Source: "..\bin\x64\plugins_2022\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxRBF
+Source: "..\bin\x64\plugins_2022\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxSpring
+
+Source: "..\bin\x64\plugins_2022\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\attachmentConstraint
+Source: "..\bin\x64\plugins_2022\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\drivenConstraint
+
+Source: "..\bin\x64\plugins_2022\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\faceCap
+Source: "..\bin\x64\plugins_2022\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\projectTango
+
+Source: "..\bin\x64\plugins_2022\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: lockCamera
+Source: "..\bin\x64\plugins_2022\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: postProcessing
+Source: "..\bin\x64\plugins_2022\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: shaders\superDynamicLighting
+
+Source: "..\bin\x64\plugins_2022\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: calculateNormals
+Source: "..\bin\x64\plugins_2022\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: volumeCalculator
+
+Source: "..\bin\x64\plugins_2022\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\manager
+Source: "..\bin\x64\plugins_2022\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\extension
+
+
+Source: "..\bin\x64\plugins_2022\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2022
+Source: "..\bin\x64\plugins_2022\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2022
+Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\references
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\actions
 
 ;[Registry]
 ;Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
