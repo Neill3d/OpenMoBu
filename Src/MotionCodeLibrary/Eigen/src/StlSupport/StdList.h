@@ -10,6 +10,10 @@
 #ifndef EIGEN_STDLIST_H
 #define EIGEN_STDLIST_H
 
+#ifndef EIGEN_STDLIST_MODULE_H
+#error "Please include Eigen/StdList instead of including this file directly."
+#endif
+
 #include "details.h"
 
 /**
@@ -35,7 +39,7 @@ namespace std \
     list(InputIterator first, InputIterator last, const allocator_type& a = allocator_type()) : list_base(first, last, a) {} \
     list(const list& c) : list_base(c) {}  \
     explicit list(size_type num, const value_type& val = value_type()) : list_base(num, val) {} \
-    list(iterator start, iterator end) : list_base(start, end) {}  \
+    list(iterator start_, iterator end_) : list_base(start_, end_) {}  \
     list& operator=(const list& x) {  \
       list_base::operator=(x);  \
       return *this;  \
@@ -43,8 +47,8 @@ namespace std \
   }; \
 }
 
-// check whether we really need the std::vector specialization
-#if !(defined(_GLIBCXX_VECTOR) && (!EIGEN_GNUC_AT_LEAST(4,1))) /* Note that before gcc-4.1 we already have: std::list::resize(size_type,const T&). */
+// check whether we really need the std::list specialization
+#if !EIGEN_HAS_CXX11_CONTAINERS && !(defined(_GLIBCXX_LIST) && (!EIGEN_GNUC_AT_LEAST(4,1))) /* Note that before gcc-4.1 we already have: std::list::resize(size_type,const T&). */
 
 namespace std
 {
@@ -62,7 +66,7 @@ namespace std
     : list_base(first, last, a) {} \
     list(const list& c) : list_base(c) {}  \
     explicit list(size_type num, const value_type& val = value_type()) : list_base(num, val) {} \
-    list(iterator start, iterator end) : list_base(start, end) {}  \
+    list(iterator start_, iterator end_) : list_base(start_, end_) {}  \
     list& operator=(const list& x) {  \
     list_base::operator=(x);  \
     return *this; \

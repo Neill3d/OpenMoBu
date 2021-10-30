@@ -30,6 +30,8 @@
 #ifndef SPARSELU_PRUNEL_H
 #define SPARSELU_PRUNEL_H
 
+#include "./InternalHeaderCheck.h"
+
 namespace Eigen {
 namespace internal {
 
@@ -49,8 +51,9 @@ namespace internal {
  * \param glu Global LU data
  * 
  */
-template <typename Scalar, typename Index>
-void SparseLUImpl<Scalar,Index>::pruneL(const Index jcol, const IndexVector& perm_r, const Index pivrow, const Index nseg, const IndexVector& segrep, BlockIndexVector repfnz, IndexVector& xprune, GlobalLU_t& glu)
+template <typename Scalar, typename StorageIndex>
+void SparseLUImpl<Scalar,StorageIndex>::pruneL(const Index jcol, const IndexVector& perm_r, const Index pivrow, const Index nseg,
+                                               const IndexVector& segrep, BlockIndexVector repfnz, IndexVector& xprune, GlobalLU_t& glu)
 {
   // For each supernode-rep irep in U(*,j]
   Index jsupno = glu.supno(jcol); 
@@ -123,7 +126,7 @@ void SparseLUImpl<Scalar,Index>::pruneL(const Index jcol, const IndexVector& per
           }
         } // end while 
         
-        xprune(irep) = kmin;  //Pruning 
+        xprune(irep) = StorageIndex(kmin);  //Pruning 
       } // end if do_prune 
     } // end pruning 
   } // End for each U-segment

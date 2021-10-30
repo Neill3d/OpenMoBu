@@ -10,6 +10,8 @@
 #ifndef EIGEN_MISC_KERNEL_H
 #define EIGEN_MISC_KERNEL_H
 
+#include "./InternalHeaderCheck.h"
+
 namespace Eigen { 
 
 namespace internal {
@@ -34,14 +36,13 @@ struct traits<kernel_retval_base<DecompositionType> >
   > ReturnType;
 };
 
-template<typename _DecompositionType> struct kernel_retval_base
- : public ReturnByValue<kernel_retval_base<_DecompositionType> >
+template<typename DecompositionType_> struct kernel_retval_base
+ : public ReturnByValue<kernel_retval_base<DecompositionType_> >
 {
-  typedef _DecompositionType DecompositionType;
+  typedef DecompositionType_ DecompositionType;
   typedef ReturnByValue<kernel_retval_base> Base;
-  typedef typename Base::Index Index;
 
-  kernel_retval_base(const DecompositionType& dec)
+  explicit kernel_retval_base(const DecompositionType& dec)
     : m_dec(dec),
       m_rank(dec.rank()),
       m_cols(m_rank==dec.cols() ? 1 : dec.cols() - m_rank)
@@ -68,7 +69,6 @@ template<typename _DecompositionType> struct kernel_retval_base
   typedef typename DecompositionType::MatrixType MatrixType; \
   typedef typename MatrixType::Scalar Scalar; \
   typedef typename MatrixType::RealScalar RealScalar; \
-  typedef typename MatrixType::Index Index; \
   typedef Eigen::internal::kernel_retval_base<DecompositionType> Base; \
   using Base::dec; \
   using Base::rank; \
