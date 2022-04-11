@@ -179,7 +179,7 @@ protected:
 	bool								mNeedUpdateTextures;	// we should update textures after change a context
 
 	std::vector<FBLight*>							mLightsPtr;
-	std::auto_ptr<Graphics::CGPUShaderLights>		mShaderLights;
+	std::unique_ptr<Graphics::CGPUShaderLights>		mShaderLights;
 	
 	OGLCullFaceInfo			mCullFaceInfo;
 	FBModelCullingMode		mLastCullingMode;
