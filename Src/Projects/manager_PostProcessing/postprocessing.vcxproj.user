@@ -15,4 +15,9 @@
     <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">
+    <LocalDebuggerCommand>D:\Program Files\Autodesk\MotionBuilder 2023\bin\x64\motionbuilder.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-console</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>
