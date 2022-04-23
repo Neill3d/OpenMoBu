@@ -165,7 +165,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">..\..\..\bin\$(Platform)\plugins_2022\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">..\..\..\bin\$(Platform)\plugins_2022\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">..\..\..\bin\$(Platform)\plugins_2023\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2016|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
