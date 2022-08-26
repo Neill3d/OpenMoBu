@@ -59,6 +59,15 @@ const char * FBPropertyBaseEnum<EImageCompression>::mStrings[] = {
 	"ASTC",
 	0 };
 
+//Louis
+//Modifiable Flares
+const char * FBPropertyBaseEnum<EFlareType>::mStrings[] = {
+	"Basic",
+	"Bubbles",
+	"Anamorphic",
+	0
+};
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
 /*
@@ -109,6 +118,7 @@ PostPersistentData::PostPersistentData(const char* pName, HIObject pObject)
     FBClassInit;
 
 	mReloadShaders = false;
+	mLazyLoadCounter = 0;
 }
 
 void PostPersistentData::ActionReloadShaders(HIObject pObject, bool value)
@@ -321,6 +331,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	//
 	AddPropertyView("Lens Flare Setup", "", true);
 
+	//Louis 
+	AddPropertyView("Flare Type", "Lens Flare Setup");
+	AddPropertyView("Flare Seed", "Lens Flare Setup");
 	AddPropertyView("Flare Use Play Time", "Lens Flare Setup");
 	AddPropertyView("Flare Time Speed", "Lens Flare Setup");
 
@@ -524,6 +537,9 @@ bool PostPersistentData::FBCreate()
 
 	FBPropertyPublish(this, LensFlare, "Lens Flare", nullptr, nullptr);
 
+	//Louis 
+	FBPropertyPublish(this, FlareType, "Flare Type", nullptr, nullptr);
+	FBPropertyPublish(this, FlareSeed, "Flare Seed", nullptr, nullptr);
 	FBPropertyPublish(this, FlareUsePlayTime, "Flare Use Play Time", nullptr, nullptr);
 	FBPropertyPublish(this, FlareTimeSpeed, "Flare Time Speed", nullptr, nullptr);
 
@@ -677,6 +693,7 @@ bool PostPersistentData::FBCreate()
 	FG_GrainSize.SetMinMax(15.0, 25.0);
 
 	//
+	FlareSeed.SetMinMax(0.0, 100.0);
 	FlareAmount.SetMinMax(0.0, 100.0);
 	FlarePosX.SetMinMax(0.0, 100.0);
 	FlarePosY.SetMinMax(0.0, 100.0);
@@ -769,6 +786,10 @@ void PostPersistentData::DefaultValues()
 
 	//
 	LensFlare = false;
+
+	//Louis
+	FlareType = flare1;
+	FlareSeed = 30.0;
 
 	FlareUsePlayTime = false;
 	FlareTimeSpeed = 100.0;
@@ -958,18 +979,21 @@ bool PostPersistentData::FbxStore(FBFbxObject* pFbxObject, kFbxObjectStore pStor
         //pFbxObject->FieldWriteC( "Text", mText );
     }
 
-    return true;
+    return false;
 }
 
 bool PostPersistentData::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
 {
+	constexpr int LAZY_COUNTER_VALUE{ 500 };
+
     if( pStoreWhat == kAttributes )
     {
         //Retrieve default text
         //mText = pFbxObject->FieldReadC("Text");
+		mLazyLoadCounter = LAZY_COUNTER_VALUE;
     }
 
-    return true;
+    return false;
 }
 
 

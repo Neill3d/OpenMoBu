@@ -12,6 +12,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- SDK include
 #include <fbsdk/fbsdk.h>
+#include <map>
 
 #include "GL/glew.h"
 
@@ -36,6 +37,79 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //
 class Socket;
+
+struct PostProcessContextData
+{
+public:
+	FBSystem			mSystem;
+
+	//
+	int				mLastPaneCount;
+	//int				mPaneId;
+
+	bool			mSchematicView[4];
+	bool			mVideoRendering;
+
+	int				mViewport[4];		// x, y, width, height
+	int				mViewerViewport[4];
+
+	int				mEnterId;
+	size_t			mFrameId;
+
+	GLint			mAttachedFBO[MAX_ATTACH_STACK];
+
+
+	//
+	MainFrameBuffer						mMainFrameBuffer;
+
+	std::unique_ptr<GLSLShader>			mShaderSimple;	// for simple blit quads on a screen
+
+	PostEffectChain						mEffectChain;
+
+	std::vector<PostPersistentData*>	mPaneSettings;	// choose a propriate settings according to a pane camera
+
+														// if each pane has different size (in practice should be not more then 2
+	PostEffectBuffers					mEffectBuffers0;
+	PostEffectBuffers					mEffectBuffers1;
+	PostEffectBuffers					mEffectBuffers2;
+	PostEffectBuffers					mEffectBuffers3;
+
+	void Init();
+
+	void	PreRenderFirstEntry();
+
+	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
+	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);
+
+private:
+
+
+	bool PrepPaneSettings();
+
+	// manager shaders
+	bool	LoadShaders();
+	const bool CheckShadersPath(const char* path) const;
+	void	FreeShaders();
+
+	void	FreeBuffers();
+
+
+	void	DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh);
+	void	DrawHUDRect(FBHUDRectElement *pElem, int panex, int paney, int panew, int paneh, int vieww, int viewh);
+#if defined(HUD_FONT)
+	void	DrawHUDText(FBHUDTextElement *pElem, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh);
+#endif
+	void	FreeFonts();
+
+
+#if defined(HUD_FONT)
+	std::vector<CFont*>					mElemFonts;
+#endif
+	std::vector<FBHUDRectElement*>		mRectElements;
+	std::vector<FBHUDTextElement*>		mTextElements;
+
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 /** Post Processing Manager.
@@ -90,38 +164,28 @@ private:
 	bool		mDoVideoClipTimewrap;
 
 	//
-	//HGLRC			mCurrentContext;
+	static HGLRC			gCurrentContext;
 
-	bool			mSchematicView[4];
-	bool			mVideoRendering;
+	static std::map<HGLRC, PostProcessContextData*>	gContextMap;
 
-	int				mViewport[4];		// x, y, width, height
+
+	//int				mLastPaneCount;
+	//int				mPaneId;
+
+
+
+	int				mEnterId;
+	size_t			mFrameId;
+
+	//bool			mSchematicView[4];
+	//bool			mVideoRendering;
+
+	//int				mViewport[4];		// x, y, width, height
 
 	//int				mLastPostPane;
-	int				mViewerViewport[4];
+	//int				mViewerViewport[4];
 
 	//int				mLocalViewport[4];	// local used for chain post-processing
-
-	//
-	MainFrameBuffer						mMainFrameBuffer;
-
-	std::unique_ptr<GLSLShader>			mShaderSimple;	// for simple blit quads on a screen
-	
-	PostEffectChain						mEffectChain;
-	
-	std::vector<PostPersistentData*>	mPaneSettings;	// choose a propriate settings according to a pane camera
-
-	// if each pane has different size (in practice should be not more then 2
-	PostEffectBuffers					mEffectBuffers0;
-	PostEffectBuffers					mEffectBuffers1;
-	PostEffectBuffers					mEffectBuffers2;
-	PostEffectBuffers					mEffectBuffers3;
-
-#if defined(HUD_FONT)
-	std::vector<CFont*>					mElemFonts;
-#endif
-	std::vector<FBHUDRectElement*>		mRectElements;
-	std::vector<FBHUDTextElement*>		mTextElements;
 
 	// Tango device experiment
 	double				mLastSendTimeSecs;
@@ -139,27 +203,8 @@ private:
 
 	unsigned char		mSendBuffer[MAX_UDP_BUFFER_SIZE];
 #endif
-	//
-	int				mLastPaneCount;
-	//int				mPaneId;
-
 	
-
-	int				mEnterId;
-	size_t			mFrameId;
-
-	GLint			mAttachedFBO[MAX_ATTACH_STACK];
-
 	void	CheckForAContextChange();
-
-	bool PrepPaneSettings();
-
-	// manager shaders
-	bool	LoadShaders();
-	const bool CheckShadersPath(const char* path) const;
-	void	FreeShaders();
-
-	void	FreeBuffers();
 
 	bool EmptyGLErrorStack();
 	/*
@@ -175,17 +220,11 @@ private:
 public:
 	bool			mLastProcessCompositions;
 
+	bool skipRender;
+
 	void	PreRenderFirstEntry();
 
-	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
-	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);
-
-	void	DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh);
-	void	DrawHUDRect(FBHUDRectElement *pElem, int panex, int paney, int panew, int paneh, int vieww, int viewh);
-#if defined(HUD_FONT)
-	void	DrawHUDText(FBHUDTextElement *pElem, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh);
-#endif
-	void	FreeFonts();
+	bool ExternalRenderAfterRender();
 
 	void PrepVideoClipsTimeWrap();
 };

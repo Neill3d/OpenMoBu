@@ -33,15 +33,16 @@ FBRegisterCustomManager(POSTPROCESSING_MANAGER__CLASS);         // Manager class
 #define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
 
 // track the state of OpenGL viewport context
-HGLRC	gCurrentContext = 0;
+HGLRC	Manager_PostProcessing::gCurrentContext = 0;
+std::map<HGLRC, PostProcessContextData*>	Manager_PostProcessing::gContextMap;
 
 Manager_PostProcessing *gManager = nullptr;
 
 bool GRenderAfterRender()
 {
-	if (nullptr != gManager)
+	if (nullptr != gManager && !gManager->skipRender)
 	{
-		return gManager->RenderAfterRender(gManager->mLastProcessCompositions, false);
+		return gManager->ExternalRenderAfterRender();
 	}
 
 	return false;
@@ -75,19 +76,9 @@ bool Manager_PostProcessing::FBCreate()
 	//mPaneId = 0;
 	mEnterId = 0;
 	mFrameId = 0;
-	mLastPaneCount = 0;
-
+	
 	//mPropPaneCount = nullptr;
 
-	mVideoRendering = false;
-
-	for (int i = 0; i < 4; ++i)
-	{
-		mViewerViewport[i] = 0;
-		//mLocalViewport[i] = 0;
-		mSchematicView[i] = false;
-	}
-	
 	gManager = this;
 
 	mLastSendTimeSecs = 0.0;
@@ -110,8 +101,26 @@ bool Manager_PostProcessing::FBCreate()
 	mSocketRecv = nullptr;
 
 	mDoVideoClipTimewrap = false;
+	skipRender = false;
 
     return true;
+}
+
+
+void PostProcessContextData::Init()
+{
+	mVideoRendering = false;
+	mLastPaneCount = 0;
+
+	for (int i = 0; i < 4; ++i)
+	{
+		mViewerViewport[i] = 0;
+		//mLocalViewport[i] = 0;
+		mSchematicView[i] = false;
+	}
+
+	//
+	mMainFrameBuffer.InitTextureInternalFormat();
 }
 
 
@@ -133,13 +142,12 @@ bool Manager_PostProcessing::Init()
 
 	
 	//
-#ifdef _DEBUG
+#ifdef OGL_DEBUG
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(DebugOGL_Callback, nullptr);
 #endif
 
-	//
-	mMainFrameBuffer.InitTextureInternalFormat();
+	
 
     return true;
 }
@@ -346,17 +354,20 @@ void Manager_PostProcessing::EventFileNew(HISender pSender, HKEvent pEvent)
 void Manager_PostProcessing::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
 	//mSettings = nullptr;
+	skipRender = true;
 }
 
 void Manager_PostProcessing::EventFileMerge(HISender pSender, HKEvent pEvent)
 {
 	//mSettings = nullptr;
 	//mSettingsMerge = true;
+	
 }
 
 void Manager_PostProcessing::EventFileOpenComplete(HISender pSender, HKEvent pEvent)
 {
 	//mSettings = nullptr;
+	skipRender = false;
 }
 
 
@@ -403,7 +414,7 @@ void Manager_PostProcessing::OnPerFrameEvaluationPipelineCallback(HISender pSend
 
 ////////////////////////////////////////////////////////////////////////////////////
 // RenderBeforeRender
-void Manager_PostProcessing::RenderBeforeRender(const bool processCompositions, const bool renderToBuffer)
+void PostProcessContextData::RenderBeforeRender(const bool processCompositions, const bool renderToBuffer)
 {
 	//FBScene *pScene = mSystem.Scene;
 
@@ -488,7 +499,7 @@ void Manager_PostProcessing::RenderBeforeRender(const bool processCompositions, 
 // RenderAfterRender - post processing work after main scene rendering is finished
 
 
-bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, const bool renderToBuffer)
+bool PostProcessContextData::RenderAfterRender(const bool processCompositions, const bool renderToBuffer)
 {
 	bool lStatus = false;
 
@@ -529,7 +540,7 @@ bool Manager_PostProcessing::RenderAfterRender(const bool processCompositions, c
 		CHECK_GL_ERROR();
 
 		// this is a hack for Reflection shader (to avoid error overhead on glReadBuffers(GL_BACK) )
-#ifndef _DEBUG
+#ifndef OGL_DEBUG
 		EmptyGLErrorStack();
 #endif
 		//if (mLastPostPane == mPaneId)
@@ -728,28 +739,48 @@ void Manager_PostProcessing::CheckForAContextChange()
 		gCurrentContext = hContext;
 	}
 
+	auto iter = gContextMap.find(hContext);
+
+	if (iter == end(gContextMap))
+	{
+		PostProcessContextData *newData = new PostProcessContextData();
+		newData->Init();
+		gContextMap.insert(std::make_pair(hContext, newData));
+	}
+
 	if (hContext != gCurrentContext)
 	{
 		gCurrentContext = hContext;
 
-		mEffectChain.ChangeContext();
-		FreeShaders();
-		FreeBuffers();
-		FreeFonts();
+		//mEffectChain.ChangeContext();
+		//FreeShaders();
+		//FreeBuffers();
+		//FreeFonts();
 
 		FBTrace("> !! CHANGE CONTEXT !!\n");
 	}
 }
 
+
 void Manager_PostProcessing::PreRenderFirstEntry()
+{
+	CheckForAContextChange();
+
+	auto iter = gContextMap.find(gCurrentContext);
+
+	if (iter != end(gContextMap))
+	{
+		iter->second->PreRenderFirstEntry();
+	}
+}
+
+void PostProcessContextData::PreRenderFirstEntry()
 {
 
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
 
 	//mPaneId = 0;
 	mFrameId++;
-
-	CheckForAContextChange();
 
 	// grab the whole viewer
 
@@ -905,6 +936,9 @@ void Manager_PostProcessing::PreRenderFirstEntry()
 void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent)
 {
 
+	if (skipRender)
+		return;
+
 	FBEventEvalGlobalCallback lFBEvent(pEvent);
 
 	// check for a context change here
@@ -913,21 +947,24 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 		PreRenderFirstEntry();
 	}
 
+	auto iter = gContextMap.find(gCurrentContext);
+
+	if (iter == end(gContextMap))
+	{
+		//iter->second->PreRenderFirstEntry();
+		return;
+	}
+
 	// nullptr != mPaneSettings[mPaneId] && false == mSchematicView[mPaneId]
 	bool usePostProcessing = false;
 
-	for (int i = 0; i<mLastPaneCount; ++i)
+	for (int i = 0; i<iter->second->mLastPaneCount; ++i)
 	{
-		if (nullptr != mPaneSettings[i])
+		if (nullptr != iter->second->mPaneSettings[i])
 		{
 			usePostProcessing = true;
 			break;
 		}
-	}
-
-	if (mViewerViewport[2] <= 1 || mViewerViewport[3] <= 1)
-	{
-		usePostProcessing = false;
 	}
 
 	
@@ -935,8 +972,13 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
+		if (iter->second->mViewerViewport[2] <= 1 || iter->second->mViewerViewport[3] <= 1)
+		{
+			usePostProcessing = false;
+		}
+
 			mLastProcessCompositions = usePostProcessing;
-			RenderBeforeRender(usePostProcessing, false);
+			iter->second->RenderBeforeRender(usePostProcessing, false);
 			
 			if (true == mDoVideoClipTimewrap)
 			{
@@ -952,7 +994,7 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 			// User could do some special effect, HUD or buffer download (via PBO) here. 
 			//
 			//if (mVideoRendering)
-				RenderAfterRender(usePostProcessing, false);
+		iter->second->RenderAfterRender(usePostProcessing, false);
 
 		} break;
 
@@ -965,28 +1007,50 @@ void Manager_PostProcessing::OnPerFrameRenderingPipelineCallback(HISender pSende
 	CHECK_GL_ERROR();
 }
 
+
+bool Manager_PostProcessing::ExternalRenderAfterRender()
+{
+	auto iter = gContextMap.find(gCurrentContext);
+
+	if (iter != end(gContextMap))
+	{
+		return iter->second->RenderAfterRender(mLastProcessCompositions, false);
+	}
+	return false;
+}
+
 void Manager_PostProcessing::OnVideoFrameRendering(HISender pSender, HKEvent pEvent)
 {
 	FBEventVideoFrameRendering levent(pEvent);
 
 	if (levent.GetState() == FBEventVideoFrameRendering::eBeginRendering)
 	{
+		PreRenderFirstEntry();
+
+		auto iter = gContextMap.find(gCurrentContext);
+		if (iter == end(gContextMap))
+			return;
+
 		// turn off preview mode and switch quality settings if needed
-		mVideoRendering = true;
-		FreeBuffers();
+		iter->second->mVideoRendering = true;
+		//FreeBuffers();
 
 		// TODO: tweak post processing upper / lower clip
 		PushUpperLowerClipForEffects();
 	}
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
 	{
+		auto iter = gContextMap.find(gCurrentContext);
+		if (iter == end(gContextMap))
+			return;
+
 		// turn on back preview mode and display quality settings
-		mVideoRendering = false;
+		iter->second->mVideoRendering = false;
 		PopUpperLowerClipForEffects();
 	}
 }
 
-const bool Manager_PostProcessing::CheckShadersPath(const char* path) const
+const bool PostProcessContextData::CheckShadersPath(const char* path) const
 {
 	const char* test_shaders[] = {
 		SHADER_SIMPLE_VERTEX,
@@ -1006,7 +1070,7 @@ const bool Manager_PostProcessing::CheckShadersPath(const char* path) const
 	return true;
 }
 
-bool Manager_PostProcessing::LoadShaders()
+bool PostProcessContextData::LoadShaders()
 {
 	if (nullptr != mShaderSimple.get())
 	{
@@ -1086,12 +1150,12 @@ bool Manager_PostProcessing::LoadShaders()
 	return status;
 }
 
-void Manager_PostProcessing::FreeShaders()
+void PostProcessContextData::FreeShaders()
 {
 	mShaderSimple.reset(nullptr);
 }
 
-void Manager_PostProcessing::FreeBuffers()
+void PostProcessContextData::FreeBuffers()
 {
 	mMainFrameBuffer.ChangeContext();
 
@@ -1101,7 +1165,7 @@ void Manager_PostProcessing::FreeBuffers()
 	mEffectBuffers3.ChangeContext();
 }
 
-bool Manager_PostProcessing::PrepPaneSettings()
+bool PostProcessContextData::PrepPaneSettings()
 {
 	mPaneSettings.resize(4);
 
@@ -1177,7 +1241,7 @@ bool Manager_PostProcessing::EmptyGLErrorStack()
 }
 
 
-void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh)
+void PostProcessContextData::DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
 	FBScene *pScene = mSystem.Scene;
 	
@@ -1292,7 +1356,7 @@ void Manager_PostProcessing::DrawHUD(int panex, int paney, int panew, int paneh,
 	}
 }
 
-void Manager_PostProcessing::DrawHUDRect(FBHUDRectElement *pRect, int panex, int paney, int panew, int paneh, int vieww, int viewh)
+void PostProcessContextData::DrawHUDRect(FBHUDRectElement *pRect, int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
 	bool posPer = pRect->PositionByPercent;
 	bool sclPer = pRect->ScaleByPercent;
@@ -1383,7 +1447,7 @@ void Manager_PostProcessing::DrawHUDRect(FBHUDRectElement *pRect, int panex, int
 	glDisable(GL_BLEND);
 }
 #if defined(HUD_FONT)
-void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh)
+void PostProcessContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
 //	if (nullptr == pFont)
 //		return;
@@ -1574,7 +1638,7 @@ void Manager_PostProcessing::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 }
 #endif
 
-void Manager_PostProcessing::FreeFonts()
+void PostProcessContextData::FreeFonts()
 {
 #if defined(HUD_FONT)	
 	for (auto iter = begin(mElemFonts); iter != end(mElemFonts); ++iter)

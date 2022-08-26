@@ -147,6 +147,10 @@ public: // PROPERTIES
 	// Lens Flare
 	FBPropertyAnimatableBool	LensFlare;
 
+	//Louis
+	FBPropertyBaseEnum<EFlareType>	FlareType;
+	FBPropertyAnimatableDouble	FlareSeed;
+
 	FBPropertyBool					FlareUsePlayTime;
 	FBPropertyAnimatableDouble		FlareTimeSpeed;
 
@@ -320,6 +324,7 @@ public:
 	void PushClipSettings(double upper, double lower);
 	void PopClipSettings();
 
+	bool IsLazyLoadReady() { mLazyLoadCounter = (mLazyLoadCounter >= 0) ? mLazyLoadCounter-1 : -1; return mLazyLoadCounter < 0; }
 
 protected:
 
@@ -333,6 +338,8 @@ protected:
 
 	double				mTempLower;
 	double				mTempUpper;
+
+	int			mLazyLoadCounter;
 
 	void		DefaultValues();
 	void		LoadFromConfig(const char *sessionFilter=nullptr);

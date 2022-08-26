@@ -10,6 +10,9 @@
 #include <math.h>
 #include <iostream>
 #include <sstream>
+//#include <winreg.h>
+//#include <sysinfoapi.h>
+//#include <winerror.h>
 
 //////////////////////
 //
@@ -37,7 +40,7 @@ GLuint text_shader(0);
 
 ////////////////////////////////////////////////////////////////////////////
 //
-
+/*
 // Get system font file path
 std::string GetSystemFontFile(const std::string &faceName) {
 
@@ -108,7 +111,7 @@ std::string GetSystemFontFile(const std::string &faceName) {
 
 	return std::string(sFontFile.begin(), sFontFile.end());
 }
-
+*/
 ///////////////////////////////////////////////////////////////////////////////
 //
 
@@ -132,7 +135,7 @@ void CFont::Init()
 	buffer = text_buffer_new();
 
 	std::string fontName(FONT_NAME);
-	fontPath = GetSystemFontFile(fontName);
+	fontPath = FONT_PATH; // GetSystemFontFile(fontName);
 
 	normal.family = (char*)fontPath.c_str();
 	normal.size = 13.0f;

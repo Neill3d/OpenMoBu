@@ -22,6 +22,15 @@ enum EImageCompression
 	eImageCompressionASTC
 };
 
+//Louis
+//Modifiable Flares
+enum EFlareType
+{
+	flare1,
+	flare2,
+	flare3,
+};
+
 /////////////////////
 /*
 struct CompressImageHeader
