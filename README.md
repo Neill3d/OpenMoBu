@@ -35,20 +35,13 @@ Please post issues and feature requests to this [github repository issues sectio
  Note! Some old Projects and MoBu solution are created in VisualStudio 2010, the latest projects I've developed in VS 2015.
 
   1) Specify env variables with the path to your motionbuilder folder
-* ADSK_MOBU_2010_64
-* ADSK_MOBU_2011_64
-* ADSK_MOBU_2012_64
-* ADSK_MOBU_2013_64
-* ADSK_MOBU_2014_64
-* ADSK_MOBU_2015_64
-* ADSK_MOBU_2016_64
-* ADSK_MOBU_2017_64
+* ADSK_MOBU_{version number}_64, for example ADSK_MOBU_2017_64
  
  NOTE: If during the compilation you have error "Macro definition of snprintf conflicts with Standard Library function declaration". The way out for the issue is to comment the line of declaration snprintf in kaydara.h
  
- Post Process Project has dependencies of
- freetype2 - https://github.com/aseprite/freetype2
- freetype-gl - https://github.com/frachop/freetypegl
+ In order to render HUD text on top of post processed screen image, there is a setting "Draw HUD Layer" in the post process object. And the plugin have to be compiled with HUD_FONT definition and with depencies of freetype2 and freetype-gl:
+ * freetype2 - https://github.com/aseprite/freetype2
+ * freetype-gl - https://github.com/frachop/freetypegl
  
 2) After compiling release version of the plugin, there is a post build commandline to copy file into the output folder.
 
