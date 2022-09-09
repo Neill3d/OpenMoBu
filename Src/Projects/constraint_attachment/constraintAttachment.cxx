@@ -349,6 +349,7 @@ void CConstraintAttachment::SetupAllAnimationNodes()
 		mConstrainedRotation = AnimationNodeInCreate( 4, ReferenceGet( mGroupConstrain, 0 ), ANIMATIONNODE_TYPE_ROTATION );
 
 		DeformerBind( ReferenceGet(mGroupSource, 0) );
+		ReferenceGet(mGroupSource, 0)->ForceAlwaysEvaluate();
 	}
 	
 }
