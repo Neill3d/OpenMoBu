@@ -13,6 +13,8 @@
 
 //--- Class declaration
 #include "boxPoseTransform.h"
+#include "nv_math.h"
+#include "math3d.h"
 
 //--- Registration defines
 
@@ -21,7 +23,6 @@
 #define	BOXPOSETRANSFORM__LOCATION		"Neill3d"
 #define BOXPOSETRANSFORM__LABEL			"Pose Transform"
 #define	BOXPOSETRANSFORM__DESC			"Grab Transform from a specified pose"
-
 
 //--- implementation and registration
 
@@ -137,60 +138,84 @@ bool CBoxPoseTransform::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FB
 	if (!model)
 		return false;
 
+    const char* modelName = model->Name;
 
 	for (int i = 0; i < NUMBER_OF_POSES; ++i)
 	{
 		FBObjectPose* pose = (m_Poses[i].GetCount() > 0) ? (FBObjectPose*)m_Poses[i].GetAt(0) : nullptr;
 
-		if (pose)
+        if (pose == nullptr)
+            continue;
+
+        FBStringList storedNames = pose->GetStoredObjectNames();
+
+        int nameIndex = -1;
+
+        for (int j = 0, storedNamesCount = storedNames.GetCount(); j < storedNamesCount; ++j)
+        {
+            const char* name{ storedNames.GetAt(j) };
+            char* lastDelim = strrchr((char*)name, ':');
+
+            if (lastDelim != nullptr)
+            {
+                name = lastDelim + 1;    
+            }
+            
+            if (strcmpi(name, modelName) == 0)
+            {
+                nameIndex = j;
+                break;
+            }
+        }
+
+        if (nameIndex < 0)
+            continue;
+
+        const char* name{ storedNames.GetAt(nameIndex) };
+		double factor{ 0.0f };
+		m_Factor[i]->ReadData(&factor, pEvaluateInfo);
+
+		factor *= 0.01;
+
+		FBMatrix tm, scl;
+		FBTVector t;
+		FBRVector r;
+		FBQuaternion q;
+
+		bool is_valid = false;
+
+		if (pose->GetTransform(t, tm, scl, name, FBPoseTransformType::kFBPoseTransformLocal))
 		{
-			double factor{ 0.0f };
-			m_Factor[i]->ReadData(&factor, pEvaluateInfo);
+			FBMatrixToQuaternion(q, tm);
+			is_valid = true;
+		}
+		else if (pose->IsPropertyStored(name, "Lcl Translation") && pose->IsPropertyStored(name, "Lcl Rotation"))
+		{
+			pose->GetPropertyValue(t, sizeof(double) * 3, name, "Lcl Translation");
+			pose->GetPropertyValue(r, sizeof(double) * 3, name, "Lcl Rotation");
 
-			factor *= 0.01;
+			FBRotationToQuaternion(q, r);
+			is_valid = true;
+		}
 
-			FBString name = model->Name;
-
-			FBMatrix tm, scl;
-			FBTVector t;
-			FBRVector r;
-			FBQuaternion q;
-
-			bool is_valid = false;
-
-			if (pose->GetTransform(t, tm, scl, name, FBPoseTransformType::kFBPoseTransformLocal))
+		if (is_valid)
+		{
+			if (factor >= 1.0)
 			{
-				FBMatrixToQuaternion(q, tm);
-				is_valid = true;
+				translation = FBVector3d(t);
+				FBQuaternionToRotation(rotation, q);
 			}
-			else if (pose->IsPropertyStored(name, "Lcl Translation") && pose->IsPropertyStored(name, "Lcl Rotation"))
+			else
 			{
-				pose->GetPropertyValue(t, sizeof(double) * 3, name, "Lcl Translation");
-				pose->GetPropertyValue(r, sizeof(double) * 3, name, "Lcl Rotation");
+				FBQuaternion p;
+				FBRotationToQuaternion(p, rotation);
 
-				FBRotationToQuaternion(q, r);
-				is_valid = true;
-			}
+				FBQuaternion result;
+				FBInterpolateRotation(result, p, q, factor);
+				FBQuaternionToRotation(rotation, result);
 
-			if (is_valid)
-			{
-				if (factor >= 1.0)
-				{
-					translation = FBVector3d(t);
-					FBQuaternionToRotation(rotation, q);
-				}
-				else
-				{
-					FBQuaternion p;
-					FBRotationToQuaternion(p, rotation);
-
-					FBQuaternion result;
-					FBInterpolateRotation(result, p, q, factor);
-					FBQuaternionToRotation(rotation, result);
-
-					for (int j = 0; j < 3; ++j)
-						translation[j] = factor * (t[j] - translation[j]) + translation[j];
-				}
+				for (int j = 0; j < 3; ++j)
+					translation[j] = factor * (t[j] - translation[j]) + translation[j];
 			}
 		}
 	}
