@@ -80,7 +80,7 @@ protected:
 
 };
 
-/**	RBF Interpolator of 3 parameters.
+/**	RBF Interpolator of 4 parameters.
 *	Box for a relation constraint
 */
 class BoxRBF4 : public BoxRBF3
@@ -91,5 +91,6 @@ class BoxRBF4 : public BoxRBF3
 protected:
 	const int GetPlugDim() const override { return 4; }
 };
+
 
 #endif /* __BOX_RBF_H__ */

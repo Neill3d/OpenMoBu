@@ -337,8 +337,8 @@
       </HeaderFileName>
     </Midl>
     <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
@@ -376,7 +376,7 @@
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\$(TargetName).dll"</Command>
@@ -723,10 +723,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\MotionCodeLibrary\math3d.cpp" />
+    <ClCompile Include="..\..\MotionCodeLibrary\nv_math.cpp" />
+    <ClCompile Include="BoxQuaternion.cxx" />
     <ClCompile Include="Main.cxx" />
     <ClCompile Include="BoxRBF.cxx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\MotionCodeLibrary\math3d.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_math.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_mathdecl.h" />
+    <ClInclude Include="BoxQuaternion.h" />
     <ClInclude Include="BoxRBF.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

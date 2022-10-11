@@ -17,6 +17,18 @@ FBLibraryDeclare( boxrbf )
 {
 	FBLibraryRegister( BoxRBF3 );
 	FBLibraryRegister( BoxRBF4 );
+
+    // work with quaternion
+
+    FBLibraryRegister(BoxEulerToQuaternion);
+    FBLibraryRegister(BoxQuaternionToEuler);
+    FBLibraryRegister(BoxQuaternionMult);
+    FBLibraryRegister(BoxQuaternionInvert);
+    FBLibraryRegister(BoxQuaternionNormalize);
+    FBLibraryRegister(BoxQuaternionLookRotation);
+    FBLibraryRegister(BoxQuaternionAxisRotation);
+    FBLibraryRegister(BoxQuaternionLerp);
+    FBLibraryRegister(BoxVectorRotateBy);
 }
 FBLibraryDeclareEnd;
 
