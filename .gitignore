@@ -29,3 +29,7 @@
 # Executables
 *.out
 *.app
+
+# VS
+*.suo
+*.VC.*
