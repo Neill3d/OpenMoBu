@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cxx" />
+    <ClCompile Include="boxPoseTransform.cxx" />
+    <ClCompile Include="..\..\MotionCodeLibrary\nv_math.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\math3d.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="boxLookRotation.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="boxPoseTransform.h" />
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_math.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_mathdecl.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\math3d.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="boxLookRotation.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="MotionCodeLibrary">
+      <UniqueIdentifier>{e6833b57-203b-475c-89d2-ffb860859c41}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

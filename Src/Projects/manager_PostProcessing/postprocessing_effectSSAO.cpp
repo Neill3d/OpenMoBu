@@ -67,19 +67,20 @@ const char *PostEffectSSAO::GetName()
 {
 	return SHADER_SSAO_NAME;
 }
-const char *PostEffectSSAO::GetVertexFname()
+const char *PostEffectSSAO::GetVertexFname(const int)
 {
 	return SHADER_SSAO_VERTEX;
 }
-const char *PostEffectSSAO::GetFragmentFname()
+const char *PostEffectSSAO::GetFragmentFname(const int)
 {
 	return SHADER_SSAO_FRAGMENT;
 }
 
-bool PostEffectSSAO::PrepUniforms()
+bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
+	GLSLShader* mShader = mShaders[shaderIndex];
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -223,6 +224,7 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 	int quarterWidth = ((w + 3) / 4);
 	int quarterHeight = ((h + 3) / 4);
 
+	GLSLShader* mShader = GetShaderPtr();
 	if (nullptr != mShader)
 	{
 		mShader->Bind();

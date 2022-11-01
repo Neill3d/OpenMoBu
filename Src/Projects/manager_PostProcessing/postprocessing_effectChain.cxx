@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_effectSSAO.h"
 #include "postprocessing_effectDisplacement.h"
 #include "postprocessing_effectMotionBlur.h"
+#include "postprocessing_effectLensFlare.h"
 #include "postprocessing_helper.h"
 
 #define SHADER_FISH_EYE_NAME			"Fish Eye"
@@ -30,10 +31,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define SHADER_FILMGRAIN_NAME			"Film Grain"
 #define SHADER_FILMGRAIN_VERTEX			"\\GLSL\\simple.vsh"
 #define SHADER_FILMGRAIN_FRAGMENT		"\\GLSL\\filmGrain.fsh"
-
-#define SHADER_LENSFLARE_NAME			"Lens Flare"
-#define SHADER_LENSFLARE_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_LENSFLARE_FRAGMENT		"\\GLSL\\lensFlare.fsh"
 
 #define SHADER_DOF_NAME					"Depth Of Field"
 #define SHADER_DOF_VERTEX				"\\GLSL\\simple.vsh"
@@ -58,53 +55,48 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 PostEffectBase::PostEffectBase()
 {
-	mShader = nullptr;
 }
 
 PostEffectBase::~PostEffectBase()
 {
-	FreeShader();
+	FreeShaders();
 }
 
 const char *PostEffectBase::GetName()
 {
 	return "empty";
 }
-const char *PostEffectBase::GetVertexFname()
-{
-	return "empty";
-}
-const char *PostEffectBase::GetFragmentFname()
-{
-	return "empty";
-}
 
 // load and initialize shader from a specified location
 
-void PostEffectBase::FreeShader()
+void PostEffectBase::FreeShaders()
 {
-	if (nullptr != mShader)
+	for (auto shaderptr : mShaders)
 	{
-		delete mShader;
-		mShader = nullptr;
+		delete shaderptr;
 	}
+	mShaders.clear();
 }
 
-bool PostEffectBase::Load(const char *vname, const char *fname)
+bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *fname)
 {
-	FreeShader();
+	if (mShaders.size() > shaderIndex)
+	{
+		delete mShaders[shaderIndex];
+		mShaders[shaderIndex] = nullptr;
+	}
 
 	bool lSuccess = true;
-	mShader = new GLSLShader();
+	GLSLShader* shader = new GLSLShader();
 
 	try
 	{
-		if (nullptr == mShader)
+		if (nullptr == shader)
 		{
 			throw std::exception("failed to allocate memory for the shader object");
 		}
 
-		if (false == mShader->LoadShaders(vname, fname))
+		if (false == shader->LoadShaders(vname, fname))
 		{
 			throw std::exception("failed to locate and load shader files");
 		}
@@ -114,16 +106,31 @@ bool PostEffectBase::Load(const char *vname, const char *fname)
 	{
 		FBTrace("Post Effect Chain ERROR: %s\n", e.what());
 
-		delete mShader;
-		mShader = nullptr;
+		delete shader;
+		shader = nullptr;
 
 		lSuccess = false;
+	}
+
+	if (mShaders.size() > shaderIndex)
+	{
+		mShaders[shaderIndex] = shader;
+
+		//if (nullptr != mShader)
+		//{
+//			delete mShader;
+	//		mShader = nullptr;
+		//}
+	}
+	else
+	{
+		mShaders.push_back(shader);
 	}
 
 	return lSuccess;
 }
 
-bool PostEffectBase::PrepUniforms()
+bool PostEffectBase::PrepUniforms(const int)
 {
 	return false;
 }
@@ -144,21 +151,21 @@ bool PostEffectBase::PrepPass(const int pass)
 
 void PostEffectBase::Bind()
 {
-	if (nullptr != mShader)
+	if (nullptr != GetShaderPtr())
 	{
-		mShader->Bind();
+		GetShaderPtr()->Bind();
 	}
 }
 void PostEffectBase::UnBind()
 {
-	if (nullptr != mShader)
+	if (nullptr != GetShaderPtr())
 	{
-		mShader->UnBind();
+		GetShaderPtr()->UnBind();
 	}
 }
 
 GLSLShader *PostEffectBase::GetShaderPtr() {
-	return mShader;
+	return mShaders[mCurrentShader];
 }
 
 
@@ -184,36 +191,36 @@ const char *PostEffectFishEye::GetName()
 	return SHADER_FISH_EYE_NAME;
 }
 
-const char *PostEffectFishEye::GetVertexFname()
+const char *PostEffectFishEye::GetVertexFname(const int shaderIndex)
 {
 	return SHADER_FISH_EYE_VERTEX;
 }
 
-const char *PostEffectFishEye::GetFragmentFname()
+const char *PostEffectFishEye::GetFragmentFname(const int shaderIndex)
 {
 	return SHADER_FISH_EYE_FRAGMENT;
 }
 
-bool PostEffectFishEye::PrepUniforms()
+bool PostEffectFishEye::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
-	if (nullptr != mShader)
+	GLSLShader* shader = mShaders[shaderIndex];
+	if (shader)
 	{
-		mShader->Bind();
+		shader->Bind();
 
-		GLint loc = mShader->findLocation("sampler0");
+		GLint loc = shader->findLocation("sampler0");
 		if (loc >= 0)
 			glUniform1i(loc, 0);
+		upperClip = shader->findLocation("upperClip");
+		lowerClip = shader->findLocation("lowerClip");
 
-		upperClip = mShader->findLocation("upperClip");
-		lowerClip = mShader->findLocation("lowerClip");
+		mLocAmount = shader->findLocation("amount");
+		mLocLensRadius = shader->findLocation("lensradius");
+		mLocSignCurvature = shader->findLocation("signcurvature");
 
-		mLocAmount = mShader->findLocation("amount");
-		mLocLensRadius = mShader->findLocation("lensradius");
-		mLocSignCurvature = mShader->findLocation("signcurvature");
-
-		mShader->UnBind();
+		shader->UnBind();
 
 		lSuccess = true;
 	}
@@ -232,9 +239,10 @@ bool PostEffectFishEye::CollectUIValues(PostPersistentData *pData, int w, int h,
 	double lensradius = pData->FishEyeLensRadius;
 	double signcurvature = pData->FishEyeSignCurvature;
 
-	if (nullptr != mShader)
+	GLSLShader* shader = GetShaderPtr();
+	if (shader)
 	{
-		mShader->Bind();
+		shader->Bind();
 
 		if (upperClip >= 0)
 			glUniform1f(upperClip, 0.01f * (float)_upperClip);
@@ -249,7 +257,7 @@ bool PostEffectFishEye::CollectUIValues(PostPersistentData *pData, int w, int h,
 		if (mLocSignCurvature >= 0)
 			glUniform1f(mLocSignCurvature, (float)signcurvature);
 
-		mShader->UnBind();
+		shader->UnBind();
 
 		lSuccess = true;
 	}
@@ -279,38 +287,39 @@ const char *PostEffectColor::GetName()
 	return SHADER_COLOR_NAME;
 }
 
-const char *PostEffectColor::GetVertexFname()
+const char *PostEffectColor::GetVertexFname(const int)
 {
 	return SHADER_COLOR_VERTEX;
 }
 
-const char *PostEffectColor::GetFragmentFname()
+const char *PostEffectColor::GetFragmentFname(const int)
 {
 	return SHADER_COLOR_FRAGMENT;
 }
 
-bool PostEffectColor::PrepUniforms()
+bool PostEffectColor::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
-	if (nullptr != mShader)
+	GLSLShader* shader = mShaders[shaderIndex];
+	if (shader)
 	{
-		mShader->Bind();
+		shader->Bind();
 
-		GLint loc = mShader->findLocation("sampler0");
+		GLint loc = shader->findLocation("sampler0");
 		if (loc >= 0)
 			glUniform1i(loc, 0);
 
-		mResolution = mShader->findLocation("gResolution");
-		mChromaticAberration = mShader->findLocation("gCA");
+		mResolution = shader->findLocation("gResolution");
+		mChromaticAberration = shader->findLocation("gCA");
 
-		mUpperClip = mShader->findLocation("upperClip");
-		mLowerClip = mShader->findLocation("lowerClip");
+		mUpperClip = shader->findLocation("upperClip");
+		mLowerClip = shader->findLocation("lowerClip");
 
-		mLocCSB = mShader->findLocation("gCSB");
-		mLocHue = mShader->findLocation("gHue");
+		mLocCSB = shader->findLocation("gCSB");
+		mLocHue = shader->findLocation("gHue");
 
-		mShader->UnBind();
+		shader->UnBind();
 
 		lSuccess = true;
 	}
@@ -338,7 +347,8 @@ bool PostEffectColor::CollectUIValues(PostPersistentData *pData, int w, int h, F
 	double hueSat = 0.01 * pData->HueSaturation;
 	double lightness = 0.01 * pData->Lightness;
 
-	if (nullptr != mShader)
+	GLSLShader* mShader = GetShaderPtr();
+	if (mShader)
 	{
 		mShader->Bind();
 
@@ -393,19 +403,20 @@ const char *PostEffectVignetting::GetName()
 {
 	return SHADER_VIGNETTE_NAME;
 }
-const char *PostEffectVignetting::GetVertexFname()
+const char *PostEffectVignetting::GetVertexFname(const int)
 {
 	return SHADER_VIGNETTE_VERTEX;
 }
-const char *PostEffectVignetting::GetFragmentFname()
+const char *PostEffectVignetting::GetFragmentFname(const int)
 {
 	return SHADER_VIGNETTE_FRAGMENT;
 }
 
-bool PostEffectVignetting::PrepUniforms()
+bool PostEffectVignetting::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
+	GLSLShader* mShader = mShaders[shaderIndex];
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -441,6 +452,8 @@ bool PostEffectVignetting::CollectUIValues(PostPersistentData *pData, int w, int
 	double vignout = pData->VignOut;
 	double vignin = pData->VignIn;
 	double vignfade = pData->VignFade;
+
+	GLSLShader* mShader = GetShaderPtr();
 
 	if (nullptr != mShader)
 	{
@@ -491,19 +504,20 @@ const char *PostEffectFilmGrain::GetName()
 {
 	return SHADER_FILMGRAIN_NAME;
 }
-const char *PostEffectFilmGrain::GetVertexFname()
+const char *PostEffectFilmGrain::GetVertexFname(const int)
 {
 	return SHADER_FILMGRAIN_VERTEX;
 }
-const char *PostEffectFilmGrain::GetFragmentFname()
+const char *PostEffectFilmGrain::GetFragmentFname(const int)
 {
 	return SHADER_FILMGRAIN_FRAGMENT;
 }
 
-bool PostEffectFilmGrain::PrepUniforms()
+bool PostEffectFilmGrain::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
+	GLSLShader* mShader = mShaders[shaderIndex];
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -551,6 +565,7 @@ bool PostEffectFilmGrain::CollectUIValues(PostPersistentData *pData, int w, int 
 	double _grainsize = pData->FG_GrainSize;
 	double _lumamount = pData->FG_LumAmount;
 
+	GLSLShader* mShader = GetShaderPtr();
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -588,211 +603,6 @@ bool PostEffectFilmGrain::CollectUIValues(PostPersistentData *pData, int w, int 
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////
-// post lens flare
-
-//! a constructor
-PostEffectLensFlare::PostEffectLensFlare()
-: PostEffectBase()
-{
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
-
-	m_NumberOfPasses = 1;
-}
-
-//! a destructor
-PostEffectLensFlare::~PostEffectLensFlare()
-{
-
-}
-
-const char *PostEffectLensFlare::GetName()
-{
-	return SHADER_LENSFLARE_NAME;
-}
-const char *PostEffectLensFlare::GetVertexFname()
-{
-	return SHADER_LENSFLARE_VERTEX;
-}
-const char *PostEffectLensFlare::GetFragmentFname()
-{
-	return SHADER_LENSFLARE_FRAGMENT;
-}
-
-bool PostEffectLensFlare::PrepUniforms()
-{
-	bool lSuccess = false;
-
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
-
-		GLint loc = mShader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-
-		upperClip = mShader->findLocation("upperClip");
-		lowerClip = mShader->findLocation("lowerClip");
-
-		amount = mShader->findLocation("amount");
-
-		textureWidth = mShader->findLocation("textureWidth");
-		textureHeight = mShader->findLocation("textureHeight");
-
-		timer = mShader->findLocation("iTime");
-
-		light_pos = mShader->findLocation("light_pos");
-
-		tint = mShader->findLocation("tint");
-		inner = mShader->findLocation("inner");
-		outer = mShader->findLocation("outer");
-
-		fadeToBorders = mShader->findLocation("fadeToBorders");
-		borderWidth = mShader->findLocation("borderWidth");
-		feather = mShader->findLocation("feather");
-
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
-}
-
-bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
-{
-	bool lSuccess = false;
-	m_NumberOfPasses = 1;
-
-	const double _upperClip = pData->UpperClip;
-	const double _lowerClip = pData->LowerClip;
-
-	FBTime systemTime = (pData->FlareUsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
-
-	double _amount = pData->FlareAmount;
-
-	FBColor _tint = pData->FlareTint;
-	double _inner = pData->FlareInner;
-	double _outer = pData->FlareOuter;
-
-	double timerMult = pData->FlareTimeSpeed;
-	double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
-
-	double _pos[3] = { 0.01 * pData->FlarePosX, 0.01 * pData->FlarePosY, 1.0 };
-
-	const float _fadeToBorders = (pData->FlareFadeToBorders) ? 1.0f : 0.0f;
-	double _borderWidth = pData->FlareBorderWidth;
-	double _feather = pData->FlareBorderFeather;
-
-	m_DepthAttenuation = (pData->FlareDepthAttenuation) ? 1.0f : 0.0f;
-
-	// TODO: track light position in screen space
-	if (pData->UseFlareLightObject && pData->FlareLight.GetCount() > 0)
-	{
-		m_NumberOfPasses = pData->FlareLight.GetCount();
-		m_LightPositions.resize(m_NumberOfPasses);
-		m_LightColors.resize(m_NumberOfPasses);
-
-		for (int i = 0; i < m_NumberOfPasses; ++i)
-		{
-			FBLight *pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(i));
-
-			FBVector3d v;
-			pLight->GetVector(v);
-
-			FBMatrix mvp;
-			pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
-
-			FBVector4d v4;
-			FBVectorMatrixMult(v4, mvp, FBVector4d(v[0], v[1], v[2], 1.0));
-
-			v4[0] = w * 0.5 * (v4[0] + 1.0);
-			v4[1] = h * 0.5 * (v4[1] + 1.0);
-			
-
-			_pos[0] = v4[0] / w;
-			_pos[1] = v4[1] / h;
-			_pos[2] = v4[2]; // pCamera->FarPlaneDistance;
-
-			m_LightPositions[i].Set(_pos);
-			const FBColor color(pLight->DiffuseColor);
-			m_LightColors[i].Set(color);
-		}
-		
-		// relative coords to a screen size
-		pData->FlarePosX = 100.0 * _pos[0] / w;
-		pData->FlarePosY = 100.0 * _pos[2]; // _pos[1] / h;
-	}
-
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
-
-		if (upperClip >= 0)
-			glUniform1f(upperClip, 0.01f * (float)_upperClip);
-
-		if (lowerClip >= 0)
-			glUniform1f(lowerClip, 1.0f - 0.01f * (float)_lowerClip);
-
-		if (amount >= 0)
-			glUniform1f(amount, 0.01f * (float)_amount);
-
-		if (textureWidth >= 0)
-			glUniform1f(textureWidth, (float)w);
-		if (textureHeight >= 0)
-			glUniform1f(textureHeight, (float)h);
-
-		if (timer >= 0)
-			glUniform1f(timer, (float)_timer);
-		
-		if (light_pos >= 0)
-		{
-			glUniform4f(light_pos, static_cast<float>(_pos[0]), static_cast<float>(_pos[1]), static_cast<float>(_pos[2]), 0.0f);
-		}
-
-		if (tint >= 0)
-			glUniform4f(tint, (float)_tint[0], (float)_tint[1], (float)_tint[2], 1.0f);
-
-		if (inner >= 0)
-			glUniform1f(inner, 0.01f * (float)_inner);
-		if (outer >= 0)
-			glUniform1f(outer, 0.01f * (float)_outer);
-
-		if (fadeToBorders >= 0)
-			glUniform1f(fadeToBorders, _fadeToBorders);
-		if (borderWidth >= 0)
-			glUniform1f(borderWidth, (float)_borderWidth);
-		if (feather >= 0)
-			glUniform1f(feather, 0.01f * (float)_feather);
-
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
-}
-
-const int PostEffectLensFlare::GetNumberOfPasses() const
-{
-	return m_NumberOfPasses;
-}
-
-bool PostEffectLensFlare::PrepPass(const int pass)
-{
-	// shader must be binded
-	if (light_pos >= 0 && pass < static_cast<int>(m_LightPositions.size()))
-	{
-		const FBVector3d pos(m_LightPositions[pass]);
-		glUniform4f(light_pos, static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), m_DepthAttenuation);
-
-		const FBColor _tint(m_LightColors[pass]);
-		glUniform4f(tint, (float)_tint[0], (float)_tint[1], (float)_tint[2], 1.0f);
-		return true;
-	}
-	return false;
-}
 
 ////////////////////////////////////////////////////////////////////////////////////
 // post DOF
@@ -815,19 +625,20 @@ const char *PostEffectDOF::GetName()
 {
 	return SHADER_DOF_NAME;
 }
-const char *PostEffectDOF::GetVertexFname()
+const char *PostEffectDOF::GetVertexFname(const int)
 {
 	return SHADER_DOF_VERTEX;
 }
-const char *PostEffectDOF::GetFragmentFname()
+const char *PostEffectDOF::GetFragmentFname(const int)
 {
 	return SHADER_DOF_FRAGMENT;
 }
 
-bool PostEffectDOF::PrepUniforms()
+bool PostEffectDOF::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
+	GLSLShader* mShader = mShaders[shaderIndex];
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -975,6 +786,7 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBC
 		_focalDistance = dist;
 	}
 
+	GLSLShader* mShader = GetShaderPtr();
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -2102,18 +1914,19 @@ PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shade
 			throw std::exception("failed to allocate memory for the shader");
 		}
 
-		FBString vertex_path(shadersLocation, newEffect->GetVertexFname() );
-		FBString fragment_path(shadersLocation, newEffect->GetFragmentFname() );
-
-		
-		if (false == newEffect->Load(vertex_path, fragment_path))
+		for (int i = 0; i < newEffect->GetNumberOfShaders(); ++i)
 		{
-			throw std::exception("failed to load and prepare effect");
+			FBString vertex_path(shadersLocation, newEffect->GetVertexFname(i));
+			FBString fragment_path(shadersLocation, newEffect->GetFragmentFname(i));
+
+			if (false == newEffect->Load(i, vertex_path, fragment_path))
+			{
+				throw std::exception("failed to load and prepare effect");
+			}
+
+			// samplers and locations
+			newEffect->PrepUniforms(i);
 		}
-
-		// samplers and locations
-		newEffect->PrepUniforms();
-
 	}
 	catch (const std::exception &e)
 	{

@@ -38,19 +38,20 @@ const char *PostEffectMotionBlur::GetName()
 {
 	return SHADER_MOTIONBLUR_NAME;
 }
-const char *PostEffectMotionBlur::GetVertexFname()
+const char *PostEffectMotionBlur::GetVertexFname(const int)
 {
 	return SHADER_MOTIONBLUR_VERTEX;
 }
-const char *PostEffectMotionBlur::GetFragmentFname()
+const char *PostEffectMotionBlur::GetFragmentFname(const int)
 {
 	return SHADER_MOTIONBLUR_FRAGMENT;
 }
 
-bool PostEffectMotionBlur::PrepUniforms()
+bool PostEffectMotionBlur::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
+	GLSLShader* mShader = mShaders[shaderIndex];
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -190,6 +191,7 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 	int quarterWidth = ((w + 3) / 4);
 	int quarterHeight = ((h + 3) / 4);
 
+	GLSLShader* mShader = GetShaderPtr();
 	if (nullptr != mShader)
 	{
 		mShader->Bind();

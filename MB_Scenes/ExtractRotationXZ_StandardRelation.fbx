@@ -1,0 +1,1760 @@
+; FBX 7.7.0 project file
+; ----------------------------------------------------
+
+FBXHeaderExtension:  {
+	FBXHeaderVersion: 1004
+	FBXVersion: 7700
+	CreationTimeStamp:  {
+		Version: 1000
+		Year: 2022
+		Month: 9
+		Day: 23
+		Hour: 21
+		Minute: 31
+		Second: 36
+		Millisecond: 328
+	}
+	Creator: "FBX SDK/FBX Plugins version 2019.5"
+	OtherFlags:  {
+		TCDefinition: 127
+	}
+	SceneInfo: "SceneInfo::GlobalInfo", "UserData" {
+		Type: "UserData"
+		Version: 100
+		MetaData:  {
+			Version: 100
+			Title: ""
+			Subject: ""
+			Author: ""
+			Keywords: ""
+			Revision: ""
+			Comment: ""
+		}
+		Properties70:  {
+			P: "DocumentUrl", "KString", "Url", "", "C:\Users\Sergei\Documents\GitHub\OpenMoBu\MB_Scenes\ExtractRotationXZ_LegacyRelation.fbx"
+			P: "SrcDocumentUrl", "KString", "Url", "", "C:\Users\Sergei\Documents\GitHub\OpenMoBu\MB_Scenes\ExtractRotationXZ_LegacyRelation.fbx"
+			P: "Original", "Compound", "", ""
+			P: "Original|ApplicationVendor", "KString", "", "", "Autodesk"
+			P: "Original|ApplicationName", "KString", "", "", "MotionBuilder"
+			P: "Original|ApplicationVersion", "KString", "", "", "2019"
+			P: "Original|DateTime_GMT", "DateTime", "", "", "23/09/2022 19:31:36.319"
+			P: "Original|FileName", "KString", "", "", ""
+			P: "LastSaved", "Compound", "", ""
+			P: "LastSaved|ApplicationVendor", "KString", "", "", "Autodesk"
+			P: "LastSaved|ApplicationName", "KString", "", "", "MotionBuilder"
+			P: "LastSaved|ApplicationVersion", "KString", "", "", "2019"
+			P: "LastSaved|DateTime_GMT", "DateTime", "", "", "23/09/2022 19:31:36.319"
+		}
+	}
+}
+GlobalSettings:  {
+	Version: 1000
+	Properties70:  {
+		P: "UpAxis", "int", "Integer", "",1
+		P: "UpAxisSign", "int", "Integer", "",1
+		P: "FrontAxis", "int", "Integer", "",2
+		P: "FrontAxisSign", "int", "Integer", "",1
+		P: "CoordAxis", "int", "Integer", "",0
+		P: "CoordAxisSign", "int", "Integer", "",1
+		P: "OriginalUpAxis", "int", "Integer", "",-1
+		P: "OriginalUpAxisSign", "int", "Integer", "",1
+		P: "UnitScaleFactor", "double", "Number", "",1
+		P: "OriginalUnitScaleFactor", "double", "Number", "",1
+		P: "AmbientColor", "ColorRGB", "Color", "",0.400000005960464,0.400000005960464,0.400000005960464
+		P: "DefaultCamera", "KString", "", "", "Producer Perspective"
+		P: "TimeMode", "enum", "", "",3
+		P: "TimeProtocol", "enum", "", "",2
+		P: "SnapOnFrameMode", "enum", "", "",0
+		P: "TimeSpanStart", "KTime", "Time", "",0
+		P: "TimeSpanStop", "KTime", "Time", "",230930790000
+		P: "CustomFrameRate", "double", "Number", "",-1
+		P: "TimeMarker", "Compound", "", ""
+		P: "CurrentTimeMarker", "int", "Integer", "",-1
+	}
+}
+
+; Documents Description
+;------------------------------------------------------------------
+
+Documents:  {
+	Count: 1
+	Document: 1094993312, "KFbxScene", "Scene" {
+		Properties70:  {
+			P: "SourceObject", "object", "", ""
+			P: "ActiveAnimStackName", "KString", "", "", "Take 001"
+		}
+		RootNode: 0
+	}
+}
+
+; Document References
+;------------------------------------------------------------------
+
+References:  {
+}
+
+; Object definitions
+;------------------------------------------------------------------
+
+Definitions:  {
+	Version: 100
+	Count: 63
+	ObjectType: "GlobalSettings" {
+		Count: 1
+	}
+	ObjectType: "MotionBuilder_System" {
+		Count: 29
+		PropertyTemplate: "MotionBuilder_System" {
+			Properties70:  {
+				P: "MoBuTypeName", "KString", "", "", ""
+				P: "MoBuSubTypeName", "KString", "", "", ""
+				P: "MoBuObjectFullName", "KString", "", "", ""
+			}
+		}
+	}
+	ObjectType: "Model" {
+		Count: 11
+		PropertyTemplate: "FbxNode" {
+			Properties70:  {
+				P: "QuaternionInterpolate", "enum", "", "",0
+				P: "RotationOffset", "Vector3D", "Vector", "",0,0,0
+				P: "RotationPivot", "Vector3D", "Vector", "",0,0,0
+				P: "ScalingOffset", "Vector3D", "Vector", "",0,0,0
+				P: "ScalingPivot", "Vector3D", "Vector", "",0,0,0
+				P: "TranslationActive", "bool", "", "",0
+				P: "TranslationMin", "Vector3D", "Vector", "",0,0,0
+				P: "TranslationMax", "Vector3D", "Vector", "",0,0,0
+				P: "TranslationMinX", "bool", "", "",0
+				P: "TranslationMinY", "bool", "", "",0
+				P: "TranslationMinZ", "bool", "", "",0
+				P: "TranslationMaxX", "bool", "", "",0
+				P: "TranslationMaxY", "bool", "", "",0
+				P: "TranslationMaxZ", "bool", "", "",0
+				P: "RotationOrder", "enum", "", "",0
+				P: "RotationSpaceForLimitOnly", "bool", "", "",0
+				P: "RotationStiffnessX", "double", "Number", "",0
+				P: "RotationStiffnessY", "double", "Number", "",0
+				P: "RotationStiffnessZ", "double", "Number", "",0
+				P: "AxisLen", "double", "Number", "",10
+				P: "PreRotation", "Vector3D", "Vector", "",0,0,0
+				P: "PostRotation", "Vector3D", "Vector", "",0,0,0
+				P: "RotationActive", "bool", "", "",0
+				P: "RotationMin", "Vector3D", "Vector", "",0,0,0
+				P: "RotationMax", "Vector3D", "Vector", "",0,0,0
+				P: "RotationMinX", "bool", "", "",0
+				P: "RotationMinY", "bool", "", "",0
+				P: "RotationMinZ", "bool", "", "",0
+				P: "RotationMaxX", "bool", "", "",0
+				P: "RotationMaxY", "bool", "", "",0
+				P: "RotationMaxZ", "bool", "", "",0
+				P: "InheritType", "enum", "", "",0
+				P: "ScalingActive", "bool", "", "",0
+				P: "ScalingMin", "Vector3D", "Vector", "",0,0,0
+				P: "ScalingMax", "Vector3D", "Vector", "",1,1,1
+				P: "ScalingMinX", "bool", "", "",0
+				P: "ScalingMinY", "bool", "", "",0
+				P: "ScalingMinZ", "bool", "", "",0
+				P: "ScalingMaxX", "bool", "", "",0
+				P: "ScalingMaxY", "bool", "", "",0
+				P: "ScalingMaxZ", "bool", "", "",0
+				P: "GeometricTranslation", "Vector3D", "Vector", "",0,0,0
+				P: "GeometricRotation", "Vector3D", "Vector", "",0,0,0
+				P: "GeometricScaling", "Vector3D", "Vector", "",1,1,1
+				P: "MinDampRangeX", "double", "Number", "",0
+				P: "MinDampRangeY", "double", "Number", "",0
+				P: "MinDampRangeZ", "double", "Number", "",0
+				P: "MaxDampRangeX", "double", "Number", "",0
+				P: "MaxDampRangeY", "double", "Number", "",0
+				P: "MaxDampRangeZ", "double", "Number", "",0
+				P: "MinDampStrengthX", "double", "Number", "",0
+				P: "MinDampStrengthY", "double", "Number", "",0
+				P: "MinDampStrengthZ", "double", "Number", "",0
+				P: "MaxDampStrengthX", "double", "Number", "",0
+				P: "MaxDampStrengthY", "double", "Number", "",0
+				P: "MaxDampStrengthZ", "double", "Number", "",0
+				P: "PreferedAngleX", "double", "Number", "",0
+				P: "PreferedAngleY", "double", "Number", "",0
+				P: "PreferedAngleZ", "double", "Number", "",0
+				P: "LookAtProperty", "object", "", ""
+				P: "UpVectorProperty", "object", "", ""
+				P: "Show", "bool", "", "",1
+				P: "NegativePercentShapeSupport", "bool", "", "",1
+				P: "DefaultAttributeIndex", "int", "Integer", "",-1
+				P: "Freeze", "bool", "", "",0
+				P: "LODBox", "bool", "", "",0
+				P: "Lcl Translation", "Lcl Translation", "", "A",0,0,0
+				P: "Lcl Rotation", "Lcl Rotation", "", "A",0,0,0
+				P: "Lcl Scaling", "Lcl Scaling", "", "A",1,1,1
+				P: "Visibility", "Visibility", "", "A",1
+				P: "Visibility Inheritance", "Visibility Inheritance", "", "",1
+			}
+		}
+	}
+	ObjectType: "NodeAttribute" {
+		Count: 11
+		PropertyTemplate: "FbxCamera" {
+			Properties70:  {
+				P: "Color", "ColorRGB", "Color", "",0.8,0.8,0.8
+				P: "Position", "Vector", "", "A",0,0,0
+				P: "UpVector", "Vector", "", "A",0,1,0
+				P: "InterestPosition", "Vector", "", "A",0,0,0
+				P: "Roll", "Roll", "", "A",0
+				P: "OpticalCenterX", "OpticalCenterX", "", "A",0
+				P: "OpticalCenterY", "OpticalCenterY", "", "A",0
+				P: "BackgroundColor", "Color", "", "A",0.63,0.63,0.63
+				P: "TurnTable", "Number", "", "A",0
+				P: "DisplayTurnTableIcon", "bool", "", "",0
+				P: "UseMotionBlur", "bool", "", "",0
+				P: "UseRealTimeMotionBlur", "bool", "", "",1
+				P: "Motion Blur Intensity", "Number", "", "A",1
+				P: "AspectRatioMode", "enum", "", "",0
+				P: "AspectWidth", "double", "Number", "",320
+				P: "AspectHeight", "double", "Number", "",200
+				P: "PixelAspectRatio", "double", "Number", "",1
+				P: "FilmOffsetX", "Number", "", "A",0
+				P: "FilmOffsetY", "Number", "", "A",0
+				P: "FilmWidth", "double", "Number", "",0.816
+				P: "FilmHeight", "double", "Number", "",0.612
+				P: "FilmAspectRatio", "double", "Number", "",1.33333333333333
+				P: "FilmSqueezeRatio", "double", "Number", "",1
+				P: "FilmFormatIndex", "enum", "", "",0
+				P: "PreScale", "Number", "", "A",1
+				P: "FilmTranslateX", "Number", "", "A",0
+				P: "FilmTranslateY", "Number", "", "A",0
+				P: "FilmRollPivotX", "Number", "", "A",0
+				P: "FilmRollPivotY", "Number", "", "A",0
+				P: "FilmRollValue", "Number", "", "A",0
+				P: "FilmRollOrder", "enum", "", "",0
+				P: "ApertureMode", "enum", "", "",2
+				P: "GateFit", "enum", "", "",0
+				P: "FieldOfView", "FieldOfView", "", "A",25.1149997711182
+				P: "FieldOfViewX", "FieldOfViewX", "", "A",40
+				P: "FieldOfViewY", "FieldOfViewY", "", "A",40
+				P: "FocalLength", "Number", "", "A",34.8932762167263
+				P: "CameraFormat", "enum", "", "",0
+				P: "UseFrameColor", "bool", "", "",0
+				P: "FrameColor", "ColorRGB", "Color", "",0.3,0.3,0.3
+				P: "ShowName", "bool", "", "",1
+				P: "ShowInfoOnMoving", "bool", "", "",1
+				P: "ShowGrid", "bool", "", "",1
+				P: "ShowOpticalCenter", "bool", "", "",0
+				P: "ShowAzimut", "bool", "", "",1
+				P: "ShowTimeCode", "bool", "", "",0
+				P: "ShowAudio", "bool", "", "",0
+				P: "AudioColor", "Vector3D", "Vector", "",0,1,0
+				P: "NearPlane", "double", "Number", "",10
+				P: "FarPlane", "double", "Number", "",4000
+				P: "AutoComputeClipPanes", "bool", "", "",0
+				P: "ViewCameraToLookAt", "bool", "", "",1
+				P: "ViewFrustumNearFarPlane", "bool", "", "",0
+				P: "ViewFrustumBackPlaneMode", "enum", "", "",2
+				P: "BackPlaneDistance", "Number", "", "A",4000
+				P: "BackPlaneDistanceMode", "enum", "", "",1
+				P: "ViewFrustumFrontPlaneMode", "enum", "", "",2
+				P: "FrontPlaneDistance", "Number", "", "A",10
+				P: "FrontPlaneDistanceMode", "enum", "", "",1
+				P: "LockMode", "bool", "", "",0
+				P: "LockInterestNavigation", "bool", "", "",0
+				P: "BackPlateFitImage", "bool", "", "",0
+				P: "BackPlateCrop", "bool", "", "",0
+				P: "BackPlateCenter", "bool", "", "",1
+				P: "BackPlateKeepRatio", "bool", "", "",1
+				P: "BackgroundAlphaTreshold", "double", "Number", "",0.5
+				P: "ShowBackplate", "bool", "", "",1
+				P: "BackPlaneOffsetX", "Number", "", "A",0
+				P: "BackPlaneOffsetY", "Number", "", "A",0
+				P: "BackPlaneRotation", "Number", "", "A",0
+				P: "BackPlaneScaleX", "Number", "", "A",1
+				P: "BackPlaneScaleY", "Number", "", "A",1
+				P: "Background Texture", "object", "", ""
+				P: "FrontPlateFitImage", "bool", "", "",1
+				P: "FrontPlateCrop", "bool", "", "",0
+				P: "FrontPlateCenter", "bool", "", "",1
+				P: "FrontPlateKeepRatio", "bool", "", "",1
+				P: "Foreground Opacity", "double", "Number", "",1
+				P: "ShowFrontplate", "bool", "", "",1
+				P: "FrontPlaneOffsetX", "Number", "", "A",0
+				P: "FrontPlaneOffsetY", "Number", "", "A",0
+				P: "FrontPlaneRotation", "Number", "", "A",0
+				P: "FrontPlaneScaleX", "Number", "", "A",1
+				P: "FrontPlaneScaleY", "Number", "", "A",1
+				P: "Foreground Texture", "object", "", ""
+				P: "DisplaySafeArea", "bool", "", "",0
+				P: "DisplaySafeAreaOnRender", "bool", "", "",0
+				P: "SafeAreaDisplayStyle", "enum", "", "",1
+				P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+				P: "Use2DMagnifierZoom", "bool", "", "",0
+				P: "2D Magnifier Zoom", "Number", "", "A",100
+				P: "2D Magnifier X", "Number", "", "A",50
+				P: "2D Magnifier Y", "Number", "", "A",50
+				P: "CameraProjectionType", "enum", "", "",0
+				P: "OrthoZoom", "double", "Number", "",1
+				P: "UseRealTimeDOFAndAA", "bool", "", "",0
+				P: "UseDepthOfField", "bool", "", "",0
+				P: "FocusSource", "enum", "", "",0
+				P: "FocusAngle", "double", "Number", "",3.5
+				P: "FocusDistance", "double", "Number", "",200
+				P: "UseAntialiasing", "bool", "", "",0
+				P: "AntialiasingIntensity", "double", "Number", "",0.77777
+				P: "AntialiasingMethod", "enum", "", "",0
+				P: "UseAccumulationBuffer", "bool", "", "",0
+				P: "FrameSamplingCount", "int", "Integer", "",7
+				P: "FrameSamplingType", "enum", "", "",1
+			}
+		}
+	}
+	ObjectType: "MotionBuilder_Generic" {
+		Count: 8
+		PropertyTemplate: "MotionBuilder_Generic" {
+			Properties70:  {
+				P: "MoBuTypeName", "KString", "", "", ""
+				P: "MoBuSubTypeName", "KString", "", "", ""
+				P: "MoBuObjectFullName", "KString", "", "", ""
+			}
+		}
+	}
+	ObjectType: "AnimationLayer" {
+		Count: 1
+		PropertyTemplate: "FbxAnimLayer" {
+			Properties70:  {
+				P: "Weight", "Number", "", "A",100
+				P: "Mute", "bool", "", "",0
+				P: "Solo", "bool", "", "",0
+				P: "Lock", "bool", "", "",0
+				P: "Color", "ColorRGB", "Color", "",0.8,0.8,0.8
+				P: "BlendMode", "enum", "", "",0
+				P: "RotationAccumulationMode", "enum", "", "",0
+				P: "ScaleAccumulationMode", "enum", "", "",0
+				P: "BlendModeBypass", "ULongLong", "", "",0
+			}
+		}
+	}
+	ObjectType: "AnimationStack" {
+		Count: 1
+		PropertyTemplate: "FbxAnimStack" {
+			Properties70:  {
+				P: "Description", "KString", "", "", ""
+				P: "LocalStart", "KTime", "Time", "",0
+				P: "LocalStop", "KTime", "Time", "",0
+				P: "ReferenceStart", "KTime", "Time", "",0
+				P: "ReferenceStop", "KTime", "Time", "",0
+			}
+		}
+	}
+	ObjectType: "PluginParameters" {
+		Count: 1
+	}
+}
+
+; Object properties
+;------------------------------------------------------------------
+
+Objects:  {
+	PluginParameters: 12521648, "ReferencesShadersPlugin", "1.0" {
+	}
+	NodeAttribute: 1103448160, "NodeAttribute::Producer Perspective", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",463.715388097782,183.349738064534,-98.0642445088647
+			P: "InterestPosition", "Vector", "", "A",112.214706420898,20.215702056886,-107.268608093262
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: 463.715388097782,183.349738064534,-98.0642445088647
+		Up: 0,1,0
+		LookAt: 112.214706420898,20.215702056886,-107.268608093262
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1103450096, "NodeAttribute::Producer Front", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",0,90,15000
+			P: "InterestPosition", "Vector", "", "A",0,90,0
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "NearPlane", "Number", "", "A",1
+			P: "FarPlane", "Number", "", "A",30000
+			P: "ViewFrustumBackPlaneMode", "enum", "", "",0
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+			P: "CameraProjectionType", "enum", "", "",1
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: 0,90,15000
+		Up: 0,1,0
+		LookAt: 0,90,0
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1103452032, "NodeAttribute::Producer Back", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",0,90,-15000
+			P: "InterestPosition", "Vector", "", "A",0,90,0
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "NearPlane", "Number", "", "A",1
+			P: "FarPlane", "Number", "", "A",30000
+			P: "ViewFrustumBackPlaneMode", "enum", "", "",0
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+			P: "CameraProjectionType", "enum", "", "",1
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: 0,90,-15000
+		Up: 0,1,0
+		LookAt: 0,90,0
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1103453968, "NodeAttribute::Producer Right", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",15000,90,0
+			P: "InterestPosition", "Vector", "", "A",0,90,0
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "NearPlane", "Number", "", "A",1
+			P: "FarPlane", "Number", "", "A",30000
+			P: "ViewFrustumBackPlaneMode", "enum", "", "",0
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+			P: "CameraProjectionType", "enum", "", "",1
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: 15000,90,0
+		Up: 0,1,0
+		LookAt: 0,90,0
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1153102016, "NodeAttribute::Producer Left", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",-15000,90,0
+			P: "InterestPosition", "Vector", "", "A",0,90,0
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "NearPlane", "Number", "", "A",1
+			P: "FarPlane", "Number", "", "A",30000
+			P: "ViewFrustumBackPlaneMode", "enum", "", "",0
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+			P: "CameraProjectionType", "enum", "", "",1
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: -15000,90,0
+		Up: 0,1,0
+		LookAt: 0,90,0
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1153105888, "NodeAttribute::Producer Top", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",0,15090,0
+			P: "UpVector", "Vector", "", "A",0,0,-1
+			P: "InterestPosition", "Vector", "", "A",0,90,0
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "NearPlane", "Number", "", "A",1
+			P: "FarPlane", "Number", "", "A",30000
+			P: "ViewFrustumBackPlaneMode", "enum", "", "",0
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+			P: "CameraProjectionType", "enum", "", "",1
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: 0,15090,0
+		Up: 0,0,-1
+		LookAt: 0,90,0
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1153107824, "NodeAttribute::Producer Bottom", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",0,-14910,0
+			P: "UpVector", "Vector", "", "A",-0,-0,1
+			P: "InterestPosition", "Vector", "", "A",0,90,0
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "NearPlane", "Number", "", "A",1
+			P: "FarPlane", "Number", "", "A",30000
+			P: "ViewFrustumBackPlaneMode", "enum", "", "",0
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+			P: "CameraProjectionType", "enum", "", "",1
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: 0,-14910,0
+		Up: -0,-0,1
+		LookAt: 0,90,0
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1100429088, "NodeAttribute::Camera Switcher", "CameraSwitcher" {
+		Properties70:  {
+			P: "Camera Index", "Integer", "", "A",0
+		}
+		Version: 101
+		Name: "Model::Camera Switcher"
+		CameraId: 0
+		CameraName: 100
+		CameraIndexName: 
+	}
+	NodeAttribute: 1153109760, "NodeAttribute::Camera", "Camera" {
+		Properties70:  {
+			P: "Position", "Vector", "", "A",100.926902770996,39.6338043212891,-13.5165500640869
+			P: "UpVector", "Vector", "", "A",0.0630932891426808,0.989729712959298,0.128274440753656
+			P: "InterestPosition", "Vector", "", "A",151.544708251953,23.0692329406738,89.3940887451172
+			P: "BackgroundColor", "Color", "", "A",0.16,0.16,0.16
+			P: "DisplayTurnTableIcon", "bool", "", "",1
+			P: "FilmFormatIndex", "enum", "", "",4
+			P: "FieldOfView", "FieldOfView", "", "A",40
+			P: "FocalLength", "Number", "", "A",21.3544940948486
+			P: "ViewFrustumBackPlaneMode", "enum", "", "",0
+			P: "BackPlateFitImage", "bool", "", "",1
+			P: "SafeAreaAspectRatio", "double", "Number", "",1.33333333333333
+			P: "2D Magnifier Zoom", "Number", "", "A",0
+			P: "2D Magnifier X", "Number", "", "A",0
+			P: "2D Magnifier Y", "Number", "", "A",0
+		}
+		TypeFlags: "Camera"
+		GeometryVersion: 124
+		Position: 100.926902770996,39.6338043212891,-13.5165500640869
+		Up: 0.0630932891426808,0.989729712959298,0.128274440753656
+		LookAt: 151.544708251953,23.0692329406738,89.3940887451172
+		ShowInfoOnMoving: 1
+		ShowAudio: 0
+		AudioColor: 0,1,0
+		CameraOrthoZoom: 1
+	}
+	NodeAttribute: 1421471760, "NodeAttribute::", "Null" {
+		Properties70:  {
+			P: "Size", "double", "Number", "",938
+		}
+		TypeFlags: "Null"
+	}
+	NodeAttribute: 1421473344, "NodeAttribute::", "Null" {
+		TypeFlags: "Null"
+	}
+	Model: 1149733296, "Model::Producer Perspective", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",463.715388097782,183.349738064534,-98.0642445088647
+			P: "Lcl Rotation", "Lcl Rotation", "", "A",-179.368592480261,1.3606603947735,-155.103640872119
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149729296, "Model::Producer Front", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",0,90,15000
+			P: "Lcl Rotation", "Lcl Rotation", "", "A",-0,90,0
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149731296, "Model::Producer Back", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",0,90,-15000
+			P: "Lcl Rotation", "Lcl Rotation", "", "A",-0,-90,0
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149735296, "Model::Producer Right", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",15000,90,0
+			P: "Lcl Rotation", "Lcl Rotation", "", "A",180,-0,180
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149737296, "Model::Producer Left", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",-15000,90,0
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149749296, "Model::Producer Top", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",0,15090,0
+			P: "Lcl Rotation", "Lcl Rotation", "", "A",-90,-0,-90
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149719296, "Model::Producer Bottom", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",0,-14910,0
+			P: "Lcl Rotation", "Lcl Rotation", "", "A",90,-0,90
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149743296, "Model::Camera Switcher", "CameraSwitcher" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "Show", "bool", "", "",0
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", "NbTakesWithLinks: 0&lf;"
+		}
+		Shading: W
+		Culling: "CullingOff"
+	}
+	Model: 1149739296, "Model::Camera", "Camera" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",100.926902770996,39.6338043212891,-13.5165500640869
+			P: "Lcl Rotation", "Lcl Rotation", "", "A",-3.45483374595642,5.04893779754639,-34.4496307373047
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "ResolutionMode", "enum", "", "",0
+			P: "mAlsoKeyOnFOVProperty", "bool", "", "",0
+			P: "AspectW", "double", "Number", "",1
+			P: "AspectH", "double", "Number", "",1
+			P: "ForegroundTransparent", "bool", "", "",1
+			P: "Display2DMagnifierFrame", "bool", "", "",1
+			P: "Focus Model", "object", "", ""
+			P: "ResetCamera", "Action", "", "",0
+		}
+		Shading: U
+		Culling: "CullingOff"
+	}
+	Model: 1149741296, "Model::ExtractedRotation", "Null" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A+",100.926902770996,39.6338043212891,-13.5165500640869
+			P: "Lcl Rotation", "Lcl Rotation", "", "A+",0,-35.9836120605469,0
+			P: "Lcl Scaling", "Lcl Scaling", "", "A+",1,1,1
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "DrawLink", "bool", "", "",1
+		}
+		Shading: U
+		Culling: "CullingOff"
+	}
+	Model: 1149745296, "Model::Camera Interest", "Null" {
+		Version: 232
+		Properties70:  {
+			P: "ScalingMin", "Vector3D", "Vector", "",1,1,1
+			P: "DefaultAttributeIndex", "int", "Integer", "",0
+			P: "Lcl Translation", "Lcl Translation", "", "A",135.442245483398,-28.3887424468994,-303.638671875
+			P: "MultiTake", "int", "Integer", "",1
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "ManipulationMode", "enum", "", "",0
+			P: "Primary Visibility", "bool", "", "",1
+			P: "Casts Shadows", "bool", "", "",1
+			P: "Receive Shadows", "bool", "", "",1
+			P: "ScalingPivotUpdateOffset", "Vector3D", "Vector", "",0,0,0
+			P: "SetPreferedAngle", "Action", "", "",0
+			P: "PivotsVisibility", "enum", "", "",1
+			P: "RotationLimitsVisibility", "bool", "", "",0
+			P: "LocalTranslationRefVisibility", "bool", "", "",0
+			P: "RotationRefVisibility", "bool", "", "",0
+			P: "RotationAxisVisibility", "bool", "", "",0
+			P: "ScalingRefVisibility", "bool", "", "",0
+			P: "HierarchicalCenterVisibility", "bool", "", "",0
+			P: "GeometricCenterVisibility", "bool", "", "",0
+			P: "ReferentialSize", "double", "Number", "",12
+			P: "Pickable", "bool", "", "",1
+			P: "Transformable", "bool", "", "",1
+			P: "CullingMode", "enum", "", "",0
+			P: "ShowTrajectories", "bool", "", "",0
+			P: "DrawLink", "bool", "", "",1
+		}
+		Shading: U
+		Culling: "CullingOff"
+	}
+	AnimationStack: 1160441584, "AnimStack::Take 001", "" {
+		Properties70:  {
+			P: "LocalStop", "KTime", "Time", "",230930790000
+			P: "ReferenceStop", "KTime", "Time", "",230930790000
+			P: "MoBuAttrBlindData", "KString", "", "", "&quot;Animation Stack Settings&quot;:  {&lf;    TimeMarks:  {&lf;    }&lf;}&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	AnimationLayer: 1159496896, "AnimLayer::Take 001:BaseAnimation", "" {
+		Properties70:  {
+			P: "Color", "ColorRGB", "Color", "",0.611764705882353,0,0.16078431372549
+			P: "BlendModeBypass", "ULongLong", "", "",131584
+			P: "MultiTake", "int", "Integer", "",0
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "mLayerID", "int", "Integer", "",0
+			P: "MutedForSolo", "bool", "", "",0
+			P: "MutedByParent", "bool", "", "",0
+			P: "LockedByParent", "bool", "", "",0
+			P: "Hide", "bool", "", "",0
+			P: "ParentCollapseVisibility", "bool", "", "",1
+			P: "Selection", "bool", "", "",1
+			P: "Empty", "bool", "", "",0
+		}
+	}
+	MotionBuilder_System: 1100429440, "KTimeWarpManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Box"
+			P: "MoBuObjectFullName", "KString", "", "", "KTimeWarpManager"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1100423632, "Integrated Camera", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Video"
+			P: "MoBuSubTypeName", "KString", "", "", "Live"
+			P: "MoBuObjectFullName", "KString", "", "", "Video::Integrated Camera"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "RecordPath", "charptr", "", "", "C:\Users\Sergei\Documents\Take 001-Integrated Camera-VideoRecording.avi"
+			P: "Online", "bool", "", "",0
+			P: "ResolutionFR", "enum", "", "",0
+			P: "RecordToFile", "bool", "", "",0
+			P: "RecordAudio", "bool", "", "",0
+			P: "Compressor", "enum", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", "UseMipMap: 0&lf;Input: 0&lf;Sampling: 0&lf;Format: 0&lf;Precision: -1&lf;Interleave: 0&lf;Delay: 0&lf;Online: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1100431376, "CAMERA - UAC", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Video"
+			P: "MoBuSubTypeName", "KString", "", "", "Live"
+			P: "MoBuObjectFullName", "KString", "", "", "Video::CAMERA - UAC"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "RecordPath", "charptr", "", "", "C:\Users\Sergei\Documents\Take 001-CAMERA - UAC-VideoRecording.avi"
+			P: "Online", "bool", "", "",0
+			P: "ResolutionFR", "enum", "", "",0
+			P: "RecordToFile", "bool", "", "",0
+			P: "RecordAudio", "bool", "", "",0
+			P: "Compressor", "enum", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", "UseMipMap: 0&lf;Input: 1&lf;Sampling: 0&lf;Format: 0&lf;Precision: -1&lf;Interleave: 0&lf;Delay: 0&lf;Online: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1100423808, "Camera (NVIDIA Broadcast)", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Video"
+			P: "MoBuSubTypeName", "KString", "", "", "Live"
+			P: "MoBuObjectFullName", "KString", "", "", "Video::Camera (NVIDIA Broadcast)"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "RecordPath", "charptr", "", "", "C:\Users\Sergei\Documents\Take 001-Camera (NVIDIA Broadcast)-VideoRecording.avi"
+			P: "Online", "bool", "", "",0
+			P: "ResolutionFR", "enum", "", "",0
+			P: "RecordToFile", "bool", "", "",0
+			P: "RecordAudio", "bool", "", "",0
+			P: "Compressor", "enum", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", "UseMipMap: 0&lf;Input: 2&lf;Sampling: 0&lf;Format: 0&lf;Precision: -1&lf;Interleave: 0&lf;Delay: 0&lf;Online: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1100423456, "OBS Virtual Camera", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Video"
+			P: "MoBuSubTypeName", "KString", "", "", "Live"
+			P: "MoBuObjectFullName", "KString", "", "", "Video::OBS Virtual Camera"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "RecordPath", "charptr", "", "", "C:\Users\Sergei\Documents\Take 001-OBS Virtual Camera-VideoRecording.avi"
+			P: "Online", "bool", "", "",0
+			P: "ResolutionFR", "enum", "", "",0
+			P: "RecordToFile", "bool", "", "",0
+			P: "RecordAudio", "bool", "", "",0
+			P: "Compressor", "enum", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", "UseMipMap: 0&lf;Input: 3&lf;Sampling: 0&lf;Format: 0&lf;Precision: -1&lf;Interleave: 0&lf;Delay: 0&lf;Online: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1100424160, "Video Output 1", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Video"
+			P: "MoBuSubTypeName", "KString", "", "", "Output"
+			P: "MoBuObjectFullName", "KString", "", "", "Video::Video Output 1"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "DrawMode", "enum", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", "UseMipMap: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1100424688, "KVideoRenderer", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Object"
+			P: "MoBuSubTypeName", "KString", "", "", "KVideoRenderer"
+			P: "MoBuObjectFullName", "KString", "", "", "KVideoRenderer"
+			P: "MoBuAttrBlindData", "KString", "", "", "&lf;;Renderer Tool Options&lf;; ----------------------------------------------------&lf;RendererTools:  {&lf;    Version: 103&lf;    StartTime: &quot;0&quot;&lf;    StopTime: &quot;0&quot;&lf;    StepTime: &quot;2&quot;&lf;    OutputFormat: &quot;AVI&quot;&lf;    OutputPath: &quot;c:\temp\Output.avi&quot;&lf;    Format: &quot;From Camera&quot;&lf;    FieldMode: 0&lf;    Quality: 24&lf;    RendererAntialing: 0&lf;    ModelsOnly: 1&lf;    ViewingMode: 1&lf;    StereoDisplayMode: 10&lf;    RendererCallbackIndex: -1&lf;    RendererCallbackPrefIndex: 0&lf;    RenderAudio: 0&lf;    AudioFormat: 2098178&lf;    AudioOutputLocation: 0&lf;    AudioUseCustomStandalonePath: 0&lf;    AudioCustomStandalonePath: &quot;c:\temp\Output.wav&quot;&lf;    ShowCameraLabel: 0&lf;    ShowTimeCode: 0&lf;    ShowSafeArea: 0&lf;    GlobalViewingMode: 0&lf;    GlobalStereoDisplayMode: 0&lf;}&lf;&lf;"
+             
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1100424864, "KSerialManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KSerialManager"
+			P: "MoBuObjectFullName", "KString", "", "", "KSerialManager"
+			P: "MoBuAttrBlindData", "KString", "", "", "&lf;; Serial Manager Section &lf;; ----------------------------------------------------&lf;SerialManager:  {&lf;}&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1100425040, "KCharacterHelper", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Tool"
+			P: "MoBuSubTypeName", "KString", "", "", "Character"
+			P: "MoBuObjectFullName", "KString", "", "", "KCharacterHelper"
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", "CHARACTER_TOOL:  {&lf;    KEYING_MODE: 0&lf;    IK_MANIP: 0&lf;    SYMETRY_EDIT: 1&lf;    MARKERSET_VISIBILITY: 1&lf;    FLOOR_CONTACT_VISIBILITY: 1&lf;    FINGER_TIPS_VISIBILITY: 0&lf;    REACH_OVERRIDE: 1&lf;    RESIST_OVERRIDE: 1&lf;}&lf;"
+             
+		}
+	}
+	MotionBuilder_System: 1100425216, "KNLEManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KNLEManager"
+			P: "MoBuObjectFullName", "KString", "", "", "KNLEManager"
+			P: "MoBuAttrBlindData", "KString", "", "", "GlobalNLE:  {&lf;    Version: 7&lf;    Edit: &quot;Edit&quot; {&lf;        IsCurrent: 1&lf;        Models: 0&lf;        ResultTrack:  {&lf;            TakeName: &quot;NoTake&quot;&lf;            Start: -230930790000&lf;            Stop: 1385584740000&lf;            Ghost: 1&lf;            T: 0,0,0&lf;            R: 0,-0,0&lf;        }&lf;        IsLocal: 0&lf;        StartRefTrackIdx: -1&lf;        StopRefTrackIdx: -1&lf;        StartRatio: 0.5&lf;        StopRatio: 0.5&lf;        KeepActive: 0&lf;        Start: 0&lf;        Stop: 230930790000&lf;    }&lf;}&lf;"
+             
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1100425568, "KNamespacePropertiesManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KNamespacePropertiesManager"
+			P: "MoBuObjectFullName", "KString", "", "", "KNamespacePropertiesManager"
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1100426272, "Constraints", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Folder"
+			P: "MoBuSubTypeName", "KString", "", "", "Category"
+			P: "MoBuObjectFullName", "KString", "", "", "Folder::Constraints"
+			P: "MoBuAttrBlindData", "KString", "", "", "FolderType: &quot;Constraints&quot;&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1100426624, "KAudioManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KAudioManager"
+			P: "MoBuObjectFullName", "KString", "", "", "KAudioManager"
+			P: "MoBuAttrBlindData", "KString", "", "", "AudioInput:  {&lf;    Name: &quot;Микрофон (2- CAMERA - UAC)&quot;&lf;    Format: 2098178&lf;    Online: 0&lf;    Record: 0&lf;    RecordPath: &quot;&quot;&lf;    Destination: &quot;&quot;&lf;    LiveDelay: 0&lf;}&lf;AudioInput:  {&lf;    Name: &quot;Микрофон (NVIDIA Broadcast)&quot;&lf;    Format: 2098178&lf;    Online: 0&lf;    Record: 0&lf;    RecordPath: &quot;&quot;&lf;    Destination: &quot;&quot;&lf;    LiveDelay: 0&lf;}&lf;AudioInput:  {&lf;    Name: &quot;Микрофон (Realtek(R) Audio)&quot;&lf;    Format: 2098178&lf;    Online: 0&lf;    Record: 0&lf;    RecordPath: &quot;&quot;&lf;    Destination: &quot;&quot;&lf;    LiveDelay: 0&lf;}&lf;"
+             
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1100427328, "KMotionTriggerManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KMotionTriggerManager"
+			P: "MoBuObjectFullName", "KString", "", "", "KMotionTriggerManager"
+			P: "MoBuAttrBlindData", "KString", "", "", "KEEPACTIVE: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1102645808, "Story root", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "TimelineX"
+			P: "MoBuObjectFullName", "KString", "", "", "Timeline::Story root"
+			P: "Muted", "bool", "", "",0
+			P: "Soloed", "bool", "", "",0
+			P: "RecordClipPath", "charptr", "", "", ""
+			P: "Tracks", "object", "", ""
+			P: "Timelines", "object", "", ""
+			P: "ClipGroupClip", "object", "", ""
+			P: "MoBuAttrBlindData", "KString", "", "", "&quot;Display Time Span&quot;: 0,0&lf;&quot;Vertical Scroll Position&quot;: 0&lf;State: 0&lf;ViewMinimized: 0&lf;IsEdit: 0&lf;TimelineHeight: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1102645984, "Edit root", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "TimelineX"
+			P: "MoBuObjectFullName", "KString", "", "", "Timeline::Edit root"
+			P: "Muted", "bool", "", "",0
+			P: "Soloed", "bool", "", "",0
+			P: "RecordClipPath", "charptr", "", "", ""
+			P: "Tracks", "object", "", ""
+			P: "Timelines", "object", "", ""
+			P: "ClipGroupClip", "object", "", ""
+			P: "MoBuAttrBlindData", "KString", "", "", "&quot;Display Time Span&quot;: 0,0&lf;&quot;Vertical Scroll Position&quot;: 0&lf;State: 0&lf;ViewMinimized: 0&lf;IsEdit: 1&lf;TimelineHeight: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1102646512, "KTimelineXManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KTimelineXManager"
+			P: "MoBuObjectFullName", "KString", "", "", "KTimelineXManager"
+			P: "MoBuAttrBlindData", "KString", "", "", "; TimelineX section&lf;; ----------------------------------------------------&lf;&lf;GlobalTimelineX:  {&lf;    Mute: 0&lf;    TimeDiscontinuity: 1&lf;    TimeReferential: 0&lf;    EditStartEnd: 0,230930790000&lf;    EditZoomStartEnd: 0,230930790000&lf;}&lf;"
+             
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 242154864, "KHUDManager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KHUDManager"
+			P: "MoBuObjectFullName", "KString", "", "", "KHUDManager"
+			P: "DefaultHUD", "object", "", ""
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 242156096, "Poses", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Folder"
+			P: "MoBuSubTypeName", "KString", "", "", "Category"
+			P: "MoBuObjectFullName", "KString", "", "", "Folder::Poses"
+			P: "MoBuAttrBlindData", "KString", "", "", "FolderType: &quot;Poses&quot;&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1146329696, "Takes", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Folder"
+			P: "MoBuSubTypeName", "KString", "", "", "Category"
+			P: "MoBuObjectFullName", "KString", "", "", "Folder::Takes"
+			P: "MoBuAttrBlindData", "KString", "", "", "FolderType: &quot;Takes&quot;&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1146322128, "Global Light", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "GlobalShading"
+			P: "MoBuSubTypeName", "KString", "", "", "Light"
+			P: "MoBuObjectFullName", "KString", "", "", "Global Light"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "Ambient Color", "Color", "", "A",0.400000005960464,0.400000005960464,0.400000005960464
+			P: "Fog Color", "Color", "", "A",1,1,1
+			P: "Fog Begin", "Number", "", "A",0.300000011920929
+			P: "Fog End", "Number", "", "A",1000
+			P: "Fog Density", "Number", "", "A",4
+			P: "FogMode", "enum", "", "",0
+			P: "FogEnable", "bool", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1126109536, "Renderer", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Renderer"
+			P: "MoBuSubTypeName", "KString", "", "", "Default"
+			P: "MoBuObjectFullName", "KString", "", "", "Renderer::Renderer"
+			P: "DisplayNormal", "bool", "", "",0
+			P: "DisplayBoundingBox", "bool", "", "",0
+			P: "DisplayHierarchicalBoundingBox", "bool", "", "",0
+			P: "DisplayStereoManipulator", "bool", "", "",0
+			P: "IDBufferPickingAlpha", "double", "Number", "",0.5
+			P: "SelectionOverride", "bool", "", "",0
+			P: "SelectionOverrideTransparency", "double", "Number", "",0.25
+			P: "SelectionOverrideColor", "ColorRGB", "Color", "",0.05,0.5,0.05
+			P: "SelectionForceSnapPointsDisplay", "bool", "", "",0
+			P: "PickingEnabled", "bool", "", "",1
+			P: "HideManipulatorsOnManip", "bool", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1126113408, "Python Tool Manager", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "__FBTool"
+			P: "MoBuObjectFullName", "KString", "", "", "Python Tool Manager"
+			P: "Caption", "charptr", "", "", ""
+			P: "Enabled", "bool", "", "",1
+			P: "ReadOnly", "bool", "", "",0
+			P: "Visible", "bool", "", "",1
+			P: "Left", "int", "Integer", "",0
+			P: "Top", "int", "Integer", "",0
+			P: "Width", "int", "Integer", "",1
+			P: "Height", "int", "Integer", "",1
+			P: "Anchors", "int", "Integer", "",0
+			P: "SkinContext", "enum", "", "",0
+			P: "RenderingHints", "int", "Integer", "",0
+			P: "Hint", "charptr", "", "", ""
+			P: "HintMouse", "charptr", "", "", ""
+			P: "HintMouseLeft", "int", "Integer", "",-1
+			P: "HintMouseTop", "int", "Integer", "",-1
+			P: "HintMouseWidth", "int", "Integer", "",-1
+			P: "HintMouseHeight", "int", "Integer", "",-1
+			P: "HintIsTextCompletion", "bool", "", "",0
+			P: "Active", "bool", "", "",0
+			P: "ActiveControl", "object", "", ""
+			P: "BackgroundBrush", "enum", "", "",4
+			P: "BorderStyle", "int", "Integer", "",0
+			P: "Position", "int", "Integer", "",0
+			P: "StartWSize", "int", "Integer", "",200
+			P: "StartHSize", "int", "Integer", "",200
+			P: "MaxWSize", "int", "Integer", "",-1
+			P: "MaxHSize", "int", "Integer", "",-1
+			P: "MinWSize", "int", "Integer", "",140
+			P: "MinHSize", "int", "Integer", "",-1
+			P: "StartXPos", "int", "Integer", "",-1
+			P: "StartYPos", "int", "Integer", "",-1
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1138669344, "Batch Tool (scripted)", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "__FBTool"
+			P: "MoBuObjectFullName", "KString", "", "", "Batch Tool (scripted)"
+			P: "Caption", "charptr", "", "", ""
+			P: "Enabled", "bool", "", "",1
+			P: "ReadOnly", "bool", "", "",0
+			P: "Visible", "bool", "", "",1
+			P: "Left", "int", "Integer", "",0
+			P: "Top", "int", "Integer", "",0
+			P: "Width", "int", "Integer", "",1
+			P: "Height", "int", "Integer", "",1
+			P: "Anchors", "int", "Integer", "",0
+			P: "SkinContext", "enum", "", "",0
+			P: "RenderingHints", "int", "Integer", "",0
+			P: "Hint", "charptr", "", "", ""
+			P: "HintMouse", "charptr", "", "", ""
+			P: "HintMouseLeft", "int", "Integer", "",-1
+			P: "HintMouseTop", "int", "Integer", "",-1
+			P: "HintMouseWidth", "int", "Integer", "",-1
+			P: "HintMouseHeight", "int", "Integer", "",-1
+			P: "HintIsTextCompletion", "bool", "", "",0
+			P: "Active", "bool", "", "",0
+			P: "ActiveControl", "object", "", ""
+			P: "BackgroundBrush", "enum", "", "",4
+			P: "BorderStyle", "int", "Integer", "",0
+			P: "Position", "int", "Integer", "",0
+			P: "StartWSize", "int", "Integer", "",535
+			P: "StartHSize", "int", "Integer", "",365
+			P: "MaxWSize", "int", "Integer", "",-1
+			P: "MaxHSize", "int", "Integer", "",-1
+			P: "MinWSize", "int", "Integer", "",140
+			P: "MinHSize", "int", "Integer", "",-1
+			P: "StartXPos", "int", "Integer", "",-1
+			P: "StartYPos", "int", "Integer", "",-1
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 431873856, "Character Selection/Key Controls", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "__FBTool"
+			P: "MoBuObjectFullName", "KString", "", "", "Character Selection/Key Controls"
+			P: "Caption", "charptr", "", "", ""
+			P: "Enabled", "bool", "", "",1
+			P: "ReadOnly", "bool", "", "",0
+			P: "Visible", "bool", "", "",1
+			P: "Left", "int", "Integer", "",0
+			P: "Top", "int", "Integer", "",0
+			P: "Width", "int", "Integer", "",1
+			P: "Height", "int", "Integer", "",1
+			P: "Anchors", "int", "Integer", "",0
+			P: "SkinContext", "enum", "", "",0
+			P: "RenderingHints", "int", "Integer", "",0
+			P: "Hint", "charptr", "", "", ""
+			P: "HintMouse", "charptr", "", "", ""
+			P: "HintMouseLeft", "int", "Integer", "",-1
+			P: "HintMouseTop", "int", "Integer", "",-1
+			P: "HintMouseWidth", "int", "Integer", "",-1
+			P: "HintMouseHeight", "int", "Integer", "",-1
+			P: "HintIsTextCompletion", "bool", "", "",0
+			P: "Active", "bool", "", "",0
+			P: "ActiveControl", "object", "", ""
+			P: "BackgroundBrush", "enum", "", "",4
+			P: "BorderStyle", "int", "Integer", "",0
+			P: "Position", "int", "Integer", "",0
+			P: "StartWSize", "int", "Integer", "",242
+			P: "StartHSize", "int", "Integer", "",120
+			P: "MaxWSize", "int", "Integer", "",-1
+			P: "MaxHSize", "int", "Integer", "",-1
+			P: "MinWSize", "int", "Integer", "",140
+			P: "MinHSize", "int", "Integer", "",-1
+			P: "StartXPos", "int", "Integer", "",-1
+			P: "StartYPos", "int", "Integer", "",-1
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421468240, "FBX Export", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "__FBTool"
+			P: "MoBuObjectFullName", "KString", "", "", "FBX Export"
+			P: "Caption", "charptr", "", "", ""
+			P: "Enabled", "bool", "", "",1
+			P: "ReadOnly", "bool", "", "",0
+			P: "Visible", "bool", "", "",1
+			P: "Left", "int", "Integer", "",0
+			P: "Top", "int", "Integer", "",0
+			P: "Width", "int", "Integer", "",1
+			P: "Height", "int", "Integer", "",1
+			P: "Anchors", "int", "Integer", "",0
+			P: "SkinContext", "enum", "", "",0
+			P: "RenderingHints", "int", "Integer", "",0
+			P: "Hint", "charptr", "", "", ""
+			P: "HintMouse", "charptr", "", "", ""
+			P: "HintMouseLeft", "int", "Integer", "",-1
+			P: "HintMouseTop", "int", "Integer", "",-1
+			P: "HintMouseWidth", "int", "Integer", "",-1
+			P: "HintMouseHeight", "int", "Integer", "",-1
+			P: "HintIsTextCompletion", "bool", "", "",0
+			P: "Active", "bool", "", "",0
+			P: "ActiveControl", "object", "", ""
+			P: "BackgroundBrush", "enum", "", "",4
+			P: "BorderStyle", "int", "Integer", "",0
+			P: "Position", "int", "Integer", "",0
+			P: "StartWSize", "int", "Integer", "",350
+			P: "StartHSize", "int", "Integer", "",170
+			P: "MaxWSize", "int", "Integer", "",-1
+			P: "MaxHSize", "int", "Integer", "",-1
+			P: "MinWSize", "int", "Integer", "",140
+			P: "MinHSize", "int", "Integer", "",-1
+			P: "StartXPos", "int", "Integer", "",-1
+			P: "StartYPos", "int", "Integer", "",-1
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421473696, "MainViewer", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KtViewer"
+			P: "MoBuObjectFullName", "KString", "", "", "MainViewer"
+			P: "PaneCount", "int", "Integer", "",0
+			P: "DisplayStatistics", "bool", "", "",0
+			P: "DisplayMemory", "bool", "", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421469824, "ModelView0", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "ModelView"
+			P: "MoBuObjectFullName", "KString", "", "", "ModelView0"
+			P: "RenderCallbackIndex", "int", "Integer", "",-1
+			P: "RenderCallbackPrefIndex", "int", "Integer", "",0
+			P: "CameraViewingMode", "int", "Integer", "",0
+			P: "CurrentCamera", "object", "", ""
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421470000, "ModelView1", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "ModelView"
+			P: "MoBuObjectFullName", "KString", "", "", "ModelView1"
+			P: "RenderCallbackIndex", "int", "Integer", "",-1
+			P: "RenderCallbackPrefIndex", "int", "Integer", "",0
+			P: "CameraViewingMode", "int", "Integer", "",0
+			P: "CurrentCamera", "object", "", ""
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421465952, "ModelView2", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "ModelView"
+			P: "MoBuObjectFullName", "KString", "", "", "ModelView2"
+			P: "RenderCallbackIndex", "int", "Integer", "",-1
+			P: "RenderCallbackPrefIndex", "int", "Integer", "",0
+			P: "CameraViewingMode", "int", "Integer", "",0
+			P: "CurrentCamera", "object", "", ""
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421468064, "ModelView3", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "ModelView"
+			P: "MoBuObjectFullName", "KString", "", "", "ModelView3"
+			P: "RenderCallbackIndex", "int", "Integer", "",-1
+			P: "RenderCallbackPrefIndex", "int", "Integer", "",0
+			P: "CameraViewingMode", "int", "Integer", "",0
+			P: "CurrentCamera", "object", "", ""
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421469648, "HierarchyView", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "KtHierarchyView"
+			P: "MoBuObjectFullName", "KString", "", "", "HierarchyView"
+			P: "MoBuAttrBlindData", "KString", "", "", "; HierarchyView section &lf;; ----------------------------------------------------&lf;HierarchyView:  {&lf;    ShowGrid: 1&lf;    ObjectsAttributes:  {&lf;        Name: &quot;Model::Camera&quot; {&lf;            X: 75&lf;            Y: 250&lf;            Expanded: 4&lf;        }&lf;        Name: &quot;Model::Camera Interest&quot; {&lf;            X: 150&lf;            Y: 250&lf;            Expanded: 4&lf;        }&lf;        Name: &quot;Model::ExtractedRotation&quot; {&lf;            X: 112&lf;            Y: 301&lf;            Expanded: 4&lf;        }&lf;    }&lf;}&lf;"
+             
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421471936, "Transport", "" {
+		Properties70:  {
+			P: "MoBuObjectFullName", "KString", "", "", "Transport"
+			P: "Caption", "charptr", "", "", ""
+			P: "Enabled", "bool", "", "",1
+			P: "ReadOnly", "bool", "", "",0
+			P: "Visible", "bool", "", "",1
+			P: "Left", "int", "Integer", "",0
+			P: "Top", "int", "Integer", "",0
+			P: "Width", "int", "Integer", "",0
+			P: "Height", "int", "Integer", "",0
+			P: "Anchors", "int", "Integer", "",0
+			P: "SkinContext", "enum", "", "",0
+			P: "RenderingHints", "int", "Integer", "",0
+			P: "Hint", "charptr", "", "", ""
+			P: "HintMouse", "charptr", "", "", ""
+			P: "HintMouseLeft", "int", "Integer", "",-1
+			P: "HintMouseTop", "int", "Integer", "",-1
+			P: "HintMouseWidth", "int", "Integer", "",-1
+			P: "HintMouseHeight", "int", "Integer", "",-1
+			P: "HintIsTextCompletion", "bool", "", "",0
+			P: "Active", "bool", "", "",0
+			P: "ActiveControl", "object", "", ""
+			P: "BackgroundBrush", "enum", "", "",3
+			P: "BorderStyle", "int", "Integer", "",0
+			P: "Position", "int", "Integer", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", "&quot;Transport Tool Settings&quot;:  {&lf;    &quot;ZoomBar Settings&quot;:  {&lf;        &quot;Take 001&quot;:  {&lf;            ZoomWindowMode: 1&lf;            ZoomWindowTime: 0,230930790000&lf;        }&lf;    }&lf;    &quot;Audio Display Settings&quot;:  {&lf;        AudioDisplay: 1&lf;        AudioClipName: &quot;&quot;&lf;        AudioTrackName: &quot;&quot;&lf;        AudioLeftChannelActive: 1&lf;        AudioRightChannelActive: 1&lf;    }&lf;    Settings:  {&lf;        TimeFormat: 1&lf;        PlaySpeed: 1&lf;        SnapOnFrames: 1&lf;        ReferenceTimeIndex: -1&lf;        PlotFrameRate: 0.0166666666666667&lf;    }&lf;}&lf;"
+             
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_System: 1421468944, "FCurve", "" {
+		Properties70:  {
+			P: "MoBuObjectFullName", "KString", "", "", "FCurve"
+			P: "Caption", "charptr", "", "", ""
+			P: "Enabled", "bool", "", "",1
+			P: "ReadOnly", "bool", "", "",0
+			P: "Visible", "bool", "", "",1
+			P: "Left", "int", "Integer", "",0
+			P: "Top", "int", "Integer", "",0
+			P: "Width", "int", "Integer", "",1
+			P: "Height", "int", "Integer", "",1
+			P: "Anchors", "int", "Integer", "",0
+			P: "SkinContext", "enum", "", "",0
+			P: "RenderingHints", "int", "Integer", "",0
+			P: "Hint", "charptr", "", "", ""
+			P: "HintMouse", "charptr", "", "", ""
+			P: "HintMouseLeft", "int", "Integer", "",-1
+			P: "HintMouseTop", "int", "Integer", "",-1
+			P: "HintMouseWidth", "int", "Integer", "",-1
+			P: "HintMouseHeight", "int", "Integer", "",-1
+			P: "HintIsTextCompletion", "bool", "", "",0
+			P: "Active", "bool", "", "",0
+			P: "ActiveControl", "object", "", ""
+			P: "BackgroundBrush", "enum", "", "",3
+			P: "BorderStyle", "int", "Integer", "",0
+			P: "Position", "int", "Integer", "",0
+			P: "MoBuAttrBlindData", "KString", "", "", "&quot;FCurve Tool Settings&quot;:  {&lf;    &quot;FCurve Editor Settings&quot;:  {&lf;        &quot;Audio Display Settings&quot;:  {&lf;            AudioDisplay: 1&lf;            AudioClipName: &quot;&quot;&lf;            AudioTrackName: &quot;&quot;&lf;            AudioLeftChannelActive: 1&lf;            AudioRightChannelActive: 1&lf;        }&lf;    }&lf;    &quot;FCurve Editor Extended Settings&quot;:  {&lf;        &quot;Transport Original Values&quot;: 9223372036854775807,-9223372036854775807&lf;        &quot;Zoombar Original Values&quot;: 9223372036854775807,-9223372036854775807&lf;    }&lf;}&lf;"
+             
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1421471232, "Shot Track", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "TimelineXTrack"
+			P: "MoBuSubTypeName", "KString", "", "", "Shot"
+			P: "MoBuObjectFullName", "KString", "", "", "TimelineTrack::Shot Track"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "Active", "bool", "", "",0
+			P: "Lock", "bool", "", "",0
+			P: "Snap", "Action", "", "",0
+			P: "Weight", "Weight", "", "A",100
+			P: "Muted", "bool", "", "",0
+			P: "Soloed", "bool", "", "",0
+			P: "RecordClipPath", "charptr", "", "", ""
+			P: "Tracks", "object", "", ""
+			P: "Clips", "object", "", ""
+			P: "ShowBackplate", "bool", "", "",1
+			P: "ShowFrontplate", "bool", "", "",1
+			P: "MoBuAttrBlindData", "KString", "", "", "State: 0&lf;ViewMinimized: 0&lf;TrackHeight: 0&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1421466128, "GlobalInfo", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "SceneInfo"
+			P: "MoBuSubTypeName", "KString", "", "", "UserData"
+			P: "MoBuObjectFullName", "KString", "", "", "SceneInfo::GlobalInfo"
+			P: "MoBuAttrBlindData", "KString", "", "", "Version: 100&lf;MetaData:  {&lf;    Version: 100&lf;    Title: &quot;&quot;&lf;    Subject: &quot;&quot;&lf;    Author: &quot;&quot;&lf;    Keywords: &quot;&quot;&lf;    Revision: &quot;&quot;&lf;    Comment: &quot;&quot;&lf;}&lf;"
+			P: "MoBuRelationBlindData", "KString", "", "", ""
+		}
+	}
+	MotionBuilder_Generic: 1421473520, "Relation", "" {
+		Properties70:  {
+			P: "MoBuTypeName", "KString", "", "", "Constraint"
+			P: "MoBuSubTypeName", "KString", "", "", "Relations"
+			P: "MoBuObjectFullName", "KString", "", "", "Constraint::Relation"
+			P: "DefaultKeyingGroup", "int", "Integer", "",0
+			P: "DefaultKeyingGroupEnum", "enum", "", "",0
+			P: "Active", "bool", "", "",1
+			P: "Lock", "bool", "", "",0
+			P: "Snap", "Action", "", "",0
+			P: "Weight", "Weight", "", "A",100
+			P: "MoBuAttrBlindData", "KString", "", "", ""
+			P: "MoBuRelationBlindData", "Blob", "", "",6192 {
+				BinaryData: "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"
+			}
+		}
+	}
+}
+
+; Object connections
+;------------------------------------------------------------------
+
+Connections:  {
+	
+	;Model::Camera, Model::RootNode
+	C: "OO",1149739296,0
+	
+	;Model::Camera Interest, Model::RootNode
+	C: "OO",1149745296,0
+	
+	;Model::ExtractedRotation, Model::RootNode
+	C: "OO",1149741296,0
+	
+	;NodeAttribute::Producer Perspective, Model::Producer Perspective
+	C: "OO",1103448160,1149733296
+	
+	;NodeAttribute::Producer Front, Model::Producer Front
+	C: "OO",1103450096,1149729296
+	
+	;NodeAttribute::Producer Back, Model::Producer Back
+	C: "OO",1103452032,1149731296
+	
+	;NodeAttribute::Producer Right, Model::Producer Right
+	C: "OO",1103453968,1149735296
+	
+	;NodeAttribute::Producer Left, Model::Producer Left
+	C: "OO",1153102016,1149737296
+	
+	;NodeAttribute::Producer Top, Model::Producer Top
+	C: "OO",1153105888,1149749296
+	
+	;NodeAttribute::Producer Bottom, Model::Producer Bottom
+	C: "OO",1153107824,1149719296
+	
+	;NodeAttribute::Camera Switcher, Model::Camera Switcher
+	C: "OO",1100429088,1149743296
+	
+	;Relation, Constraints
+	C: "OO",1421473520,1100426272
+	
+	;Shot Track, Edit root
+	C: "OO",1421471232,1102645984
+	
+	;Shot Track, Edit root
+	C: "OP",1421471232,1102645984, "Tracks"
+	
+	;AnimStack::Take 001, Takes
+	C: "OO",1160441584,1146329696
+	
+	;Model::Producer Perspective, ModelView0
+	C: "OP",1149733296,1421469824, "CurrentCamera"
+	
+	;Model::Producer Front, ModelView1
+	C: "OP",1149729296,1421470000, "CurrentCamera"
+	
+	;Model::Producer Top, ModelView2
+	C: "OP",1149749296,1421465952, "CurrentCamera"
+	
+	;Model::Producer Right, ModelView3
+	C: "OP",1149735296,1421468064, "CurrentCamera"
+	
+	;NodeAttribute::Camera, Model::Camera
+	C: "OO",1153109760,1149739296
+	
+	;Model::Camera Interest, Model::Camera
+	C: "OP",1149745296,1149739296, "LookAtProperty"
+	
+	;NodeAttribute::, Model::ExtractedRotation
+	C: "OO",1421471760,1149741296
+	
+	;Relation, Model::ExtractedRotation
+	C: "OO",1421473520,1149741296
+	
+	;AnimLayer::Take 001:BaseAnimation, AnimStack::Take 001
+	C: "OO",1159496896,1160441584
+	
+	;NodeAttribute::, Model::Camera Interest
+	C: "OO",1421473344,1149745296
+	
+	;Model::Camera Interest, Relation
+	C: "OO",1149745296,1421473520
+	
+	;Model::Camera, Relation
+	C: "OO",1149739296,1421473520
+}
+;Takes section
+;----------------------------------------------------
+
+Takes:  {
+	Current: "Take 001"
+	Take: "Take 001" {
+		FileName: "Take_001.tak"
+		LocalTime: 0,230930790000
+		ReferenceTime: 0,230930790000
+	}
+}

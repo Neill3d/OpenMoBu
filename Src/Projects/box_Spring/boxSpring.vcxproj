@@ -105,6 +105,14 @@
       <Configuration>Release 2022</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release 2023|Win32">
+      <Configuration>Release 2023</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release 2023|x64">
+      <Configuration>Release 2023</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ADFDDC4F-2C44-476D-AC7E-8ABAED9ABE5D}</ProjectGuid>
@@ -147,6 +155,12 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
@@ -219,6 +233,12 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
@@ -297,6 +317,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2009|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
@@ -345,6 +369,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2009|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
@@ -381,6 +409,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|Win32'">$(ADSK_MOBU_2015_64)\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|Win32'">$(ADSK_MOBU_2015_64)\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'">$(ADSK_MOBU_2015_64)\bin\$(Platform)\plugins\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">$(ADSK_MOBU_2015_64)\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2009|Win32'">$(ADSK_MOBU_2009_64)\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2010|Win32'">$(ADSK_MOBU_2010_64)\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2011|Win32'">$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\</OutDir>
@@ -393,6 +422,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">..\..\..\bin\$(Platform)\plugins_2022\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">..\..\..\bin\$(Platform)\plugins_2023\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2009|x64'">$(ADSK_MOBU_2009_64)\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2010|x64'">$(ADSK_MOBU_2010_64)\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2011|x64'">$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\</OutDir>
@@ -405,6 +435,7 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|Win32'">$(ADSK_MOBU_2015_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|Win32'">$(ADSK_MOBU_2015_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'">$(ADSK_MOBU_2015_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">$(ADSK_MOBU_2015_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2009|Win32'">$(ADSK_MOBU_2009_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2010|Win32'">$(ADSK_MOBU_2010_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2011|Win32'">$(ADSK_MOBU_2011_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
@@ -417,6 +448,7 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2009|x64'">$(ADSK_MOBU_2009_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2010|x64'">$(ADSK_MOBU_2010_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2011|x64'">$(ADSK_MOBU_2011_64)\obj\$(Platform)\plugins\$(ProjectName)\</IntDir>
@@ -429,6 +461,7 @@
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2018|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2019|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'">true</IgnoreImportLibrary>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2009|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2010|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2011|Win32'">true</IgnoreImportLibrary>
@@ -441,6 +474,7 @@
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">true</IgnoreImportLibrary>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2009|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2010|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2011|x64'">true</IgnoreImportLibrary>
@@ -453,6 +487,7 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2018|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2019|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2009|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2010|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2011|Win32'">false</LinkIncremental>
@@ -465,6 +500,7 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2009|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2010|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2011|x64'">false</LinkIncremental>
@@ -487,6 +523,7 @@
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2018|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2019|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2015_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2009|Win32'">$(ADSK_MOBU_2009_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2009_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2010|Win32'">$(ADSK_MOBU_2010_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2010_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2011|Win32'">$(ADSK_MOBU_2011_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2011_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
@@ -499,6 +536,7 @@
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">$(ADSK_MOBU_2018_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2018_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">$(ADSK_MOBU_2019_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2019_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">$(ADSK_MOBU_2022_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2022_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">$(ADSK_MOBU_2023_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2023_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2009|x64'">$(ADSK_MOBU_2009_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2009_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2010|x64'">$(ADSK_MOBU_2010_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2010_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release 2011|x64'">$(ADSK_MOBU_2011_64)\OpenRealitySDK\include\fbsdk;$(ADSK_MOBU_2011_64)\OpenRealitySDK\include;..\..\MotionCodeLibrary;$(IncludePath)</IncludePath>
@@ -513,6 +551,7 @@
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2018|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2019|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">$(ADSK_MOBU_2015_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2009|Win32'">$(ADSK_MOBU_2009_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2010|Win32'">$(ADSK_MOBU_2010_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2011|Win32'">$(ADSK_MOBU_2011_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
@@ -525,6 +564,7 @@
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">$(ADSK_MOBU_2018_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">$(ADSK_MOBU_2022_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">$(ADSK_MOBU_2023_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2009|x64'">$(ADSK_MOBU_2009_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2010|x64'">$(ADSK_MOBU_2010_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release 2011|x64'">$(ADSK_MOBU_2011_64)\OpenRealitySDK\lib\$(Platform);$(LibraryPath)</LibraryPath>
@@ -726,6 +766,54 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|Win32'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TypeLibraryName>../../../../bin/plugins/orbox_template.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>
+      </AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc80.pdb</ProgramDataBaseFileName>
+      <BrowseInformation>true</BrowseInformation>
+      <BrowseInformationFile>$(IntDir)</BrowseInformationFile>
+      <WarningLevel>Level4</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>$(ADSK_MOBU_2015_64)/bin\$(Platform)/plugins/$(ProjectName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ADSK_MOBU_2015_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\..\bin_2015\$(Platform)\plugins\$(ProjectName).dll"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">
     <Midl>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
@@ -1297,6 +1385,54 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TypeLibraryName>../../../../bin/plugins/orbox_template.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>
+      </AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc80.pdb</ProgramDataBaseFileName>
+      <BrowseInformation>true</BrowseInformation>
+      <BrowseInformationFile>$(IntDir)</BrowseInformationFile>
+      <WarningLevel>Level4</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <CompileAs>Default</CompileAs>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>
+      </ImportLibrary>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\$(TargetName).dll"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">
     <Midl>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>

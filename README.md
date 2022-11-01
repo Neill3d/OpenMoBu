@@ -1,5 +1,6 @@
+[![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2021/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2021)
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019.1/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019.1)
-[![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019)
+[<img src="https://discord.com/assets/ff41b628a47ef3141164bfedb04fb220.png" width=10% height=10%>](https://discord.gg/Uqe2UQxq)
 
 # OpenMoBu code repository!
 
@@ -31,21 +32,28 @@ Please post issues and feature requests to this [github repository issues sectio
 
 ## How to compile
  
- Note! Some old Projects and MoBu solution are created in VisualStudio 2010, the latest projects I've developed in VS 2013.
- 
-  1) Specify env variables with the path to your motionbuilder folder
-* ADSK_MOBU_2010_64
-* ADSK_MOBU_2011_64
-* ADSK_MOBU_2012_64
-* ADSK_MOBU_2013_64
-* ADSK_MOBU_2014_64
-* ADSK_MOBU_2015_64
-* ADSK_MOBU_2016_64
-* ADSK_MOBU_2017_64
- 
- 2) On my machine I have put 32 bits version of MoBu into the 64 bits folders. They share the same files except folders bin/win32 and bin/x64.
+ Note! Some old Projects and MoBu solution are created in VisualStudio 2010, the latest projects I've developed in VS 2015.
 
-3) For supporting older version of MoBu in different projects I'm using these pre-defines
+  1) Specify env variables with the path to your motionbuilder folder
+* ADSK_MOBU_{version number}_64, for example ADSK_MOBU_2017_64
+ 
+ NOTE: If during the compilation you have error "Macro definition of snprintf conflicts with Standard Library function declaration". The way out for the issue is to comment the line of declaration snprintf in kaydara.h
+ 
+ In order to render HUD text on top of post processed screen image, there is a setting "Draw HUD Layer" in the post process object. And the plugin have to be compiled with HUD_FONT definition and with depencies of freetype2 and freetype-gl:
+ * freetype2 - https://github.com/aseprite/freetype2
+ * freetype-gl - https://github.com/frachop/freetypegl
+ 
+2) After compiling release version of the plugin, there is a post build commandline to copy file into the output folder.
+
+copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2011\$(Platform)\plugins\$(ProjectName).dll"
+
+3) I'm using one MotionCodeLibrary for compiling all the projects. In each project I have added a relative path to that folder. Right now this library is a colletion of header and source files, it's not a static or dynamic library. You should not only include needed headers but also add corresponding source code files to your project.
+
+## Compiling older plugins
+
+1) On my machine I have put 32 bits version of MoBu into the 64 bits folders. They share the same files except folders bin/win32 and bin/x64.
+
+2) For supporting older version of MoBu in different projects I'm using these pre-defines
 
 * OLD_FBEVALUATE_LOCALTIME - MoBu 2010 doesn't support recieving system and local time from the evaluation variable FBEvaluateInfo
 * OLD_FBTIME_SETFRAME - in old SetFrame function (MoBu 2010) you need to specify a bool parameter as an argument
@@ -59,13 +67,7 @@ Please post issues and feature requests to this [github repository issues sectio
 * OLD_FBMATH
 * OLD_CONSTRAINT_MANAGER
  
-4) You should know that each dll plugin project has a resource with version information.
- 
-5) After compiling release version of the plugin, there is a command to copy file into the installation folder.
-
-copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2011\$(Platform)\plugins\$(ProjectName).dll"
-
-6) I'm using one MotionCodeLibrary for compiling all the projects. In each project I have added a relative path to that folder. Right now this library is a colletion of header and source files, it's not a static or dynamic library. That means to compile your project you should not only include needed headers but also add corresponding source code files to your project.
+3) You should know that each dll plugin project has a resource with a version information.
 
 ## Special Thanks
 

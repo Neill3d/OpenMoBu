@@ -50,14 +50,16 @@ public:
 	//! a destructor
 	virtual ~PostEffectBase();
 
-	virtual const char *GetName();
-	virtual const char *GetVertexFname();
-	virtual const char *GetFragmentFname();
+	virtual int GetNumberOfShaders() const abstract; 
+
+	virtual const char *GetName() abstract;
+	virtual const char *GetVertexFname(const int shaderIndex) abstract;
+	virtual const char *GetFragmentFname(const int shaderIndex) abstract;
 
 	// load and initialize shader from a specified location
-	bool Load(const char *vname, const char *fname);
+	bool Load(const int shaderIndex, const char *vname, const char *fname);
 
-	virtual bool PrepUniforms();
+	virtual bool PrepUniforms(const int shaderIndex);
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera);		// grab main UI values for the effect
 
 	// new feature to have several passes for a specified effect
@@ -71,9 +73,11 @@ public:
 
 protected:
 
-	GLSLShader		*mShader;
+	int mCurrentShader{ 0 };
+	std::vector<GLSLShader*>	mShaders;
 
-	void FreeShader();
+	void SetCurrentShader(const int index) { mCurrentShader = index; }
+	void FreeShaders();
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -89,11 +93,13 @@ public:
 	//! a destructor
 	virtual ~PostEffectFishEye();
 
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname() override;
-	virtual const char *GetFragmentFname() override;
+	int GetNumberOfShaders() const override { return 1; }
 
-	virtual bool PrepUniforms() override;
+	virtual const char *GetName() override;
+	virtual const char *GetVertexFname(const int shaderIndex) override;
+	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
 protected:
@@ -126,11 +132,13 @@ public:
 	//! a destructor
 	virtual ~PostEffectColor();
 
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname() override;
-	virtual const char *GetFragmentFname() override;
+	int GetNumberOfShaders() const override { return 1; }
 
-	virtual bool PrepUniforms() override;
+	virtual const char *GetName() override;
+	virtual const char *GetVertexFname(const int shaderIndex) override;
+	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
 protected:
@@ -168,11 +176,13 @@ public:
 	//! a destructor
 	virtual ~PostEffectVignetting();
 
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname() override;
-	virtual const char *GetFragmentFname() override;
+	int GetNumberOfShaders() const override { return 1; }
 
-	virtual bool PrepUniforms() override;
+	virtual const char *GetName() override;
+	virtual const char *GetVertexFname(const int shaderIndex) override;
+	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
 protected:
@@ -209,11 +219,13 @@ public:
 	//! a destructor
 	virtual ~PostEffectFilmGrain();
 
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname() override;
-	virtual const char *GetFragmentFname() override;
+	int GetNumberOfShaders() const override { return 1; }
 
-	virtual bool PrepUniforms() override;
+	virtual const char *GetName() override;
+	virtual const char *GetVertexFname(const int shaderIndex) override;
+	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
 protected:
@@ -246,71 +258,6 @@ protected:
 	};
 };
 
-///////////////////////////////////////////////////////////////////////////////////////
-// PostEffectLensFlare
-
-struct PostEffectLensFlare : public PostEffectBase
-{
-public:
-
-	//! a constructor
-	PostEffectLensFlare();
-
-	//! a destructor
-	virtual ~PostEffectLensFlare();
-
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname() override;
-	virtual const char *GetFragmentFname() override;
-
-	virtual bool PrepUniforms() override;
-	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
-
-	virtual const int GetNumberOfPasses() const override;
-	virtual bool PrepPass(const int pass) override;
-
-protected:
-
-	FBSystem		mSystem;
-
-	int				m_NumberOfPasses;
-	float			m_DepthAttenuation;
-
-	std::vector<FBVector3d>	m_LightPositions; // window xy and depth (for attenuation)
-	std::vector<FBColor>	m_LightColors;
-
-	// shader locations
-	enum { LOCATIONS_COUNT = 13 };
-	union
-	{
-		struct
-		{
-			// locations
-			GLint		upperClip;
-			GLint		lowerClip;
-
-			GLint		amount;
-
-			GLint		textureWidth;
-			GLint		textureHeight;
-
-			GLint		timer;
-
-			GLint		light_pos;
-
-			GLint		tint;
-			GLint		inner;
-			GLint		outer;
-
-			GLint		fadeToBorders;
-			GLint		borderWidth;
-			GLint		feather;
-		};
-
-		GLint		mLocations[LOCATIONS_COUNT];
-	};
-};
-
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectDOF
@@ -325,11 +272,13 @@ public:
 	//! a destructor
 	virtual ~PostEffectDOF();
 
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname() override;
-	virtual const char *GetFragmentFname() override;
+	int GetNumberOfShaders() const override { return 1; }
 
-	virtual bool PrepUniforms() override;
+	virtual const char *GetName() override;
+	virtual const char *GetVertexFname(const int shaderIndex) override;
+	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
 protected:

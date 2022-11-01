@@ -22,6 +22,7 @@
 FBLibraryDeclare( box_poseTransform )
 {
 	FBLibraryRegister( CBoxPoseTransform );
+    FBLibraryRegister(CBoxLookRotation);
 }
 FBLibraryDeclareEnd;
 

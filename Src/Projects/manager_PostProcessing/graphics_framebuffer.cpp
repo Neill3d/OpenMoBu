@@ -210,19 +210,25 @@ void MainFrameBuffer::PrepAttachedFBO()
 	// collect information about the mobu framebuffer
 
 	int objectType, objectName;
-	GLint width=0, height=0, format=0, samples=0;
+	GLint width = 0, height = 0, format = 0, samples = 0;
 
 	glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &objectType);
 	glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &objectName);
 
+	if (objectType == 0)
+	{
+		glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &objectType);
+		glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &objectName);
+	}
+
 	if (objectType == GL_RENDERBUFFER && glIsRenderbuffer(objectName) == GL_TRUE)
 	{
-		glBindRenderbuffer(GL_RENDERBUFFER,objectName);
-		
-		glGetRenderbufferParameteriv(GL_RENDERBUFFER,GL_RENDERBUFFER_WIDTH, &width);
-		glGetRenderbufferParameteriv(GL_RENDERBUFFER,GL_RENDERBUFFER_HEIGHT, &height);
-		glGetRenderbufferParameteriv(GL_RENDERBUFFER,GL_RENDERBUFFER_INTERNAL_FORMAT, &format);
-		glGetRenderbufferParameteriv(GL_RENDERBUFFER,GL_RENDERBUFFER_SAMPLES, &samples);
+		glBindRenderbuffer(GL_RENDERBUFFER, objectName);
+
+		glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
+		glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
+		glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, &format);
+		glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &samples);
 		/*
 		if (samples > 0)
 		{
@@ -233,42 +239,52 @@ void MainFrameBuffer::PrepAttachedFBO()
 			glRenderbufferStorage     ( GL_RENDERBUFFER, linfo.depthInternalFormat, linfo.width, linfo.height );
 		}
 		*/
-		glFramebufferRenderbuffer ( GL_FRAMEBUFFER,  GL_DEPTH_ATTACHMENT,
-		                    GL_RENDERBUFFER, 0 );	// objectName 
-		glFramebufferRenderbuffer ( GL_FRAMEBUFFER,  GL_STENCIL_ATTACHMENT,
-		                    GL_RENDERBUFFER, 0 );	// COMPOSITE MASTER USE FORMAT WITHOUT STENCIL !!!
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER, 0);	// objectName 
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT,
+			GL_RENDERBUFFER, 0);	// COMPOSITE MASTER USE FORMAT WITHOUT STENCIL !!!
 
-		glBindRenderbuffer(GL_RENDERBUFFER,0);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	}
+	else if (glIsTexture(objectName) == GL_TRUE)
+	{
+		glGetTextureParameteriv(objectName, GL_TEXTURE_WIDTH, &width);
+		glGetTextureParameteriv(objectName, GL_TEXTURE_HEIGHT, &height);
+		glGetTextureParameteriv(objectName, GL_TEXTURE_SAMPLES, &samples);
 	}
 
-	extendedInfo.Set(1.0, samples, 0, width, height);
+	if (width > 0 && height > 0)
+	{
+		extendedInfo.Set(1.0, samples, 0, width, height);
 
-	//
-	// detach mobu resources
+		//
+		// detach mobu resources
 
-	detachFBOAttachment(0, GL_COLOR_ATTACHMENT0, samples);
+		detachFBOAttachment(0, GL_COLOR_ATTACHMENT0, samples);
 
-	/*
-	CreateTextures(textures_extended, extendedInfo.GetBufferWidth(), extendedInfo.GetBufferHeight(), 
+		/*
+		CreateTextures(textures_extended, extendedInfo.GetBufferWidth(), extendedInfo.GetBufferHeight(),
 		extendedInfo.GetNumberOfSamples(), extendedInfo.GetNumberOfCoverageSamples(), true, true, false, true, true);
 
-	attachTexture2D(0, GL_COLOR_ATTACHMENT0, textures_extended.color_texture, extendedInfo.GetNumberOfSamples());
-	attachTexture2D(0, depthAttachment, textures_extended.depth_texture, extendedInfo.GetNumberOfSamples());
-	//attachTexture2D(0, GL_STENCIL_ATTACHMENT, textures_extended.stencil_texture, extendedInfo.GetNumberOfSamples());
-	attachTexture2D(0, GL_COLOR_ATTACHMENT1, textures_extended.normal_texture, extendedInfo.GetNumberOfSamples());
-	attachTexture2D(0, GL_COLOR_ATTACHMENT2, textures_extended.mask_texture, extendedInfo.GetNumberOfSamples());
-	*/
-	CreateTextures(textures_extended, extendedInfo.GetBufferWidth(), extendedInfo.GetBufferHeight(), 
-		extendedInfo.GetNumberOfSamples(), extendedInfo.GetNumberOfCoverageSamples(), true, true, true, true, true);
+		attachTexture2D(0, GL_COLOR_ATTACHMENT0, textures_extended.color_texture, extendedInfo.GetNumberOfSamples());
+		attachTexture2D(0, depthAttachment, textures_extended.depth_texture, extendedInfo.GetNumberOfSamples());
+		//attachTexture2D(0, GL_STENCIL_ATTACHMENT, textures_extended.stencil_texture, extendedInfo.GetNumberOfSamples());
+		attachTexture2D(0, GL_COLOR_ATTACHMENT1, textures_extended.normal_texture, extendedInfo.GetNumberOfSamples());
+		attachTexture2D(0, GL_COLOR_ATTACHMENT2, textures_extended.mask_texture, extendedInfo.GetNumberOfSamples());
+		*/
+		CreateTextures(textures_extended, extendedInfo.GetBufferWidth(), extendedInfo.GetBufferHeight(),
+			extendedInfo.GetNumberOfSamples(), extendedInfo.GetNumberOfCoverageSamples(), true, true, true, true, true);
 
-	attachTexture2D(0, GL_COLOR_ATTACHMENT0, textures_extended.color_texture, extendedInfo.GetNumberOfSamples());
-	attachTexture2D(0, depthAttachment, textures_extended.depth_texture, extendedInfo.GetNumberOfSamples());
-	attachTexture2D(0, GL_STENCIL_ATTACHMENT, textures_extended.stencil_texture, mainInfo.GetNumberOfSamples());
+		attachTexture2D(0, GL_COLOR_ATTACHMENT0, textures_extended.color_texture, extendedInfo.GetNumberOfSamples());
+		attachTexture2D(0, depthAttachment, textures_extended.depth_texture, extendedInfo.GetNumberOfSamples());
+		attachTexture2D(0, GL_STENCIL_ATTACHMENT, textures_extended.stencil_texture, mainInfo.GetNumberOfSamples());
 
 #ifdef MANY_ATTACHMENTS
-	attachTexture2D(0, GL_COLOR_ATTACHMENT1, textures_extended.normal_texture, extendedInfo.GetNumberOfSamples());
-	attachTexture2D(0, GL_COLOR_ATTACHMENT2, textures_extended.mask_texture, extendedInfo.GetNumberOfSamples());
+		attachTexture2D(0, GL_COLOR_ATTACHMENT1, textures_extended.normal_texture, extendedInfo.GetNumberOfSamples());
+		attachTexture2D(0, GL_COLOR_ATTACHMENT2, textures_extended.mask_texture, extendedInfo.GetNumberOfSamples());
 #endif
+
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -447,7 +463,7 @@ bool MainFrameBuffer::ReSize(const int newWidth, const int newHeight, double ssf
 {
 	bool result = false;
 
-#ifdef _DEBUG
+#ifdef OGL_DEBUG
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback( DebugOGL_Callback, nullptr );
 #endif

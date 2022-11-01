@@ -9,6 +9,9 @@
       <UniqueIdentifier>{20f04ac3-86a2-46ab-8025-37d4241f17e0}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
+    <Filter Include="MotionCodeLibrary">
+      <UniqueIdentifier>{5cdef704-6e5d-40cb-b4fe-bfadb7e4fbad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoxRBF.cxx">
@@ -17,10 +20,31 @@
     <ClCompile Include="Main.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BoxQuaternion.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\math3d.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\MotionCodeLibrary\nv_math.cpp">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoxRBF.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxQuaternion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\math3d.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_math.h">
+      <Filter>MotionCodeLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MotionCodeLibrary\nv_mathdecl.h">
+      <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

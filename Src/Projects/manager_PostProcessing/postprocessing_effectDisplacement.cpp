@@ -40,46 +40,48 @@ const char *PostEffectDisplacement::GetName()
 {
 	return SHADER_DISPLACEMENT_NAME;
 }
-const char *PostEffectDisplacement::GetVertexFname()
+const char *PostEffectDisplacement::GetVertexFname(const int shaderIndex)
 {
 	return SHADER_DISPLACEMENT_VERTEX;
 }
-const char *PostEffectDisplacement::GetFragmentFname()
+const char *PostEffectDisplacement::GetFragmentFname(const int shaderIndex)
 {
 	return SHADER_DISPLACEMENT_FRAGMENT;
 }
 
-bool PostEffectDisplacement::PrepUniforms()
+bool PostEffectDisplacement::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	GLSLShader* shader = mShaders[shaderIndex];
 
-		GLint loc = mShader->findLocation("colorSampler");
+	if (shader)
+	{
+		shader->Bind();
+
+		GLint loc = shader->findLocation("colorSampler");
 		if (loc >= 0)
 			glUniform1i(loc, 0);
-		loc = mShader->findLocation("depthSampler");
+		loc = shader->findLocation("depthSampler");
 		if (loc >= 0)
 			glUniform1i(loc, 2);
-		loc = mShader->findLocation("texRandom");
+		loc = shader->findLocation("texRandom");
 		if (loc >= 0)
 			glUniform1i(loc, 4);
 
-		mLoc.upperClip = mShader->findLocation("upperClip");
-		mLoc.lowerClip = mShader->findLocation("lowerClip");
+		mLoc.upperClip = shader->findLocation("upperClip");
+		mLoc.lowerClip = shader->findLocation("lowerClip");
 
-		mLoc.iTime = mShader->findLocation("iTime");
-		mLoc.iSpeed = mShader->findLocation("iSpeed");
-		mLoc.useQuakeEffect = mShader->findLocation("useQuakeEffect");
-		mLoc.xDistMag = mShader->findLocation("xDistMag");
-		mLoc.yDistMag = mShader->findLocation("yDistMag");
+		mLoc.iTime = shader->findLocation("iTime");
+		mLoc.iSpeed = shader->findLocation("iSpeed");
+		mLoc.useQuakeEffect = shader->findLocation("useQuakeEffect");
+		mLoc.xDistMag = shader->findLocation("xDistMag");
+		mLoc.yDistMag = shader->findLocation("yDistMag");
 
-		mLoc.xSineCycles = mShader->findLocation("xSineCycles");
-		mLoc.ySineCycles = mShader->findLocation("ySineCycles");
+		mLoc.xSineCycles = shader->findLocation("xSineCycles");
+		mLoc.ySineCycles = shader->findLocation("ySineCycles");
 
-		mShader->UnBind();
+		shader->UnBind();
 
 		lSuccess = true;
 	}
@@ -105,9 +107,9 @@ bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, int w, i
 	const double xcycles = pData->Disp_SinCyclesX;
 	const double ycycles = pData->Disp_SinCyclesY;
 
-	if (nullptr != mShader)
+	if (GetShaderPtr())
 	{
-		mShader->Bind();
+		GetShaderPtr()->Bind();
 
 		// iTime
 		
@@ -138,7 +140,7 @@ bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, int w, i
 		if (mLoc.ySineCycles >= 0)
 			glUniform1f(mLoc.ySineCycles, (float)ycycles);
 
-		mShader->UnBind();
+		GetShaderPtr()->UnBind();
 
 		lSuccess = true;
 	}

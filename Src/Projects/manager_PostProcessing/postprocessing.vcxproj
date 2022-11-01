@@ -21,6 +21,10 @@
       <Configuration>Release 2022</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release 2023|x64">
+      <Configuration>Release 2023</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
@@ -66,6 +70,12 @@
     <CharacterSet>NotSet</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -93,6 +103,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
@@ -100,18 +114,22 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\bin\$(Platform)\plugins_2018\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">..\..\..\bin\$(Platform)\plugins_2022\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">..\..\..\bin\$(Platform)\plugins_2023\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">true</IgnoreImportLibrary>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">true</IgnoreImportLibrary>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\$(Platform)\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug 2019|x64'">..\..\..\bin\$(Platform)\plugins_2019\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\obj\$(Platform)\$(Configuration)\plugins\$(ProjectName)\</IntDir>
@@ -140,11 +158,15 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">
     <IncludePath>..\..\..\..\glew\include;..\..\MotionCodeLibrary;..\..\..\..\freetype-gl;..\..\..\..\freetype-gl\windows\freetype;$(ADSK_MOBU_2019_64)\OpenRealitySDK\include;$(ADSK_MOBU_2019_64)\OpenRealitySDK\include\fbsdk;$(IncludePath)</IncludePath>
     <LibraryPath>..\..\..\..\glew\lib\Release\x64;..\..\..\..\freetype-gl\build\Release;..\..\..\..\freetype\build\Release;$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);D:\Anaconda2\Library\lib;$(LibraryPath)</LibraryPath>
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">
     <IncludePath>..\..\..\..\glew\include;..\..\MotionCodeLibrary;..\..\..\..\freetype-gl;..\..\..\..\freetype-gl\windows\freetype;$(ADSK_MOBU_2022_64)\OpenRealitySDK\include;$(ADSK_MOBU_2022_64)\OpenRealitySDK\include\fbsdk;$(IncludePath)</IncludePath>
     <LibraryPath>..\..\..\..\glew\lib\Release\x64;..\..\..\..\freetype-gl\build\Release;..\..\..\..\freetype\build\Release;$(ADSK_MOBU_2022_64)\OpenRealitySDK\lib\$(Platform);D:\Anaconda2\Library\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">
+    <IncludePath>D:\Mobu\glew\include;..\..\..\..\MoPlugs_External\glew\include;..\..\MotionCodeLibrary;..\..\..\..\freetype-gl;..\..\..\..\freetype-gl\windows\freetype;$(ADSK_MOBU_2023_64)\OpenRealitySDK\include;$(ADSK_MOBU_2023_64)\OpenRealitySDK\include\fbsdk;D:\SERGEI\freetype2-master\include;D:\SERGEI\freetype-gl-master;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Mobu\glew\lib\Release\x64;..\..\..\..\MoPlugs_External\glew\lib\Release\x64;..\..\..\..\freetype-gl\build\Release;..\..\..\..\freetype\build\Release;$(ADSK_MOBU_2023_64)\OpenRealitySDK\lib\$(Platform);D:\Anaconda2\Library\lib;D:\Mobu;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>C:\Program Files %28x86%29\Windows Kits\10\bin\10.0.17763.0\x64;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -270,10 +292,10 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       </HeaderFileName>
     </Midl>
     <ClCompile>
-      <Optimization>Disabled</Optimization>
-      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;GLEW_STATIC;HUD_FONT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -296,7 +318,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;freetype-gl.lib;freetype.lib;bz2.lib;libpng_static.lib;libpng.lib;zlibstatic.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;freetype-gl.lib;freetype.lib;bzip2_static.lib;libpng_static.lib;zlibstatic.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -310,8 +332,8 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\G
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\$(TargetName).dll"
-start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\GLSL"</Command>
+      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2018_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">
@@ -326,10 +348,10 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\G
       </HeaderFileName>
     </Midl>
     <ClCompile>
-      <Optimization>MaxSpeed</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;GLEW_STATIC;HUD_FONT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -353,7 +375,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\G
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;freetype-gl.lib;freetype.lib;bz2.lib;libpng_static.lib;zlibstatic.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;freetype-gl.lib;freetype.lib;bzip2_static.lib;libpng_static.lib;zlibstatic.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -369,6 +391,63 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2019_64)\bin\x64\plugins\G
     <PostBuildEvent>
       <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\$(TargetName).dll"
 start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\GLSL"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">
+    <Midl>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>X64</TargetEnvironment>
+      <TypeLibraryName>
+      </TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>OGL_DEBUG;HUD_FONT;NDEBUG;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>
+      </AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc80.pdb</ProgramDataBaseFileName>
+      <BrowseInformation>
+      </BrowseInformation>
+      <BrowseInformationFile>
+      </BrowseInformationFile>
+      <WarningLevel>Level4</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <CompileAs>Default</CompileAs>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>fbsdk.lib;opengl32.lib;glu32.lib;glew32s.lib;freetype-gl.lib;freetype.lib;bzip2_static.lib;libpng_static.lib;zlibstatic.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>
+      </ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(TargetDir)$(TargetName).dll" "$(ADSK_MOBU_2023_64)\bin\x64\plugins\$(TargetName).dll"
+start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2023_64)\bin\x64\plugins\GLSL"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -491,6 +570,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\G
     <ClCompile Include="postprocessing_data.cxx" />
     <ClCompile Include="postprocessing_effectChain.cxx" />
     <ClCompile Include="postprocessing_effectDisplacement.cpp" />
+    <ClCompile Include="postprocessing_effectLensFlare.cpp" />
     <ClCompile Include="postprocessing_effectMotionBlur.cpp" />
     <ClCompile Include="postprocessing_effectSSAO.cpp" />
     <ClCompile Include="postprocessing_fonts.cpp" />
@@ -502,6 +582,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\G
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="postprocessing_ini.cpp" />
     <ClCompile Include="postprocessing_manager.cxx" />
@@ -512,6 +593,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\G
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="postprocessing_tool.cxx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -520,6 +602,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\G
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="rg_etc1\rg_etc1.cpp" />
     <ClCompile Include="shader.c">
@@ -543,6 +626,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\G
     <ClInclude Include="postprocessing_data.h" />
     <ClInclude Include="postprocessing_effectChain.h" />
     <ClInclude Include="postprocessing_effectDisplacement.h" />
+    <ClInclude Include="postprocessing_effectLensFlare.h" />
     <ClInclude Include="postprocessing_effectMotionBlur.h" />
     <ClInclude Include="postprocessing_effectSSAO.h" />
     <ClInclude Include="postprocessing_fonts.h" />
@@ -558,6 +642,7 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\G
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2018|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2022|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release 2023|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="rg_etc1\rg_etc1.h" />
     <ClInclude Include="shader.h">
@@ -581,6 +666,8 @@ start xcopy /Y /R "$(ProjectDir)\GLSL\*" "$(ADSK_MOBU_2022_64)\bin\x64\plugins\G
     <None Include="GLSL\fishEye.fsh" />
     <None Include="GLSL\fishEye.vsh" />
     <None Include="GLSL\lensFlare.fsh" />
+    <None Include="GLSL\lensFlareAnamorphic.fsh" />
+    <None Include="GLSL\lensFlareBubble.fsh" />
     <None Include="GLSL\mix.fsh" />
     <None Include="GLSL\motionblur.fsh" />
     <None Include="GLSL\simple.fsh" />

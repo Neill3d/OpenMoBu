@@ -12,4 +12,8 @@
     <LocalDebuggerCommandArguments>-f "D:\\MB_Scenes\\testRealSceneOrig_ForRef1.fbx"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2023|Win32'">
+    <LocalDebuggerCommandArguments>-f "D:\\MB_Scenes\\testRealSceneOrig_ForRef1.fbx"</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

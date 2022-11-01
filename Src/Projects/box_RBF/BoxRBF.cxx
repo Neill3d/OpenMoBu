@@ -39,6 +39,7 @@ FBRegisterBox(	BOXRBF4__NAME,				// Unique name to register box.
 				BOXRBF4__DESC,			// Box long description.
 				FB_DEFAULT_SDK_ICON);	// Icon filename (default=Open Reality icon)
 
+
 const char * FBPropertyBaseEnum<EFunctionType>::mStrings[] = {
 	"Gaussian",
 	"Multiquadratic",

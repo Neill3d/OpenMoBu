@@ -25,11 +25,13 @@ public:
 	//! a destructor
 	virtual ~PostEffectDisplacement();
 
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname() override;
-	virtual const char *GetFragmentFname() override;
+	int GetNumberOfShaders() const override { return 1; }
 
-	virtual bool PrepUniforms() override;
+	const char *GetName() override;
+	const char *GetVertexFname(const int shaderIndex) override;
+	const char *GetFragmentFname(const int shaderIndex) override;
+
+	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
 	virtual void Bind() override;

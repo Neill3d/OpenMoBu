@@ -101,6 +101,9 @@
     <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp">
       <Filter>MotionCodeLibrary</Filter>
     </ClCompile>
+    <ClCompile Include="postprocessing_effectLensFlare.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="postprocessing_data.h">
@@ -184,6 +187,9 @@
     <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h">
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
+    <ClInclude Include="postprocessing_effectLensFlare.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -251,6 +257,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\vignetting.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\lensFlareAnamorphic.fsh">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\lensFlareBubble.fsh">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
