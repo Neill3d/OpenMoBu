@@ -635,7 +635,6 @@ bool BoxVectorRotateBy::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBE
 {
     FBQuaternion q;
     FBVector3d v;
-    double factor;
 
     if (!m_InQ->ReadData(q, pEvaluateInfo)
         || !m_InV->ReadData(v, pEvaluateInfo))
