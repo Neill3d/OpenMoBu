@@ -103,7 +103,8 @@ Name: scripts\actions; GroupDescription: "Scripts:"; Description: "Action Script
 ; 2017
 
 Source: "..\bin\x64\plugins_2017\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseReader
-Source: "..\bin\x64\plugins_2017\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseTransform
+; TODO: the port of existing code is missing
+;Source: "..\bin\x64\plugins_2017\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseTransform
 Source: "..\bin\x64\plugins_2017\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\rayIntersect
 Source: "..\bin\x64\plugins_2017\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxRBF
 Source: "..\bin\x64\plugins_2017\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxSpring
@@ -136,7 +137,7 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d
 ; 2018
 
 Source: "..\bin\x64\plugins_2018\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\poseReader
-Source: "..\bin\x64\plugins_2018\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\poseTransform
+; Source: "..\bin\x64\plugins_2018\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\poseTransform
 Source: "..\bin\x64\plugins_2018\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\rayIntersect
 Source: "..\bin\x64\plugins_2018\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxRBF
 Source: "..\bin\x64\plugins_2018\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxSpring
@@ -204,12 +205,12 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d
 Source: "..\bin\x64\plugins_2022\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseReader
 Source: "..\bin\x64\plugins_2022\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseTransform
 Source: "..\bin\x64\plugins_2022\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\rayIntersect
-Source: "..\bin\x64\plugins_2022\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxRBF
+;Source: "..\bin\x64\plugins_2022\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxRBF
 Source: "..\bin\x64\plugins_2022\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxSpring
 
 Source: "..\bin\x64\plugins_2022\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\attachmentConstraint
 Source: "..\bin\x64\plugins_2022\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\drivenConstraint
-Source: "..\bin\x64\plugins_2022\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\twistExtraction
+;Source: "..\bin\x64\plugins_2022\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\twistExtraction
 
 Source: "..\bin\x64\plugins_2022\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\faceCap
 Source: "..\bin\x64\plugins_2022\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\projectTango
