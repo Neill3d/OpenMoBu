@@ -1,6 +1,6 @@
-[![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2021/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2021)
+[![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2022/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2022)
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019.1/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019.1)
-[<img src="https://discord.com/assets/ff41b628a47ef3141164bfedb04fb220.png" width=10% height=10%>](https://discord.gg/Uqe2UQxq)
+[<img src="https://discord.com/assets/ff41b628a47ef3141164bfedb04fb220.png" width=10% height=10%>](https://discord.gg/EU5E2p9VCf)
 
 # OpenMoBu code repository!
 
