@@ -26,98 +26,24 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_fonts.h"
 
 #include "postprocessing_effectChain.h"
-
+#include "postprocesscontextdata.h"
 
 //--- Registration defines
-#define POSTPROCESSING_MANAGER__CLASSNAME Manager_PostProcessing
-#define POSTPROCESSING_MANAGER__CLASSSTR  "Manager_PostProcessing"
+#define POSTPROCESSING_MANAGER__CLASSNAME PostProcessingManager
+#define POSTPROCESSING_MANAGER__CLASSSTR  "PostProcessingManager"
 
-// number of entering in render callback
-#define MAX_ATTACH_STACK		10
 
-//
+// forward
 class Socket;
-
-struct PostProcessContextData
-{
-public:
-	FBSystem			mSystem;
-
-	//
-	int				mLastPaneCount;
-	//int				mPaneId;
-
-	bool			mSchematicView[4];
-	bool			mVideoRendering;
-
-	int				mViewport[4];		// x, y, width, height
-	int				mViewerViewport[4];
-
-	int				mEnterId;
-	size_t			mFrameId;
-
-	GLint			mAttachedFBO[MAX_ATTACH_STACK];
-
-
-	//
-	MainFrameBuffer						mMainFrameBuffer;
-
-	std::unique_ptr<GLSLShader>			mShaderSimple;	// for simple blit quads on a screen
-
-	PostEffectChain						mEffectChain;
-
-	std::vector<PostPersistentData*>	mPaneSettings;	// choose a propriate settings according to a pane camera
-
-														// if each pane has different size (in practice should be not more then 2
-	PostEffectBuffers					mEffectBuffers0;
-	PostEffectBuffers					mEffectBuffers1;
-	PostEffectBuffers					mEffectBuffers2;
-	PostEffectBuffers					mEffectBuffers3;
-
-	void Init();
-
-	void	PreRenderFirstEntry();
-
-	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
-	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);
-
-private:
-
-
-	bool PrepPaneSettings();
-
-	// manager shaders
-	bool	LoadShaders();
-	const bool CheckShadersPath(const char* path) const;
-	void	FreeShaders();
-
-	void	FreeBuffers();
-
-
-	void	DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh);
-	void	DrawHUDRect(FBHUDRectElement *pElem, int panex, int paney, int panew, int paneh, int vieww, int viewh);
-#if defined(HUD_FONT)
-	void	DrawHUDText(FBHUDTextElement *pElem, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh);
-#endif
-	void	FreeFonts();
-
-
-#if defined(HUD_FONT)
-	std::vector<CFont*>					mElemFonts;
-#endif
-	std::vector<FBHUDRectElement*>		mRectElements;
-	std::vector<FBHUDTextElement*>		mTextElements;
-
-};
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 /** Post Processing Manager.
 */
-class Manager_PostProcessing : public FBCustomManager
+class PostProcessingManager : public FBCustomManager
 {
     //--- FiLMBOX box declaration.
-	FBCustomManagerDeclare(Manager_PostProcessing);
+	FBCustomManagerDeclare(PostProcessingManager);
 
 public:
     virtual bool FBCreate();        //!< FiLMBOX creation function.
@@ -148,19 +74,13 @@ public: // CALLBACKS
 	
 	void OnVideoFrameRendering(HISender pSender, HKEvent pEvent);
 
-
 private:
 
 	bool				mFirstRun;
 
 	FBApplication		mApplication;
 	FBSystem			mSystem;
-	//FBEvaluateManager	mEvalManager;
-
-	//bool									mSettingsMerge;
-	//HdlFBPlugTemplate<PostPersistentData>	mSettings;
-	//HdlFBPlugTemplate<FBCamera>				mCamera;
-
+	
 	bool		mDoVideoClipTimewrap;
 
 	//
@@ -169,23 +89,8 @@ private:
 	static std::map<HGLRC, PostProcessContextData*>	gContextMap;
 
 
-	//int				mLastPaneCount;
-	//int				mPaneId;
-
-
-
 	int				mEnterId;
 	size_t			mFrameId;
-
-	//bool			mSchematicView[4];
-	//bool			mVideoRendering;
-
-	//int				mViewport[4];		// x, y, width, height
-
-	//int				mLastPostPane;
-	//int				mViewerViewport[4];
-
-	//int				mLocalViewport[4];	// local used for chain post-processing
 
 	// Tango device experiment
 	double				mLastSendTimeSecs;
@@ -206,7 +111,7 @@ private:
 	
 	void	CheckForAContextChange();
 
-	bool EmptyGLErrorStack();
+	
 	/*
 	bool	OpenSocket(const int portSend, const int portRecv, bool blocking);
 	void	CloseSocket();

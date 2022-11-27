@@ -601,11 +601,11 @@ struct mat4
     mat4 & set_rot(const nv_scalar & theta, const vec3 & v);
     mat4 & set_rot(const vec3 & u, const vec3 & v);
 
-    mat4 & as_rot(const quat & q)
+    mat4 & as_rot(const quat & rotation)
     {
         a30 = a31 = a32 = 0.0; a33 = 1.0;
         a03 = a13 = a23 = 0.0;
-        set_rot(q);
+        set_rot(rotation);
         return *this;
     }
     mat4 & as_rot(const mat3 & M)
@@ -677,9 +677,9 @@ struct mat4
         *this *= mat4().as_rot(theta, v);
         return *this;
     }
-    mat4 & rotate(quat &q)
+    mat4 & rotate(quat &rotation)
     {
-        *this *= mat4().identity().set_rot(q);
+        *this *= mat4().identity().set_rot(rotation);
         return *this;
     }
 

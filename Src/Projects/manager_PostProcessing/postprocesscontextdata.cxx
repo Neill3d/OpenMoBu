@@ -1,0 +1,1121 @@
+
+/** \file   PostProcessContextData.cxx
+
+    Sergei <Neill3d> Solokhin 2018-2022
+
+    GitHub page - https://github.com/Neill3d/OpenMoBu
+    Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+
+*/
+
+//--- Class declaration
+#include <Windows.h>
+#include "postprocesscontextdata.h"
+
+#include "postprocessing_helper.h"
+
+#define IS_INSIDE_MAIN_CYCLE			(mEnterId==1)
+#define IS_RENDERING_OFFLINE			(mAttachedFBO[mEnterId-1] > 0)
+
+#define SHADER_SIMPLE_VERTEX			"\\GLSL\\simple.vsh"
+#define SHADER_SIMPLE_FRAGMENT			"\\GLSL\\simple.fsh"
+
+#define RENDER_HUD_RECT_TOP				"RectangleTop"
+#define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
+
+
+
+void PostProcessContextData::Init()
+{
+    mVideoRendering = false;
+    mLastPaneCount = 0;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        mViewerViewport[i] = 0;
+        //mLocalViewport[i] = 0;
+        mSchematicView[i] = false;
+    }
+
+    //
+    mMainFrameBuffer.InitTextureInternalFormat();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// RenderBeforeRender
+void PostProcessContextData::RenderBeforeRender(const bool processCompositions, const bool renderToBuffer)
+{
+    //FBScene *pScene = mSystem.Scene;
+
+    //glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
+    /*
+    if (mEnterId < 1)
+    {
+        if (mAttachedFBO[mEnterId] > 0)
+            mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
+        else
+            mMainFrameBuffer.DetachFBO();
+    }
+    */
+    //if (0 == mPaneId)
+    //{
+    mEnterId++;
+    //}
+
+    // attachment point
+    if (processCompositions)
+    {
+
+        // let's run compression threads
+
+        for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
+        {
+            FBCamera *pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+            if (nullptr == pCamera || true == pCamera->SystemCamera
+                || true == mVideoRendering || true == mSchematicView[nPane])
+            {
+                continue;
+            }
+
+
+            PostEffectBuffers *currBuffers = nullptr;
+            switch (nPane)
+            {
+            case 0:
+                currBuffers = &mEffectBuffers0;
+                break;
+            case 1:
+                currBuffers = &mEffectBuffers1;
+                break;
+            case 2:
+                currBuffers = &mEffectBuffers2;
+                break;
+            case 3:
+                currBuffers = &mEffectBuffers3;
+                break;
+            }
+
+            mEffectChain.BeginFrame(currBuffers);
+        }
+
+        // it will use attached dimentions, if any external buffer is exist
+        //mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
+
+        mViewerViewport[2] = mMainFrameBuffer.GetBufferWidth();
+        mViewerViewport[3] = mMainFrameBuffer.GetBufferHeight();
+
+        mMainFrameBuffer.BeginRender();
+
+        glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+
+        glEnable(GL_DEPTH_TEST);
+        //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    }
+    /*
+    else if (mMainFrameBuffer.GetAttachedFBO() > 0)
+    {
+        mMainFrameBuffer.BeginRender();
+
+        glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+        glEnable(GL_DEPTH_TEST);
+    }*/
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// RenderAfterRender - post processing work after main scene rendering is finished
+
+
+bool PostProcessContextData::RenderAfterRender(const bool processCompositions, const bool renderToBuffer)
+{
+    bool lStatus = false;
+
+    if (mEnterId <= 0)
+        return lStatus;
+
+    //	FBScene *pScene = mSystem.Scene;
+    /*
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    int lviewport[4];
+    glGetIntegerv( GL_VIEWPORT, lviewport );
+    */
+
+    //mMainFrameBuffer.EndRender();
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    /////////////
+    // !!!
+    if (processCompositions && 1 == mEnterId)
+    {
+        /*
+        if ()
+        {
+            FBTrace("entering wrong pane index\n");
+        }
+        */
+
+        glDisable(GL_MULTISAMPLE);
+        glDisable(GL_DEPTH_TEST);
+
+        mMainFrameBuffer.EndRender();
+        mMainFrameBuffer.PrepForPostProcessing(false);	// ?!
+
+        CHECK_GL_ERROR();
+
+        // this is a hack for Reflection shader (to avoid error overhead on glReadBuffers(GL_BACK) )
+#ifndef OGL_DEBUG
+        EmptyGLErrorStack();
+#endif
+        //if (mLastPostPane == mPaneId)
+        //{
+
+        FBTime sysTime = mSystem.SystemTime;
+        const double sysTimeSecs = sysTime.GetSecondDouble();
+
+        for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
+        {
+            int localViewport[4];
+            FBCamera *pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+
+            localViewport[0] = pCamera->CameraViewportX;
+            localViewport[1] = pCamera->CameraViewportY;
+            localViewport[2] = pCamera->CameraViewportWidth;
+            localViewport[3] = pCamera->CameraViewportHeight;
+
+            if (true == pCamera->SystemCamera)
+            {
+                localViewport[2] = 0;
+            }
+            else
+                if (false == mVideoRendering || nPane > 0)
+                {
+                    if (true == mSchematicView[nPane])
+                        localViewport[2] = 0;
+                }
+            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            PostEffectBuffers *currBuffers = nullptr;
+            switch (nPane)
+            {
+            case 0:
+                currBuffers = &mEffectBuffers0;
+                break;
+            case 1:
+                currBuffers = &mEffectBuffers1;
+                break;
+            case 2:
+                currBuffers = &mEffectBuffers2;
+                break;
+            case 3:
+                currBuffers = &mEffectBuffers3;
+                break;
+            }
+
+            // not in schematic view
+            if (localViewport[2] > 0 && nullptr != currBuffers
+                && localViewport[2] == currBuffers->GetWidth()
+                && nullptr != mPaneSettings[nPane])
+            {
+                // 1. blit part of a main screen
+                const GLuint postBufferObj = currBuffers->PrepAndGetBufferObject();
+
+                if (false == mMainFrameBuffer.isFboAttached())
+                {
+                    BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
+                        postBufferObj, 0, 0, localViewport[2], localViewport[3], true, false, false, false);
+                }
+                else
+                {
+                    BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
+                        postBufferObj, 0, 0, localViewport[2], localViewport[3], true, false, false, false);
+                }
+
+
+                // 2. process it
+
+                mEffectChain.Prep(mPaneSettings[nPane], localViewport[2], localViewport[3], pCamera);
+
+                if (true == mEffectChain.Process(currBuffers, sysTimeSecs)
+                    && nullptr != mShaderSimple.get())
+                {
+                    CHECK_GL_ERROR();
+
+                    const GLuint finalFBO = currBuffers->GetFinalFBO();
+
+                    // special test for an android device, send preview image by udp
+#if BROADCAST_PREVIEW == 1
+                    if (true == mSendPreview)
+                    {
+                        SendPreview(currBuffers);
+                        mPaneSettings[nPane]->IsSynced = mIsSynced;
+                        if (mIsSynced)
+                        {
+                            mPaneSettings[nPane]->DeviceAddress = FBVector4d((double)mSendAddress.GetA(), (double)mSendAddress.GetB(),
+                                (double)mSendAddress.GetC(), (double)mSendAddress.GetD());
+                            mPaneSettings[nPane]->DevicePort = mSendAddress.GetPort();
+                        }
+
+                    }
+#endif
+                    // 2.5 HUDs
+
+                    if (true == mPaneSettings[nPane]->DrawHUDLayer)
+                    {
+                        glBindFramebuffer(GL_FRAMEBUFFER, finalFBO);
+
+                        DrawHUD(0, 0, localViewport[2], localViewport[3], mMainFrameBuffer.GetWidth(), mMainFrameBuffer.GetHeight());
+
+                        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    }
+
+                    // 3. blit back a part of a screen
+
+                    if (false == mMainFrameBuffer.isFboAttached())
+                    {
+                        BlitFBOToFBOOffset(finalFBO, 0, 0, localViewport[2], localViewport[3],
+                            mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
+                            false, false, false, false);
+                    }
+                    else
+                    {
+                        BlitFBOToFBOOffset(finalFBO, 0, 0, localViewport[2], localViewport[3],
+                            mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
+                            false, false, false, false);
+                    }
+
+                }
+
+            }
+        }
+
+
+
+        if (mAttachedFBO[mEnterId - 1] > 0)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId - 1]);
+            //glReadBuffer(GL_COLOR_ATTACHMENT0);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        }
+        else
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+
+        //}
+
+        // DONE: draw a resulted rect
+        // render background
+        if (false == mMainFrameBuffer.isFboAttached()
+            && nullptr != mShaderSimple.get())
+        {
+            mShaderSimple->Bind();
+
+            glBindTexture(GL_TEXTURE_2D, mMainFrameBuffer.GetFinalColorObject());
+            drawOrthoQuad2d(mViewerViewport[2], mViewerViewport[3]);
+
+            mShaderSimple->UnBind();
+
+            lStatus = true;
+        }
+
+
+        CHECK_GL_ERROR();
+    }
+    /*
+    mPaneId = mPaneId + 1;
+    if (mPaneId >= mLastPaneCount)
+        mPaneId = 0;
+*/
+//if (0 == mPaneId)
+//{
+    mEnterId--;
+    //}
+
+    if (mEnterId < 0)
+    {
+        FBTrace("ERROR: wrong entering id!", "Ok");
+        mEnterId = 0;
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    else
+    {
+
+        // offline render
+        if (mAttachedFBO[mEnterId] > 0)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId]);
+            glReadBuffer(GL_COLOR_ATTACHMENT0);
+        }
+
+    }
+
+    return lStatus;
+}
+
+bool PostProcessContextData::EmptyGLErrorStack()
+{
+    bool wasError = false;
+    for (GLenum glErr = glGetError(); glErr != GL_NO_ERROR; glErr = glGetError())
+    {
+        wasError = true;
+    }
+    return wasError;
+}
+
+void PostProcessContextData::PreRenderFirstEntry()
+{
+
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
+
+    //mPaneId = 0;
+    mFrameId++;
+
+    // grab the whole viewer
+
+    mViewerViewport[0] = mViewerViewport[1] = 0;
+    mViewerViewport[2] = mViewerViewport[3] = 0;
+
+    mSchematicView[0] = mSchematicView[1] = mSchematicView[2] = mSchematicView[3] = false;
+
+    FBRenderer *pRenderer = mSystem.Renderer;
+    const int schematic = pRenderer->GetSchematicViewPaneIndex();
+
+    if (schematic >= 0)
+        mSchematicView[schematic] = true;
+
+    mLastPaneCount = pRenderer->GetPaneCount();
+
+    // DONE: this is strict post effect pane index, should we choose another one ?!
+
+    for (int i = 0; i < mLastPaneCount; ++i)
+    {
+        FBCamera *pCamera = pRenderer->GetCameraInPane(i);
+        if (nullptr == pCamera)
+            continue;
+
+        bool paneSharesCamera = false;
+        for (int j = 0; j < mLastPaneCount; ++j)
+        {
+            if (i != j)
+            {
+                FBCamera *pOtherCamera = pRenderer->GetCameraInPane(j);
+                if (pCamera == pOtherCamera)
+                {
+                    paneSharesCamera = true;
+                    break;
+                }
+            }
+        }
+
+        int x = pCamera->CameraViewportX;
+        int y = pCamera->CameraViewportY;
+        int w = pCamera->CameraViewportWidth;
+        int h = pCamera->CameraViewportHeight;
+
+        if (w <= 0 || h <= 0)
+            continue;
+
+        //
+        if (kFBFrameSizeWindow == pCamera->FrameSizeMode)
+        {
+            w += x;
+            h += y;
+        }
+        else
+        {
+            w += 2 * x;
+            h += 2 * y;
+        }
+
+        if (true == paneSharesCamera)
+        {
+            w *= 2;
+            h *= 2;
+        }
+
+        if (w > mViewerViewport[2])
+            mViewerViewport[2] = w;
+        if (h > mViewerViewport[3])
+            mViewerViewport[3] = h;
+    }
+
+    //
+    // resize, alloc shaders, etc.
+    LoadShaders();
+
+    PrepPaneSettings();
+
+    //
+    for (int i = 0; i < mLastPaneCount; ++i)
+    {
+        if (nullptr == mPaneSettings[i])
+            continue;
+
+        FBCamera *pCamera = pRenderer->GetCameraInPane(i);
+        if (nullptr == pCamera)
+            continue;
+
+        bool paneSharesCamera = false;
+        for (int j = 0; j < mLastPaneCount; ++j)
+        {
+            if (i != j)
+            {
+                FBCamera *pOtherCamera = pRenderer->GetCameraInPane(j);
+                if (pCamera == pOtherCamera)
+                {
+                    paneSharesCamera = true;
+                    break;
+                }
+            }
+        }
+
+        int w = pCamera->CameraViewportWidth;
+        int h = pCamera->CameraViewportHeight;
+
+        if (w <= 0 || h <= 0)
+            continue;
+
+        // next line could change current fbo
+
+        bool usePreview = mPaneSettings[i]->OutputPreview;
+        double scaleF = mPaneSettings[i]->OutputScaleFactor;
+
+        switch (i)
+        {
+        case 0:
+            mEffectBuffers0.ReSize(w, h, usePreview, scaleF);
+            break;
+        case 1:
+            mEffectBuffers1.ReSize(w, h, usePreview, scaleF);
+            break;
+        case 2:
+            mEffectBuffers2.ReSize(w, h, usePreview, scaleF);
+            break;
+        case 3:
+            mEffectBuffers3.ReSize(w, h, usePreview, scaleF);
+            break;
+        }
+    }
+
+    //
+
+    if (mAttachedFBO[mEnterId] > 0)
+        mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
+    else
+        mMainFrameBuffer.DetachFBO();
+    /*
+    CHECK_GL_ERROR();
+
+    if (mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
+    {
+        mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
+
+        mMainFrameBuffer.BeginRender();
+        glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        mMainFrameBuffer.EndRender();
+
+        CHECK_GL_ERROR();
+    }
+    */
+}
+
+const bool PostProcessContextData::CheckShadersPath(const char* path) const
+{
+    const char* test_shaders[] = {
+        SHADER_SIMPLE_VERTEX,
+        SHADER_SIMPLE_FRAGMENT
+    };
+
+    for (const char* shader_path : test_shaders)
+    {
+        FBString full_path(path, shader_path);
+
+        if (!IsFileExists(full_path))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool PostProcessContextData::LoadShaders()
+{
+    if (nullptr != mShaderSimple.get())
+    {
+        return true;
+    }
+
+    FBString shaders_path(mSystem.ApplicationPath);
+    shaders_path = shaders_path + "\\plugins";
+
+    bool status = true;
+
+    if (!CheckShadersPath(shaders_path))
+    {
+        status = false;
+
+        const FBStringList& plugin_paths = mSystem.GetPluginPath();
+
+        for (int i = 0; i < plugin_paths.GetCount(); ++i)
+        {
+            if (CheckShadersPath(plugin_paths[i]))
+            {
+                shaders_path = plugin_paths[i];
+                status = true;
+                break;
+            }
+        }
+    }
+
+    if (status == false)
+    {
+        FBTrace("[PostProcessing] Failed to find simple shaders!\n");
+        return false;
+    }
+
+    GLSLShader *pNewShader = nullptr;
+
+    try
+    {
+        pNewShader = new GLSLShader();
+
+        if (nullptr == pNewShader)
+        {
+            throw std::exception("failed to allocate memory for the simple shader");
+        }
+
+        FBString vertex_path(shaders_path, SHADER_SIMPLE_VERTEX);
+        FBString fragment_path(shaders_path, SHADER_SIMPLE_FRAGMENT);
+
+
+        if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
+        {
+            throw std::exception("failed to load and prepare simple shader");
+        }
+
+        // samplers and locations
+        pNewShader->Bind();
+
+        GLint loc = pNewShader->findLocation("sampler0");
+        if (loc >= 0)
+            glUniform1i(loc, 0);
+
+        pNewShader->UnBind();
+
+    }
+    catch (const std::exception &e)
+    {
+        FBTrace("Post Processing Simple Shader: %s\n", e.what());
+
+        delete pNewShader;
+        pNewShader = nullptr;
+
+        status = false;
+    }
+
+    mShaderSimple.reset(pNewShader);
+
+    return status;
+}
+
+void PostProcessContextData::FreeShaders()
+{
+    mShaderSimple.reset(nullptr);
+}
+
+void PostProcessContextData::FreeBuffers()
+{
+    mMainFrameBuffer.ChangeContext();
+
+    mEffectBuffers0.ChangeContext();
+    mEffectBuffers1.ChangeContext();
+    mEffectBuffers2.ChangeContext();
+    mEffectBuffers3.ChangeContext();
+}
+
+bool PostProcessContextData::PrepPaneSettings()
+{
+    mPaneSettings.resize(4);
+
+    FBScene *pScene = mSystem.Scene;
+    FBRenderer *pRenderer = mSystem.Renderer;
+
+    for (int i = 0; i < 4; ++i)
+        mPaneSettings[i] = nullptr;
+
+    // find a global settings (without camera attachments)
+
+    PostPersistentData *pGlobalData = nullptr;
+
+    for (int i = 0, count = pScene->UserObjects.GetCount(); i < count; ++i)
+    {
+        if (FBIS(pScene->UserObjects[i], PostPersistentData))
+        {
+            PostPersistentData *pData = (PostPersistentData*)pScene->UserObjects[i];
+
+            if (true == pData->Active && (false == pData->UseCameraObject || 0 == pData->Camera.GetCount()))
+            {
+                pGlobalData = pData;
+            }
+        }
+    }
+
+    // looking for exclusing values
+
+    for (int i = 0; i < 4; ++i)
+    {
+        FBCamera *pPaneCamera = pRenderer->GetCameraInPane(i);
+        if (pPaneCamera)
+        {
+            int dstCount = pPaneCamera->GetDstCount();
+
+            for (int j = 0; j < dstCount; ++j)
+            {
+                FBPlug *pdst = pPaneCamera->GetDst(j);
+
+                if (FBIS(pdst, PostPersistentData))
+                {
+                    PostPersistentData *pData = (PostPersistentData*)pdst;
+
+                    if (pData->Active && pData->UseCameraObject)
+                    {
+                        mPaneSettings[i] = pData;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // if exclusive pane settings is not assign, then try to assign global one
+        if (nullptr == mPaneSettings[i])
+        {
+            mPaneSettings[i] = pGlobalData;
+        }
+    }
+
+    return true;
+}
+
+void PostProcessContextData::DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh)
+{
+    FBScene *pScene = mSystem.Scene;
+
+    {
+
+        glViewport(panex, paney, panew, paneh);
+
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+
+        glOrtho(0.0, panew, 0.0, paneh, -1.0, 1.0);
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        // collect huds
+
+        int numberOfRectElems = 0;
+        int numberOfTextElems = 0;
+
+        for (int i = 0, count = pScene->HUDs.GetCount(); i < count; ++i)
+        {
+            FBHUD *pHud = pScene->HUDs[i];
+
+            for (int j = 0, elemCount = pHud->Elements.GetCount(); j < elemCount; ++j)
+            {
+                FBHUDElement *pElem = pHud->Elements[j];
+
+                if (FBIS(pElem, FBHUDRectElement))
+                {
+                    numberOfRectElems += 1;
+                }
+                else if (FBIS(pElem, FBHUDTextElement))
+                {
+                    numberOfTextElems += 1;
+                }
+            }
+        }
+
+        if ((numberOfRectElems + numberOfTextElems) <= 0)
+            return;
+
+        mRectElements.resize(numberOfRectElems);
+        mTextElements.resize(numberOfTextElems);
+
+        // assign elems
+        numberOfRectElems = 0;
+        numberOfTextElems = 0;
+
+        for (int i = 0, count = pScene->HUDs.GetCount(); i < count; ++i)
+        {
+            FBHUD *pHud = pScene->HUDs[i];
+
+            for (int j = 0, elemCount = pHud->Elements.GetCount(); j < elemCount; ++j)
+            {
+                FBHUDElement *pElem = pHud->Elements[j];
+
+                if (FBIS(pElem, FBHUDRectElement))
+                {
+                    mRectElements[numberOfRectElems] = (FBHUDRectElement*)pElem;
+                    numberOfRectElems += 1;
+                }
+                else if (FBIS(pElem, FBHUDTextElement))
+                {
+                    mTextElements[numberOfTextElems] = (FBHUDTextElement*)pElem;
+                    numberOfTextElems += 1;
+                }
+            }
+        }
+
+        // draw rects
+
+        for (auto iter = begin(mRectElements); iter != end(mRectElements); ++iter)
+        {
+            if ((*iter)->Show)
+            {
+                DrawHUDRect(*iter, panex, paney, panew, paneh, vieww, viewh);
+            }
+        }
+
+        // prep text fonts
+        if (mTextElements.size() > 0)
+        {
+
+#if defined(HUD_FONT)
+            if (mElemFonts.size() != mTextElements.size())
+            {
+                FreeFonts();
+                mElemFonts.resize(mTextElements.size());
+
+                for (int ii = 0; ii < mTextElements.size(); ++ii)
+                {
+                    CFont *pFont = new CFont();
+                    pFont->Init();
+
+                    mElemFonts[ii] = pFont;
+                }
+            }
+
+            auto textiter = begin(mTextElements);
+            auto fontiter = begin(mElemFonts);
+
+            for (; textiter != end(mTextElements); ++textiter, ++fontiter)
+            {
+                if ((*textiter)->Show)
+                {
+                    DrawHUDText(*textiter, *fontiter, panex, paney, panew, paneh, vieww, viewh);
+                }
+            }
+#endif
+        }
+    }
+}
+
+void PostProcessContextData::DrawHUDRect(FBHUDRectElement *pRect, int panex, int paney, int panew, int paneh, int vieww, int viewh)
+{
+    bool posPer = pRect->PositionByPercent;
+    bool sclPer = pRect->ScaleByPercent;
+    //bool sclAsp = pRect->ScaleUniformly;
+
+    double posx = pRect->X;
+    double posy = pRect->Y;
+
+    if (posPer)
+    {
+        posx = 0.01 * posx * panew;
+        posy = 0.01 * posy * paneh;
+    }
+
+    double wid = pRect->Width;
+    double hei = pRect->Height;
+
+    if (sclPer)
+    {
+        wid = 0.01 * wid * panew;
+        hei = 0.01 * hei * paneh;
+    }
+
+    FBHUDElementHAlignment hAlign = pRect->Justification;
+    FBHUDElementHAlignment hDock = pRect->HorizontalDock;
+    FBHUDElementVAlignment vDock = pRect->VerticalDock;
+
+    switch (hAlign)
+    {
+    case kFBHUDLeft:
+        break;
+    case kFBHUDRight:
+        posx -= wid;
+        break;
+    case kFBHUDCenter:
+        posx -= 0.5 * wid;
+        break;
+    }
+
+    switch (hDock)
+    {
+    case kFBHUDLeft:
+        break;
+    case kFBHUDRight:
+        posx += panew;
+        break;
+    case kFBHUDCenter:
+        posx += 0.5 * panew;
+        break;
+    }
+
+    switch (vDock)
+    {
+    case FBHUDElementVAlignment::kFBHUDBottom:
+        break;
+    case FBHUDElementVAlignment::kFBHUDTop:
+        posy += (paneh - hei);
+        break;
+    case FBHUDElementVAlignment::kFBHUDVCenter:
+        posy += 0.5 * (paneh - hei);
+        break;
+    }
+
+
+    FBColorAndAlpha lBackground = pRect->Color;
+
+    // HACK:
+    lBackground[3] = 1.0;
+
+    glColor4dv(lBackground);
+
+    const bool lUseBlendForBackground = lBackground[3] <= (254.0 / 255);
+    if (lUseBlendForBackground)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    glBegin(GL_QUADS);
+
+    glVertex2d(posx, posy);
+    glVertex2d(posx + wid, posy);
+    glVertex2d(posx + wid, posy + hei);
+    glVertex2d(posx, posy + hei);
+
+    glEnd();
+
+    glDisable(GL_BLEND);
+}
+#if defined(HUD_FONT)
+void PostProcessContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, int panex, int paney, int panew, int paneh, int vieww, int viewh)
+{
+    //	if (nullptr == pFont)
+    //		return;
+
+    bool posPer = pRect->PositionByPercent;
+    bool sclPer = pRect->ScaleByPercent;
+    //bool sclAsp = pRect->ScaleUniformly;
+
+    double posx = pRect->X;
+    double posy = pRect->Y;
+
+    if (posPer)
+    {
+        posx = 0.01 * posx * panew;
+        posy = 0.01 * posy * paneh;
+    }
+
+    double wid = pRect->Width;
+    double hei = pRect->Height;
+
+    if (sclPer)
+    {
+        wid = 0.01 * wid * panew;
+        hei = 0.01 * hei * paneh;
+    }
+
+    FBHUDElementHAlignment hAlign = pRect->Justification;
+    FBHUDElementHAlignment hDock = pRect->HorizontalDock;
+    FBHUDElementVAlignment vDock = pRect->VerticalDock;
+
+    switch (hAlign)
+    {
+    case kFBHUDLeft:
+        break;
+    case kFBHUDRight:
+        posx -= wid;
+        break;
+    case kFBHUDCenter:
+        posx -= 0.5 * wid;
+        break;
+    }
+
+    switch (hDock)
+    {
+    case kFBHUDLeft:
+        break;
+    case kFBHUDRight:
+        posx += panew;
+        break;
+    case kFBHUDCenter:
+        posx += 0.5 * panew;
+        break;
+    }
+
+    switch (vDock)
+    {
+    case kFBHUDBottom:
+        break;
+    case kFBHUDTop:
+        posy += (paneh - hei);
+        break;
+    case kFBHUDCenter:
+        posy += 0.5 * (paneh - hei);
+        break;
+    }
+
+
+    // get number of characters
+
+    FBString content(pRect->Content);
+    FBString refString("");
+
+    char buffer[64] = { 0 };
+    FBProperty *pRefProperty = nullptr;
+
+    for (int nprop = 0; nprop < pRect->PropertyList.GetCount(); ++nprop)
+    {
+        FBProperty *prop = pRect->PropertyList[nprop];
+        if (true == prop->IsReferenceProperty())
+        {
+
+            for (int nSrc = 0, nSrcCount = prop->GetSrcCount(); nSrc < nSrcCount; ++nSrc)
+            {
+                FBPlug *plug = prop->GetSrc(nSrc);
+                if (FBIS(plug, FBProperty))
+                {
+                    pRefProperty = (FBProperty*)plug;
+                    break;
+                }
+            }
+
+            if (nullptr != pRefProperty)
+                break;
+        }
+    }
+
+    if (nullptr == pRefProperty)
+    {
+        sprintf_s(buffer, sizeof(char) * 64, content);
+    }
+    else
+    {
+
+        if (kFBPT_Time == pRefProperty->GetPropertyType() && true == pRect->ForceTimeCodeDisplay)
+        {
+            FBTime time;
+            pRefProperty->GetData(&time, sizeof(FBTime));
+            refString = time.GetTimeString(kFBTimeModeDefault, FBTime::eSMPTE);
+
+            sprintf_s(buffer, sizeof(char) * 64, content, refString);
+        }
+        else if (kFBPT_double == pRefProperty->GetPropertyType())
+        {
+            double value = 0.0;
+            pRefProperty->GetData(&value, sizeof(double));
+
+            sprintf_s(buffer, sizeof(char) * 64, content, value);
+        }
+        else if (kFBPT_int == pRefProperty->GetPropertyType())
+        {
+            int value = 0.0;
+            pRefProperty->GetData(&value, sizeof(int));
+
+            sprintf_s(buffer, sizeof(char) * 64, content, value);
+        }
+        else
+        {
+            refString = pRefProperty->AsString();
+            sprintf_s(buffer, sizeof(char) * 64, content, refString);
+        }
+
+    }
+
+    const int numchars = strlen(buffer);
+
+    // draw a background
+
+    FBColorAndAlpha lColor = pRect->Color;
+    FBColorAndAlpha lBackground = pRect->BackgroundColor;
+
+    // HACK:
+    lColor[3] = 1.0;
+    lBackground[3] = 1.0;
+
+    double fontHei = floor(0.53 * hei);
+    // logical average width for each character
+    double sclw = 0.65; // *(double)paneh / (double)viewh;
+    double fontWid = (wid * sclw) / (double)numchars;
+    fontWid = floor(fontWid);
+
+
+    //
+    if (fontHei < 5.0)
+        fontHei = 5.0;
+    else if (fontHei > 300.0)
+        fontHei = 300.0;
+
+    glColor4dv(lBackground);
+
+    const bool lUseBlendForBackground = lBackground[3] <= (254.0 / 255);
+    if (lUseBlendForBackground)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    glBegin(GL_QUADS);
+
+    glVertex2d(posx, posy);
+    glVertex2d(posx + wid, posy);
+    glVertex2d(posx + wid, posy + hei);
+    glVertex2d(posx, posy + hei);
+
+    glEnd();
+
+    glDisable(GL_BLEND);
+
+
+    // draw text
+    glColor4dv(lColor);
+
+    pFont->Resize(panew, paneh);
+
+    pFont->TextClear();
+    pFont->TextAdd(posx, posy, 0.75f * (float)hei, wid, hei, buffer, static_cast<uint32_t>(strlen(buffer)));
+
+    pFont->Display();
+}
+#endif
+
+void PostProcessContextData::FreeFonts()
+{
+#if defined(HUD_FONT)	
+    for (auto iter = begin(mElemFonts); iter != end(mElemFonts); ++iter)
+    {
+        CFont *pFont = *iter;
+        if (pFont)
+        {
+            delete pFont;
+            pFont = nullptr;
+        }
+    }
+
+    mElemFonts.clear();
+#endif
+}

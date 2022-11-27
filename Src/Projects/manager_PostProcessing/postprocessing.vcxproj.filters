@@ -29,9 +29,6 @@
     <ClCompile Include="postprocessing_data.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="postprocessing_manager.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="postprocessing_tool.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -104,12 +101,15 @@
     <ClCompile Include="postprocessing_effectLensFlare.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="postprocesscontextdata.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postprocessingmanager.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="postprocessing_data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="postprocessing_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="postprocessing_tool.h">
@@ -188,6 +188,12 @@
       <Filter>MotionCodeLibrary</Filter>
     </ClInclude>
     <ClInclude Include="postprocessing_effectLensFlare.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocesscontextdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postprocessingmanager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

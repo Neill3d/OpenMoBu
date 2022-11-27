@@ -24,7 +24,7 @@ extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 FBLibraryDeclare( manager_postprocessing )
 {
 	FBLibraryRegister(PostProcessingAssociation);
-    FBLibraryRegister( Manager_PostProcessing );
+    FBLibraryRegister( PostProcessingManager );
 
 	FBLibraryRegister(PostPersistentData);
 	FBLibraryRegisterElement(PostPersistentData);

@@ -347,8 +347,8 @@
     <LibraryPath>$(ADSK_MOBU_2017_64)\OpenRealitySDK\lib\$(Platform);$(MOPLUGS_EXTERNAL)\glew\lib\Release\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2019|x64'">
-    <IncludePath>..\..\MotionCodeLibrary;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include;$(MOPLUGS_EXTERNAL)/glew/include;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include/fbsdk;..\..\..\..\glew\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);..\..\..\..\glew\lib\Release\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\MotionCodeLibrary;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include;$(MOPLUGS_EXTERNAL)/glew/include;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include/fbsdk;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);$(MOPLUGS_EXTERNAL)\glew\lib\Release\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>..\..\MotionCodeLibrary;$(ADSK_MOBU_2017_64)/OpenRealitySDK/Include;$(MOPLUGS_EXTERNAL)/glew/include;$(ADSK_MOBU_2017_64)/OpenRealitySDK/Include/fbsdk;$(IncludePath)</IncludePath>
@@ -375,8 +375,8 @@
     <LibraryPath>$(ADSK_MOBU_2018_64)\OpenRealitySDK\lib\$(Platform);$(MOPLUGS_EXTERNAL)\glew\lib\Release\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2019|x64'">
-    <IncludePath>..\..\MotionCodeLibrary;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include/fbsdk;..\..\..\..\glew\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);..\..\..\..\glew\lib\Release\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\MotionCodeLibrary;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include;$(ADSK_MOBU_2019_64)/OpenRealitySDK/Include/fbsdk;$(MOPLUGS_EXTERNAL)/glew/include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ADSK_MOBU_2019_64)\OpenRealitySDK\lib\$(Platform);$(MOPLUGS_EXTERNAL)\glew\lib\Release\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>

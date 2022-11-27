@@ -33,3 +33,6 @@
 # VS
 *.suo
 *.VC.*
+
+bin/
+Setup_Compiler/Output/

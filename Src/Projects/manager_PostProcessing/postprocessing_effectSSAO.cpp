@@ -320,12 +320,11 @@ bool PostEffectSSAO::InitMisc()
 	{
 		for (int j = 0; j < HBAO_RANDOM_SIZE; ++j)
 		{
-
-			float Rand1 = (float)dist(e2);
-			float Rand2 = (float)dist(e2);
+			Rand1 = (float)dist(e2);
+			Rand2 = (float)dist(e2);
 
 			// Use random rotation angles in [0,2PI/NUM_DIRECTIONS)
-			float Angle = 2.f * M_PI * Rand1 / numDir;
+			Angle = 2.f * M_PI * Rand1 / numDir;
 			hbaoRandom[i][j][0] = cosf(Angle);
 			hbaoRandom[i][j][1] = sinf(Angle);
 			hbaoRandom[i][j][2] = Rand2;
