@@ -51,6 +51,8 @@ copy "$(ADSK_MOBU_2011_64)\bin\$(Platform)\plugins\$(ProjectName).dll" "..\bin_2
 
 ## Compiling older plugins
 
+There is a snprintf redifinition issue when compiling for older MoBu SDKs with VS2017+, to solve that you could just comment the line #define snprintf _snprintf in kaydara.h in the OpenRealitySDK/include
+
 1) On my machine I have put 32 bits version of MoBu into the 64 bits folders. They share the same files except folders bin/win32 and bin/x64.
 
 2) For supporting older version of MoBu in different projects I'm using these pre-defines
