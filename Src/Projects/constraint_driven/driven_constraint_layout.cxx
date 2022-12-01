@@ -24,6 +24,10 @@ FBRegisterConstraintLayout		(	ORCONSTRAINT__LAYOUT,				// Layout class name
 									ORCONSTRAINT__CLASSSTR,				// Constraint class name (for association)
 									FB_DEFAULT_SDK_ICON			);		// Icon filename (default=Open Reality icon)
 
+static constexpr const char* INFO_TEXT{"Transfer value of an non animatable property into an obj's animatable property\n"
+								"Documentation page - https://github.com/Neill3d/OpenMoBu/wiki/Driven-property-constraint \n" };
+static constexpr const char* ABOUT_TEXT{"Created by Sergei <Neill3d> Solokhin\n"
+                                "- OpenMoBu project, github - https://github.com/Neill3d/OpenMoBu" };
 
 /************************************************
  *	Creation function..
@@ -102,7 +106,7 @@ void Driven_Constraint_Layout::UICreate()
 
 	AddRegion( "Info", "Info",	lS,	kFBAttachLeft,	"",	1.0,
 											lS,	kFBAttachBottom,"DstProperty",	1.0,
-											lW,	kFBAttachNone,	NULL,	1.0,
+											lW*2,	kFBAttachNone,	NULL,	1.0,
 											lH*2,	kFBAttachNone,	NULL,	1.0 );
 
 	// Assign regions
@@ -132,11 +136,7 @@ void Driven_Constraint_Layout::UIReset()
 void Driven_Constraint_Layout::UIConfigure()
 {
 	// Configure UI
-	mLabelDirections.Caption =	"Drive constrain object's property by the src obj's property\n"
-								"Put the source object into the first container\n"
-								"and the dst object into the another one\n"
-								"Select properties you want to connect\n"
-								"To begin just switch on constraint active state\n";
+	mLabelDirections.Caption =	INFO_TEXT;
 
 	//mButtonTest.Caption = "Test";
 	//mButtonTest.OnClick.Add( this, (FBCallback) &Driven_Constraint_Layout::EventButtonTestClick );
@@ -158,8 +158,7 @@ void Driven_Constraint_Layout::UIConfigure()
 	SetupSrcPropertyList( mConstraint->mSrcModel, mConstraint->mSrcProp );
 	SetupDstPropertyList( mConstraint->mDstModel, mConstraint->mDstProp );
 
-	mInfo.Caption = "Author Sergey Solohin (Neill3d), neill3d.com\n"
-					"- Freelance MoCap studio AnimArt - mocap.com.ua";
+	mInfo.Caption = ABOUT_TEXT;
 }
 
 
