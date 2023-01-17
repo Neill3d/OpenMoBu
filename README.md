@@ -79,6 +79,6 @@ There is a snprintf redifinition issue when compiling for older MoBu SDKs with V
 ## Contact
   
   Sergei Solokhin (Neill3d)
-  e-mail to: s@neill3d.com
+  e-mail to: neill3d@gmail.com
 
-  http://neill3d.com/en/
+  https://www.facebook.com/Neill3D
