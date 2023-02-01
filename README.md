@@ -14,6 +14,8 @@ Please post issues and feature requests to this [github repository issues sectio
 ---
  Note! Please have a look at the repository Wiki pages for more information about setup and scripts/plugins
 
+[Documentation pages](http://neill3d.github.io/OpenMoBu/)
+
 ## Introduction webinars
 * Part 1 - https://youtu.be/sgzunIbNcp4
 * Part 2 - https://youtu.be/5By9h3KO6JE
