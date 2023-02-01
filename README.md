@@ -71,10 +71,9 @@ There is a snprintf redifinition issue when compiling for older MoBu SDKs with V
  
 3) You should know that each dll plugin project has a resource with a version information.
 
-## Special Thanks
+## Supporters and Special Thanks
 
- Big thanks to Les Androids Associes! They gave me a permission to share my development to the public.
-
+A gold supporter for the repository and special thanks to Les Androids Associes!
 
 ## Contact
   
