@@ -1,7 +1,8 @@
 # Post Processing Effects
- It's a part of OpenMoBu project and could be found on OpenMoBu repository on Github
+ It's a part of OpenMoBu project and could be found in OpenMoBu repository on Github
+ 
 The plugin that applies post effects in your viewport window
-
+[![MoPlugs](https://github.com/Neill3d/MoBu/blob/master/Documentation/Images/Bryan_usecase.jpg)]()
 List of available effects:
 * color correction
 * displacement
