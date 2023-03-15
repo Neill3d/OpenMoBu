@@ -1,6 +1,6 @@
 # Spring box
 A box for relation constraint
-<image TODO>
+![This is an image](/springbox.jpg)
   
 Spring box math based on fundamental formule F = -kx
 
