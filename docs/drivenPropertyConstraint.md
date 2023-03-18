@@ -1,7 +1,7 @@
 # Driven Property Constraint
 
 The main usage is to transfer value of some non animatable property into an animatable property. 
-For exapmple, to control a scale of a box by curve path length.
+For example, to control a scale of a box by curve path length.
 
 ### How To Use
 
