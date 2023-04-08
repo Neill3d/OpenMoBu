@@ -14,11 +14,26 @@ List of available effects:
 * Screen Space Ambient Occlusion (SSAO)
 * Vignetting
 
+## How To Start
 The effects could be applied only in a camera view.
+
+In order to apply effects, you have to create a post process user object which contains all properties. You can do that from Assert Browser or from the Post Process Tool
+
+The use of python tool will be shown in the next topic, let's do that from assets browser.
+[![PostProcessingTool](https://github.com/Neill3d/OpenMoBu/blob/master/docs/post_process_asset.jpg)]()
+
+Drag'n'drop into your scene, once created you can always locate from Navigate window in User Objects section
+[![PostProcessingTool](https://github.com/Neill3d/OpenMoBu/blob/master/docs/post_process_user_object.jpg)]()
+
+Switch the view to a camera view (or create a new camera if you don't have any camera in the scene).
+Select the post process user object and in property view you will get access to its properties to tweak.
+[![PostProcessingTool](https://github.com/Neill3d/OpenMoBu/blob/master/docs/post_process_user_object_properties.jpg)]()
+
+Here you can active the desired effects and the whole effect system in order to see the result in real-time in the viewport.
 
 ## Python tool to tweak post effects properties.
 PostProcessingTool.py - you can find in PythonScripts/Startup
-[![PostProcessingTool]()]()
+[![PostProcessingTool](https://github.com/Neill3d/OpenMoBu/blob/master/docs/post_process_tool.jpg)]()
 
 ## Post Effects User Object
  This is a container of post effects properties and that's the object in the scene that you can use for merging and tweaking manually by u
