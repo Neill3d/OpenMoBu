@@ -1,0 +1,42 @@
+[
+	{
+		"name" : "Upper Clip Level",
+		"type" : "Number",
+		"defaultValue" : 0.0,
+		"minValue" : 0.0,
+		"maxValue" : 100.0,
+		"uniform" : "upperClip"
+	},
+	{
+		"name" : "Lower Clip Level",
+		"type" : "Number",
+		"defaultValue" : 0.0,
+		"minValue" : 0.0,
+		"maxValue" : 100.0,
+		"uniform" : "lowerClip"
+	},
+    {
+    	"name" : "Fish Eye Amount",
+    	"type" : "Number",
+    	"defaultValue" : 100.0,
+    	"minValue" : 0.0,
+    	"maxValue" : 100.0,
+    	"uniform" : "amount"
+    },
+	{
+		"name" : "Fish Eye Lens Radious",
+		"type" : "Number",
+		"defaultValue" : 3.0,
+		"minValue" : 0.0,
+		"maxValue" : 100.0,
+		"uniform" : "lensradius"
+	},
+    {
+    	"name" : "Fish Eye Sign Curvature",
+    	"type" : "Number",
+    	"defaultValue" : 3.8,
+    	"minValue" : 0.0,
+    	"maxValue" : 100.0,
+    	"uniform" : "signcurvature"
+    }
+]

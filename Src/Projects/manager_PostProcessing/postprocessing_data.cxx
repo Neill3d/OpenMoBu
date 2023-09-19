@@ -52,7 +52,7 @@ const char * FBPropertyBaseEnum<EBlurQuality>::mStrings[] = {
 	"Preview4",
 	0 };
 
-const char * FBPropertyBaseEnum<EImageCompression>::mStrings[] = {
+const char * FBPropertyBaseEnum<PostProcessingEffects::EImageCompression>::mStrings[] = {
 	"Default",
 	"S3TC",
 	"ETC2",
@@ -61,7 +61,7 @@ const char * FBPropertyBaseEnum<EImageCompression>::mStrings[] = {
 
 //Louis
 //Modifiable Flares
-const char * FBPropertyBaseEnum<EFlareType>::mStrings[] = {
+const char * FBPropertyBaseEnum<PostProcessingEffects::EFlareType>::mStrings[] = {
 	"Basic",
 	"Bubbles",
 	"Anamorphic",
@@ -640,7 +640,7 @@ bool PostPersistentData::FBCreate()
 	OutputHeight.ModifyPropertyFlag(kFBPropertyFlagReadOnly, true);
 	
 	OutputUseCompression = true;
-	OutputCompression = eImageCompressionDefault;
+	OutputCompression = PostProcessingEffects::eImageCompressionDefault;
 
 	OutputUncompressSize = 0;
 	OutputUncompressSize.ModifyPropertyFlag(kFBPropertyFlagReadOnly, true);
@@ -788,7 +788,7 @@ void PostPersistentData::DefaultValues()
 	LensFlare = false;
 
 	//Louis
-	FlareType = flare1;
+	FlareType = PostProcessingEffects::flare1;
 	FlareSeed = 30.0;
 
 	FlareUsePlayTime = false;

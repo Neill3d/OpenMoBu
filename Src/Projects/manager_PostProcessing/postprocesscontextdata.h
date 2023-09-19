@@ -16,7 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "GL/glew.h"
 
-#include "graphics_framebuffer.h"
+#include "mainFramebuffer.h"
 #include "postprocessing_data.h"
 
 #include "glslShader.h"
@@ -25,7 +25,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
 
-#include "postprocessing_effectChain.h"
+#include "postEffectBuffers.h"
+#include "postEffectChain.h"
 
 // number of entering in render callback
 #define MAX_ATTACH_STACK		10
@@ -59,15 +60,15 @@ public:
 
 	std::unique_ptr<GLSLShader>			mShaderSimple;	// for simple blit quads on a screen
 
-	PostEffectChain						mEffectChain;
+	std::unique_ptr<PostProcessingEffects::PostEffectChain>	mEffectChain;
 
 	std::vector<PostPersistentData*>	mPaneSettings;	// choose a propriate settings according to a pane camera
 
-														// if each pane has different size (in practice should be not more then 2
-	PostEffectBuffers					mEffectBuffers0;
-	PostEffectBuffers					mEffectBuffers1;
-	PostEffectBuffers					mEffectBuffers2;
-	PostEffectBuffers					mEffectBuffers3;
+	// if each pane has different size (in practice should be not more then 2
+	PostProcessingEffects::PostEffectBuffers	mEffectBuffers0;
+	PostProcessingEffects::PostEffectBuffers	mEffectBuffers1;
+	PostProcessingEffects::PostEffectBuffers	mEffectBuffers2;
+	PostProcessingEffects::PostEffectBuffers	mEffectBuffers3;
 
 	void    Init();
 

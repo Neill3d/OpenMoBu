@@ -13,7 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- SDK include
 #include <fbsdk/fbsdk.h>
-#include "postprocessing_helper.h"
+#include "postEffectUtils.h"
 
 //--- Registration define
 
@@ -148,7 +148,7 @@ public: // PROPERTIES
 	FBPropertyAnimatableBool	LensFlare;
 
 	//Louis
-	FBPropertyBaseEnum<EFlareType>	FlareType;
+	FBPropertyBaseEnum<PostProcessingEffects::EFlareType>	FlareType;
 	FBPropertyAnimatableDouble	FlareSeed;
 
 	FBPropertyBool					FlareUsePlayTime;
@@ -273,7 +273,7 @@ public: // PROPERTIES
 	FBPropertyInt				OutputHeight;
 	FBPropertyListObject		OutputVideo;
 	FBPropertyBool				OutputUseCompression; // enable / disable compression
-	FBPropertyBaseEnum<EImageCompression>	OutputCompression;
+	FBPropertyBaseEnum<PostProcessingEffects::EImageCompression>	OutputCompression;
 	FBPropertyInt				OutputCompressionCode;
 	FBPropertyInt				OutputUncompressSize;
 	FBPropertyInt				OutputCompressedSize;	// stats for a ETC1 compressed size

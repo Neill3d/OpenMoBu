@@ -12,7 +12,8 @@
 #include <Windows.h>
 #include "postprocesscontextdata.h"
 
-#include "postprocessing_helper.h"
+#include "postEffectUtils.h"
+#include "FileUtils.h"
 
 #define IS_INSIDE_MAIN_CYCLE			(mEnterId==1)
 #define IS_RENDERING_OFFLINE			(mAttachedFBO[mEnterId-1] > 0)
@@ -79,7 +80,7 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
             }
 
 
-            PostEffectBuffers *currBuffers = nullptr;
+            PostProcessingEffects::PostEffectBuffers *currBuffers = nullptr;
             switch (nPane)
             {
             case 0:
@@ -96,7 +97,7 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
                 break;
             }
 
-            mEffectChain.BeginFrame(currBuffers);
+            mEffectChain->BeginFrame(currBuffers);
         }
 
         // it will use attached dimentions, if any external buffer is exist
@@ -128,6 +129,48 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
 /////////////////////////////////////////////////////////////////////////////////////
 // RenderAfterRender - post processing work after main scene rendering is finished
 
+
+void PrepareViewInfo(PostProcessingEffects::SViewInfo& viewInfo, FBCamera* camera)
+{
+    FBMatrix modelView, modelViewI, proj;
+
+    ((FBModel*)camera)->GetMatrix(modelView);
+    for (int i = 0; i < 16; ++i)
+        viewInfo.modelview.mat_array[i] = static_cast<float>(modelView[i]);
+
+    FBMatrixInverse(modelViewI, modelView);
+    for (int i = 0; i < 16; ++i)
+        viewInfo.modelviewInv.mat_array[i] = static_cast<float>(modelView[i]);
+
+    camera->GetCameraMatrix(proj, FBCameraMatrixType::kFBProjection);
+    for (int i = 0; i < 16; ++i)
+        viewInfo.proj.mat_array[i] = static_cast<float>(proj[i]);
+
+    FBVector3d pos;
+    camera->GetVector(pos);
+
+    for (int i = 0; i < 3; ++i)
+        viewInfo.cameraPos[i] = static_cast<float>(pos[i]);
+
+    viewInfo.w = camera->CameraViewportWidth;
+    viewInfo.h = camera->CameraViewportHeight;
+
+    viewInfo.renderWidth = camera->CameraViewportWidth;
+    viewInfo.renderHeight = camera->CameraViewportHeight;
+
+    viewInfo.farPlane = camera->FarPlaneDistance;
+    viewInfo.nearPlane = camera->NearPlaneDistance;
+    viewInfo.fieldOfView = camera->FieldOfView;
+
+    viewInfo.isPerspective = (camera->Type == FBCameraType::kFBCameraTypePerspective);
+
+    FBTime localTime = FBSystem::TheOne().LocalTime;
+    FBTime systemTime = FBSystem::TheOne().SystemTime;
+
+    viewInfo.localTimeFrame = localTime.GetFrame();
+    viewInfo.localTime = localTime.GetSecondDouble();
+    viewInfo.systemTime = systemTime.GetSecondDouble();
+}
 
 bool PostProcessContextData::RenderAfterRender(const bool processCompositions, const bool renderToBuffer)
 {
@@ -201,7 +244,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
                 }
             //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            PostEffectBuffers *currBuffers = nullptr;
+            PostProcessingEffects::PostEffectBuffers *currBuffers = nullptr;
             switch (nPane)
             {
             case 0:
@@ -240,9 +283,15 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
                 // 2. process it
 
-                mEffectChain.Prep(mPaneSettings[nPane], localViewport[2], localViewport[3], pCamera);
+                PostProcessingEffects::SViewInfo viewInfo;
+                PrepareViewInfo(viewInfo, pCamera);
 
-                if (true == mEffectChain.Process(currBuffers, sysTimeSecs)
+                viewInfo.w = localViewport[2];
+                viewInfo.h = localViewport[3];
+
+                mEffectChain->Prep(uiCallback, viewInfo);
+
+                if (true == mEffectChain->Process(currBuffers, sysTimeSecs)
                     && nullptr != mShaderSimple.get())
                 {
                     CHECK_GL_ERROR();

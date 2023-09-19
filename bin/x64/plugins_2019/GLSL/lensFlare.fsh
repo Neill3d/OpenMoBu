@@ -3,7 +3,7 @@
 //
 //	Post Processing Toolkit
 //
-//	Sergei <Neill3d> Solokhin 2018
+//	Sergei <Neill3d> Solokhin 2018-2019
 //
 //	GitHub page - https://github.com/Neill3d/OpenMoBu
 //	Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -139,8 +139,6 @@ void main (void)
 	
 	vec4 color = texture2D( sampler0, tx ); 
 	
-	
-	
 	vec2 fragCoord = gl_FragCoord.xy;
 	vec2 iResolution = vec2(textureWidth, textureHeight);
 	vec3 iMouse = vec3(light_pos.x * textureWidth, light_pos.y * textureHeight, light_pos.z);
@@ -148,19 +146,16 @@ void main (void)
 	vec2 uv = fragCoord.xy / iResolution.xy - 0.5;
 	uv.x *= iResolution.x/iResolution.y; //fix aspect ratio
 	vec3 mouse = vec3(iMouse.xy/iResolution.xy - 0.5,iMouse.z-.5);
+	float att = 1.0 - clamp(2.0 * (light_pos.z - 0.5), 0.0, 1.0);
+	mouse.z = clamp(0.275 * log(100.0 * att), 0.0, 1.0);
 	mouse.x *= iResolution.x/iResolution.y; //fix aspect ratio
-	if (iMouse.z<.5)
-	{
-		mouse.x=sin(iTime)*.5;
-		mouse.y=sin(iTime*.913)*.5;
-	}
 	
 	vec3 flareColor = lensflare(uv,mouse.xy); // vec3(1.4,1.2,1.0)
 	
 	flareColor = cc(flareColor,outer,inner); 
 	flareColor *= tint.rgb;
 	
-	float f = amount;
+	float f = mix(amount, amount * mouse.z, light_pos.w);
 	
 	if (fadeToBorders > 0.0)
 	{
@@ -177,6 +172,5 @@ void main (void)
 	}
 	
 	color.rgb = color.rgb + f * flareColor;
-	
 	gl_FragData [0] =  color;
 }

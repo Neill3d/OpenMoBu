@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="PostProcessingEffects::PostEffectFishEye">
+    <Position X="5" Y="4.25" Width="1.5" />
+    <NestedTypes>
+      <Enum Name="PostProcessingEffects::PostEffectFishEye::PropertyNames" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>postEffectFishEye.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="PostProcessingEffects::PostEffectFishEye::ShaderUniforms" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>postEffectFishEye.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAACAAAQAEEAAIAAAIAAAAAAAAIAARAAgAQAEAFEA=</HashCode>
+      <FileName>postEffectFishEye.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PostProcessingEffects::PostEffectBuffers">
+    <Position X="11.75" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAMgCBYASQABAIDACAAgCFGBIgDAQEGIgApBMVCKII=</HashCode>
+      <FileName>postEffectBuffers.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PostProcessingEffects::CPostEffectBase">
+    <Position X="1.75" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgIgAGAAABAIAAMAAAAIAAQAAAIIAgRQAgEQAEABAQ=</HashCode>
+      <FileName>postEffectBase.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CStringPoolProviderImpl">
+    <Position X="8.25" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>StringPoolProvider.cpp</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

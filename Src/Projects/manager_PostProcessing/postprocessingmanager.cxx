@@ -12,7 +12,7 @@
 #include <Windows.h>
 #include "postprocessingmanager.h"
 
-#include "postprocessing_helper.h"
+//#include "postprocessing_helper.h"
 
 //--- Registration defines
 #define POSTPROCESSING_MANAGER__CLASS POSTPROCESSING_MANAGER__CLASSNAME
@@ -139,8 +139,8 @@ bool PostProcessingManager::Open()
 
 	mSystem.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
-	//FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Add(this, (FBCallback)&Manager_PostProcessing::OnPerFrameEvaluationPipelineCallback);
-	//FBEvaluateManager::TheOne().OnSynchronizationEvent.Add(this, (FBCallback)&Manager_PostProcessing::OnPerFrameSynchronizationCallback);
+	//FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	//FBEvaluateManager::TheOne().OnSynchronizationEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
     return true;
@@ -298,8 +298,8 @@ bool PostProcessingManager::Close()
 {
 	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
-	//FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Remove(this, (FBCallback)&Manager_PostProcessing::OnPerFrameEvaluationPipelineCallback);
-	//FBEvaluateManager::TheOne().OnSynchronizationEvent.Remove(this, (FBCallback)&Manager_PostProcessing::OnPerFrameSynchronizationCallback);
+	//FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	//FBEvaluateManager::TheOne().OnSynchronizationEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
 	mApplication.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
@@ -379,7 +379,7 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 
 void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSender, HKEvent pEvent)
 {
-	
+    //FBEventEvalGlobalCallback fbevent(pEvent);
 }
 
 
@@ -454,7 +454,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 		//iter->second->PreRenderFirstEntry();
 		return;
 	}
-
+	
 	// nullptr != mPaneSettings[mPaneId] && false == mSchematicView[mPaneId]
 	bool usePostProcessing = false;
 
@@ -523,31 +523,54 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 {
 	FBEventVideoFrameRendering levent(pEvent);
 
-	if (levent.GetState() == FBEventVideoFrameRendering::eBeginRendering)
-	{
-		PreRenderFirstEntry();
+    switch (levent.GetState())
+    {
+    case FBEventVideoFrameRendering::eBeginRendering:
+    {
+        //m_frameIndex = 0;
+        PreRenderFirstEntry();
 
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter == end(gContextMap))
-			return;
+        auto iter = gContextMap.find(gCurrentContext);
+        if (iter == end(gContextMap))
+            return;
 
-		// turn off preview mode and switch quality settings if needed
-		iter->second->mVideoRendering = true;
-		//FreeBuffers();
+        // turn off preview mode and switch quality settings if needed
+        iter->second->mVideoRendering = true;
 
-		// TODO: tweak post processing upper / lower clip
-		PushUpperLowerClipForEffects();
-	}
-	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
-	{
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter == end(gContextMap))
-			return;
+        PushUpperLowerClipForEffects();
+    } break;
 
-		// turn on back preview mode and display quality settings
-		iter->second->mVideoRendering = false;
-		PopUpperLowerClipForEffects();
-	}
+    case FBEventVideoFrameRendering::eEndRendering:
+    {
+        auto iter = gContextMap.find(gCurrentContext);
+        if (iter == end(gContextMap))
+            return;
+
+        // turn on back preview mode and display quality settings
+        iter->second->mVideoRendering = false;
+        PopUpperLowerClipForEffects();
+    } break;
+
+    case FBEventVideoFrameRendering::eRendering:
+        TriggerPythonDevices();
+        break;
+    }
+}
+
+void PostProcessingManager::TriggerPythonDevices()
+{
+    FBScene *pScene = mSystem.Scene;
+
+    for (int i = 0, count = pScene->Devices.GetCount(); i < count; ++i)
+    {
+        FBDevice* device = pScene->Devices[i];
+
+        // execute script in the current context
+        if (FBPropertyString* prop = (FBPropertyString*)device->PropertyList.Find("Python Script Code"))
+        {
+            FBPython::EvalLines(prop->AsString());
+        }
+    }
 }
 
 void PostProcessingManager::PrepVideoClipsTimeWrap()

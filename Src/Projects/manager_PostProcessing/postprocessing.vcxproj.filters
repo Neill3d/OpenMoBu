@@ -12,9 +12,6 @@
     <Filter Include="MotionCodeLibrary">
       <UniqueIdentifier>{9b37b9c2-0625-4b3c-9760-f13e60ad0faa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="rg_ETC1">
-      <UniqueIdentifier>{37c27cfa-945c-45de-8083-f03cfe999081}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Freetype_gl">
       <UniqueIdentifier>{81026d93-66d1-4068-a3b0-965ee848ea36}</UniqueIdentifier>
     </Filter>
@@ -32,31 +29,16 @@
     <ClCompile Include="postprocessing_tool.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="postprocessing_effectChain.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="postprocessing_association.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="postprocessing_ini.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="postprocessing_effectSSAO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="postprocessing_helper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="postprocessing_manip.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="postprocessing_hudelement.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rg_etc1\rg_etc1.cpp">
-      <Filter>rg_ETC1</Filter>
-    </ClCompile>
-    <ClCompile Include="postprocessing_effectDisplacement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mat4.c">
@@ -67,9 +49,6 @@
     </ClCompile>
     <ClCompile Include="postprocessing_fonts.cpp">
       <Filter>Freetype_gl</Filter>
-    </ClCompile>
-    <ClCompile Include="postprocessing_effectMotionBlur.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\MotionCodeLibrary\Assert2.cpp">
       <Filter>MotionCodeLibrary</Filter>
@@ -92,14 +71,8 @@
     <ClCompile Include="..\..\MotionCodeLibrary\OGL_Utils.cpp">
       <Filter>MotionCodeLibrary</Filter>
     </ClCompile>
-    <ClCompile Include="graphics_framebuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\MotionCodeLibrary\FileUtils.cpp">
       <Filter>MotionCodeLibrary</Filter>
-    </ClCompile>
-    <ClCompile Include="postprocessing_effectLensFlare.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="postprocesscontextdata.cxx">
       <Filter>Source Files</Filter>
@@ -115,31 +88,16 @@
     <ClInclude Include="postprocessing_tool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="postprocessing_effectChain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="postprocessing_association.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="postprocessing_ini.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="postprocessing_effectSSAO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="postprocessing_helper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="postprocessing_manip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="postprocessing_hudelement.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="rg_etc1\rg_etc1.h">
-      <Filter>rg_ETC1</Filter>
-    </ClInclude>
-    <ClInclude Include="postprocessing_effectDisplacement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="mat4.h">
@@ -150,9 +108,6 @@
     </ClInclude>
     <ClInclude Include="postprocessing_fonts.h">
       <Filter>Freetype_gl</Filter>
-    </ClInclude>
-    <ClInclude Include="postprocessing_effectMotionBlur.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\MotionCodeLibrary\Assert2.h">
       <Filter>MotionCodeLibrary</Filter>
@@ -186,9 +141,6 @@
     </ClInclude>
     <ClInclude Include="..\..\MotionCodeLibrary\FileUtils.h">
       <Filter>MotionCodeLibrary</Filter>
-    </ClInclude>
-    <ClInclude Include="postprocessing_effectLensFlare.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="postprocesscontextdata.h">
       <Filter>Header Files</Filter>

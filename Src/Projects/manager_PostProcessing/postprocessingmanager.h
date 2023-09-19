@@ -3,7 +3,7 @@
 
 /** \file   postprocessing_manager.h
 
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2023
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -16,7 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "GL/glew.h"
 
-#include "graphics_framebuffer.h"
+#include "mainFrameBuffer.h"
 #include "postprocessing_data.h"
 
 #include "glslShader.h"
@@ -25,7 +25,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
 
-#include "postprocessing_effectChain.h"
+#include "postEffectChain.h"
 #include "postprocesscontextdata.h"
 
 //--- Registration defines
@@ -121,6 +121,12 @@ private:
 
 	void	PushUpperLowerClipForEffects();
 	void	PopUpperLowerClipForEffects();
+
+private:
+
+    // This is about python device triggering before each offline render frame
+
+    void    TriggerPythonDevices();
 
 public:
 	bool			mLastProcessCompositions;

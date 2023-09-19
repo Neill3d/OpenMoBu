@@ -34,5 +34,8 @@
 *.suo
 *.VC.*
 
+doxygen/
+Lib/
+.vs/
 bin/
 Setup_Compiler/Output/

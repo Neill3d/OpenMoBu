@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="rg_etc1">
+      <UniqueIdentifier>{500969ae-7fe9-421a-aba0-0d240b7c7bd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects">
+      <UniqueIdentifier>{31872e6c-721c-4c3b-9116-b3f5bb12274b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="postEffectBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectBuffers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rg_etc1\rg_etc1.h">
+      <Filter>rg_etc1</Filter>
+    </ClInclude>
+    <ClInclude Include="libraryMain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mainFrameBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectSSAO.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectColorCorrection.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectDisplacement.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectDOF.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectFilmGrain.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectFishEye.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectLensFlare.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectMotionBlur.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectVignetting.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="StringPoolProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="postEffectFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectPropertyList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectProperty.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="postEffectBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectBuffers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rg_etc1\rg_etc1.cpp">
+      <Filter>rg_etc1</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectChain.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mainFrameBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectColorCorrection.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectDisplacement.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectDOF.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectFilmGrain.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectFishEye.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectLensFlare.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectMotionBlur.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectSSAO.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectVignetting.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="StringPoolProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="postEffectFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="README.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
+  </ItemGroup>
+</Project>
