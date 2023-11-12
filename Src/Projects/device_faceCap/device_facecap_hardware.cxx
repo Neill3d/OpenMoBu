@@ -273,7 +273,7 @@ int CDevice_FaceCap_Hardware::FetchData()
 					if (tosc_isBundle(mBuffer)) {
 						tosc_bundle bundle;
 						tosc_parseBundle(&bundle, mBuffer, bytes_received);
-						const uint64_t timetag = tosc_getTimetag(&bundle);
+						//const uint64_t timetag = tosc_getTimetag(&bundle);
 						tosc_message osc;
 						while (tosc_getNextMessage(&bundle, &osc)) {
 							if (ProcessMessage(&osc))
