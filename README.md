@@ -1,6 +1,6 @@
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2022/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2022)
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019.1/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019.1)
-<a href="[https://discord.gg/EU5E2p9VCf](https://discord.gg/EU5E2p9VCf)"><img alt="OpenMoBu on Discord" src="https://img.shields.io/badge/discord-OpenMoBu-blue?logo=discord&logoColor=white&style=flat"></a>
+<a href="https://discord.gg/EU5E2p9VCf"><img alt="OpenMoBu on Discord" src="https://img.shields.io/badge/discord-OpenMoBu-blue?logo=discord&logoColor=white&style=flat"></a>
 # OpenMoBu code repository!
 https://discord.gg/EU5E2p9VCf
  It's a set of C++ and Python code for Autodesk MotionBuilder that I have developed while taking part in several projects.
