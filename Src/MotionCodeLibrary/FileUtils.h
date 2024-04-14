@@ -9,8 +9,8 @@
 // GitHub repository - https://github.com/Neill3d/OpenMoBu
 //
 // Author Sergey Solokhin (Neill3d) 2014-2017
-//  e-mail to: s@neill3d.com
-//		www.neill3d.com
+//  e-mail to: neill3d@gmail.com
+// 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //--- SDK include

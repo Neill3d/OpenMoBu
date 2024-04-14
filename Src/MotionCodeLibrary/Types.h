@@ -1,9 +1,8 @@
 
 /**
 	Declare common engine types and macros.
-    Copyright (C) 2010 Sergey Solohin (neill), e-mail to: Neill.Solow<at>gmail.com
-	home page - neill3d.com
-
+	Copyright (C) 2010 Sergey Solohin (neill), e-mail to: neill3d<at>gmail.com
+	
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
