@@ -159,15 +159,9 @@ void Manip_LockCamera::ViewExpose()
 
 	// TODO: grab current pane dimentions
 
-	const int panex = GetPanePosX();
-	const int paney = GetPanePosY();
-	const int panew = GetPaneWidth();
-	const int paneh = GetPaneHeight();
-
 	int lViewport[4];
 
 	glGetIntegerv(GL_VIEWPORT, lViewport);
-	//glViewport(panex, paney, panew, paneh);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();

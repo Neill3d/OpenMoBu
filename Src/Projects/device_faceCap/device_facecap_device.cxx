@@ -1,7 +1,7 @@
 
 /**	\file	device_facecap_device.cxx
 *	Developed by Sergei <Neill3d> Solokhin 2019
-*	e-mail to: s@neill3d.com
+*	e-mail to: neill3d@gmail.com
 *	twitter: @Neill3d
 *
 * OpenMoBu github - https://github.com/Neill3d/OpenMoBu

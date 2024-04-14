@@ -328,6 +328,8 @@ public:
 
 protected:
 
+	friend class ToolPostProcessing;
+
 	FBSystem			mSystem;
 
     FBString			mText;

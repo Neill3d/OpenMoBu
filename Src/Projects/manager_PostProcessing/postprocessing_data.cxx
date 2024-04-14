@@ -1005,8 +1005,12 @@ void PostPersistentData::DoReloadShaders()
 
 void PostPersistentData::DoDebugFarDist()
 {
-	FBCamera *pCamera = mSystem.Renderer->CurrentCamera;
-
+#if(PRODUCT_VERSION>2024)
+	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
+	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
+#else
+	FBCamera* pCamera = mSystem.Renderer->CurrentCamera;
+#endif
 	if (nullptr == pCamera)
 		return;
 	if (FBIS(pCamera, FBCameraSwitcher))
@@ -1359,8 +1363,12 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 
 void PostPersistentData::ComputePointInFront(FBVector3d &v)
 {
-	FBCamera *pCamera = mSystem.Renderer->CurrentCamera;
-
+#if(PRODUCT_VERSION>2024)
+	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
+	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
+#else
+	FBCamera* pCamera = mSystem.Renderer->CurrentCamera;
+#endif
 	if (nullptr == pCamera)
 		return;
 	if (FBIS(pCamera, FBCameraSwitcher))

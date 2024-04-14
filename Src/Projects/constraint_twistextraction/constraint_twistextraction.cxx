@@ -45,6 +45,8 @@ FBRotationOrder MapRotationOrder(const FBModelRotationOrder& modelRotationOrder)
 			return FBRotationOrder::kFBZYX;
 		case kFBSphericXYZ:
 			return FBRotationOrder::kFBXYZ;
+		default:
+			return FBRotationOrder::kFBXYZ;
 	}
 }
 

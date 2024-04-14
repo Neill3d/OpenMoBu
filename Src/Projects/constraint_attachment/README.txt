@@ -26,5 +26,4 @@ LOG
 
 
 Author Sergey Solohin (Neill3d) 2015-2018
- e-mail to: s@neill3d.com
-	www.neill3d.com
+ e-mail to: neill3d@gmail.com
