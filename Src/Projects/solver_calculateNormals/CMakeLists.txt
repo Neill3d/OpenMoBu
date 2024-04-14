@@ -14,8 +14,8 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productvers
 #
 # GLEW
 
-set(CMAKE_PREFIX_PATH "C:/Users/Sergei/Documents/GitHub/MoPlugs_External/glew")
-set(CMAKE_LIBRARY_PATH "C:/Users/Sergei/Documents/GitHub/MoPlugs_External/glew/lib/Release/x64")
+set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/third_party/glew)
+set(CMAKE_LIBRARY_PATH ${CMAKE_SOURCE_DIR}/third_party/glew/lib/Release/x64)
 set (GLEW_USE_STATIC_LIBS TRUE)
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})

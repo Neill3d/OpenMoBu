@@ -6,7 +6,8 @@
 #ifndef __SHADER_H__
 #define __SHADER_H__
 
-#include <fbsdk-opengl.h>
+#include <GL/GL.h>
+#include <GL/GLU.h>
 
 #ifdef __cplusplus
 extern "C" {
