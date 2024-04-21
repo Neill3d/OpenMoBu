@@ -51,12 +51,37 @@ A set of plugins that constains source object / objects with a destination objec
 
  Tools, custom objects in the scene
 
+### Optical Volume Calculator
+
+ The custom model that helps to calculate a unit score of a volume coverage for the optical system. In order to run the solver, you have to immitate the capturing space by placing cameras the same way how you are going to place them in the real room with a correct defined FOV and aspect ratio.
+
+
 [Optical Volume Calculator](opticalVolumeCalculator.md)
 
 ## Graphics
 
  Shading, fx, geometry preparation for rendering
 
-[Post Processing](PostProcessingEffects.md)
-[Super Dynamic Lighting Shader](superDynamicLightingShader.md)
+### Post Processing Filters
+
+ A special user object, that helps to add post process filter on top of your camera view.
+
+[Post Processing, read more](PostProcessingEffects.md)
+
+### Super Dynamic Lighting Shader
+
+ This is an advance version of Dynamic Lighting Shader with features like vertex displacement, specular map, Matcap shading, etc.
+
+[Super Dynamic Lighting Shader, read more](superDynamicLightingShader.md)
+
+### Calcualte Normals Solver
+
+ A solver to recalculate mesh normals on fly during rendering. That helps to better visualize deformations from blendshape activation or by skinned skeleton tranform.
+
 [Calculate Normals Solver](calculateNormalsSolver.md)
+
+## About the project
+
+Sergei <Neill3d> Solokhin
+
+Donate for the project - https://ko-fi.com/neill3d
