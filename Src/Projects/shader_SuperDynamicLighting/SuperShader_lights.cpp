@@ -208,12 +208,16 @@ namespace Graphics
 		//else
 		//	lViewDirection = direction;
 
-		double cosAngle;
+		double cosAngle = 0.0;
 		if (pLight->LightType == kFBLightTypeSpot)
-			cosAngle = cos((3.141592654*pLight->ConeAngle / 180.0f) / 2.0f);
-		else
-			cosAngle = 0.0;
-
+		{
+#if(PRODUCT_VERSION>2024)
+			cosAngle = cos((3.141592654 * pLight->OuterAngle / 180.0f) / 2.0f);
+#else
+			cosAngle = cos((3.141592654 * pLight->ConeAngle / 180.0f) / 2.0f);
+#endif
+		}
+		
 		light.spotAngle = (float)cosAngle;
 		//FBVectorToVec3( lViewDirection.mValue, light.dir.vec_array );
 

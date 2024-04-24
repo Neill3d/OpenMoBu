@@ -373,7 +373,7 @@ void ReferencesManager::OnSceneChange(HISender pSender, HKEvent pEvent)
 		&& FBIS(lEvent.Component, FBScene))
 	{
 		FBFileReference *pref = (FBFileReference*)(FBComponent*)lEvent.ChildComponent;
-		FBString refpath = pref->ReferenceFilePath;
+		FBString refpath = pref->ReferenceFilePath.AsString();
 
 		char *str = refpath;
 		int pos = refpath.Find('\\');

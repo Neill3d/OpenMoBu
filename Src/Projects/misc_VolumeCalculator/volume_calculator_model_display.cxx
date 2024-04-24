@@ -7,8 +7,8 @@
 // GitHub repository - https://github.com/Neill3d/MoBu
 //
 // Author Sergey Solohin (Neill3d) 2014
-//  e-mail to: s@neill3d.com
-//		www.neill3d.com
+//  e-mail to: neill3d@gmail.com
+// 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //--- Class declaration
@@ -40,7 +40,13 @@ static void Volume_SwitchToCamera(HIObject pObject, bool value) {
 
 			FBCamera *pCamera = (FBCamera*) list.GetAt(0);
 			pCamera->ViewNearFarPlane = true;
+
+#if(PRODUCT_VERSION>2024)
+			const unsigned selectedPaneIndex = pScene->Renderer->GetSelectedPaneIndex();
+			pScene->Renderer->SetCameraInPane(pCamera, selectedPaneIndex);
+#else
 			pScene->Renderer->CurrentCamera = pCamera;
+#endif
 		}
 		else
 		{
@@ -142,9 +148,8 @@ static void Volume_SetLensPreset(HIObject object, kCELensPresets pValue)
 static void Volume_About(HIObject pObject, bool value) {
 	ModelVolumeCalculator *model = FBCast<ModelVolumeCalculator>(pObject);
 	if (value && model)	{
-		FBMessageBox( "About", "Volume calculator created by Sergey Solohin (Neill3d)\n"
-			"e-mail to: s@neill3d.com\n"
-			"home page: www.neill3d.com\n\n",
+		FBMessageBox( "About", "Optical Volume calculator created by Sergey Solohin (Neill3d)\n"
+			"e-mail to: neill3d@gmail.com\n",
 			"Ok" );
 	}
 }

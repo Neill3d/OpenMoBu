@@ -1,7 +1,7 @@
 
 /**	\file	device_facecap_layout.cxx
 *	Developed by Sergei <Neill3d> Solokhin 2019
-*	e-mail to: s@neill3d.com
+*	e-mail to: neill3d@gmail.com
 *	twitter: @Neill3d
 *
 * OpenMoBu github - https://github.com/Neill3d/OpenMoBu
@@ -365,5 +365,5 @@ void CDevice_FaceCap_Layout::EventButtonSetCandidateClick( HISender pSender, HKE
 
 void CDevice_FaceCap_Layout::EventButtonAboutClick(HISender pSender, HKEvent pEvent)
 {
-	FBMessageBox("FaceCap OSC Device Plugin", "Developed by Sergei <Neill3d> Solokhin 2019\n E-mail to: s@neill3d.com\n twitter: @Neill3d", "Ok");
+	FBMessageBox("FaceCap OSC Device Plugin", "Developed by Sergei <Neill3d> Solokhin 2019\n E-mail to: neill3d@gmail.com\n twitter: @Neill3d", "Ok");
 }

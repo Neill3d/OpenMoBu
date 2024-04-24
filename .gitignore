@@ -39,3 +39,4 @@ doxygen/
 Lib/
 bin/
 Setup_Compiler/Output/
+Build/

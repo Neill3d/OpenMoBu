@@ -106,7 +106,7 @@ namespace nv_dds
         unsigned long dwReserved2[3];
     };
 
-    typedef enum TextureType
+    enum TextureType
     {
         TextureNone,
         TextureFlat,    // 1D, 2D, and rectangle textures

@@ -2,8 +2,7 @@
  Spring box plugin for Autodesk MotionBuilder
 
  Author Sergei Solokhin (Neill3d) 2014
-  e-mail to: s@neill3d.com
-    www.neill3d.com
+  e-mail to: neill3d@gmail.com
 
  Spring box math based on fundamental formule F = -kx
   and using const timeStep - 0.03 by default (around 30 fps)

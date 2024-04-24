@@ -11,7 +11,8 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 
 #include "glslShader.h"
 #include "SuperShader_glsl.h"
-#include <fbsdk.h>
+//--- SDK include
+#include <fbsdk/fbsdk.h>
 #include <vector>
 
 #include <memory>

@@ -7,8 +7,8 @@
 // GitHub repository - https://github.com/Neill3d/MoBu
 //
 // Author Sergey Solohin (Neill3d) 2014
-//  e-mail to: s@neill3d.com
-//		www.neill3d.com
+//  e-mail to: neill3d@gmail.com
+// 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 //--- Class declarations
@@ -295,16 +295,16 @@ FBComponent *FindComponentInScene(FBString &name)
 	// try in components
 	for (int i=0; i<FBSystem().Scene->Components.GetCount(); ++i)
 	{
-		FBString compname = FBSystem().Scene->Components[i]->Name; 
-		if (strstr( (char*)name, (char*)compname) != NULL)
+		FBString compname = FBSystem().Scene->Components[i]->Name.AsString(); 
+		if (strstr( (char*)name, (char*)compname) != nullptr)
 			return FBSystem().Scene->Components[i];
 	}
 	// try in constraints
 	for (int i=0; i<FBSystem().Scene->Constraints.GetCount(); ++i)
 	{
 		FBConstraint *constraint = FBSystem().Scene->Constraints[i];
-		FBString compname = constraint->Name; 
-		if (strstr( (char*)name, (char*)compname) != NULL)
+		FBString compname = constraint->Name.AsString(); 
+		if (strstr( (char*)name, (char*)compname) != nullptr)
 			return constraint;
 	}
 	return nullptr;

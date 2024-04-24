@@ -23,8 +23,6 @@
 	#include <windows.h>
 #endif
 
-#include "resourceUtils.h"
-
 //--- Library declaration
 FBLibraryDeclare( box_posereader )
 {
@@ -39,7 +37,6 @@ bool FBLibrary::LibInit()		{ return true; }
 bool FBLibrary::LibOpen()		{ return true; }
 bool FBLibrary::LibReady()		
 { 
-	InitResourceUtils();
 	return true; 
 }
 bool FBLibrary::LibClose()		{ return true; }

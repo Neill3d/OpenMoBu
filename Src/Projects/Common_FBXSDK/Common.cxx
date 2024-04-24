@@ -232,9 +232,9 @@ bool LoadScene(FbxManager* pManager, FbxDocument* pScene, const char* pFilename)
 			FbxSceneReference* pRef = pManager->GetReference(i);
 
 			FBXSDK_printf("    Reference %d\n", i);
-			FBXSDK_printf("         Node Name: \"%s\"\n", pRef->ReferenceNodeName.Get());
-			FBXSDK_printf("         Namespace Name: \"%s\"\n", pRef->ReferenceNameSpace.Get());
-			FBXSDK_printf("         File Path: \"%s\"\n", pRef->ReferenceFilePath.Get());
+			FBXSDK_printf("         Node Name: \"%s\"\n", pRef->ReferenceNodeName.Get().Buffer());
+			FBXSDK_printf("         Namespace Name: \"%s\"\n", pRef->ReferenceNameSpace.Get().Buffer());
+			FBXSDK_printf("         File Path: \"%s\"\n", pRef->ReferenceFilePath.Get().Buffer());
 			//FBXSDK_printf("         Description: \"%s\"\n", lTakeInfo->mDescription.Buffer());
 
 			// Change the value of the import name if the animation stack should be imported 
