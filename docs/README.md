@@ -12,7 +12,7 @@ Stream Video Part 1 - https://www.youtube.com/live/sgzunIbNcp4?si=kTXzdfnZ3FnkiI
 
 [How To Install](HowToInstall.md)
 
-[How To Compile](HowToCompile.md)
+[How To Compile/Build](HowToCompile.md)
 
 [Script Device](ScriptDevice.md)
 

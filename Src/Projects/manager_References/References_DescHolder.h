@@ -12,6 +12,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include <vector>
+#include <string>
 
 //--- Registration define
 #define DESCHOLDER__CLASSNAME	DescriptionHolder

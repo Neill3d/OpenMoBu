@@ -10,7 +10,7 @@ if(NOT buildversion)
 endif()
 
 # Read Product Version
-file(READ ${OPENREALITY_ROOT}/PRODUCT_VERSION.txt productversion)
+file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
 
 # If requested path doesn't exist, override BIN_PATH with default release build.
 if(NOT EXISTS ${OPENREALITY_ROOT}/lib/${BIN_PATH})

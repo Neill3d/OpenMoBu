@@ -6,9 +6,12 @@ cmake_minimum_required(VERSION 3.19)
 # Project name
 project(OpenMoBu)
 
+# Read Product Version
+file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
+
 # Mandatory path to MotionBuilder Root folder.
-set(MOBU_ROOT "C:/Program Files/Autodesk/MotionBuilder 2025")
-set(OPENREALITY_ROOT "C:/Program Files/Autodesk/MotionBuilder 2025/OpenRealitySDK" CACHE PATH "Provide a path to OpenReality SDK")
+set(MOBU_ROOT "C:/Program Files/Autodesk/MotionBuilder ${productversion}")
+set(OPENREALITY_ROOT "C:/Program Files/Autodesk/MotionBuilder ${productversion}/OpenRealitySDK" CACHE PATH "Provide a path to OpenReality SDK")
 
 set(COPY_TO_PLUGINS ON CACHE BOOL "Copy binaries into mobu plugins folder?")
 

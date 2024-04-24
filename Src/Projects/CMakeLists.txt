@@ -28,3 +28,8 @@ add_subdirectory( manager_PostProcessing )
 
 add_subdirectory( shader_SuperDynamicLighting )
 add_subdirectory( solver_calculateNormals )
+
+# references manager and fbx extraction console app
+
+add_subdirectory(cmd_shadingGraph_exporter)
+add_subdirectory( manager_References )

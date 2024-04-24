@@ -381,7 +381,7 @@ bool DescriptionHolder::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, in
 			if (FBIS(pPlug, FBFileReference))
 			{
 				FBFileReference *pref = (FBFileReference*)pPlug;
-				std::string filename = pref->ReferenceFilePath;
+				std::string filename = pref->ReferenceFilePath.AsString();
 
 				size_t len = filename.size();
 				if (len > 3)

@@ -133,7 +133,7 @@ bool mainExtract(const FbxString &lFilePath, const FbxString &strOutput)
 		//
 		// DONE: write models show and vis data 
 
-		printf("[Shading Graph Exporter] Writing %d shaders and %d models\n", lShaders.size(), lModels.size());
+		printf("[Shading Graph Exporter] Writing %zd shaders and %zd models\n", lShaders.size(), lModels.size());
 
 		for (auto iter = begin(lShaders); iter != end(lShaders); ++iter)
 		{
@@ -226,7 +226,7 @@ bool mainBake(const FbxString &lFilePath, const FbxString &lXmlPath, const FbxSt
 		}
 	}
 
-	printf("> have founded %d library shaders\n", lShadersLibrary.size());
+	printf("> have founded %zd library shaders\n", lShadersLibrary.size());
 
 	bool lResult = LoadScene(lSdkManager, lScene, lFilePath.Buffer());
 	if (lResult)

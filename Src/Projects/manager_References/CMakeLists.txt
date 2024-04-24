@@ -1,5 +1,5 @@
 
-project(constraint_twistextraction LANGUAGES CXX)
+project(manager_References LANGUAGES CXX)
 
 file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h)
 add_library(${PROJECT_NAME} SHARED ${SRCS})
@@ -8,10 +8,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include $
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
-target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productversion})
+target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productversion} MOBU_DLL TIXML_USE_STL)
 
 #
-#
+# link libraries
 
 target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk MotionCodeLibrary)
 
