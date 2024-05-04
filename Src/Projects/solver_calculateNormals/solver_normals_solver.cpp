@@ -6,7 +6,7 @@
 //
 // GitHub repository - https://github.com/Neill3d/OpenMoBu
 //
-// Author Sergey Solokhin (Neill3d) 2014-2018
+// Author Sergei Solokhin (Neill3d) 2014-2024
 //  e-mail to: neill3d@gmail.com
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ bool KNormalSolverAssociation::MenuBuild( FBAMMenu* pAMMenu, FBComponent* pFocus
 		{
 			FBModelVertexData *pData = ((FBModel*) pFocusedObject)->ModelVertexData;
 
-			if (nullptr != pData && pData->IsDrawable() )
+			if (pData && pData->IsDrawable() )
 			{
 				pAMMenu->AddOption( "" );
 				mAddModelEvaluation = pAMMenu->AddOption( "Add To Normal Solver", -1, true);
@@ -81,63 +81,60 @@ bool KNormalSolverAssociation::MenuBuild( FBAMMenu* pAMMenu, FBComponent* pFocus
 
 bool KNormalSolverAssociation::MenuAction( int pMenuId, FBComponent* pFocusedObject)
 {
-	bool result = false;
+	if (mAddModelEvaluation < 0 || pMenuId != mAddModelEvaluation)
+		return false;
 
-	
-	if (mAddModelEvaluation >= 0 && pMenuId == mAddModelEvaluation)
-	{
-		// DONE: automaticaly add properties to texture and model
+	// DONE: automaticaly add properties to texture and model
 
-		// try to find if model is already in some solver
-		SolverCalculateNormals *pSolver = nullptr;
-		FBScene *pScene = mSystem.Scene;
-		for (int i=0, count=pScene->ConstraintSolvers.GetCount(); i<count; ++i)
-		{	
-			if (FBIS(pScene->ConstraintSolvers[i], SolverCalculateNormals) )
-			{
-				int index = pScene->ConstraintSolvers[i]->Components.Find(pFocusedObject);
-				if (index >= 0)
-				{
-					pSolver = (SolverCalculateNormals*) pScene->ConstraintSolvers[i];
-					break;
-				}
-			}
-		}
-
-		if (pSolver)
+	// try to find if model is already in some solver
+	SolverCalculateNormals *pSolver = nullptr;
+	FBScene *pScene = mSystem.Scene;
+	for (int i=0, count=pScene->ConstraintSolvers.GetCount(); i<count; ++i)
+	{	
+		if (FBIS(pScene->ConstraintSolvers[i], SolverCalculateNormals) )
 		{
-			// model is already in the solver, let's do Unregister operation
-			bool activeState = pSolver->Active;
-			pSolver->Active = false;
-
-			bool isExist = false;
-			for (int i=0, count=pSolver->AffectedModels.GetCount(); i<count; ++i)
+			int index = pScene->ConstraintSolvers[i]->Components.Find(pFocusedObject);
+			if (index >= 0)
 			{
-				if ( pSolver->AffectedModels[i] == pFocusedObject )
-				{
-					isExist = true;
-					break;
-				}
-			}
-
-			if (false == isExist)
-				pSolver->AffectedModels.Add(pFocusedObject);
-			pSolver->Active = activeState;
-		}
-		else
-		{
-			// register model for the first model in the scene solvers
-			FBModel *pModel = (FBModel*) pFocusedObject;
-			pSolver = (SolverCalculateNormals*) FBCreateObject( "Browsing/Templates/Solvers", "SolverCalculateNormals", "Normal Solver" );
-
-			if (nullptr != pSolver)
-			{
-				pSolver->AffectedModels.Add(pModel);
+				pSolver = static_cast<SolverCalculateNormals*>(pScene->ConstraintSolvers[i]);
+				break;
 			}
 		}
 	}
 
-	return result;
+	if (pSolver)
+	{
+		// model is already in the solver, let's do Unregister operation
+		bool activeState = pSolver->Active;
+		pSolver->Active = false;
+
+		bool isExist = false;
+		for (int i=0, count=pSolver->AffectedModels.GetCount(); i<count; ++i)
+		{
+			FBComponent* AffectedComponent = pSolver->AffectedModels[i];
+			if (strcmp(AffectedComponent->GetFullName(), pFocusedObject->GetFullName()) == 0)
+			{
+				isExist = true;
+				break;
+			}
+		}
+
+		if (!isExist)
+			pSolver->AffectedModels.Add(pFocusedObject);
+		pSolver->Active = activeState;
+	}
+	else
+	{
+		// register model for the first model in the scene solvers
+		//FBModel *pModel = (FBModel*) pFocusedObject;
+		if (pSolver = static_cast<SolverCalculateNormals*>(FBCreateObject("Browsing/Templates/Solvers", "SolverCalculateNormals", "Normal Solver")))
+		{
+			pSolver->AffectedModels.Add(pFocusedObject);
+		}
+	}
+
+	return true;
+	
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -158,18 +155,15 @@ SolverCalculateNormals::SolverCalculateNormals(const char *pName)
 	FBClassInit;
 	
 	mNeedProgramReload = true;
-
-	for (int i=0; i<100; ++i)
-		mBuffersId[i] = 0;
-	
+	memset(mBuffersId, 0, sizeof(GLuint) * 100);
 }
 
 bool SolverCalculateNormals::FBCreate()
 {
 	
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	FBPropertyPublish(this, ReLoadShader, "Reload shader", nullptr, SetReLoadShader);
-#endif
+//#endif
 
 	FBPropertyPublish(this, AffectedModels, "Affected Models", nullptr, nullptr);
 	
@@ -214,7 +208,7 @@ void SolverCalculateNormals::OnSystemIdle (HISender pSender, HKEvent pEvent)
 
 void SolverCalculateNormals::OnPerFrameRenderingPipelineCallback    (HISender pSender, HKEvent pEvent)
 {
-	if (false == Active || AffectedModels.GetCount() == 0)
+	if (Active.AsInt() == 0 || AffectedModels.GetCount() == 0)
 		return;
 
 	static bool firstTime = true;
@@ -242,12 +236,15 @@ void SolverCalculateNormals::OnPerFrameRenderingPipelineCallback    (HISender pS
 		
 			for (int i=0, count=AffectedModels.GetCount(); i<count; ++i)
 			{
-				FBModel *pModel = (FBModel*) AffectedModels.GetAt(i);
+				FBModel *pModel = FBCast<FBModel>(AffectedModels.GetAt(i));
 
-				PrepModelData(pModel);
+				if (!pModel)
+					continue;
+				if (!PrepModelData(pModel))
+					continue;
+
 				RunReComputeNormals(pModel);
 			}
-		
 		}
 		break;
 	case kFBGlobalEvalCallbackAfterRender:
@@ -280,8 +277,11 @@ void SolverCalculateNormals::GenerateGLBuffers()
 void SolverCalculateNormals::FreeGLBuffers()
 {
 	if (mBuffersId[0] > 0)
-		glDeleteBuffers(100, &mBuffersId[0] );
-
+	{
+		glDeleteBuffers(100, &mBuffersId[0]);
+		mBuffersId[0] = 0;
+	}
+	
 	for (auto iter=begin(mModelData); iter!=end(mModelData); ++iter)
 	{
 		ModelSolverData &data = iter->second;
@@ -292,16 +292,12 @@ void SolverCalculateNormals::FreeGLBuffers()
 			data.mBufferId = 0;
 		}
 	}
+	mModelData.clear();
 }
 
 bool SolverCalculateNormals::PrepModelData(FBModel *pModel)
 {
 	auto iter = mModelData.find(pModel);
-
-	ModelSolverData data;
-
-	if (iter != end(mModelData) )
-		data = iter->second;
 
 	FBGeometry *pGeometry = pModel->Geometry;
 	FBModelVertexData *pData = pModel->ModelVertexData;
@@ -313,27 +309,37 @@ bool SolverCalculateNormals::PrepModelData(FBModel *pModel)
 	const int vertexCount = pData->GetVertexCount();
 	const int geomUpdateId = pModel->GeometryUpdateId;
 
-	if (geomUpdateId != data.geomUpdateId || vertexCount != data.vertexCount)
+	ModelSolverData data;
+
+	if (iter != end(mModelData))
+		data = iter->second;
+
+	if (data.mBufferId == 0 || geomUpdateId != data.geomUpdateId || vertexCount != data.vertexCount)
 	{
-		// let's update duplicate buffer
-
-		if ( 0 == data.mBufferId )
-			glGenBuffers( 1, &data.mBufferId );
-
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.mBufferId);
+		if (0 == data.mBufferId)
+			glGenBuffers(1, &data.mBufferId);
 
 		data.duplicateCount = 0;
 		const int *duplicates = pData->GetVertexArrayDuplicationMap(data.duplicateCount);
+		if (duplicates && data.duplicateCount < static_cast<unsigned int>(vertexCount))
+		{
+			const size_t size = sizeof(int) * data.duplicateCount;
 
-		const size_t size = sizeof(int) * data.duplicateCount;
+			// let's update duplicate buffer
 
-		glBufferData(GL_SHADER_STORAGE_BUFFER, size, nullptr, GL_STREAM_READ);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, size, duplicates, GL_STREAM_READ);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, data.mBufferId);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, size, nullptr, GL_STREAM_READ);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, size, duplicates, GL_STREAM_READ);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		}
+		else
+		{
+			data.duplicateCount = 0;
+		}
+		
 		data.geomUpdateId = geomUpdateId;
 		data.vertexCount = vertexCount;
-
+		
 		if (iter != end(mModelData) )
 			iter->second = data;
 		else
@@ -351,6 +357,7 @@ bool SolverCalculateNormals::LoadShaders()
 		mProgramZero.Clear();
 		mProgramNorm.Clear();
 		mProgramRecomputeNormals.Clear();
+		mProgramDup.Clear();
 	}
 
 	// check for a compute shader
@@ -367,16 +374,20 @@ bool SolverCalculateNormals::LoadShaders()
 	constexpr const char* shader_normals_zero = "/GLSL_CS/recomputeNormalsZero.cs";
 	constexpr const char* shader_recompute_normals = "/GLSL_CS/recomputeNormals.cs";
 	constexpr const char* shader_normals_norm = "/GLSL_CS/recomputeNormalsNorm.cs";
+	constexpr const char* shader_normals_dup = "/GLSL_CS/recomputeNormalsDup.cs";
 
-	if (false == mProgramZero.PrepProgram(shader_normals_zero) )
+	if (!mProgramZero.PrepProgram(shader_normals_zero) )
 		return false;
 
-	if (false == mProgramRecomputeNormals.PrepProgram(shader_recompute_normals) )
+	if (!mProgramRecomputeNormals.PrepProgram(shader_recompute_normals) )
 		return false;
 	
-	if (false == mProgramNorm.PrepProgram(shader_normals_norm) )
+	if (!mProgramNorm.PrepProgram(shader_normals_norm) )
 		return false;
 		
+	if (!mProgramDup.PrepProgram(shader_normals_dup))
+		return false;
+
 	if (0 == mProgramZero.GetProgramId() )
 	{
 		bool res = false;
@@ -496,7 +507,7 @@ bool SolverCalculateNormals::LoadShaders()
 
 bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 {
-	if (mNeedProgramReload && false == LoadShaders() )
+	if (mNeedProgramReload && !LoadShaders() )
 		return false;
 	
 	//
@@ -508,25 +519,23 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 	if ( nullptr == pGeometry || nullptr == pData || false == pData->IsDrawable() )
 		return false;
 
-	const int numberOfVertices = pData->GetVertexCount();
+	int numberOfVertices = pData->GetVertexCount();
 	
 	if (0 == numberOfVertices)
 		return false;
-
-
-	int numberOfIndices = 0;
 	
+	int numberOfIndicesFromSubPatches = 0;
 	for (int i=0, count=pData->GetSubPatchCount(); i<count; ++i)
 	{
 		int offset = pData->GetSubPatchIndexOffset(i);
 		int size = pData->GetSubPatchIndexSize(i);
 
 		int localCount = offset+size;
-		if ( localCount > numberOfIndices )
-			numberOfIndices = localCount;
+		if ( localCount > numberOfIndicesFromSubPatches)
+			numberOfIndicesFromSubPatches = localCount;
 	}
-
-	const int numberOfTriangles = numberOfIndices / 3;
+	
+	int numberOfTriangles = numberOfIndicesFromSubPatches / 3;
 
 	//
 	// run a compute program
@@ -552,13 +561,12 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, iter->second.mBufferId );
 	}
 
-	
-
 //	CHECK_GL_ERROR_MOBU();
 
 	//
 	// ZERO NORMALS
 	{
+
 	const GLuint programId = mProgramZero.GetProgramId();
 	if (programId == 0)
 		return false;
@@ -573,14 +581,13 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 	const int x = numberOfVertices / computeLocalX + 1;
 
 	mProgramZero.DispatchPipeline( x, 1, 1 );
-
 	mProgramZero.UnBind();
 
 //	CHECK_GL_ERROR_MOBU();
 	}
 	
 	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT ); //GL_ALL_BARRIER_BITS
-
+	
 	//
 	// ACCUM NORMALS
 	{
@@ -594,21 +601,19 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 	if (loc >= 0)
 		glProgramUniform1i( programId, loc, numberOfTriangles );
 	
-	const int computeLocalX = 1024;
+	const int computeLocalX = 512;
 	const int x = numberOfTriangles / computeLocalX + 1;
 
 	mProgramRecomputeNormals.DispatchPipeline( x, 1, 1 );
-
 	mProgramRecomputeNormals.UnBind();
 
 //	CHECK_GL_ERROR_MOBU();
 	}
 
 	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
-
+	
 	//
-	// ZERO NORMALS
-
+	// NORMALIZE
 
 	{
 	const GLuint programId = mProgramNorm.GetProgramId();
@@ -621,18 +626,40 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 	if (loc >= 0)
 		glProgramUniform1i( programId, loc, numberOfVertices );
 
-	loc = glGetUniformLocation( programId, "duplicateStart" );
-	if (loc >= 0)
-		glProgramUniform1i( programId, loc, numberOfVertices - duplicateCount );
-	
 	const int computeLocalX = 1024;
 	const int x = numberOfVertices / computeLocalX + 1;
 
 	mProgramNorm.DispatchPipeline( x, 1, 1 );
-
 	mProgramNorm.UnBind();
 	}
-//	CHECK_GL_ERROR_MOBU();
+	
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+	//
+	// COPY DUPLICATES
+
+	if (duplicateCount > 0)
+	{
+		const GLuint programId = mProgramDup.GetProgramId();
+		if (programId == 0)
+			return false;
+
+		mProgramDup.Bind();
+
+		GLint loc = glGetUniformLocation(programId, "duplicateCount");
+		if (loc >= 0)
+			glProgramUniform1i(programId, loc, duplicateCount);
+
+		loc = glGetUniformLocation(programId, "duplicateStart");
+		if (loc >= 0)
+			glProgramUniform1i(programId, loc, numberOfVertices - duplicateCount);
+
+		const int computeLocalX = 1024;
+		const int x = duplicateCount / computeLocalX + 1;
+
+		mProgramDup.DispatchPipeline(x, 1, 1);
+		mProgramDup.UnBind();
+	}
+	
 	return true;
 }

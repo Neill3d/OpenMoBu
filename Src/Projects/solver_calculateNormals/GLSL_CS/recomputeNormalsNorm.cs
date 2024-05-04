@@ -6,7 +6,7 @@
 //
 // GitHub repository - https://github.com/Neill3d/MoBu
 //
-// Author Sergey Solokhin (Neill3d) 2014-2017
+// Author Sergei Solokhin (Neill3d) 2014-2024
 //  e-mail to: neill3d@gmail.com
 //
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -20,7 +20,6 @@
 layout (local_size_x = 1024, local_size_y = 1) in;
 
 uniform int		numberOfNormals;
-uniform int		duplicateStart;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TYPES AND DATA BUFFERS
@@ -31,11 +30,6 @@ layout (std140, binding = 2) buffer OutputNormals
 {
 	vec4	normals[];
 } outputNormals;
-
-layout (std430, binding = 3) buffer Duplicates
-{
-	int		indices[];
-} duplicates;
 
 ////////////////////////////////////////////////////////
 //
@@ -60,17 +54,8 @@ void main()
 	if (flattened_id >= numberOfNormals)
 		return;
 	
-	vec4 nor;
-	if (flattened_id < duplicateStart)
-	{
-		nor = outputNormals.normals[flattened_id];
-		nor = normalize(nor);
-	}
-	else
-	{
-		int id = duplicates.indices[flattened_id - duplicateStart];
-		nor = outputNormals.normals[ id ];
-	}
+	vec4 nor = outputNormals.normals[flattened_id];
+	nor = normalize(nor);
 	
 	outputNormals.normals[flattened_id] = nor;
 }

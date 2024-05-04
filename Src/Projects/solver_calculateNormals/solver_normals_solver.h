@@ -6,7 +6,7 @@
 //
 // GitHub repository - https://github.com/Neill3d/MoBu
 //
-// Author Sergey Solokhin (Neill3d) 2014-2017
+// Author Sergei Solokhin (Neill3d) 2014-2024
 //  e-mail to: neill3d@gmail.com
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -102,12 +102,12 @@ class SolverCalculateNormals : public FBConstraintSolver
 
 public:
 	//! a constructor
-	SolverCalculateNormals(const char *pName = NULL);
+	SolverCalculateNormals(const char *pName = nullptr);
 
 	virtual bool FBCreate() override;
 	virtual void FBDestroy() override;		//!< FiLMBOX Destruction function.
 
-	virtual bool PlugDataNotify(FBConnectionAction pAction,FBPlug* pThis,void* pData=NULL,void* pDataOld=NULL,int pDataSize=0) override;
+	virtual bool PlugDataNotify(FBConnectionAction pAction,FBPlug* pThis,void* pData=nullptr, void* pDataOld=nullptr, int pDataSize=0) override;
 	virtual bool PlugNotify(FBConnectionAction pAction,FBPlug* pThis,int pIndex,FBPlug* pPlug,FBConnectionType pConnectionType,FBPlug* pNewPlug ) override;
 
 	void OnPerFrameRenderingPipelineCallback    (HISender pSender, HKEvent pEvent);
@@ -137,7 +137,7 @@ public:
 	
 
 protected:
-	bool	mNeedProgramReload;
+	bool	mNeedProgramReload{ true };
 
 	FBSystem		mSystem;
 
@@ -164,14 +164,15 @@ protected:
 	};
 
 	// this a workaround for the mobu bug
-	GLuint					mBuffersId[100];
-	GLuint					mBufferUseCount;
+	GLuint					mBuffersId[100]{ 0 };
+	GLuint					mBufferUseCount{ 0 };
 
 	CComputeProgram			mProgramZero;
 	CComputeProgram			mProgramRecomputeNormals;
 	CComputeProgram			mProgramNorm;
+	CComputeProgram			mProgramDup;
 
-	std::map<FBModel*, ModelSolverData>		mModelData;
+	std::unordered_map<FBModel*, ModelSolverData>		mModelData;
 
 	void		GenerateGLBuffers();
 	void		FreeGLBuffers();

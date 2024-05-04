@@ -13,7 +13,7 @@ set_target_properties(freetype-gl PROPERTIES
 
 project(manager_PostProcessing LANGUAGES CXX)
 
-file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h)
+file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h *.fsh *.vsh)
 add_library(${PROJECT_NAME} SHARED ${SRCS})
 
 # Read Product Version

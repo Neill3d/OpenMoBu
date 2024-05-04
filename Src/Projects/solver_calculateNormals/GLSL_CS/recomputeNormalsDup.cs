@@ -13,24 +13,29 @@
 
 
 // recomputer normals in real-time (for a good quality deformations) 
-// 1 - zero vertex normals before we proceed with vertex-face accumulation
+// 3 - normalize accumulated normals and don't forget about duplicates
 
 #version 430
 
 layout (local_size_x = 1024, local_size_y = 1) in;
 
-uniform int		numberOfNormals;
+uniform int		duplicateStart;
+uniform int		duplicateCount;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TYPES AND DATA BUFFERS
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// output buffer
+// inout
 layout (std140, binding = 2) buffer OutputNormals
 {
 	vec4	normals[];
 } outputNormals;
 
+layout (std430, binding = 3) buffer Duplicates
+{
+	int		indices[];
+} duplicates;
 
 ////////////////////////////////////////////////////////
 //
@@ -52,8 +57,11 @@ void main()
 	uint flattened_id = get_invocation();
 	
 	// ?! skip unused part of the array
-	if (flattened_id >= numberOfNormals)
+	if (flattened_id >= duplicateCount)
 		return;
-	
-	outputNormals.normals[flattened_id] = vec4(0.0, 0.0, 0.0, 0.0);
+
+	int id = duplicates.indices[flattened_id];
+	vec4 nor = outputNormals.normals[id];
+
+	outputNormals.normals[duplicateStart + flattened_id] = mix(nor, outputNormals.normals[duplicateStart + flattened_id], 0.5);
 }
