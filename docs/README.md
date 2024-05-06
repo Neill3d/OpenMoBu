@@ -81,7 +81,7 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  A solver to recalculate mesh normals on fly during rendering. That helps to better visualize deformations from blendshape activation or by skinned skeleton tranform.
 
-[Read More...](Plugins/calculateNormalsSolver.md)
+[Read More...](Plugins/solverCalculateNormals.md)
 
 ## About the project
 

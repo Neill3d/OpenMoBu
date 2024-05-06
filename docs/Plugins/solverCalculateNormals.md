@@ -1,0 +1,25 @@
+# Solver Auto Calculate Normals
+
+ MotionBuilder loads model with vertex normal information used for lighting. The quality issue comes when you deform such mesh with a blendshape or skin binding. The MotionBuilder deforms only vertex position, but not normals. Because of that a deformation that comes from blendshapes or skinning, will not be reflected well on a shape lighting. The solver helps to recalculate normals on fly and improve the lighting experience on a deformed meshes.
+
+![assets](https://github.com/Neill3d/OpenMoBu/blob/master/Documentation/Images/solver_normals.png)
+
+ The solver does an auto normals recalculation for connected models.
+ It takes a model tesselated mesh which is stored on gpu vertex buffers, then run compute shaders to recalculate and replace normals data. It doesn't take in a count any smoothing group or hard edges threshold information and that's why it could not be a good fit for some models. If your model has a nice uniform mesh with soft normals, that should work fine.
+
+### How To Use
+
+- Locate a solver in the assets browser in solvers category
+![assets](https://github.com/Neill3d/OpenMoBu/blob/master/Documentation/Images/solver_normals_assets.png)
+- Add solver into the scene
+- Assign models to the solver by using a model context menu or solver Models property list.
+![assets](https://github.com/Neill3d/OpenMoBu/blob/master/Documentation/Images/solver_normals_props.png)
+
+### Test Scenes
+
+[FBX Scene with Deformable mesh and the solver](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/solver_CalculateNormals.fbx)
+
+### Videos
+
+[first release](https://youtu.be/QYUpd1u6O_o?si=WzmfQbCdII8WR1oB)
+[first release WIP](https://youtu.be/YFLuMV-uGR8?si=pcvfAaf7Vm51x6vB)
