@@ -21,5 +21,5 @@
 
 ### Videos
 
-[first release](https://youtu.be/QYUpd1u6O_o?si=WzmfQbCdII8WR1oB)
-[first release WIP](https://youtu.be/YFLuMV-uGR8?si=pcvfAaf7Vm51x6vB)
+- [first release](https://youtu.be/QYUpd1u6O_o?si=WzmfQbCdII8WR1oB)
+- [first release WIP](https://youtu.be/YFLuMV-uGR8?si=pcvfAaf7Vm51x6vB)
