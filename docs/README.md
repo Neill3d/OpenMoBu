@@ -79,7 +79,7 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 ### Calculate Normals Solver
 
- A solver to recalculate mesh normals on fly during rendering. That helps to better visualize deformations from blendshape activation or by skinned skeleton tranform.
+ A solver to recalculate mesh normals on fly during rendering. That helps to better visualize deformations from blendshape activation or by skinned skeleton transform.
 
 [Read More...](Plugins/solverCalculateNormals.md)
 
