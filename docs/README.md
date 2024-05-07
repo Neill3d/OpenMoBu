@@ -4,7 +4,7 @@ Collection of scripts and plugins for Autodesk MotionBuilder
 
 ## Introduction Videos
 
-Stream Video Part 1 - https://www.youtube.com/live/sgzunIbNcp4?si=kTXzdfnZ3FnkiIdv
+[Stream Video Part 1](https://www.youtube.com/live/sgzunIbNcp4?si=kTXzdfnZ3FnkiIdv)
 
 ## Pages
 
