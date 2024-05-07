@@ -7,6 +7,8 @@ Rigging for correction joints
 
 ![PoseReaderBox](relationBox_PoseReader.jpg)
 
+Category - OpenMobu
+
  A relation constraint box based on Comet's PoseReader plugin for Autodesk Maya.
 The idea is to calculate the activation of factor when a given transform rotatin is inside a given cone limits.
 
@@ -23,6 +25,8 @@ extract transform and blend from stored poses
 
 ![PoseTransformBox](box_poseTransform.jpg)
 
+Category - OpenMobu
+
 [Sample scene - relationBox_PoseTransform.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_PoseTransform.fbx)
 
 ## Look Rotation Box
@@ -30,6 +34,8 @@ extract transform and blend from stored poses
 calculate a rotation to look at a given target point
 
 ![LookRotationBox](relationBox_LookRotation.jpg)
+
+Category - OpenMobu
 
 [Sample scene - relationBox_LookRotation.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_LookRotation.fbx)
 
@@ -39,11 +45,26 @@ calculate an intersection point between ray and a mesh
 
 ![RayIntersectBox](relationBox_RayIntersect.jpg)
 
+Category - OpenMobu
+
 [Sample scene - relationBox_RayIntersect.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_RayIntersect.fbx)
 
 ## Quaternion math boxes
 
 ![QuaternionBoxes](relationBox_quaternionMath.jpg)
+
+Boxes Category - Quaternion
+
+List of boxes:
+- Axis Rotation
+- Euler To Quaternion
+- Interpolate
+- Invert
+- Look Rotation
+- Mult
+- Normalize
+- Quaternion To Euler
+- RotateBy
 
 [Sample scene - relationBox_QuaternionMath.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_QuaternionMath.fbx)
 
@@ -55,6 +76,12 @@ Interpole input between n-dimentional targets
 
 ![RBFBox](relationBox_RBF.jpg)
 
+Category - OpenMobu
+
+Boxes:
+- RBFVector
+- RBFVector 4
+
 [Sample scene - relationBox_RBF.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_RBF.fbx)
 
 
@@ -63,6 +90,8 @@ Interpole input between n-dimentional targets
 Convert Euler Rotation into Sphere Coords. In that case we could avoid gimbal lock effect on rotation and do a relation based on a polar coords on a sphere surface. Could be a nice suit for rigging correction joints.
 
 ![SphereCoordsBox](relationBox_sphereCoords.jpg)
+
+Category - OpenMobu
 
 [Sample scene - relationBox_SphereCoords.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_SphereCoords.fbx)
 
