@@ -12,13 +12,13 @@
 //--- Registration defines
 #define BOXRBF3__CLASS		BOXRBF3__CLASSNAME
 #define BOXRBF3__NAME		BOXRBF3__CLASSSTR
-#define	BOXRBF3__LOCATION	"Neill3d"
+#define	BOXRBF3__LOCATION	"OpenMobu"
 #define BOXRBF3__LABEL		"RBF Vector"
 #define	BOXRBF3__DESC		"RBF Vector Interpolator"
 
 #define BOXRBF4__CLASS		BOXRBF4__CLASSNAME
 #define BOXRBF4__NAME		BOXRBF4__CLASSSTR
-#define	BOXRBF4__LOCATION	"Neill3d"
+#define	BOXRBF4__LOCATION	"OpenMobu"
 #define BOXRBF4__LABEL		"RBF Vector4"
 #define	BOXRBF4__DESC		"RBF Vector4 Interpolator"
 

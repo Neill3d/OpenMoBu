@@ -18,13 +18,13 @@
 //--- Registration defines
 #define BOXRAYINTERSECT__CLASS			BOXRAYINTERSECT__CLASSNAME
 #define BOXRAYINTERSECT__NAME			BOXRAYINTERSECT__CLASSSTR
-#define	BOXRAYINTERSECT__LOCATION		"Neill3d"
-#define BOXRAYINTERSECT__LABEL			"Ray Intersection Beta"
+#define	BOXRAYINTERSECT__LOCATION		"OpenMobu"
+#define BOXRAYINTERSECT__LABEL			"Ray Intersection"
 #define	BOXRAYINTERSECT__DESC			"Intersect mesh with a given ray and return u,v coords"
 
 #define BOXSPHERECOORDS__CLASS			BOXSPHERECOORDS__CLASSNAME
 #define BOXSPHERECOORDS__NAME			BOXSPHERECOORDS__CLASSSTR
-#define	BOXSPHERECOORDS__LOCATION		"Neill3d"
+#define	BOXSPHERECOORDS__LOCATION		"OpenMobu"
 #define BOXSPHERECOORDS__LABEL			"Sphere Coords"
 #define	BOXSPHERECOORDS__DESC			"Convert given direction into sphere coords"
 

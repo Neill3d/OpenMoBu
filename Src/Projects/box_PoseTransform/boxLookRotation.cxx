@@ -20,7 +20,7 @@
 
 #define BOXLOOK__CLASS			BOXLOOK__CLASSNAME
 #define BOXLOOK__NAME			BOXLOOK__CLASSSTR
-#define	BOXLOOK__LOCATION		"Neill3d"
+#define	BOXLOOK__LOCATION		"OpenMobu"
 #define BOXLOOK__LABEL			"Look Rotation"
 #define	BOXLOOK__DESC			"Compute rotation to aim at the target"
 

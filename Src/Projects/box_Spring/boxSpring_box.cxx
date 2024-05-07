@@ -20,7 +20,7 @@
 //--- Registration defines
 #define BOXSPRING__CLASS		BOXSPRING__CLASSNAME
 #define BOXSPRING__NAME			BOXSPRING__CLASSSTR
-#define	BOXSPRING__LOCATION		"Neill3d"
+#define	BOXSPRING__LOCATION		"OpenMobu"
 #define BOXSPRING__LABEL		"Spring"
 #define	BOXSPRING__DESC			"spring controller"
 

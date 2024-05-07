@@ -23,7 +23,7 @@
 //--- Registration defines
 #define ORBOXTEMPLATE__CLASS		ORBOXTEMPLATE__CLASSNAME
 #define ORBOXTEMPLATE__NAME			ORBOXTEMPLATE__CLASSSTR
-#define	ORBOXTEMPLATE__LOCATION		"Neill3d"
+#define	ORBOXTEMPLATE__LOCATION		"OpenMobu"
 #define ORBOXTEMPLATE__LABEL		"Comet's PoseReader"
 #define	ORBOXTEMPLATE__DESC			"Pose Space Angle Reader MotionBuilder Plugin"
 
