@@ -5,12 +5,12 @@
 
 Rigging for correction joints
 
-![RelationBox](relationBox_Posereader.jpg)
+![PoseReaderBox](relationBox_PoseReader.jpg)
 
  A relation constraint box based on Comet's PoseReader plugin for Autodesk Maya.
 The idea is to calculate the activation of factor when a given transform rotatin is inside a given cone limits.
 
-Could be very useful for rigging, when you want to operate with correction joints which activation is connected to a joint certain orientation. For instance, correct the should raise up level when arm is looking up.
+Could be very useful for rigging, when you want to operate with correction joints where activation is connected to a joint certain orientation. For instance, to correct a shoulder raise up level when arm is looking up.
 
 There is a test scene to demonstrate a rig setup on the left shoulder of a skeleton.
 
@@ -23,23 +23,40 @@ extract transform and blend from stored poses
 
 ![PoseTransformBox](box_poseTransform.jpg)
 
+[Sample scene - relationBox_PoseTransform.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_PoseTransform.fbx)
+
 ## Look Rotation Box
 
 calculate a rotation to look at a given target point
 
 ![LookRotationBox](relationBox_LookRotation.jpg)
 
+[Sample scene - relationBox_LookRotation.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_LookRotation.fbx)
+
 ## RayIntersect Box 
 
 calculate an intersection point between ray and a mesh
 
-## Quaterniona math boxes
+![RayIntersectBox](relationBox_RayIntersect.jpg)
 
-![PoseTransformBox](relationBox_quaternionMath.jpg)
+[Sample scene - relationBox_RayIntersect.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_RayIntersect.fbx)
+
+## Quaternion math boxes
+
+![QuaternionBoxes](relationBox_quaternionMath.jpg)
+
+[Sample scene - relationBox_QuaternionMath.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_QuaternionMath.fbx)
 
 ## RBF Box 
 
 Radial Basis Function node, rigging for correction joints
+
+Interpole input between n-dimentional targets
+
+![RBFBox](relationBox_RBF.jpg)
+
+[Sample scene - relationBox_RBF.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_RBF.fbx)
+
 
 ## Sphere Coords Box
 
@@ -47,18 +64,24 @@ Convert Euler Rotation into Sphere Coords. In that case we could avoid gimbal lo
 
 ![SphereCoordsBox](relationBox_sphereCoords.jpg)
 
+[Sample scene - relationBox_SphereCoords.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_SphereCoords.fbx)
+
+[Sample scene - relationBox_SphereCoords_ExtractRotationXZ.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_SphereCoords_ExtractRotationXZ.fbx)
+
 ## Spring Box
 
 spring dynamics, secondary motion
 
 A box for relation constraint
-![This is an image](/springbox.jpg)
+![This is an image](springbox.jpg)
   
 Spring box math based on fundamental formule F = -kx
 
 [A short demo video on Youtube](http://youtu.be/rAToQEmg_LY)
   
-[Sample scene - test_springBox.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/test_springBox.fbx)
+[Sample scene - relationBox_Spring.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_Spring.fbx)
+
+[Sample scene - relationBox_SpringAndCamera.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_SpringAndCamera.fbx)
   
 | Parameter | Description | Default Value |
 | ------ | ------ | ------ |
