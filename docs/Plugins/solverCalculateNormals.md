@@ -5,7 +5,11 @@
 ![compareWithSolverUse](solver_normals.jpg)
 
  The solver does an auto normals recalculation for connected models.
- It takes a model tesselated mesh which is stored on gpu vertex buffers, then run compute shaders to recalculate and replace normals data. It doesn't take in a count any smoothing group or hard edges threshold information and that's why it could not be a good fit for some models. If your model has a nice uniform mesh with soft normals, that should work fine.
+ It takes a model tesselated mesh which is stored on gpu vertex buffers, then run compute shaders to recalculate and replace normals data. 
+
+ Calculations are fully on gpu, not complex for modern cards, so the solver should not impact your scene performance in general.
+ 
+ It doesn't take in a count any smoothing group or hard edges threshold information and that's why it could be not a good fit for some models. If your model has a nice uniform mesh with soft normals, that should work fine.
 
 ### How To Use
 
