@@ -20,11 +20,16 @@ Collection of scripts and plugins for Autodesk MotionBuilder
 
  Those plugins are extended functionality of relation constraint which is a form of visual programming with node system and connections between nodes. The plugins add new nodes to the constraint.
 
-- [Comet's PoseReader Box](Plugins/PoseReader.md)
-- [PoseTransform Box](Plugins/PoseTransformBox.md)
-- [RayIntersect Box](Plugins/RayIntersectBox.md)
-- [RBF Box](Plugins/RBFBox.md)
-- [Spring Box](Plugins/SpringBox.md)
+- Comet's PoseReader Box (rigging for correction joints)
+- Look Rotation Box (aim constraint calculations in a form of relation constraint box)
+- PoseTransform Box (extract transform and blend from stored poses)
+- RayIntersect Box (calculate an intersection point between ray and a mesh) 
+- RBF Box (Radial Basis Function node, rigging for correction joints)
+- Sphere Coords Box (convert an Euler rotation into sphere coords)
+- Spring Box (spring dynamics, secondary motion)
+- Quaternion Math boxes
+
+[Read More...](Plugins/relationBoxes.md)
 
 ## Constraint Plugins
 
