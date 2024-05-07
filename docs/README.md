@@ -85,6 +85,8 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 ## About the project
 
-Sergei <Neill3d> Solokhin
+Sergei (Neill3d) Solokhin
 
-Donate for the project - https://ko-fi.com/neill3d
+Special thanks to Les Androids Associes.
+
+[Support the project](https://ko-fi.com/neill3d)
