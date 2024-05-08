@@ -18,7 +18,8 @@ For example, to control a scale of a box by curve path length.
 
 ### Test Scenes
 
-[Curve Path Length Example](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/DrivenProperty_CurvePathLength.fbx)
+- [Camera Driven Property Example](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/constraint_DrivenProperty_Camera.fbx)
+- [Curve Path Length Example](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/DrivenProperty_CurvePathLength.fbx)
 
 ### Videos
 
