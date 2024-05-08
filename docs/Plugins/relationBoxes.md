@@ -18,6 +18,8 @@ There is a test scene to demonstrate a rig setup on the left shoulder of a skele
 
 [Example scene](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/relationBox_PoseReader.fbx)
 
+[Video on Youtube](https://youtu.be/kSSu6DMcXNI?si=dn8zvbA9cIwPQVcN)
+
 
 ## PoseTransform Box 
 

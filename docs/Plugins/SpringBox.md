@@ -5,7 +5,9 @@ A box for relation constraint
 Spring box math based on fundamental formule F = -kx
 
 [A short demo video on Youtube](http://youtu.be/rAToQEmg_LY)
-  
+
+[Video how to create a smooth follow camera](https://youtu.be/pmAZOUQBYms?si=OQ71FkckdX_BL8kn)
+
 [Sample scene - test_springBox.fbx](https://github.com/Neill3d/OpenMoBu/blob/master/MB_Scenes/test_springBox.fbx)
   
 | Parameter | Description | Default Value |
