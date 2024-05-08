@@ -39,7 +39,7 @@ A set of plugins that constains source object / objects with a destination objec
 
 - [Attachment Constraint](Plugins/attachmentConstraint.md)
 - [Driven Property Constraint](Plugins/drivenPropertyConstraint.md)
-- [Twist Extraction Constraint](Plugins/twistExtractionConstraint.md)
+- [Twist Extraction Constraint](Plugins/constraint_twistExtraction.md)
 
 ## Devices
 
@@ -54,7 +54,7 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  A plugin which hook the user input operations with the viewport in order to perform some action in the scene like transforming objects by dragging manipulator handle with the mouse input
 
-[Lock Camera Manipulator](lockCameraManipulator.md)
+[Lock Camera Manipulator](Plugins/manipulator_lockCamera.md)
 
 ## Misc
 
@@ -64,7 +64,7 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  The custom model that helps to calculate a unit score of a volume coverage for the optical system. In order to run the solver, you have to immitate the capturing space by placing cameras the same way how you are going to place them in the real room with a correct defined FOV and aspect ratio.
 
-[Read More...](opticalVolumeCalculator.md)
+[Read More...](Plugins/opticalVolumeCalculator.md)
 
 ## Graphics
 
@@ -80,7 +80,7 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  This is an advance version of Dynamic Lighting Shader with features like vertex displacement, specular map, Matcap shading, etc.
 
-[Read More...](Plugins/superDynamicLightingShader.md)
+[Read More...](Plugins/shader_superDynamicLighting.md)
 
 ### Calculate Normals Solver
 
