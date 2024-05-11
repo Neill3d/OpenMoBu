@@ -16,6 +16,7 @@ add_subdirectory( constraint_twistextraction )
 # devices
 
 add_subdirectory( device_faceCap )
+add_subdirectory( device_projectTango )
 
 # misc (objects, tools)
 

@@ -17,6 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //#include "MemPool.h"
 
 #include <winsock2.h>
+#include <Ws2tcpip.h>
 
 #pragma warning(push)
 #pragma warning(disable:4265)
@@ -80,21 +81,29 @@ bool Connect(int sd, const char *address, unsigned int port)
 {
 	struct sockaddr_in server;
 
-	if (inet_addr(address) == -1)
+	unsigned long sAddr = 0;
+	InetPton(AF_INET, address, &sAddr);
+
+	if (sAddr > 0)
 	{
-		struct hostent *he;
-		struct in_addr **addr_list;
-		if ((he = gethostbyname(address)) == NULL)
-		{
-			printf("gethostbyname - failed to resolve hostname\n");
-			return false;
+		struct addrinfo hints, *res;
+
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = AF_INET;
+
+		int err;
+		if ((err = getaddrinfo(address, nullptr, &hints, &res)) != 0) {
+			printf("error %d\n", err);
+			return 1;
 		}
-		addr_list = (struct in_addr **) he->h_addr_list;
-		for (int i = 0; addr_list[i] != NULL; i++)
-		{
-			server.sin_addr = *addr_list[i];
-			break;
-		}
+
+		struct in_addr addr;
+		addr.S_un = ((struct sockaddr_in*)(res->ai_addr))->sin_addr.S_un;
+
+		server.sin_addr = addr;
+
+		freeaddrinfo(res);
 	}
 	else
 	{
@@ -1020,8 +1029,7 @@ bool Device_ProjectTango_Hardware::SendCameras(double timestamp, const std::vect
 	// memory pool, take place for a new packets
 
 	const unsigned numberOfCameras = (unsigned) infoVector.size();	// 1k for each tile
-	const unsigned numberOfPackets = numberOfCameras;
-
+	
 	unsigned char *ptr = nullptr; 
 
 	if (nullptr != ptr)
@@ -1054,8 +1062,7 @@ bool Device_ProjectTango_Hardware::SendTakes(double timestamp, const std::vector
 	// memory pool, take place for a new packets
 
 	const unsigned numberOfTakes = (unsigned) takeVector.size();	// 1k for each tile
-	const unsigned numberOfPackets = numberOfTakes;
-
+	
 	unsigned char *ptr = nullptr; 
 
 	if (nullptr != ptr)
