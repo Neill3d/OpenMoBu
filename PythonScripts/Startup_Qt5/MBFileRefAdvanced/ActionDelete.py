@@ -26,7 +26,7 @@ if len(lRefName) > 0:
     
     for ns in lScene.Namespaces:
         if isinstance(ns, FBFileReference) and lRefName == ns.LongName:
-            if False == os.path.isfile(ns.ReferenceFilePath):
+            if not os.path.isfile(ns.ReferenceFilePath):
                 FBMessageBox('Reference A File', 'Referenced file is not found!', 'Ok')
             else:            
                 lNSObj = ns
@@ -44,7 +44,7 @@ if len(lRefName) > 0:
                 if namespace.ReferenceFilePath == filename:
                     anyInstances = True
     
-    if False == anyInstances:
+    if not anyInstances:
         misc.DeleteShadersGraph(lNSObj, filename)
         # let's find any Description Holder connection
         misc.DescriptionDelete(lNSObj)    

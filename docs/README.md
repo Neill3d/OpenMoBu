@@ -70,6 +70,16 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  Shading, fx, geometry preparation for rendering
 
+## References Manager and FBX Extension
+
+ This is a set of 2 plugins, one command line console application and python scripts in order to stabilize and extend the functionality of referenced models (support for shaders) in motionbuilder scene.
+
+ Reference Manager depends on shadingGraph cmd application which extracts shaders graph xml from fbx files.
+
+ FBX Extension is a plugin that hooks the fbx file import on motionbuilder scene loading and fixes a bug with locked reference model on missing reference file.
+
+[Read More...](Plugins/ReferencesManager.md)
+
 ### Post Processing Filters
 
  A special user object, that helps to add post process filters on top of your camera view.
