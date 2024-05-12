@@ -13,122 +13,64 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "mbextension.h"
 
-//#include "References_Exchange.h"
 #include "tinyxml.h"
 
 #include <vector>
-#include <Windows.h>
+#include <filesystem>
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
-static FbxManager* gFbxManager = NULL;
+static FbxManager* gFbxManager = nullptr;
 static bool        gProcessedOnce = false;
 
-bool FileExists(LPCTSTR szPath);
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Custom functions
-
-bool FileExists(LPCTSTR szPath)
+class MyPlugin : public FbxPlugin
 {
-	DWORD dwAttrib = GetFileAttributes(szPath);
-
-	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Custom Material declaration
-
-#define MY_CUSTOM_SHADER_CLASS_NAME		"MyCustomShaderClass"
-#define MY_CUSTOM_SHADER_CLASS_SUBTYPE	"MyCustomShaderClass" // need to match the SURFACE_CLASS_NAME so the class can be recognized
-
-// by the FBX reader.
-
-/** Define a custom material object. 
-*   For the purpose of this sample, this class will simply contains a Diffuse color property.
-*/
-
-//
-class MyCustomShader : public FbxGenericNode
-{
-	FBXSDK_OBJECT_DECLARE(MyCustomShader, FbxGenericNode);
-
+	FBXSDK_PLUGIN_DECLARE(MyPlugin); //This macro is mandatory for any plug-in definition
+	
 protected:
-
-	void ConstructProperties(bool pForceSet)
-	{
-		ParentClass::ConstructProperties(pForceSet);
-		Intensity.StaticInit(this, "Intensity", FbxDoubleDT, 100.0, pForceSet);
-
-		FbxStringList	list;
-		Links.StaticInit(this, "Links", FbxStringListDT, list, pForceSet, fbxsdk::FbxPropertyFlags::eUserDefined);
+	explicit MyPlugin(const FbxPluginDef& pDefinition, FbxModule pModuleHandle) : FbxPlugin(pDefinition, pModuleHandle)
+	{	
 	}
-
-public:
-	FbxPropertyT<FbxDouble>			Intensity;
-	FbxPropertyT<FbxStringList>		Links;
+	
+	//Abstract functions that *must* be implemented
+	virtual bool SpecificInitialize()
+	{
+		//For example, here we could register as many new I/O readers/writers as we would like, or classes, etc.
+		return true;
+	}
+	
+	virtual bool SpecificTerminate()
+	{
+		//Here we would have to unregister whatever we registered to the FBX SDK
+		return true;
+	}
 };
 
-FBXSDK_OBJECT_IMPLEMENT(MyCustomShader);
-
-/** Plugin declaration and initialization methods
-*/
-class MBCustomSurfacePlugin : public FbxPlugin
-{
-    FBXSDK_PLUGIN_DECLARE(MBCustomSurfacePlugin);
-
-protected:
-    explicit MBCustomSurfacePlugin(const FbxPluginDef& pDefinition, FbxModule pFbxModule) : FbxPlugin(pDefinition, pFbxModule)
-    {
-    }
-
-    // Implement kfbxmodules::FbxPlugin
-    virtual bool SpecificInitialize()
-    {
-        gFbxManager = GetData().mSDKManager;
-
-        // Register MyCustomSurfacer class with the plug-in's manager
-        
-		//gFbxManager->RegisterFbxClass(MY_CUSTOM_SHADER_CLASS_NAME, FBX_TYPE(MyCustomShader), FBX_TYPE(FbxGenericNode), FIELD_OBJECT_DEFINITION_OBJECT_TYPE_GENERIC_NODE, MY_CUSTOM_SHADER_CLASS_SUBTYPE);
-        return true;
-    }
-
-    virtual bool SpecificTerminate()
-    {
-        // Unregister MyCustomSurface class with the plug-in's manager
-        
-		//gFbxManager->UnregisterFbxClass(FBX_TYPE(MyCustomShader));
-
-        return true;
-    }
-};
-
-FBXSDK_PLUGIN_IMPLEMENT(MBCustomSurfacePlugin);
+FBXSDK_PLUGIN_IMPLEMENT(MyPlugin); //This macro is mandatory for any plug-in implementation
 
 /** FBX Interface
 */
 extern "C"
 {
-    // The DLL is owner of the plug-in
-    static MBCustomSurfacePlugin* sPlugin = NULL;
+	static MyPlugin* sMyPluginInstance = nullptr; //The module is owner of the plug-in
 
     // This function will be called when an application will request the plug-in
     EXPORT_DLL void FBXPluginRegistration(FbxPluginContainer& pContainer, FbxModule pFbxModule)
     {
-        if( sPlugin == NULL )
-        {
-            // Create the plug-in definition which contains the information about the plug-in
-            FbxPluginDef sPluginDef;
-            sPluginDef.mName = "ReferencesShadersPlugin";
-            sPluginDef.mVersion = "1.0";
-
-            // Create an instance of the plug-in.  The DLL has the ownership of the plug-in
-            sPlugin = MBCustomSurfacePlugin::Create(sPluginDef, pFbxModule);
-
-            // Register the plug-in
-            pContainer.Register(*sPlugin);
-        }
+		if (sMyPluginInstance == nullptr)
+		{
+            //Create the plug-in definition which contains the information about the plug-in
+			FbxPluginDef sPluginDef;
+			sPluginDef.mName = "ReferencesFix";
+			sPluginDef.mVersion = "1.0";
+			
+			//Create an instance of the plug-in
+			sMyPluginInstance = MyPlugin::Create(sPluginDef, pFbxModule);
+			
+			//Register the plug-in with the FBX SDK
+			pContainer.Register(*sMyPluginInstance);
+		}
     }
 
     FBX_MB_EXTENSION_DECLARE();
@@ -215,14 +157,11 @@ bool MBExt_ImportProcess( FBComponent*& pOutputObject, FbxObject* pInputFbxObjec
 
 void MBExt_ImportTranslated( FbxObject* pFbxObject, FBComponent* pFBComponent )
 {
-    // In this example, this doesn't interest us. A typical usage would be to
-    // record this information to able to re-make connections and such.
-
-	// store temproary imported comps
+    // update IsLocked and IsLoaded flags for reference file object
 	
 	if (FBIS(pFBComponent, FBFileReference) && nullptr != pFbxObject)
 	{
-		FBFileReference *pRef = (FBFileReference*)pFBComponent;
+		FBFileReference *pRef = FBCast<FBFileReference>(pFBComponent);
 
 		FBProperty *prop = pRef->PropertyList.Find("TempIsLoaded");
 		if (nullptr == prop)
@@ -234,20 +173,18 @@ void MBExt_ImportTranslated( FbxObject* pFbxObject, FBComponent* pFBComponent )
 		//pRef->ReferenceFilePath.SetPropertyValue("D:\\Temp\\temp3.fbx");
 		pRef->IsLoaded.SetPropertyValue(false);
 		
-		//
-		FbxSceneReference* pref = FbxCast<FbxSceneReference>(pFbxObject);
-		if (nullptr != pref)
+		
+		if (FbxSceneReference* pref = FbxCast<FbxSceneReference>(pFbxObject))
 		{
+			const FbxString path = pref->ReferenceFilePath.Get();
+			const bool isLoaded = pref->IsLoaded.Get();
 
-			FbxString path = pref->ReferenceFilePath.Get();
-
-			bool isLoaded = pref->IsLoaded.Get();
 			if (nullptr != prop)
 			{
 				int value = 0;
 				if (isLoaded)
 				{
-					if (true == FileExists(path.Buffer()))
+					if (std::filesystem::exists(path.Buffer()))
 					{
 						value = 1;
 					}

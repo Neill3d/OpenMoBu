@@ -20,6 +20,7 @@ add_subdirectory( device_projectTango )
 
 # misc (objects, tools)
 
+add_subdirectory( FBXExt_ReferencesFix )
 add_subdirectory( misc_VolumeCalculator)
 
 # graphics
