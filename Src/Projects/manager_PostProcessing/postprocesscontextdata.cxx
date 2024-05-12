@@ -423,7 +423,9 @@ void PostProcessContextData::PreRenderFirstEntry()
             continue;
 
         //
-        if (kFBFrameSizeWindow == pCamera->FrameSizeMode)
+        FBCameraFrameSizeMode cameraFrameSizeMode;
+        pCamera->FrameSizeMode.GetData(&cameraFrameSizeMode, sizeof(FBCameraFrameSizeMode));
+        if (kFBFrameSizeWindow == cameraFrameSizeMode)
         {
             w += x;
             h += y;
@@ -845,9 +847,12 @@ void PostProcessContextData::DrawHUDRect(FBHUDRectElement *pRect, int panex, int
         hei = 0.01 * hei * paneh;
     }
 
-    FBHUDElementHAlignment hAlign = pRect->Justification;
-    FBHUDElementHAlignment hDock = pRect->HorizontalDock;
-    FBHUDElementVAlignment vDock = pRect->VerticalDock;
+    FBHUDElementHAlignment hAlign;
+    pRect->Justification.GetData(&hAlign, sizeof(FBHUDElementHAlignment));
+    FBHUDElementHAlignment hDock;
+    pRect->HorizontalDock.GetData(&hDock, sizeof(FBHUDElementHAlignment));
+    FBHUDElementVAlignment vDock;
+    pRect->VerticalDock.GetData(&vDock, sizeof(FBHUDElementVAlignment));
 
     switch (hAlign)
     {
@@ -939,9 +944,12 @@ void PostProcessContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
         hei = 0.01 * hei * paneh;
     }
 
-    FBHUDElementHAlignment hAlign = pRect->Justification;
-    FBHUDElementHAlignment hDock = pRect->HorizontalDock;
-    FBHUDElementVAlignment vDock = pRect->VerticalDock;
+    FBHUDElementHAlignment hAlign;
+    pRect->Justification.GetData(&hAlign, sizeof(FBHUDElementHAlignment));
+    FBHUDElementHAlignment hDock;
+    pRect->HorizontalDock.GetData(&hDock, sizeof(FBHUDElementHAlignment));
+    FBHUDElementVAlignment vDock;
+    pRect->VerticalDock.GetData(&vDock, sizeof(FBHUDElementVAlignment));
 
     switch (hAlign)
     {

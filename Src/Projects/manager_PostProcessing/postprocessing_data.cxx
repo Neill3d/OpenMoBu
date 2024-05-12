@@ -640,7 +640,8 @@ bool PostPersistentData::FBCreate()
 	OutputHeight.ModifyPropertyFlag(kFBPropertyFlagReadOnly, true);
 	
 	OutputUseCompression = true;
-	OutputCompression = eImageCompressionDefault;
+	const EImageCompression defaultCompression = eImageCompressionDefault;
+	OutputCompression.SetData((void*)& defaultCompression);
 
 	OutputUncompressSize = 0;
 	OutputUncompressSize.ModifyPropertyFlag(kFBPropertyFlagReadOnly, true);
@@ -788,7 +789,8 @@ void PostPersistentData::DefaultValues()
 	LensFlare = false;
 
 	//Louis
-	FlareType = flare1;
+	EFlareType defaultFlareType = flare1;
+	FlareType.SetData(&defaultFlareType);
 	FlareSeed = 30.0;
 
 	FlareUsePlayTime = false;
@@ -855,7 +857,8 @@ void PostPersistentData::DefaultValues()
 	FocusObject.SetFilter(FBModel::GetInternalClassId());
 
 	FastPreview = true;
-	PreviewQuality = eBlurQualityPreview2;
+	EBlurQuality defaultBlurQuality = eBlurQualityPreview2;
+	PreviewQuality.SetData(&defaultBlurQuality);
 	PreviewBlurAmount = 100.0;
 
 	Samples = 3;
@@ -1005,7 +1008,7 @@ void PostPersistentData::DoReloadShaders()
 
 void PostPersistentData::DoDebugFarDist()
 {
-#if(PRODUCT_VERSION>2024)
+#if(PRODUCT_VERSION >= 2024)
 	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
 	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
 #else
@@ -1363,7 +1366,7 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 
 void PostPersistentData::ComputePointInFront(FBVector3d &v)
 {
-#if(PRODUCT_VERSION>2024)
+#if(PRODUCT_VERSION >= 2024)
 	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
 	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
 #else
@@ -1411,7 +1414,8 @@ void PostPersistentData::DoResetDOF()
 	FocusPoint = FBVector2d(50.0, 50.0);
 
 	FastPreview = true;
-	PreviewQuality = eBlurQualityPreview2;
+	EBlurQuality defaultBlurQuality = eBlurQualityPreview2;
+	PreviewQuality.SetData(&defaultBlurQuality);
 	PreviewBlurAmount = 100.0;
 
 	Samples = 3;

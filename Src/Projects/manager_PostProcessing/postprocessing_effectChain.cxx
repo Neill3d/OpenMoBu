@@ -740,10 +740,11 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBC
 		_focalRange = pCamera->FocusAngle;
 
 		FBModel *pInterest = nullptr;
-
-		if (kFBFocusDistanceCameraInterest == pCamera->FocusDistanceSource)
+		FBCameraFocusDistanceSource cameraFocusDistanceSource;
+		pCamera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource));
+		if (kFBFocusDistanceCameraInterest == cameraFocusDistanceSource)
 			pInterest = pCamera->Interest;
-		else if (kFBFocusDistanceModel == pCamera->FocusDistanceSource)
+		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)
 			pInterest = pCamera->FocusModel;
 
 		if (nullptr != pInterest)
@@ -1591,9 +1592,11 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 		// prep data
 
-		float znear = (float)mLastCamera->NearPlaneDistance;
-		float zfar = (float)mLastCamera->FarPlaneDistance;
-		bool perspective = (mLastCamera->Type == FBCameraType::kFBCameraTypePerspective);
+		float znear = static_cast<float>(mLastCamera->NearPlaneDistance);
+		float zfar = static_cast<float>(mLastCamera->FarPlaneDistance);
+		FBCameraType cameraType;
+		mLastCamera->Type.GetData(&cameraType, sizeof(FBCameraType));
+		bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
 
 		float clipInfo[4];
 
@@ -1824,8 +1827,9 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 			if (mSettings->OutputUseCompression)
 			{
 				GLint compressionCode = 0;
-
-				if (true == buffers->PreviewOpenGLCompress(mSettings->OutputCompression, compressionCode))
+				EImageCompression imageCompression;
+				mSettings->OutputCompression.GetData(&imageCompression, sizeof(EImageCompression));
+				if (true == buffers->PreviewOpenGLCompress(imageCompression, compressionCode))
 				{
 					mSettings->SetPreviewTextureId(buffers->GetPreviewCompressedColor(), ratio, previewW, previewH,
 						static_cast<int32_t>(buffers->GetUnCompressedSize()), 

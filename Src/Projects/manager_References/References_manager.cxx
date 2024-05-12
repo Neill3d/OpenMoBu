@@ -352,12 +352,12 @@ void ReferencesManager::OnSceneChange(HISender pSender, HKEvent pEvent)
 
 	//
 
-	if (kFBSceneChangeRename == lEvent.Type && FBIS(lEvent.Component, FBFileReference))
+	if (kFBSceneChangeRename == lEvent.Type.AsInt() && FBIS(lEvent.Component, FBFileReference))
 	{
 		FBFileReference *pref = (FBFileReference*)(FBComponent*)lEvent.Component;
 		mOldName = pref->LongName;
 	}
-	else if (kFBSceneChangeRenamed == lEvent.Type && FBIS(lEvent.Component, FBFileReference))
+	else if (kFBSceneChangeRenamed == lEvent.Type.AsInt() && FBIS(lEvent.Component, FBFileReference))
 	{
 		FBFileReference *pref = (FBFileReference*)(FBComponent*)lEvent.Component;
 
@@ -369,7 +369,7 @@ void ReferencesManager::OnSceneChange(HISender pSender, HKEvent pEvent)
 			mApp.ExecuteScript(outPath);
 		}
 	} // kFBSceneChangeDetach 
-	else if (kFBSceneChangeDetach == lEvent.Type && FBIS(lEvent.ChildComponent, FBFileReference)
+	else if (kFBSceneChangeDetach == lEvent.Type.AsInt() && FBIS(lEvent.ChildComponent, FBFileReference)
 		&& FBIS(lEvent.Component, FBScene))
 	{
 		FBFileReference *pref = (FBFileReference*)(FBComponent*)lEvent.ChildComponent;
@@ -436,7 +436,7 @@ void ReferencesManager::OnPlugDataNotify(HISender pSender, HKEvent pEvent)
 
 		if (plug == &pref->IsLoaded && false == IsSkipPlugData())
 		{
-			if (kFBCandidate == lEvent.Action)
+			if (kFBCandidate == lEvent.Action.AsInt())
 			{
 				bool *newValue = (bool*)lEvent.GetData();
 				if (false == *newValue)
@@ -444,7 +444,7 @@ void ReferencesManager::OnPlugDataNotify(HISender pSender, HKEvent pEvent)
 					mVectorUnload.insert(pref);
 				}
 			}
-			else if (kFBCandidated == lEvent.Action)
+			else if (kFBCandidated == lEvent.Action.AsInt())
 			{
 				bool *newValue = (bool*)lEvent.GetData();
 				if (true == *newValue)
@@ -506,7 +506,7 @@ void ReferencesManager::OnFileRefChange(HISender pSender, HKEvent pEvent)
 {
 	FBEventFileChange	lEvent(pEvent);
 	
-	if (kFBFileMonitoring_FILEREFERENCE == lEvent.Type)
+	if (kFBFileMonitoring_FILEREFERENCE == lEvent.Type.AsInt())
 	{
 		FBString path(lEvent.Path);
 		

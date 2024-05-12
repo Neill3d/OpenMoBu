@@ -41,7 +41,7 @@ static void Volume_SwitchToCamera(HIObject pObject, bool value) {
 			FBCamera *pCamera = (FBCamera*) list.GetAt(0);
 			pCamera->ViewNearFarPlane = true;
 
-#if(PRODUCT_VERSION>2024)
+#if(PRODUCT_VERSION >= 2024)
 			const unsigned selectedPaneIndex = pScene->Renderer->GetSelectedPaneIndex();
 			pScene->Renderer->SetCameraInPane(pCamera, selectedPaneIndex);
 #else
@@ -64,37 +64,38 @@ static void Volume_SetPreset(HIObject object, kCECameraPresets pValue)
 		{
 			for (int i=0; i<model->Cameras.GetCount(); ++i)
 			{
-				FBCamera *pCamera = (FBCamera*) model->Cameras.GetAt(i);
-
+				FBCamera *pCamera = FBCast<FBCamera>(model->Cameras.GetAt(i));
+				FBCameraFrameSizeMode cameraFrameSizeMode;
+				pCamera->FrameSizeMode.GetData(&cameraFrameSizeMode, sizeof(FBCameraFrameSizeMode));
 				switch(pValue)
 				{
 				case kCECameraPreset_V100R2:
-					pCamera->FrameSizeMode = kFBFrameSizeFixedResolution;
+					cameraFrameSizeMode = kFBFrameSizeFixedResolution;
 					pCamera->ResolutionWidth = 640;
 					pCamera->ResolutionHeight = 680;
 					pCamera->PixelAspectRatio = 1.33;
 					break;
 				case kCECameraPreset_S250E:
-					pCamera->FrameSizeMode = kFBFrameSizeFixedResolution;
+					cameraFrameSizeMode = kFBFrameSizeFixedResolution;
 					pCamera->ResolutionWidth = 832;
 					pCamera->ResolutionHeight = 832;
 					pCamera->PixelAspectRatio = 1.0;
 					break;
 				case kCECameraPreset_Flex13:
-					pCamera->FrameSizeMode = kFBFrameSizeFixedResolution;
+					cameraFrameSizeMode = kFBFrameSizeFixedResolution;
 					pCamera->ResolutionWidth = 1280;
 					pCamera->ResolutionHeight = 1024;
 					pCamera->PixelAspectRatio = 1.25;
 					break;
 				case kCECameraPreset_Prime41:
-					pCamera->FrameSizeMode = kFBFrameSizeFixedResolution;
+					cameraFrameSizeMode = kFBFrameSizeFixedResolution;
 					pCamera->ResolutionWidth = 2048;
 					pCamera->ResolutionHeight = 2048;
 					pCamera->PixelAspectRatio = 1.0;
 					break;
 				}
 
-				
+				pCamera->FrameSizeMode.SetData(&cameraFrameSizeMode);
 			}
 		}
 		else
@@ -258,7 +259,7 @@ ModelVolumeCalculator::ModelVolumeCalculator( const char* pName, HIObject pObjec
  ************************************************/
 bool ModelVolumeCalculator::FBCreate()
 {
-	ShadingMode = kFBModelShadingTexture;
+	ShadingMode.SetInt(kFBModelShadingTexture);
 
 	return true;
 }

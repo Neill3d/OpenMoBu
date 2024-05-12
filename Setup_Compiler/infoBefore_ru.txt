@@ -4,17 +4,20 @@
  Скрипты и подключаемые модули для Autodesk MotionBuilder.
 
 Поддерживаемые версии
-- 2017, 2018, 2019-2020, 2022
+- 2017, 2018, 2019-2020, 2022, 2023, 2024, 2025
 
 Plugins
 * relation box - poseReader
 * relation box - ray Intersect
 * relation box - spring
 * relation box - RBF Interpolation
+* relation box - pose transform (starting from 2022)
+* relation box - quaternion math
 * device - project Tango
 * device - Connection with a FaceCap iPhone App
 * constraint - attachment
 * constraint - driven
+* constraint - twist rotation extraction
 * manipulator - view camera locker (starting from 2017)
 * manager - auto interpolation patch (starting from 2017)
 * manager - post processing (starting from 2017)

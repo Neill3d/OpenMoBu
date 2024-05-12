@@ -17,3 +17,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productvers
 # link libraries
 
 target_link_libraries(${PROJECT_NAME} PRIVATE fbxsdk MotionCodeLibrary)
+
+if (COPY_TO_PLUGINS)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}.exe
+    )
+endif()

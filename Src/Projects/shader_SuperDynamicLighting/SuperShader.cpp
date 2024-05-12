@@ -628,7 +628,7 @@ namespace Graphics {
 				double fogBegin = FBGlobalLight::TheOne().FogBegin;
 				double fogEnd = FBGlobalLight::TheOne().FogEnd;
 				double fogDensity = FBGlobalLight::TheOne().FogDensity;
-				FBFogMode mode = FBGlobalLight::TheOne().FogMode;
+				FBFogMode mode = (FBFogMode) FBGlobalLight::TheOne().FogMode.AsInt();
 
 				UploadFogInformation(fogColor, fogEnable, fogBegin, fogEnd, fogDensity, mode);
 
@@ -845,7 +845,7 @@ namespace Graphics {
 				for (int i = 0, count = pModel->Textures.GetCount(); i < count; ++i)
 				{
 					FBTexture *pTexture = pModel->Textures[i];
-					FBTextureUseType useType = pTexture->UseType;
+					FBTextureUseType useType = (FBTextureUseType) pTexture->UseType.AsInt();
 
 					// BUG: kFBTextureUseSphericalReflexionMap means use type lightmap !
 					if (kFBTextureUseSphericalReflexionMap == useType)

@@ -8,6 +8,9 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
+#include <winsock2.h>
+#include "Ws2tcpip.h"
+
 //--- Class declaration
 #include "device_projectTango_hardware.h"
 #include "GL\glew.h"
@@ -16,8 +19,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //#include "MemPool.h"
 
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+
 
 #pragma warning(push)
 #pragma warning(disable:4265)

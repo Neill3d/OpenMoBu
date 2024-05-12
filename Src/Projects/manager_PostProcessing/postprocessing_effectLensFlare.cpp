@@ -120,7 +120,8 @@ bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int 
 	if (mCurrentShader < 0 || mCurrentShader >= NUMBER_OF_SHADERS)
 	{
 		mCurrentShader = 0;
-		pData->FlareType = EFlareType::flare1;
+		const EFlareType newFlareType{ EFlareType::flare1 };
+		pData->FlareType.SetData((void*) &newFlareType);
 	}
 	
 	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, GetShaderPtr(), pData, w, h, pCamera);

@@ -111,7 +111,7 @@ void CConstraintTwistextraction::SnapSuggested()
 	FBModel* source = ReferenceGet(mGroupSource, 0);
 	FBModel* constrained = ReferenceGet(mGroupConstrain, 0);
 
-	if (source && constrained && (ForwardAxis != axis::None))
+	if (source && constrained && (ForwardAxis.AsInt() != axis::None))
 	{
 		mSourceRotationOrder = MapRotationOrder(source->RotationOrder.GetPropertyValue());
 		mConstrainedRotationOrder = MapRotationOrder(constrained->RotationOrder.GetPropertyValue());

@@ -2,10 +2,10 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenMoBu for Autodesk® MotionBuilder®"
-#define MyAppVersion "2022.0"
+#define MyAppVersion "2024.0"
 #define MyAppPublisher "Neill3d"
-#define MyAppURL "https://github.com/Neill3d/OpenMoBu"
-#define MyAppExeName "Setup_OpenMoBu_2022_0"
+#define MyAppURL "http://openmobu.org"
+#define MyAppExeName "Setup_OpenMoBu_2024_0"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile:"infoBefore_en.txt"; InfoAfterFile: "infoAfter_en.txt"
@@ -27,7 +27,7 @@ CreateAppDir=yes
 OutputBaseFilename={#MyAppExeName}
 Compression=lzma
 SolidCompression=yes
-AppCopyright=Copyright (C) 2019-2022 Neill3d
+AppCopyright=Copyright (C) 2019-2024 Neill3d
 WizardImageFile=Neill3d2.bmp
 WizardImageStretch=no
 WizardSmallImageFile=Neill3d_sm.bmp
@@ -47,6 +47,8 @@ Name: "2018"; Description: "MotionBuilder 2018"
 Name: "2019"; Description: "MotionBuilder 2019-2020"
 Name: "2022"; Description: "MotionBuilder 2022"
 Name: "2023"; Description: "MotionBuilder 2023"
+Name: "2024"; Description: "MotionBuilder 2024"
+Name: "2025"; Description: "MotionBuilder 2025"
 
 ;Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
@@ -66,7 +68,11 @@ Name: "MotionBuilder2019"; Description: "MotionBuilder 2019-2020 plugins"; Types
 Name: "MotionBuilder2022"; Description: "MotionBuilder 2022 plugins"; Types: 2022
 ; full 2022 custom;
 Name: "MotionBuilder2023"; Description: "MotionBuilder 2023 plugins"; Types: 2023
-; full 2022 custom;
+; full 2023 custom;
+Name: "MotionBuilder2024"; Description: "MotionBuilder 2024 plugins"; Types: 2024
+; full 2024 custom;
+Name: "MotionBuilder2025"; Description: "MotionBuilder 2025 plugins"; Types: 2025
+; full 2025 custom;
 
 [Tasks]
 Name: envPath; Description: "Add to PATH variable" 
@@ -102,169 +108,236 @@ Name: scripts\actions; GroupDescription: "Scripts:"; Description: "Action Script
 
 ; 2017
 
-Source: "..\bin\x64\plugins_2017\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseReader
+Source: "..\Build\bin\2017\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseReader
 ; TODO: the port of existing code is missing
-;Source: "..\bin\x64\plugins_2017\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseTransform
-Source: "..\bin\x64\plugins_2017\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\rayIntersect
-Source: "..\bin\x64\plugins_2017\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxRBF
-Source: "..\bin\x64\plugins_2017\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxSpring
+;Source: "..\bin\x64\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\poseTransform
+Source: "..\Build\bin\2017\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\rayIntersect
+Source: "..\Build\bin\2017\plugins\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxRBF
+Source: "..\Build\bin\2017\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: relationConstraintBox\boxSpring
 
-Source: "..\bin\x64\plugins_2017\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\attachmentConstraint
-Source: "..\bin\x64\plugins_2017\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\drivenConstraint
-Source: "..\bin\x64\plugins_2017\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\twistExtraction
+Source: "..\Build\bin\2017\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\attachmentConstraint
+Source: "..\Build\bin\2017\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\drivenConstraint
+Source: "..\Build\bin\2017\plugins\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: constraint\twistExtraction
 
-Source: "..\bin\x64\plugins_2017\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: device\faceCap
-Source: "..\bin\x64\plugins_2017\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: device\projectTango
+Source: "..\Build\bin\2017\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: device\faceCap
+Source: "..\Build\bin\2017\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: device\projectTango
 
-Source: "..\bin\x64\plugins_2017\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: lockCamera
-Source: "..\bin\x64\plugins_2017\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: postProcessing
-Source: "..\bin\x64\plugins_2017\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2017\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: lockCamera
+Source: "..\Build\bin\2017\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: postProcessing
+Source: "..\Build\bin\2017\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: shaders\superDynamicLighting
 
-Source: "..\bin\x64\plugins_2017\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: calculateNormals
-Source: "..\bin\x64\plugins_2017\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: volumeCalculator
+Source: "..\Build\bin\2017\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: calculateNormals
+Source: "..\Build\bin\2017\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: volumeCalculator
 
-Source: "..\bin\x64\plugins_2017\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: references\manager
-Source: "..\bin\x64\plugins_2017\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: references\extension
+Source: "..\Build\bin\2017\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: references\manager
+Source: "..\Build\bin\2017\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: references\extension
 
 
-Source: "..\bin\x64\plugins_2017\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2017
-Source: "..\bin\x64\plugins_2017\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\Build\bin\2017\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2017
+Source: "..\Build\bin\2017\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2017
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\references
-Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\actions
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: scripts\actions
 
 ; 2018
 
-Source: "..\bin\x64\plugins_2018\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\poseReader
+Source: "..\Build\bin\2018\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\poseReader
 ; Source: "..\bin\x64\plugins_2018\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\poseTransform
-Source: "..\bin\x64\plugins_2018\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\rayIntersect
-Source: "..\bin\x64\plugins_2018\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxRBF
-Source: "..\bin\x64\plugins_2018\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxSpring
+Source: "..\Build\bin\2018\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\rayIntersect
+Source: "..\Build\bin\2018\plugins\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxRBF
+Source: "..\Build\bin\2018\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: relationConstraintBox\boxSpring
 
-Source: "..\bin\x64\plugins_2018\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\attachmentConstraint
-Source: "..\bin\x64\plugins_2018\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\drivenConstraint
-Source: "..\bin\x64\plugins_2018\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\twistExtraction
+Source: "..\Build\bin\2018\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\attachmentConstraint
+Source: "..\Build\bin\2018\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\drivenConstraint
+Source: "..\Build\bin\2018\plugins\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: constraint\twistExtraction
 
-Source: "..\bin\x64\plugins_2018\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: device\faceCap
-Source: "..\bin\x64\plugins_2018\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: device\projectTango
+Source: "..\Build\bin\2018\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: device\faceCap
+Source: "..\Build\bin\2018\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: device\projectTango
 
-Source: "..\bin\x64\plugins_2018\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: lockCamera
-Source: "..\bin\x64\plugins_2018\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: postProcessing
-Source: "..\bin\x64\plugins_2018\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2018\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: lockCamera
+Source: "..\Build\bin\2018\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: postProcessing
+Source: "..\Build\bin\2018\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: shaders\superDynamicLighting
 
-Source: "..\bin\x64\plugins_2018\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: calculateNormals
-Source: "..\bin\x64\plugins_2018\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: volumeCalculator
+Source: "..\Build\bin\2018\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: calculateNormals
+Source: "..\Build\bin\2018\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: volumeCalculator
 
-Source: "..\bin\x64\plugins_2018\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: references\manager
-Source: "..\bin\x64\plugins_2018\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: references\extension
+Source: "..\Build\bin\2018\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: references\manager
+Source: "..\Build\bin\2018\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: references\extension
 
 
-Source: "..\bin\x64\plugins_2018\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2018
-Source: "..\bin\x64\plugins_2018\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\Build\bin\2018\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2018
+Source: "..\Build\bin\2018\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2018
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt4\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt4\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\references
-Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\actions
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: scripts\actions
 
 ; 2019
 
-Source: "..\bin\x64\plugins_2019\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\poseReader
-Source: "..\bin\x64\plugins_2019\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\poseTransform
-Source: "..\bin\x64\plugins_2019\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\rayIntersect
-Source: "..\bin\x64\plugins_2019\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxRBF
-Source: "..\bin\x64\plugins_2019\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxSpring
+Source: "..\Build\bin\2019\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\poseReader
+Source: "..\Build\bin\2019\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\poseTransform
+Source: "..\Build\bin\2019\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\rayIntersect
+Source: "..\Build\bin\2019\plugins\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxRBF
+Source: "..\Build\bin\2019\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: relationConstraintBox\boxSpring
 
-Source: "..\bin\x64\plugins_2019\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\attachmentConstraint
-Source: "..\bin\x64\plugins_2019\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\drivenConstraint
-Source: "..\bin\x64\plugins_2019\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\twistExtraction
+Source: "..\Build\bin\2019\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\attachmentConstraint
+Source: "..\Build\bin\2019\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\drivenConstraint
+Source: "..\Build\bin\2019\plugins\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: constraint\twistExtraction
 
-Source: "..\bin\x64\plugins_2019\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\faceCap
-Source: "..\bin\x64\plugins_2019\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\projectTango
+Source: "..\Build\bin\2019\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\faceCap
+Source: "..\Build\bin\2019\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\projectTango
 
-Source: "..\bin\x64\plugins_2019\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: lockCamera
-Source: "..\bin\x64\plugins_2019\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: postProcessing
-Source: "..\bin\x64\plugins_2019\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2019\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: lockCamera
+Source: "..\Build\bin\2019\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: postProcessing
+Source: "..\Build\bin\2019\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: shaders\superDynamicLighting
 
-Source: "..\bin\x64\plugins_2019\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: calculateNormals
-Source: "..\bin\x64\plugins_2019\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: volumeCalculator
+Source: "..\Build\bin\2019\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: calculateNormals
+Source: "..\Build\bin\2019\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: volumeCalculator
 
-Source: "..\bin\x64\plugins_2019\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\manager
-Source: "..\bin\x64\plugins_2019\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\extension
+Source: "..\Build\bin\2019\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\manager
+Source: "..\Build\bin\2019\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\extension
 
 
-Source: "..\bin\x64\plugins_2019\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2019
-Source: "..\bin\x64\plugins_2019\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\Build\bin\2019\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2019
+Source: "..\Build\bin\2019\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2019
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\references
-Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\actions
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: scripts\actions
 
 ; 2022
 
-Source: "..\bin\x64\plugins_2022\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseReader
-Source: "..\bin\x64\plugins_2022\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseTransform
-Source: "..\bin\x64\plugins_2022\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\rayIntersect
+Source: "..\Build\bin\2022\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseReader
+Source: "..\Build\bin\2022\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseTransform
+Source: "..\Build\bin\2022\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\rayIntersect
 ;Source: "..\bin\x64\plugins_2022\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxRBF
-Source: "..\bin\x64\plugins_2022\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxSpring
+Source: "..\Build\bin\2022\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxSpring
 
-Source: "..\bin\x64\plugins_2022\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\attachmentConstraint
-Source: "..\bin\x64\plugins_2022\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\drivenConstraint
+Source: "..\Build\bin\2022\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\attachmentConstraint
+Source: "..\Build\bin\2022\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\drivenConstraint
 ;Source: "..\bin\x64\plugins_2022\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\twistExtraction
 
-Source: "..\bin\x64\plugins_2022\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\faceCap
-Source: "..\bin\x64\plugins_2022\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\projectTango
+Source: "..\Build\bin\2022\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\faceCap
+Source: "..\Build\bin\2022\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\projectTango
 
-Source: "..\bin\x64\plugins_2022\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: lockCamera
-Source: "..\bin\x64\plugins_2022\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: postProcessing
-Source: "..\bin\x64\plugins_2022\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2022\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: lockCamera
+Source: "..\Build\bin\2022\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: postProcessing
+Source: "..\Build\bin\2022\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: shaders\superDynamicLighting
 
-Source: "..\bin\x64\plugins_2022\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: calculateNormals
-Source: "..\bin\x64\plugins_2022\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: volumeCalculator
+Source: "..\Build\bin\2022\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: calculateNormals
+Source: "..\Build\bin\2022\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: volumeCalculator
 
-Source: "..\bin\x64\plugins_2022\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\manager
-Source: "..\bin\x64\plugins_2022\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\extension
+Source: "..\Build\bin\2022\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\manager
+Source: "..\Build\bin\2022\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\extension
 
 
-Source: "..\bin\x64\plugins_2022\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2022
-Source: "..\bin\x64\plugins_2022\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2022
+Source: "..\Build\bin\2022\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2022
+Source: "..\Build\bin\2022\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2022
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\references
-Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\actions
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\actions
 
 ; 2023
 
-Source: "..\bin\x64\plugins_2023\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\poseReader
-Source: "..\bin\x64\plugins_2023\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\poseTransform
-Source: "..\bin\x64\plugins_2023\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\rayIntersect
-Source: "..\bin\x64\plugins_2023\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\boxRBF
-Source: "..\bin\x64\plugins_2023\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\boxSpring
+Source: "..\Build\bin\2023\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\poseReader
+Source: "..\Build\bin\2023\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\poseTransform
+Source: "..\Build\bin\2023\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\rayIntersect
+Source: "..\Build\bin\2023\plugins\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\boxRBF
+Source: "..\Build\bin\2023\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: relationConstraintBox\boxSpring
 
-Source: "..\bin\x64\plugins_2023\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: constraint\attachmentConstraint
-Source: "..\bin\x64\plugins_2023\driven_constraint.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: constraint\drivenConstraint
-Source: "..\bin\x64\plugins_2023\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: constraint\twistExtraction
+Source: "..\Build\bin\2023\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: constraint\attachmentConstraint
+Source: "..\Build\bin\2023\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: constraint\drivenConstraint
+Source: "..\Build\bin\2023\plugins\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: constraint\twistExtraction
 
-Source: "..\bin\x64\plugins_2023\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: device\faceCap
-Source: "..\bin\x64\plugins_2023\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: device\projectTango
+Source: "..\Build\bin\2023\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: device\faceCap
+Source: "..\Build\bin\2023\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: device\projectTango
 
-Source: "..\bin\x64\plugins_2023\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: lockCamera
-Source: "..\bin\x64\plugins_2023\post_processing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: postProcessing
-Source: "..\bin\x64\plugins_2023\SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2023\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: lockCamera
+Source: "..\Build\bin\2023\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: postProcessing
+Source: "..\Build\bin\2023\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: shaders\superDynamicLighting
 
-Source: "..\bin\x64\plugins_2023\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: calculateNormals
-Source: "..\bin\x64\plugins_2023\volume_calculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: volumeCalculator
+Source: "..\Build\bin\2023\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: calculateNormals
+Source: "..\Build\bin\2023\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: volumeCalculator
 
-Source: "..\bin\x64\plugins_2023\references_manager.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: references\manager
-Source: "..\bin\x64\plugins_2023\FBX\FBXExtension_References.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: references\extension
+Source: "..\Build\bin\2023\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: references\manager
+Source: "..\Build\bin\2023\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: references\extension
 
 
-Source: "..\bin\x64\plugins_2023\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2023
-Source: "..\bin\x64\plugins_2023\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2023
+Source: "..\Build\bin\2023\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2023
+Source: "..\Build\bin\2023\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2023
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\references
-Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\Neill3d\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\actions
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\actions
+
+; 2024
+
+Source: "..\Build\bin\2024\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: relationConstraintBox\poseReader
+Source: "..\Build\bin\2024\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: relationConstraintBox\poseTransform
+Source: "..\Build\bin\2024\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: relationConstraintBox\rayIntersect
+Source: "..\Build\bin\2024\plugins\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: relationConstraintBox\boxRBF
+Source: "..\Build\bin\2024\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: relationConstraintBox\boxSpring
+
+Source: "..\Build\bin\2024\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: constraint\attachmentConstraint
+Source: "..\Build\bin\2024\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: constraint\drivenConstraint
+Source: "..\Build\bin\2024\plugins\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: constraint\twistExtraction
+
+Source: "..\Build\bin\2024\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: device\faceCap
+Source: "..\Build\bin\2024\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: device\projectTango
+
+Source: "..\Build\bin\2024\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: lockCamera
+Source: "..\Build\bin\2024\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: postProcessing
+Source: "..\Build\bin\2024\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: shaders\superDynamicLighting
+
+Source: "..\Build\bin\2024\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: calculateNormals
+Source: "..\Build\bin\2024\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: volumeCalculator
+
+Source: "..\Build\bin\2024\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: references\manager
+Source: "..\Build\bin\2024\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: references\extension
+
+
+Source: "..\Build\bin\2024\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2024
+Source: "..\Build\bin\2024\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2024
+Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: scripts\references
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: scripts\actions
+
+; 2025
+
+Source: "..\Build\bin\2025\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: relationConstraintBox\poseReader
+Source: "..\Build\bin\2025\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: relationConstraintBox\poseTransform
+Source: "..\Build\bin\2025\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: relationConstraintBox\rayIntersect
+Source: "..\Build\bin\2025\plugins\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: relationConstraintBox\boxRBF
+Source: "..\Build\bin\2025\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: relationConstraintBox\boxSpring
+
+Source: "..\Build\bin\2025\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: constraint\attachmentConstraint
+Source: "..\Build\bin\2025\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: constraint\drivenConstraint
+Source: "..\Build\bin\2025\plugins\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: constraint\twistExtraction
+
+Source: "..\Build\bin\2025\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: device\faceCap
+Source: "..\Build\bin\2025\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: device\projectTango
+
+Source: "..\Build\bin\2025\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: lockCamera
+Source: "..\Build\bin\2025\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: postProcessing
+Source: "..\Build\bin\2025\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: shaders\superDynamicLighting
+
+Source: "..\Build\bin\2025\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: calculateNormals
+Source: "..\Build\bin\2025\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: volumeCalculator
+
+Source: "..\Build\bin\2025\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: references\manager
+Source: "..\Build\bin\2025\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: references\extension
+
+
+Source: "..\Build\bin\2025\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2025
+Source: "..\Build\bin\2025\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2025
+Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: scripts\startup
+Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: scripts\references
+Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: scripts\actions
+
 
 
 ;[Registry]

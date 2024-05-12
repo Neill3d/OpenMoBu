@@ -141,8 +141,8 @@ void Driven_Constraint_Layout::UIConfigure()
 	//mButtonTest.Caption = "Test";
 	//mButtonTest.OnClick.Add( this, (FBCallback) &Driven_Constraint_Layout::EventButtonTestClick );
 
-	mSrcContainerModel.IconPosition        = kFBIconLeft; 
-	mDstContainerModel.IconPosition        = kFBIconLeft;
+	mSrcContainerModel.IconPosition.SetPropertyValue(kFBIconLeft);
+	mDstContainerModel.IconPosition.SetPropertyValue(kFBIconLeft);
 
 	// Callbacks
     mSrcContainerModel.OnDragAndDrop.Add   ( this, (FBCallback) &Driven_Constraint_Layout::EventSrcContainerDragAndDrop   );
@@ -174,7 +174,7 @@ void Driven_Constraint_Layout::EventSrcContainerDragAndDrop( HISender pSender, H
 {
     FBEventDragAndDrop lDragAndDrop( pEvent );
 
-    switch( lDragAndDrop.State )
+    switch( lDragAndDrop.State.AsInt() )
     {
         case kFBDragAndDropDrag:
         {
@@ -271,7 +271,7 @@ void Driven_Constraint_Layout::EventDstContainerDragAndDrop( HISender pSender, H
 {
     FBEventDragAndDrop lDragAndDrop( pEvent );
 
-    switch( lDragAndDrop.State )
+    switch( lDragAndDrop.State.AsInt() )
     {
         case kFBDragAndDropDrag:
         {
@@ -375,7 +375,7 @@ void Driven_Constraint_Layout::EventSceneChange( HISender pSender, HKEvent pEven
         FBEventSceneChange lEvent( pEvent );
 		FBComponent *lComponent = mConstraint->mSrcModel;
 
-        if( lEvent.Type == kFBSceneChangeDetach && (FBComponent*)lEvent.ChildComponent == lComponent )
+        if( lEvent.Type.AsInt() == kFBSceneChangeDetach && (FBComponent*)lEvent.ChildComponent == lComponent)
         {
 			mConstraint->mSrcModel = nullptr;
 			mConstraint->mSrcProp = nullptr;
@@ -384,7 +384,7 @@ void Driven_Constraint_Layout::EventSceneChange( HISender pSender, HKEvent pEven
 
 		lComponent = mConstraint->mDstModel;
 
-        if( lEvent.Type == kFBSceneChangeDetach && (FBComponent*)lEvent.ChildComponent == lComponent )
+        if( lEvent.Type.AsInt() == kFBSceneChangeDetach && (FBComponent*)lEvent.ChildComponent == lComponent)
         {
 			mConstraint->mDstModel = nullptr;
 			mConstraint->mDstProp = nullptr;

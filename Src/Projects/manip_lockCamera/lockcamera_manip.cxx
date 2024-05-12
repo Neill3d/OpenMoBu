@@ -433,7 +433,8 @@ void Manip_LockCamera::OnUIIdle(HISender pSender, HKEvent pEvent)
 void Manip_LockCamera::EventSceneChange(HISender pSender, HKEvent pEvent)
 {
 	FBEventSceneChange	e(pEvent);
-	const FBSceneChangeType type = e.Type;
+	FBSceneChangeType type;
+	e.Type.GetData(&type, sizeof(FBSceneChangeType));
 
 	if (kFBSceneChangeDetach == type && FBIS(e.ChildComponent, FBCamera))
 	{
@@ -520,7 +521,8 @@ unsigned int Manip_LockCamera::UploadImageIntoTexture(const char *filename, cons
 
 			int width = pImage->Width;
 			int height = pImage->Height;
-			FBImageFormat imageFormat = pImage->Format;
+			FBImageFormat imageFormat;
+			pImage->Format.GetData(&imageFormat, sizeof(FBImageFormat));
 
 			if (kFBImageFormatBGRA32 == imageFormat)
 			{

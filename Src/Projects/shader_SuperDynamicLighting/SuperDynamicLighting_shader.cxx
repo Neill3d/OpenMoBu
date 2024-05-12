@@ -44,8 +44,8 @@ bool SuperDynamicLighting::FBCreate()
     AffectingLights.SetSingleConnect(false);
 
 	FBPropertyPublish(this, Transparency, "Transparency", nullptr, SetTransparencyProperty);
-    Transparency = kFBAlphaSourceNoAlpha;
-    RenderingPass = GetRenderingPassNeededForAlpha(Transparency);
+    Transparency.SetInt(kFBAlphaSourceNoAlpha);
+    RenderingPass.SetInt(GetRenderingPassNeededForAlpha( (FBAlphaSource)Transparency.AsInt()));
 
 	FBPropertyPublish(this, TransparencyFactor, "TransparencyFactor", nullptr, nullptr);
     TransparencyFactor.SetMinMax(0.0, 1.0);
@@ -429,9 +429,9 @@ void SuperDynamicLighting::UpdateModelShaderInfo(FBRenderOptions* pOptions, FBSh
 
 void SuperDynamicLighting::SetTransparencyType(FBAlphaSource pTransparency)
 {
-    if (Transparency != pTransparency)
+    if (Transparency.AsInt() != pTransparency)
     {
-        Transparency = pTransparency;
+        Transparency.SetInt(pTransparency);
         //To trigger render to update the model-shader information.
         InvalidateShaderVersion();
     }
@@ -439,16 +439,16 @@ void SuperDynamicLighting::SetTransparencyType(FBAlphaSource pTransparency)
 
 FBAlphaSource SuperDynamicLighting::GetTransparencyType()
 {
-    return Transparency;
+    return (FBAlphaSource) Transparency.AsInt();
 }
 
 void SuperDynamicLighting::SetTransparencyProperty(HIObject pObject, FBAlphaSource pState)
 {     
 	SuperDynamicLighting* lShader = FBCast<SuperDynamicLighting>(pObject);
-    if (lShader->Transparency != pState)
+    if (lShader->Transparency.AsInt() != pState)
     {
         lShader->Transparency.SetPropertyValue(pState);
-        lShader->RenderingPass = GetRenderingPassNeededForAlpha(pState);
+        lShader->RenderingPass.SetPropertyValue(GetRenderingPassNeededForAlpha(pState));
          
         // if shader use alpha and thus generate custom shape than the original geometry shape, 
         // we need to let it handle DrawShadow functiionality as well. 

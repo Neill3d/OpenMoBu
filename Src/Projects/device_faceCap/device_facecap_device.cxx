@@ -358,7 +358,7 @@ void CDevice_FaceCap::DeviceRecordFrame( FBDeviceNotifyInfo &pDeviceNotifyInfo )
 			lPos[i] *= space_scale;
 		}
 
-		switch( SamplingMode )
+		switch( SamplingMode.AsInt() )
 		{
 			case kFBHardwareTimestamp:
 			case kFBSoftwareTimestamp:

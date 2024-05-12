@@ -163,7 +163,7 @@ bool BoxEulerToQuaternion::FBCreate()
     // Properties
 
     FBPropertyPublish(this, rotationOrder, "Rotation Order", nullptr, nullptr);
-    rotationOrder = ERotationOrder::eXYZ;
+    rotationOrder.SetPropertyValue(ERotationOrder::eXYZ);
 
     // Input Node
 
@@ -192,7 +192,7 @@ bool BoxEulerToQuaternion::AnimationNodeNotify(FBAnimationNode* pAnimationNode, 
         return false;
 
     FBQuaternion q;
-    FBRotationToQuaternion(q, rot, (FBRotationOrder) (int) rotationOrder);
+    FBRotationToQuaternion(q, rot, (FBRotationOrder) rotationOrder.AsInt());
 
     m_OutQuaternion->WriteData(q, pEvaluateInfo);
     return true;
@@ -211,7 +211,7 @@ bool BoxQuaternionToEuler::FBCreate()
     // Properties
 
     FBPropertyPublish(this, rotationOrder, "Rotation Order", nullptr, nullptr);
-    rotationOrder = ERotationOrder::eXYZ;
+    rotationOrder.SetPropertyValue(ERotationOrder::eXYZ);
 
     // Input Node
 
@@ -241,7 +241,7 @@ bool BoxQuaternionToEuler::AnimationNodeNotify(FBAnimationNode* pAnimationNode, 
     if (!m_InQuaternion->ReadData(q, pEvaluateInfo))
         return false;
 
-    FBQuaternionToRotation(rot, q, (FBRotationOrder)(int)rotationOrder);
+    FBQuaternionToRotation(rot, q, (FBRotationOrder)rotationOrder.AsInt());
     m_EulerRotation->WriteData(rot, pEvaluateInfo);
     return true;
 }

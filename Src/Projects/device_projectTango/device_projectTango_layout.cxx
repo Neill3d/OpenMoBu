@@ -240,7 +240,7 @@ void Device_ProjectTango_Layout::UIConfigureLayout0()
 	mEditNumberSamplingRate.OnChange.Add(this, (FBCallback)&Device_ProjectTango_Layout::EventEditNumberSamplingRateChange);
 	mListSamplingType.OnChange.Add(this, (FBCallback)&Device_ProjectTango_Layout::EventListSamplingTypeChange);
 
-	mButtonSetCandidate.Style	= kFB2States;
+	mButtonSetCandidate.Style.SetPropertyValue(kFB2States);
 	mButtonSetCandidate.OnClick.Add(this, (FBCallback)&Device_ProjectTango_Layout::EventButtonSetCandidateClick);
 	mButtonSetCandidate.Caption = "Set Candidate";
 
@@ -289,7 +289,7 @@ void Device_ProjectTango_Layout::UIReset()
 
 	mEditNumberSamplingRate.Value		= 1.0/((FBTime)mDevice->SamplingPeriod).GetSecondDouble();
 
-	mListSamplingType.ItemIndex			= mListSamplingType.Items.Find( mDevice->SamplingMode );
+	mListSamplingType.ItemIndex			= mListSamplingType.Items.Find( mDevice->SamplingMode.AsInt() );
 	mButtonSetCandidate.State			= mDevice->GetSetCandidate();
 }
 
@@ -409,7 +409,7 @@ void Device_ProjectTango_Layout::EventEditNumberSamplingRateChange(HISender pSen
 
 void Device_ProjectTango_Layout::EventListSamplingTypeChange(HISender pSender, HKEvent pEvent)
 {
-	mDevice->SamplingMode = (FBDeviceSamplingMode)mListSamplingType.Items.GetReferenceAt( mListSamplingType.ItemIndex );
+	mDevice->SamplingMode.SetPropertyValue((FBDeviceSamplingMode)mListSamplingType.Items.GetReferenceAt(mListSamplingType.ItemIndex));
 	UIReset();
 }
 

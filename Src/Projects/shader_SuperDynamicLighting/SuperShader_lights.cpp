@@ -119,7 +119,7 @@ namespace Graphics
 		//light.position =  light.position * lViewMatrix;
 
 		// Set whether or not we take the spot factor into consideration in the last position spot ...
-		switch (pLight->LightType)
+		switch (pLight->LightType.AsInt())
 		{
 		case kFBLightTypeInfinite:
 			light.type = LIGHT_TYPE_DIRECTION;
@@ -138,9 +138,9 @@ namespace Graphics
 		FBColorAndAlpha diffuseColor = (FBColor)pLight->DiffuseColor;
 		double attenuation[4];
 
-		if (pLight->LightType != kFBLightTypeInfinite)
+		if (pLight->LightType.AsInt() != kFBLightTypeInfinite)
 		{
-			switch (pLight->AttenuationType)
+			switch (pLight->AttenuationType.AsInt())
 			{
 			case kFBAttenuationLinear:
 				attenuation[0] = sDefaultAttenuationLinear[0];
@@ -209,9 +209,9 @@ namespace Graphics
 		//	lViewDirection = direction;
 
 		double cosAngle = 0.0;
-		if (pLight->LightType == kFBLightTypeSpot)
+		if (pLight->LightType.AsInt() == kFBLightTypeSpot)
 		{
-#if(PRODUCT_VERSION>2024)
+#if(PRODUCT_VERSION >= 2024)
 			cosAngle = cos((3.141592654 * pLight->OuterAngle / 180.0f) / 2.0f);
 #else
 			cosAngle = cos((3.141592654 * pLight->ConeAngle / 180.0f) / 2.0f);
@@ -318,15 +318,15 @@ namespace Graphics
 
 				if (pLight->CastLightOnObject)
 				{
-					if (pLight->LightType == kFBLightTypeInfinite) numDirLights++;
+					if (pLight->LightType.AsInt() == kFBLightTypeInfinite) numDirLights++;
 					else numPointLights++;
 				}
 
 				// lights for shadows
 				// temproary make only one cascaded shadow
-				if (pLight->LightType == kFBLightTypeInfinite && numLightCasters == 0)
+				if (pLight->LightType.AsInt() == kFBLightTypeInfinite && numLightCasters == 0)
 				{
-					if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
+					if (pLight->LightType.AsInt() != kFBLightTypePoint && pLight->CastShadows)
 						numLightCasters++;
 				}
 			}
@@ -350,7 +350,7 @@ namespace Graphics
 
 				if (pLight->CastLightOnObject)
 				{
-					if (pLight->LightType != kFBLightTypeInfinite)
+					if (pLight->LightType.AsInt() != kFBLightTypeInfinite)
 					{
 						ConstructFromFBLight(false, camModelView, camRotationMatrix, pLight, lights[numPointLights]);
 						pLightData = &lights[numPointLights];
@@ -467,15 +467,15 @@ namespace Graphics
 
 				if (pLight->CastLightOnObject)
 				{
-					if (pLight->LightType == kFBLightTypeInfinite) numDirLights++;
+					if (pLight->LightType.AsInt() == kFBLightTypeInfinite) numDirLights++;
 					else numPointLights++;
 				}
 
 				// lights for shadows
 				// temproary make only one cascaded shadow
-				if (pLight->LightType == kFBLightTypeInfinite && numLightCasters == 0)
+				if (pLight->LightType.AsInt() == kFBLightTypeInfinite && numLightCasters == 0)
 				{
-					if (pLight->LightType != kFBLightTypePoint && pLight->CastShadows)
+					if (pLight->LightType.AsInt() != kFBLightTypePoint && pLight->CastShadows)
 						numLightCasters++;
 				}
 			}
@@ -500,7 +500,7 @@ namespace Graphics
 
 				if (pLight->CastLightOnObject)
 				{
-					if (pLight->LightType != kFBLightTypeInfinite)
+					if (pLight->LightType.AsInt() != kFBLightTypeInfinite)
 					{
 						for (int i = 0, count = (int)mUsedPointLights.size(); i < count; ++i)
 						{

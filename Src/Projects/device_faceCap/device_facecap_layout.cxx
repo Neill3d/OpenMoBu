@@ -210,7 +210,7 @@ void CDevice_FaceCap_Layout::UIConfigureLayout0()
 	mEditNumberSamplingRate.OnChange.Add( this, (FBCallback)&CDevice_FaceCap_Layout::EventEditNumberSamplingRateChange );
 	mListSamplingType.OnChange.Add( this, (FBCallback)&CDevice_FaceCap_Layout::EventListSamplingTypeChange );
 
-	mButtonSetCandidate.Style	= kFB2States;
+	mButtonSetCandidate.Style.SetPropertyValue(kFB2States);
 	mButtonSetCandidate.OnClick.Add(this, (FBCallback)&CDevice_FaceCap_Layout::EventButtonSetCandidateClick );
 	mButtonSetCandidate.Caption = "Set Candidate";
 
@@ -257,7 +257,7 @@ void CDevice_FaceCap_Layout::UIReset()
 	
 	mEditNumberSamplingRate.Value		= 1.0/((FBTime)mDevice->SamplingPeriod).GetSecondDouble();
 
-	mListSamplingType.ItemIndex			= mListSamplingType.Items.Find( mDevice->SamplingMode );
+	mListSamplingType.ItemIndex			= mListSamplingType.Items.Find( mDevice->SamplingMode.AsInt() );
 	mButtonSetCandidate.State			= mDevice->GetSetCandidate();
 }
 
@@ -353,7 +353,7 @@ void CDevice_FaceCap_Layout::EventEditNumberSamplingRateChange( HISender pSender
 
 void CDevice_FaceCap_Layout::EventListSamplingTypeChange(  HISender pSender, HKEvent pEvent )
 {
-	mDevice->SamplingMode = (FBDeviceSamplingMode)mListSamplingType.Items.GetReferenceAt( mListSamplingType.ItemIndex );
+	mDevice->SamplingMode.SetPropertyValue((FBDeviceSamplingMode)mListSamplingType.Items.GetReferenceAt(mListSamplingType.ItemIndex));
 	UIReset();
 }
 

@@ -604,7 +604,8 @@ void PostProcessingManager::PrepVideoClipsTimeWrap()
 				{
 					int width = pVideoClip->Width;
 					int height = pVideoClip->Height;
-					FBVideoFormat format = pVideoClip->Format;
+					FBVideoFormat format;
+					pVideoClip->Format.GetData(&format, sizeof(FBVideoFormat));
 
 					GLenum glFormat = GL_RGB;
 

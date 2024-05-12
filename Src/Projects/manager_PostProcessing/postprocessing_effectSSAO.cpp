@@ -136,8 +136,9 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 
 	float znear = (float) pCamera->NearPlaneDistance;
 	float zfar = (float) pCamera->FarPlaneDistance;
-
-	bool perspective = (pCamera->Type == FBCameraType::kFBCameraTypePerspective);
+	FBCameraType cameraType;
+	pCamera->Type.GetData(&cameraType, sizeof(FBCameraType));
+	bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
 	//float fov = (float) pCamera->FieldOfView;
 
 	// calculate a diagonal fov

@@ -542,7 +542,7 @@ void Device_ProjectTango::DeviceRecordFrame(FBDeviceNotifyInfo &pDeviceNotifyInf
 	{
 		//mHardware.GetPosition( lPos );
 
-		switch( SamplingMode )
+		switch( SamplingMode.AsInt() )
 		{
 			case kFBHardwareTimestamp:
 			case kFBSoftwareTimestamp:
@@ -565,7 +565,7 @@ void Device_ProjectTango::DeviceRecordFrame(FBDeviceNotifyInfo &pDeviceNotifyInf
 	if (lDataR)
 	{
 		//mHardware.GetRotation( lRot );
-		switch( SamplingMode )
+		switch( SamplingMode.AsInt() )
 		{
 			case kFBHardwareTimestamp:
 			case kFBSoftwareTimestamp:
@@ -589,7 +589,7 @@ void Device_ProjectTango::DeviceRecordFrame(FBDeviceNotifyInfo &pDeviceNotifyInf
 	if (lDataFovX && lDataFovY)
 	{
 		//mHardware.GetFieldOfView(&lFovX, &lFovY);
-		switch (SamplingMode)
+		switch (SamplingMode.AsInt())
 		{
 		case kFBHardwareTimestamp:
 		case kFBSoftwareTimestamp:
@@ -616,7 +616,7 @@ void Device_ProjectTango::DeviceRecordFrame(FBDeviceNotifyInfo &pDeviceNotifyInf
 		if (lDataTrigger1)
 		{
 			//mHardware.GetDeviceTrigger(&lTrigger1);
-			switch (SamplingMode)
+			switch (SamplingMode.AsInt())
 			{
 			case kFBHardwareTimestamp:
 			case kFBSoftwareTimestamp:
@@ -1042,7 +1042,11 @@ void Device_ProjectTango::OnUIIdleEvent(HIRegister pSender, HKEvent pEvent)
 		}
 		else if (PACKET_COMMAND_LOOP == cmd.command)
 		{
+#if PRODUCT_VERSION >= 2024
+			mPlayerControl.LoopMode = (mPlayerControl.LoopMode == FBTransportLoopMode::kFBTransportNoLoop) ? FBTransportLoopMode::kFBTransportLoopCurrentTake : FBTransportLoopMode::kFBTransportNoLoop;
+#else
 			mPlayerControl.LoopActive = !mPlayerControl.LoopActive;
+#endif
 		}
 		else if (PACKET_COMMAND_FRAME_CURR == cmd.command)
 		{
@@ -1153,7 +1157,11 @@ void Device_ProjectTango::OnUIIdleEvent(HIRegister pSender, HKEvent pEvent)
 
 		syncState.playMode = (mPlayerControl.IsPlaying) ? 1 : 0;
 		syncState.recordMode = (mPlayerControl.IsRecording) ? 1 : 0;
+#if PRODUCT_VERSION >= 2024
+		syncState.loopMode = (mPlayerControl.LoopMode != FBTransportLoopMode::kFBTransportNoLoop) ? 1 : 0;
+#else
 		syncState.loopMode = (mPlayerControl.LoopActive) ? 1 : 0;
+#endif		
 		syncState.liveMode = (Live) ? 1 : 0;
 
 		syncState.takeCount = (unsigned char)mSystem.Scene->Takes.GetCount();
@@ -1206,7 +1214,7 @@ void Device_ProjectTango::SwitchToCamera(const int cameraId)
 
 			if (cameraId == totalCount)
 			{
-#if (K_KERNEL_VERSION > 16000)
+#if (PRODUCT_VERSION >= 2024)
 				int paneId = pRenderer->GetSelectedPaneIndex();
 				pRenderer->SetCameraInPane(pCamera, paneId);
 #else
