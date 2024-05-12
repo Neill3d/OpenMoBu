@@ -1,3 +1,4 @@
+[![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2024/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2024)
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2022/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2022)
 [![Downloads](https://img.shields.io/github/downloads/neill3d/openmobu/2019.1/total.svg)](https://github.com/neill3d/openmobu/releases/tag/2019.1)
 <a href="https://discord.gg/EU5E2p9VCf"><img alt="OpenMoBu on Discord" src="https://img.shields.io/badge/discord-OpenMoBu-blue?logo=discord&logoColor=white&style=flat"></a>
