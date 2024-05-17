@@ -96,7 +96,7 @@ public:
 #define FREEANDNIL(p)	if(p) { delete p; p=nullptr; }
 #define ARRAYFREE(p)	if(p) { delete [] p; p=nullptr; }
 
-#define	nullptr	NULL
+//#define	nullptr	NULL
 
 //! pack two integers into one
 inline int packValue(const int startPos, const int len)

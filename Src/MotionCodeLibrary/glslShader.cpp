@@ -281,7 +281,7 @@ void GLSLShader::Free()
   fragment = 0;
 }
 
-const GLint GLSLShader::findLocation( const char *name ) const
+GLint GLSLShader::findLocation( const char *name ) const
 {
 	if (!programObj) return -1;
 	int loc = glGetUniformLocationARB( programObj, name );

@@ -62,7 +62,7 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
   bool setUniformMatrix33( const char * name, const float *m );
   bool setUniformMatrix( const char * name, const float *m );
   
-  const GLint findLocation( const char * name ) const;
+  GLint findLocation( const char * name ) const;
 
   static void setUniformUINT ( const GLint location, const GLint value );
   static void setUniformFloat( const GLint location, const float value );
@@ -71,38 +71,38 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
   static void setUniformMatrix33( const GLint location, const float *m );
   static void setUniformMatrix( const GLint location, const float *m );
 
-	void bindTexture(GLenum target, const char *texname, GLuint texid, int texunit)
+	void bindTexture(GLenum target, const char *texname, GLuint texid, GLenum texunit)
 	{
 		glActiveTexture(GL_TEXTURE0 + texunit);
 		glBindTexture(target, texid);
 		setUniformUINT( texname, (GLint) texunit );
 		glActiveTexture(GL_TEXTURE0);
 	}
-	void bindTexture(GLenum target, const GLint location, GLuint texid, int texunit)
+	void bindTexture(GLenum target, const GLint location, GLuint texid, GLenum texunit)
 	{
 		glActiveTexture(GL_TEXTURE0 + texunit);
 		glBindTexture(target, texid);
 		setUniformUINT( location, (GLint) texunit );
 		glActiveTexture(GL_TEXTURE0);
 	}
-	void unbindTexture(GLenum target, int texunit)
+	void unbindTexture(GLenum target, GLenum texunit)
 	{
 		glActiveTexture(GL_TEXTURE0 + texunit);
 		glBindTexture(target, 0);
 		glActiveTexture(GL_TEXTURE0);
 	}
 
-	void bindTextureRECT(const char *texname, GLuint texid, int texunit) {
+	void bindTextureRECT(const char *texname, GLuint texid, GLenum texunit) {
 		bindTexture(GL_TEXTURE_RECTANGLE_ARB, texname, texid, texunit);
 	}
 
-	const GLhandleARB		GetVertexShader() const {
+	GLhandleARB		GetVertexShader() const {
 		return vertex;
 	}
-	const GLhandleARB		GetFragmentShader() const {
+	GLhandleARB		GetFragmentShader() const {
 		return fragment;
 	}
-	const GLhandleARB		GetProgramObj() const {
+	GLhandleARB		GetProgramObj() const {
 		return programObj;
 	}
 };

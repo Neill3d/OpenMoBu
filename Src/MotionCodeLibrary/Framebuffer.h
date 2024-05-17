@@ -83,7 +83,7 @@ public:
 	
 	void	SetFlag(const int flag);
 	void	RemoveFlag(const int flag);
-	const bool IsFlag(const int flag);
+	bool	IsFlag(const int flag);
 
 	// attach external resources
 

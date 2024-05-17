@@ -24,4 +24,4 @@ find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 link_libraries(${GLEW_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk OpenGL::GL GLEW::glew_s)
+target_link_libraries(${PROJECT_NAME} PRIVATE Version.lib fbsdk fbxsdk OpenGL::GL OpenGL::GLU GLEW::glew_s)

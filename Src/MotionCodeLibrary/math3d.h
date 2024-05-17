@@ -30,6 +30,14 @@ typedef FBArrayTemplate<FBVector3d> FBArrayVector3d;
 #define DEG2RAD(a)				( (a) * M_DEG2RAD )
 #define RAD2DEG(a)				( (a) * M_RAD2DEG )
 
+//
+//
+double clamp(const double x, const double lower, const double upper);
+double clamp01(const double x);
+float clampf(const float x, const float lower, const float upper);
+double smoothstep(const double edge0, const double edge1, const double x);
+float smootherstep(float edge0, float edge1, float x);
+
 // vector part
 double DotProduct(const FBVector3d v1, double *v2);
 FBVector3d CrossProduct(const FBVector3d &left, const FBVector3d &right);
@@ -66,6 +74,8 @@ bool				MatrixExtract(const GLdouble model[16], const GLdouble proj[16],
 										const GLint viewport[4], GLdouble * objx, GLdouble * objy, GLdouble * objz);
 bool				MatrixExtract(const FBMatrix	&tm, FBVector3d &forward, FBVector3d &up, FBVector3d &right);
 FBMatrix FBMatrixFromAnimationNode( FBModel	*pModel, FBTime pTime );
+
+FBMatrix NormalToRotation(FBTVector normal);
 
 // angles
 FBVector3d MatrixToEuler( const FBMatrix &matrix);

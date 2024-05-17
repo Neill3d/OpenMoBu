@@ -33,12 +33,12 @@ void FitImageWithAspect(const int imgWidth, const int imgHeight, const int regio
 	if (regionRatio > imgRatio)
 	{
 		height = regionHeight;
-		width = imgRatio * height;
+		width = static_cast<int>(imgRatio * height);
 	}
 	else
 	{
 		width = regionWidth;
-		height = 1.0 / imgRatio * (double)width;
+		height = static_cast<int>(1.0 / imgRatio * (double)width);
 	}
 
 	x = (regionWidth - width) / 2;
@@ -88,7 +88,7 @@ void Set2dViewport(int g_w, int g_h)
 
 void drawOrthoQuad2d(const double w, const double h)
 {
-	glViewport(0, 0, w, h);
+	glViewport(0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h));
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0.0, w, 0.0, h, -1.0, 1.0);
@@ -191,7 +191,7 @@ void drawQuad2d(double x, double y, double x2, double y2)
 
 void drawOrthoQuad2dOffset(const double x, const double y, const double w, const double h)
 {
-	glViewport(0, 0, w + x, h + y);
+	glViewport(0, 0, static_cast<GLsizei>(w + x), static_cast<GLsizei>(h + y));
 	glMatrixMode(GL_PROJECTION);
 	//glPushMatrix();
 	glLoadIdentity();

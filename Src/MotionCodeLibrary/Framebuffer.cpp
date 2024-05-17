@@ -77,7 +77,7 @@ void FrameBuffer::RemoveFlag(const int flag)
 	mFlags &= ~(flag);
 }
 
-const bool FrameBuffer::IsFlag(const int flag)
+bool FrameBuffer::IsFlag(const int flag)
 {
 	return ( (mFlags & flag) != 0);
 }
@@ -474,7 +474,7 @@ bool FrameBuffer::Bind () const
 }
 
 
-bool FrameBuffer::UnBind ( bool genMipmaps, GLenum target ) const
+bool FrameBuffer::UnBind ( bool genMipmaps, [[maybe_unused]]GLenum target ) const
 {
 	if ( mFrameBuffer == 0 )
 		return false;

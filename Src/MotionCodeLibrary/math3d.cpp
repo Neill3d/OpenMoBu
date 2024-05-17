@@ -15,6 +15,54 @@
 
 #define		EPSILON		10e-6
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+double clamp(const double x, const double lower, const double upper)
+{
+	double res = x;
+	if (res < lower) res = lower;
+	if (res > upper) res = upper;
+	return res;
+}
+
+double clamp01(const double x)
+{
+	if (x < 0.0) return 0.0;
+	else if (x > 1.0) return 1.0;
+	return x;
+}
+
+double smoothstep(const double edge0, const double edge1, const double x)
+{
+	// Scale, bias and saturate x to 0..1 range
+	double f = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+	// Evaluate polynomial
+	return f * f * (3 - 2 * f);
+}
+
+float clampf(float value, float v1, float v2)
+{
+	if (value < v1)
+		return v1;
+	else if (value > v2)
+		return v2;
+	return value;
+}
+
+float smootherstep(float edge0, float edge1, float x)
+{
+	if (edge1 == edge0)
+		return edge0;
+
+	// Scale, and clamp x to 0..1 range
+	x = clampf((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+
+	// Evaluate polynomial
+	return x * x * x * (x * (x * 6 - 15) + 10);
+}
+
 //
 // Splines
 //
@@ -551,6 +599,41 @@ FBVector3d MatrixToEuler(const FBMatrix &matrix)
 	return angles;
 }
 
+
+FBMatrix NormalToRotation(FBTVector normal)
+{
+	// Find a vector in the plane
+	FBTVector tangent0, tangent1;
+
+	FBMult(tangent0, normal, FBTVector(1.0, 0.0, 0.0));
+
+	if (FBDot(tangent0, tangent0) < 0.001)
+		FBMult(tangent0, normal, FBTVector(0.0, 1.0, 0.0));
+
+	FBMult(tangent0, tangent0, 1.0 / FBLength(tangent0));
+
+	// Find another vector in the plane
+	FBMult(tangent1, normal, tangent0);
+	FBMult(tangent1, tangent1, 1.0 / FBLength(tangent1));
+
+	// Construct a 3x3 matrix by storing three vectors in the columns of the matrix
+	FBMatrix m;
+	m.Identity();
+
+	m[0] = tangent0[0];
+	m[1] = tangent0[1];
+	m[2] = tangent0[2];
+
+	m[4] = tangent1[0];
+	m[5] = tangent1[1];
+	m[6] = tangent1[2];
+
+	m[8] = normal[0];
+	m[9] = normal[1];
+	m[10] = normal[2];
+
+	return m;
+}
 
 enum QUAT_INDEX
 {
