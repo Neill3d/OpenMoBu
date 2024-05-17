@@ -478,27 +478,19 @@ void ColorsRendererCallback::RenderNormalizedColors(FBRenderOptions *pRenderOpti
 			
 		}
 
-//        const int lSubRegionCount = lModelVertexData->GetSubRegionCount();
 
         //Calling PushZDepthClipOverride() disables the OpenGL custom clip-plane (used for Z-Depth HideFront selection) if this model is selected using
         //Z-Depth HideFront selection tool. This is so that the model is not clipped, i.e., remains visible.
         //lModelVertexData->PushZDepthClipOverride();
 
-		//lModelVertexData->VertexArrayMappingRequest();
-		//lModelVertexData->VertexArrayMappingRelease();
-
-
 		// TODO: use gpu offset pointer (needed for GPU skinning feature)
 
         lModelVertexData->EnableOGLVertexData();        //Bind Vertex Array or Vertex Buffer Object.
 
-		if (false == pRenderOptions->IsIDBufferRendering())
+		if (!pRenderOptions->IsIDBufferRendering())
 		{
-			
-
 			unsigned int vboId = lModelVertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Point);
 
-			
 			glBindBuffer(GL_ARRAY_BUFFER, vboId);
 			glVertexAttribPointer(0, 4, GL_FLOAT, false, 0, 0);
 		
@@ -507,42 +499,81 @@ void ColorsRendererCallback::RenderNormalizedColors(FBRenderOptions *pRenderOpti
 
 		}
 
-        lModelVertexData->VertexArrayMappingRequest();
+        const unsigned int elementBuffer = lModelVertexData->GetIndexArrayVBOId();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
 
-		const int *indexArray = lModelVertexData->GetIndexArray();
-		FBVertex *posArray = (FBVertex*) lModelVertexData->GetVertexArray(kFBGeometryArrayID_Point);
+        bool useDrawingFallback = false;
 
-		glBegin(GL_TRIANGLES);
+        for (int i = 0; i < lModelVertexData->GetSubPatchCount(); ++i)
+        {
+            bool isOptimized = false;
+            const FBGeometryPrimitiveType primitiveType = lModelVertexData->GetSubPatchPrimitiveType(i, &isOptimized);
 
+            if (primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLES
+                && primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_FAN
+                && primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_STRIP)
+            {
+                useDrawingFallback = true;
+                break;
+            }
+        }
+
+        int* indexArray = nullptr;
+        FBVertex* posArray = nullptr;
+
+        if (useDrawingFallback)
+        {
+            lModelVertexData->VertexArrayMappingRequest();
+
+            indexArray = lModelVertexData->GetIndexArray();
+            posArray = static_cast<FBVertex*>(lModelVertexData->GetVertexArray(kFBGeometryArrayID_Point));
+        }
+
+        // render
 		for(int i=0; i<lModelVertexData->GetSubPatchCount(); ++i)
         {
-			const int offset = lModelVertexData->GetSubPatchIndexOffset(i);
+            bool isOptimized = false;
+            const FBGeometryPrimitiveType primitiveType = lModelVertexData->GetSubPatchPrimitiveType(i, &isOptimized);
+
+            const int offset = lModelVertexData->GetSubPatchIndexOffset(i);
             const int size = lModelVertexData->GetSubPatchIndexSize(i);
 
-			for (int j=0; j<size; j+=3)
-			{
+            switch (primitiveType)
+            {
+            case FBGeometryPrimitiveType::kFBGeometry_TRIANGLES:
+                glDrawRangeElements(GL_TRIANGLES, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
+                break;
+            case FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_FAN:
+                glDrawRangeElements(GL_TRIANGLE_FAN, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
+                break;
+            case FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_STRIP:
+                glDrawRangeElements(GL_TRIANGLE_STRIP, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
+                break;
+            case FBGeometryPrimitiveType::kFBGeometry_QUADS:
+            {
+                // fallback
+                glBegin(GL_QUADS);
 
-				glVertex3fv( posArray[indexArray[offset+j]] );
-				glVertex3fv( posArray[indexArray[offset+j+1]] );
-				glVertex3fv( posArray[indexArray[offset+j+2]] );
+                for (int j = 0; j < size; j += 4)
+                {
+                    glVertex3fv(posArray[indexArray[offset + j]]);
+                    glVertex3fv(posArray[indexArray[offset + j + 1]]);
+                    glVertex3fv(posArray[indexArray[offset + j + 2]]);
+                    glVertex3fv(posArray[indexArray[offset + j + 3]]);
+                }
 
-			}
-
+                glEnd();
+            } break;
+            default:
+                FBTrace("Not supported primitive type %d for color renderer\n", static_cast<int>(primitiveType));
+            }
+                
 		}
 
-		glEnd();
-
-        lModelVertexData->VertexArrayMappingRelease();
-
-		/*
-        for(int lSubRegionIdx = 0; lSubRegionIdx < lSubRegionCount; ++lSubRegionIdx)
+        if (useDrawingFallback)
         {
-           
-			// ID Buffer rendering, simply draw geometry. 
-			lModelVertexData->DrawSubRegion(lSubRegionIdx); // draw all the sub patches inside this sub regions.
+            lModelVertexData->VertexArrayMappingRelease();
         }
-		*/
-		
 
         lModelVertexData->DisableOGLVertexData();   //Unbind Vertex Array or Vertex Buffer Object.
         //lModelVertexData->PopZDepthClipOverride();  //Re-enables Z-Depth HideFront clip-plane if it was previously disabled via PushZDepthClipOverride().
