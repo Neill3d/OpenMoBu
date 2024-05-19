@@ -25,10 +25,7 @@
 //--- Library declaration
 FBLibraryDeclare( orcustomrenderer )
 {
-    FBLibraryRegister( ORCustomRendererCallbackLayout );
-
 	FBLibraryRegister( ColorsRendererCallback );
-	
 }
 FBLibraryDeclareEnd;
 

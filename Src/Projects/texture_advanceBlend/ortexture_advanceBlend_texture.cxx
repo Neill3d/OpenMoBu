@@ -56,42 +56,14 @@ static void ORTextureAdvanceBlend_UseMaskSet(HIObject pMbObject, bool pValue)
     pFbObject->UseMask.SetPropertyValue(pValue);
     pFbObject->SetLayerConfigDirty();
 }
-/*
-static void ORTextureAdvanceBlend_MaskSet(HIObject pMbObject, FBTexture *pValue)
-{
-    ORTextureAdvanceBlend* pFbObject = FBCast<ORTextureAdvanceBlend>( pMbObject );
-    pFbObject->Mask.SetPropertyValue(pValue);
-    pFbObject->SetLayerConfigDirty();
-}
-*/
+
 static void ORTextureAdvanceBlend_BlendMode2Set(HIObject pMbObject, ECompositeBlendType pValue)
 {
     ORTextureAdvanceBlend* pFbObject = FBCast<ORTextureAdvanceBlend>( pMbObject );
     pFbObject->BlendMode.SetPropertyValue(pValue);
     pFbObject->SetLayerConfigDirty();
 }
-/*
-static void ORTextureAdvanceBlend_BlendMode3Set(HIObject pMbObject, ECompositeBlendType pValue)
-{
-    ORTextureAdvanceBlend* pFbObject = FBCast<ORTextureAdvanceBlend>( pMbObject );
-    pFbObject->BlendModes[1].SetPropertyValue(pValue);
-    pFbObject->SetLayerConfigDirty();
-}
 
-static void ORTextureAdvanceBlend_BlendMode4Set(HIObject pMbObject, ECompositeBlendType pValue)
-{
-    ORTextureAdvanceBlend* pFbObject = FBCast<ORTextureAdvanceBlend>( pMbObject );
-    pFbObject->BlendModes[2].SetPropertyValue(pValue);
-    pFbObject->SetLayerConfigDirty();
-}
-
-static void ORTextureAdvanceBlend_BlendMode5Set(HIObject pMbObject, ECompositeBlendType pValue)
-{
-    ORTextureAdvanceBlend* pFbObject = FBCast<ORTextureAdvanceBlend>( pMbObject );
-    pFbObject->BlendModes[3].SetPropertyValue(pValue);
-    pFbObject->SetLayerConfigDirty();
-}
-*/
 /************************************************
  *	FiLMBOX Constructor.
  ************************************************/

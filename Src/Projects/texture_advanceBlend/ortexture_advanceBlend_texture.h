@@ -146,12 +146,12 @@ class ORTextureParamBlend : public FBLayeredTexture
 
 
 public:
-	ORTextureParamBlend(const char *pName = NULL, HIObject pObject=NULL);
+	ORTextureParamBlend(const char *pName = nullptr, HIObject pObject=nullptr);
 
 	// for each layer we need separate blend mode
 
 	
-	FBPropertyAnimatableColorAndAlpha   AuxLayer;             //!< <b>Read/Write Property:</b> A Texture Connectable Color property, used to provide additional info for composition. 
+	FBPropertyAnimatableColorAndAlpha   BackgroundColor;      //!< <b>Read/Write Property:</b> A Texture Connectable Color property, used to provide additional info for composition. 
     FBPropertyBool                      CustomComposition;    //!< <b>Read/Write Property:</b> Switch to default / custom composition method. 
 
 	FBPropertyBaseEnum<ESpriteOrder>	SpriteOrder;
@@ -162,10 +162,13 @@ public:
 	FBPropertyAnimatableDouble			ParamU;
 	FBPropertyAnimatableDouble			ParamV;
 
+	FBPropertyBool						PremultAlpha;
+
 	FBPropertyBool						SpriteAnimation;
 	FBPropertyInt						SpriteFPS;
 	FBPropertyDouble					SpriteFramesLimit;
 	FBPropertyBool						SpriteLocalPlay;
+	FBPropertyTime						SpriteLocalStartTime;
 	FBPropertyBool						SpriteLoopPlay;
 
 	// FBPropertyBool						GenerateMipmaps; // we don't have a control under RTT buffer
@@ -210,6 +213,8 @@ protected:
 		GLint				countV;
 		GLint				paramU;
 		GLint				paramV;
+
+		GLint				premultAlpha;
 	};
 
 	Locations			mLocations[TOTAL_NUMBER_OF_SPRITE_SHADERS];
@@ -218,7 +223,7 @@ protected:
 	//
 
 	FBTime				mLastTime;
-	double				mSpriteParamU;
+	double				mSpriteParamU{ 0.0 };
 
 	//
 	//

@@ -13,8 +13,12 @@ set_target_properties(freetype-gl PROPERTIES
 
 project(manager_PostProcessing LANGUAGES CXX)
 
-file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h *.fsh *.vsh)
-add_library(${PROJECT_NAME} SHARED ${SRCS})
+file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h)
+file(GLOB_RECURSE SRCS_SHADERS *.fsh *.vsh)
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/GLSL FILES "${SRCS_SHADERS}")
+
+add_library(${PROJECT_NAME} SHARED ${SRCS} ${SRCS_SHADERS})
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)

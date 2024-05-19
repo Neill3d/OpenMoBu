@@ -15,6 +15,7 @@
 #include "ortexture_advanceBlend_texture.h"
 #include <gl\glew.h>
 #include <exception>
+#include <algorithm>
 
 #include "FileUtils.h"
 
@@ -122,26 +123,31 @@ static void ORTextureParamBlend_SpriteLoopPlaySet(HIObject pMbObject, bool pValu
  ************************************************/
 bool ORTextureParamBlend::FBCreate()
 {
-	FBPropertyInitTextureConnectable(this, AuxLayer, "AuxLayer" );
-    FBPropertyPublish(this, CustomComposition, "CustomComposition", NULL, ORTextureParamBlend_CustomCompositionSet);
+	FBPropertyInitTextureConnectable(this, BackgroundColor, "Background Color" );
+    FBPropertyPublish(this, CustomComposition, "CustomComposition", nullptr, ORTextureParamBlend_CustomCompositionSet);
 
-	FBPropertyPublish(this, SpriteOrder, "Sprite Order", NULL, ORTextureParamBlend_SpriteOrderSet);
+	FBPropertyPublish(this, SpriteOrder, "Sprite Order", nullptr, ORTextureParamBlend_SpriteOrderSet);
 
-	FBPropertyPublish(this, CountU, "Count U", NULL, ORTextureParamBlend_CountUSet);
-	FBPropertyPublish(this, CountV, "Count V", NULL, ORTextureParamBlend_CountVSet);
+	FBPropertyPublish(this, CountU, "Count U", nullptr, ORTextureParamBlend_CountUSet);
+	FBPropertyPublish(this, CountV, "Count V", nullptr, ORTextureParamBlend_CountVSet);
 	FBPropertyPublish(this, ParamU, "Param U", nullptr, nullptr);
 	FBPropertyPublish(this, ParamV, "Param V", nullptr, nullptr);
 
-	FBPropertyPublish(this, SpriteAnimation, "Sprite Animation", NULL, ORTextureParamBlend_SpriteAnimationSet);
-	FBPropertyPublish(this, SpriteFPS, "Sprite FPS", NULL, ORTextureParamBlend_SpriteFPSSet);
-	FBPropertyPublish(this, SpriteFramesLimit, "Sprite Frames Limit", NULL, ORTextureParamBlend_SpriteFramesLimitSet);
-	FBPropertyPublish(this, SpriteLocalPlay, "Sprite Local Play", NULL, ORTextureParamBlend_SpriteLocalPlaySet);
-	FBPropertyPublish(this, SpriteLoopPlay, "Sprite Loop Play", NULL, ORTextureParamBlend_SpriteLoopPlaySet);
+	FBPropertyPublish(this, PremultAlpha, "Premult Alpha", nullptr, nullptr);
 
-    AuxLayer = FBColorAndAlpha(1.0, 1.0, 1.0, 1.0);
+	FBPropertyPublish(this, SpriteAnimation, "Sprite Animation", nullptr, ORTextureParamBlend_SpriteAnimationSet);
+	FBPropertyPublish(this, SpriteFPS, "Sprite FPS", nullptr, ORTextureParamBlend_SpriteFPSSet);
+	FBPropertyPublish(this, SpriteFramesLimit, "Sprite Frames Limit", nullptr, ORTextureParamBlend_SpriteFramesLimitSet);
+	FBPropertyPublish(this, SpriteLocalPlay, "Sprite Local Play", nullptr, ORTextureParamBlend_SpriteLocalPlaySet);
+	FBPropertyPublish(this, SpriteLocalStartTime, "Sprite Local Start Time", nullptr, nullptr);
+	FBPropertyPublish(this, SpriteLoopPlay, "Sprite Loop Play", nullptr, ORTextureParamBlend_SpriteLoopPlaySet);
+
+    BackgroundColor = FBColorAndAlpha(1.0, 1.0, 1.0, 1.0);
     CustomComposition = true;
 
 	SpriteOrder = eSpriteMatrix;
+
+	PremultAlpha = false;
 
 	CountU = 1;
 	CountV = 1;
@@ -159,6 +165,7 @@ bool ORTextureParamBlend::FBCreate()
 	SpriteFPS = 12;
 	SpriteFramesLimit = 100.0;
 	SpriteLocalPlay = false;
+	SpriteLocalStartTime = FBTime::Zero;
 	SpriteLoopPlay = true;
 
 	mLastTime = FBTime::MinusInfinity;
@@ -193,7 +200,7 @@ bool ORTextureParamBlend::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore p
 
 bool ORTextureParamBlend::PlugDataNotify(FBConnectionAction pAction,FBPlug* pThis,void* pData,void* pDataOld,int pDataSize)
 {
-    if (pThis == &AuxLayer || pThis == &ParamU || pThis == &ParamV)
+    if (pThis == &BackgroundColor || pThis == &ParamU || pThis == &ParamV)
     {
         switch (pAction)
         {
@@ -220,23 +227,39 @@ bool ORTextureParamBlend::EvaluateAnimationNodes( FBEvaluateInfo* pEvaluateInfo 
 		if (SpriteAnimation && CountU > 0 && CountV > 0)
 		{
 			
-			double paramOneFrame = 1.0 / (CountU * CountV);
+			const double paramOneFrame = 1.0 / (CountU * CountV);
 
-			FBTime currTime = pEvaluateInfo->GetSystemTime();
+			FBTime currTime = (SpriteLocalPlay) ? pEvaluateInfo->GetLocalTime() : pEvaluateInfo->GetSystemTime();
 
 			if (mLastTime == FBTime::MinusInfinity)
 				mLastTime = currTime;
 
-			double timeElapsed = currTime.GetSecondDouble() - mLastTime.GetSecondDouble();
+			const double timeElapsed = currTime.GetSecondDouble() - mLastTime.GetSecondDouble();
+			const double framesElapsed = timeElapsed * SpriteFPS;
 
-			double framesElapsed = timeElapsed * SpriteFPS;
 			mSpriteParamU += 100.0 * paramOneFrame * framesElapsed;
 
-			while (mSpriteParamU > SpriteFramesLimit)
+			if (SpriteLocalPlay && currTime < SpriteLocalStartTime)
 			{
-				mSpriteParamU -= SpriteFramesLimit;
+				mSpriteParamU = 0.0;
 			}
 
+			if (mSpriteParamU < 0.0) mSpriteParamU = 0.0;
+			else if (mSpriteParamU > 2.0 * SpriteFramesLimit) mSpriteParamU = 2.0 * SpriteFramesLimit;
+
+			if (SpriteLoopPlay)
+			{
+				while (mSpriteParamU > SpriteFramesLimit)
+				{
+					mSpriteParamU -= SpriteFramesLimit;
+				}
+			}
+			else
+			{
+				if (mSpriteParamU > SpriteFramesLimit) 
+					mSpriteParamU = SpriteFramesLimit;
+			}
+			
 			//
 			mLastTime = currTime;
 
@@ -244,12 +267,12 @@ bool ORTextureParamBlend::EvaluateAnimationNodes( FBEvaluateInfo* pEvaluateInfo 
 			SetLayerConfigDirty();
 		}
 
-		if (AuxLayer.IsAnimated())
+		if (BackgroundColor.IsAnimated())
 		{
     
 			// Compute animatable property value in background evaluation thread.
 			FBPropertyAnimatableColorAndAlpha::ValueType lTmpValue;
-			AuxLayer.GetData(lTmpValue.mValue, sizeof(lTmpValue.mValue), pEvaluateInfo);
+			BackgroundColor.GetData(lTmpValue.mValue, sizeof(lTmpValue.mValue), pEvaluateInfo);
 
 			// Trigger composition per frame.
 			SetLayerConfigDirty();
@@ -299,9 +322,9 @@ void ORTextureParamBlend::TextureLayerComposition(FBTime pTime,FBTime pTimeInCur
 
         // Clear Buffers.
 
-        // Default implementation use BackgroundColor property. Here AuxLayer is used for demo purpose. 
+        // Default implementation use BackgroundColor property.
         // FBColorAndAlpha lBgColor = BackgroundColor;
-        FBColorAndAlpha lBgColor = AuxLayer;
+        FBColorAndAlpha lBgColor = BackgroundColor;
         glClearColor(lBgColor[0], lBgColor[1], lBgColor[2], lBgColor[3]);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -331,6 +354,9 @@ void ORTextureParamBlend::TextureLayerComposition(FBTime pTime,FBTime pTimeInCur
 		FBTexture *lTexture = Layers[0];
 		lTexture->OGLInit();
 
+		if (loc.premultAlpha >= 0)
+			pShader->setUniformFloat(loc.premultAlpha, PremultAlpha ? 1.0f : 0.0f);
+
 		switch(SpriteOrder)
 		{
 		case eSpriteVector:
@@ -346,20 +372,31 @@ void ORTextureParamBlend::TextureLayerComposition(FBTime pTime,FBTime pTimeInCur
 
 			break;
 		case eSpriteMatrix:
-			pShader->bindTexture(GL_TEXTURE_2D, loc.tex, lTexture->TextureOGLId, 0);
-		
-			pShader->setUniformFloat( loc.countU, (float) CountU );
-			pShader->setUniformFloat( loc.countV, (float) CountV );
-			pShader->setUniformFloat( loc.paramU, 0.01f * (float) ParamU );
-			pShader->setUniformFloat( loc.paramV, 0.01f * (float) ParamV );
-			break;
 		case eSpriteBlendedMatrix:
 			pShader->bindTexture(GL_TEXTURE_2D, loc.tex, lTexture->TextureOGLId, 0);
 		
 			pShader->setUniformFloat( loc.countU, (float) CountU );
 			pShader->setUniformFloat( loc.countV, (float) CountV );
-			pShader->setUniformFloat( loc.paramU, 0.01f * (float) ParamU );
-			pShader->setUniformFloat( loc.paramV, 0.01f * (float) ParamV );
+
+			if (SpriteAnimation && CountU > 0 && CountV > 0)
+			{
+				const double maxParam = CountU * CountV;
+				const double localProgress = std::min(0.01 * mSpriteParamU * maxParam, maxParam);
+				const double maxInRow = CountU;
+				const double currentRow = std::min(floor(localProgress / maxInRow), maxInRow);
+				const double currentCol = std::min(localProgress - (currentRow * maxInRow), static_cast<double>(CountV.AsInt()));
+
+				pShader->setUniformFloat(loc.paramV,  (float)(currentRow / CountU));
+				pShader->setUniformFloat(loc.paramU,  (float)(currentCol / CountV));
+
+				ParamV = 100.0 * currentRow / CountU;
+				ParamU = 100.0 * currentCol / CountV;
+			}
+			else
+			{
+				pShader->setUniformFloat(loc.paramU, 0.01f * (float)ParamU);
+				pShader->setUniformFloat(loc.paramV, 0.01f * (float)ParamV);
+			}
 			break;
 		}
 
@@ -438,6 +475,7 @@ bool ORTextureParamBlend::InitLocations(const GLSLShader *shader, Locations &loc
 		locations.countV = shader->findLocation( "countV" );
 		locations.paramU = shader->findLocation( "paramU" );
 		locations.paramV = shader->findLocation( "paramV" );
+		locations.premultAlpha = shader->findLocation("premultAlpha");
 	}
 
 	return true;

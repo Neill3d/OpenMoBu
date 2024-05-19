@@ -5,6 +5,7 @@ file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h)
 add_library(${PROJECT_NAME} SHARED ${SRCS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include ${CMAKE_SOURCE_DIR}/MotionCodeLibrary)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third_party)
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)

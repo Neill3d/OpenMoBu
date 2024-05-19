@@ -21,5 +21,7 @@ include(cmake/OpenReality.cmake)
 # Static library with a shared code - MotionCodeLibrary
 add_subdirectory( MotionCodeLibrary )
 
+set_property(GLOBAL PROPERTY USE_FOLDERS On)
+
 # Include of source folders
 add_subdirectory( Projects )

@@ -16,6 +16,7 @@ uniform float			countV;
 uniform float			paramU;
 uniform float			paramV;
 
+uniform float			premultAlpha;
 
 void main (void)
 {
@@ -32,5 +33,8 @@ void main (void)
 	
 	vec4 color = texture2D( tex, tx );
 	
+	if (premultAlpha > 0.0)
+		color.a *= mix(color.b, mix(color.r, color.g, 0.5), 0.5);
+
 	gl_FragColor = color;
 }
