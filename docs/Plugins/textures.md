@@ -11,6 +11,8 @@
 
  The texture object for blending two images with advanced number of composite modes and optional masking for the second image
 
+![textureAdvanceBlend](texture_advance_blend.jpg)
+
 ### Properties
 
  - Background color - clear color, animatable parameter, should be keyed in order to evaluate a texture object at run-time
@@ -24,6 +26,9 @@
  A texture object to player sprite texture animations.
  This is a plugin that introduced a new texture object to unpack sprite altal into a run-time texture
 If you want to see the animated effect, you have to put key on BackgroundLayer property
+
+![textureParamBlend2](texture_param_blend_2.jpg)
+![textureParamBlend](texture_param_blend.jpg)
 
 ### Properties
 
