@@ -70,16 +70,6 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  Shading, fx, geometry preparation for rendering
 
-## References Manager and FBX Extension
-
- This is a set of 2 plugins, one command line console application and python scripts in order to stabilize and extend the functionality of referenced models (support for shaders) in motionbuilder scene.
-
- Reference Manager depends on shadingGraph cmd application which extracts shaders graph xml from fbx files.
-
- FBX Extension is a plugin that hooks the fbx file import on motionbuilder scene loading and fixes a bug with locked reference model on missing reference file.
-
-[Read More...](Plugins/ReferencesManager.md)
-
 ### Post Processing Filters
 
  A special user object, that helps to add post process filters on top of your camera view.
@@ -92,11 +82,31 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 [Read More...](Plugins/shader_superDynamicLighting.md)
 
+### Texture
+
+- Texture Advanced Blend
+
+ A texture object to mix two images with a wide range of composite modes and optional masking the second texture target
+
+- Texture Parametric Blend
+
+ A texture object to support atlas packed image. The atlas image is a collection of images that are packed inside one bigger images side by side. It's quite often used in game industry for fx, as it gives some performance gain to change a next frame by offsetting uv coordinates instead of reading a separate image.
+
 ### Calculate Normals Solver
 
  A solver to recalculate mesh normals on fly during rendering. That helps to better visualize deformations from blendshape activation or by skinned skeleton transform.
 
 [Read More...](Plugins/solverCalculateNormals.md)
+
+## References Manager and FBX Extension
+
+ This is a set of 2 plugins, one command line console application and python scripts in order to stabilize and extend the functionality of referenced models (support for shaders) in motionbuilder scene.
+
+ Reference Manager depends on shadingGraph cmd application which extracts shaders graph xml from fbx files.
+
+ FBX Extension is a plugin that hooks the fbx file import on motionbuilder scene loading and fixes a bug with locked reference model on missing reference file.
+
+[Read More...](Plugins/ReferencesManager.md)
 
 ## About the project
 

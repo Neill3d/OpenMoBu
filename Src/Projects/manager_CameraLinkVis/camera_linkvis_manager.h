@@ -48,8 +48,14 @@ private:
 	FBSystem			mSystem;
 	FBCamera			*mLastCamera;
 
+	static FBGroup* gGroup;
+	static FBCamera* gCamera;
+
 	void LeaveCamera(FBCamera *pCamera);
 	void EnterCamera(FBCamera *pCamera);
+
+	FBCamera* FindCameraByGroup(const char* groupName);
+	bool GroupVis(const char* groupName, const bool show);
 };
 
 #endif /* __CAMERA_LINKVIS_MANAGER_H__ */

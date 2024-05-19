@@ -22,6 +22,9 @@
 FBCustomManagerImplementation( CAMERA_LINKVIS__CLASS  );  // Manager class name.
 FBRegisterCustomManager( CAMERA_LINKVIS__CLASS );         // Manager class name.
 
+FBGroup* Manager_CameraLinkVis::gGroup = nullptr;
+FBCamera* Manager_CameraLinkVis::gCamera = nullptr;
+
 /************************************************
  *  FiLMBOX Creation
  ************************************************/
@@ -73,40 +76,6 @@ bool Manager_CameraLinkVis::Close()
     return true;
 }
 
-void Manager_CameraLinkVis::EventConnDataNotify(HISender pSender, HKEvent pEvent)
-{
-	FBEventConnectionDataNotify	lEvent(pEvent);
-    FBPlug*						lPlug;
-	
-    if( lEvent.Plug )
-	{
-        if ( FBIS(lEvent.Plug, FBCamera) )
-        {
-            lPlug = lEvent.Plug;
-            
-			FBCamera *pCamera = FBCast<FBCamera>(lPlug);
-			FBString cameraName ( pCamera->Name );
-
-			FBTrace( "camera name - %s\n", static_cast<const char*>(cameraName) );
-        }
-    }
-}
-
-void Manager_CameraLinkVis::EventConnNotify(HISender pSender, HKEvent pEvent)
-{
-	FBEventConnectionNotify	lEvent(pEvent);
-    FBPlug*						lPlug;
-    
-	if( lEvent.SrcPlug )
-    {
-        if ( FBIS(lEvent.SrcPlug, FBCamera) )
-        {
-			FBString cameraName( ( (FBCamera*)(FBPlug*)lEvent.SrcPlug )->Name );
-			FBTrace( "camera name - %s\n", static_cast<const char*>(cameraName) );
-		}
-    }
-}
-
 void Manager_CameraLinkVis::EventRender(HISender pSender, HKEvent pEvent)
 {
 	FBEventEvalGlobalCallback	levent(pEvent);
@@ -119,8 +88,12 @@ void Manager_CameraLinkVis::EventRender(HISender pSender, HKEvent pEvent)
 
 void Manager_CameraLinkVis::EventUIIdle(HISender pSender, HKEvent pEvent)
 {
-	
-	FBCamera *pCamera = mSystem.Scene->Renderer->CurrentCamera;
+	const int paneIndex = mSystem.Scene->Renderer->GetSelectedPaneIndex();
+
+	if (paneIndex < 0)
+		return;
+
+	FBCamera *pCamera = mSystem.Scene->Renderer->GetCameraInPane(paneIndex);
 
 	if (FBIS(pCamera, FBCameraSwitcher))
 		pCamera = ( FBCast<FBCameraSwitcher>(pCamera) )->CurrentCamera;
@@ -143,7 +116,7 @@ void Manager_CameraLinkVis::EventUIIdle(HISender pSender, HKEvent pEvent)
 	mLastCamera = pCamera;
 }
 
-bool GroupVis(const char *groupName, const bool show)
+bool Manager_CameraLinkVis::GroupVis(const char *groupName, const bool show)
 {
 	FBScene *pScene = FBSystem::TheOne().Scene;
 
@@ -194,10 +167,7 @@ void Manager_CameraLinkVis::EnterCamera(FBCamera *pCamera)
 	}
 }
 
-static FBGroup *gGroup = nullptr;
-static FBCamera *gCamera = nullptr;
-
-FBCamera* FindCameraByGroup(const char *groupName)
+FBCamera* Manager_CameraLinkVis::FindCameraByGroup(const char *groupName)
 {
 	FBScene *pScene = FBSystem::TheOne().Scene;
 
