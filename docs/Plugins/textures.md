@@ -13,11 +13,11 @@
 
 ### Properties
 
- Background color - clear color, animatable parameter, should be keyed in order to evaluate a texture object at run-time
- CustomComposition - a flag that activate the advance composite logic
- Blend Mode Advanced - a wide range of composition blend modes
- Use Mask - a flag if the mask should be used
- Mask - a mask texture
+ - Background color - clear color, animatable parameter, should be keyed in order to evaluate a texture object at run-time
+ - CustomComposition - a flag that activate the advance composite logic
+ - Blend Mode Advanced - a wide range of composition blend modes
+ - Use Mask - a flag if the mask should be used
+ - Mask - a mask texture
 
 ## Texture Parameric Blend
 
@@ -27,20 +27,20 @@ If you want to see the animated effect, you have to put key on BackgroundLayer p
 
 ### Properties
 
-BackgroundLayer - clear color, animatable parameter, should be keyed in order to evaluate a texture object at run-time
-CustomComposition - a toggle to enable the whole parametric blend logic
-Sprite Order - type of packing vector or matrix. Blended matrix is a way to interpolate between nearest frames
-Count U - number of packed textures in a row in the atlas
-Count V - number of packed texture in  a colomn in the atlas
-Param U - current parameter to define position in a row to display
-Param V - current parameter to define position in a column to display
-Premult Alpha - whould we multiply output texture alpha with average rgb color
-Sprite Animation - a toggle to enable auto play of sprite animation
-Sprite FPS - number of frames per second to play the sprite
-Sprite Frames Limit - should 100, the total progress upper limit
-Sprite Local Play - a toggle between real-time or play-time animation play
-Sprite Local Start Time - start time for a play-time animation play
-Sprite Loop Play - a toggle to switch between single or looped play
+- BackgroundLayer - clear color, animatable parameter, should be keyed in order to evaluate a texture object at run-time
+- CustomComposition - a toggle to enable the whole parametric blend logic
+- Sprite Order - type of packing vector or matrix. Blended matrix is a way to interpolate between nearest frames
+- Count U - number of packed textures in a row in the atlas
+- Count V - number of packed texture in  a colomn in the atlas
+- Param U - current parameter to define position in a row to display
+- Param V - current parameter to define position in a column to display
+- Premult Alpha - whould we multiply output texture alpha with average rgb color
+- Sprite Animation - a toggle to enable auto play of sprite animation
+- Sprite FPS - number of frames per second to play the sprite
+- Sprite Frames Limit - should 100, the total progress upper limit
+- Sprite Local Play - a toggle between real-time or play-time animation play
+- Sprite Local Start Time - start time for a play-time animation play
+- Sprite Loop Play - a toggle to switch between single or looped play
 
 ## LOG
 

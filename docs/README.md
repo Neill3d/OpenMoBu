@@ -56,16 +56,6 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 [Lock Camera Manipulator](Plugins/manipulator_lockCamera.md)
 
-## Misc
-
- Tools, custom objects in the scene
-
-### Optical Volume Calculator
-
- The custom model that helps to calculate a unit score of a volume coverage for the optical system. In order to run the solver, you have to immitate the capturing space by placing cameras the same way how you are going to place them in the real room with a correct defined FOV and aspect ratio.
-
-[Read More...](Plugins/opticalVolumeCalculator.md)
-
 ## Graphics
 
  Shading, fx, geometry preparation for rendering
@@ -82,6 +72,10 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 [Read More...](Plugins/shader_superDynamicLighting.md)
 
+### Renderer Colors
+
+ A special renderer that could render your scene with color ids or normalized colors
+
 ### Texture
 
 - Texture Advanced Blend
@@ -90,7 +84,9 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 - Texture Parametric Blend
 
- A texture object to support atlas packed image. The atlas image is a collection of images that are packed inside one bigger images side by side. It's quite often used in game industry for fx, as it gives some performance gain to change a next frame by offsetting uv coordinates instead of reading a separate image.
+ A texture object to support atlas packed image or in other words a texture object for sprite texture animation. The atlas image is a collection of images that are packed inside one bigger images side by side. It's quite often used in game industry for fx, as it gives some performance gain to change a next frame by offsetting uv coordinates instead of reading a separate image.
+
+[Read More...](Plugins/textures.md)
 
 ### Calculate Normals Solver
 
@@ -107,6 +103,26 @@ For more information, please visit [FaceCap official website](https://bannaflak.
  FBX Extension is a plugin that hooks the fbx file import on motionbuilder scene loading and fixes a bug with locked reference model on missing reference file.
 
 [Read More...](Plugins/ReferencesManager.md)
+
+## Misc
+
+ Tools, custom objects in the scene
+
+### BlendShape Manager and Sculpt
+
+- Blendshape manager - to manage the given model blendshapes, plus additional functionality to add/remove/duplicate, save/load from file, do a snapshot
+
+- Blenshape Sculpt - use brushes to create or modify a blendshape. it can be useful for making correction blendshapes on fly, as you can sculpt on top of current deformed mesh and it will generate a correspondent correction blendshape
+
+### Manager To Link Group Visibility with a Camera
+
+ A special manager that could help to control a group visibility with a camera activation. When you switch between cameras in the viewport, the attached groups will change their visibility.
+
+### Optical Volume Calculator
+
+ The custom model that helps to calculate a unit score of a volume coverage for the optical system. In order to run the solver, you have to immitate the capturing space by placing cameras the same way how you are going to place them in the real room with a correct defined FOV and aspect ratio.
+
+[Read More...](Plugins/opticalVolumeCalculator.md)
 
 ## About the project
 
