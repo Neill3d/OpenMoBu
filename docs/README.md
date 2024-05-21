@@ -118,6 +118,8 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  A special manager that could help to control a group visibility with a camera activation. When you switch between cameras in the viewport, the attached groups will change their visibility.
 
+[Read More...](Plugins/cameraLinksGroupVisibility.md)
+
 ### Optical Volume Calculator
 
  The custom model that helps to calculate a unit score of a volume coverage for the optical system. In order to run the solver, you have to immitate the capturing space by placing cameras the same way how you are going to place them in the real room with a correct defined FOV and aspect ratio.
