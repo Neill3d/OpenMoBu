@@ -75,6 +75,7 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 ### Renderer Colors
 
  A special renderer that could render your scene with color ids or normalized colors
+![RendererColorsNormalized](Plugins/renderer_colors_normalized.jpg)
 
 ### Texture
 
