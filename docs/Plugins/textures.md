@@ -21,6 +21,10 @@
  - Use Mask - a flag if the mask should be used
  - Mask - a mask texture
 
+### Samples
+
+Sample file - MB_Scenes\texture_advance_blend.fbx
+
 ## Texture Parameric Blend
 
  A texture object to player sprite texture animations.
@@ -46,6 +50,10 @@ If you want to see the animated effect, you have to put key on BackgroundLayer p
 - Sprite Local Play - a toggle between real-time or play-time animation play
 - Sprite Local Start Time - start time for a play-time animation play
 - Sprite Loop Play - a toggle to switch between single or looped play
+
+### Samples
+
+Sample file - MB_Scenes\texture_param_blend.fbx
 
 ## LOG
 
