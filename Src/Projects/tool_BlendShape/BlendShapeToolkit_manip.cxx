@@ -251,8 +251,8 @@ bool ORManip_Sculpt::FBCreate()
 		StrengthSens = 0.3;
 
 		BrushColor = FBColor(1.0, 1.0, 0.0);
-		DirectionMode = kFBBrushScreen;
-		AffectMode = kFBBrushAffectOnSurface;
+		DirectionMode.SetPropertyValue(kFBBrushScreen);
+		AffectMode.SetPropertyValue(kFBBrushAffectOnSurface);
 		DisplayAffect = true;
 
 		ScreenInfluence = false;
@@ -507,7 +507,7 @@ void ORManip_Sculpt::UpdateViewPlane(FBCamera *currentCamera, BrushCameraData *p
 
 	mNearDist = currentCamera->NearPlaneDistance;
 	mFarDist = currentCamera->FarPlaneDistance;
-	mPerspective = (currentCamera->Type == kFBCameraTypePerspective);
+	mPerspective = (currentCamera->Type.GetPropertyValue() == kFBCameraTypePerspective);
 
 	mScreenHeight = lViewport[3];
 	mScreenWidth = lViewport[2];
@@ -1006,7 +1006,7 @@ bool ORManip_Sculpt::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, in
 					mBrushData.GetModelPtr()->GetMatrix(m, kModelTransformation_Geometry);
 					FBMatrixInverse(mInv, m);
 
-					if (lCamera->Type == kFBCameraTypeOrthogonal)
+					if (lCamera->Type.GetPropertyValue() == kFBCameraTypeOrthogonal)
 					{
 						nearPlane = 1.0; //lCamera->NearPlaneDistance;
 						farPlane = 3500.0; //lCamera->FarPlaneDistance;
@@ -1044,7 +1044,7 @@ bool ORManip_Sculpt::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, in
 							if (lMouseButtonPressed)
 							{
 								pCameraData->viewPlane = mViewPlane;
-								pCameraData->direction = DirectionMode;
+								pCameraData->direction = DirectionMode.GetPropertyValue();
 								if (ScreenInfluence)
 								{
 									mBrushData.radius = ScreenInfluenceRadius;
@@ -1296,7 +1296,7 @@ void ORManip_Sculpt::CalculateBufferWeights(BrushCameraData *pCameraData)
 	{
 		//FBMatrix m;
 		FBVector3d pos, res;
-		double x,y,z;
+		//double x,y,z;
 
 		double length, weight;
 
@@ -1322,7 +1322,7 @@ void ORManip_Sculpt::CalculateBufferWeights(BrushCameraData *pCameraData)
 		}
 	}
 	else
-	if (AffectMode == kFBBrushAffectOnVolume)
+	if (AffectMode.AsInt() == kFBBrushAffectOnVolume)
 	{
 		double length, weight;
 
@@ -1767,7 +1767,7 @@ void ORManip_Sculpt::Fill()
 		return;
 
 	pData->viewPlane = mViewPlane;
-	pData->direction = DirectionMode;
+	pData->direction = DirectionMode.GetPropertyValue();
 	if (ScreenInfluence)
 	{
 		mBrushData.radius = ScreenInfluenceRadius;
@@ -2040,7 +2040,7 @@ void ORManip_Sculpt::EventSceneChange(HISender pSender, HKEvent pEvent)
 {
 	FBEventSceneChange	lEvent(pEvent);
 
-	if (lEvent.Type == kFBSceneChangeDetach && FBIS(lEvent.ChildComponent, BlendShapeDeformerConstraint) )
+	if (lEvent.Type.AsInt() == kFBSceneChangeDetach && FBIS(lEvent.ChildComponent, BlendShapeDeformerConstraint))
 	{
 		SetCurrentConstraint(nullptr);
 	}

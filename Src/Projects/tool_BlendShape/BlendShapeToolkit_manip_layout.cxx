@@ -475,7 +475,7 @@ void ORManip_Sculpt_Tool::UIConfigure()
 	auto brushManager = mManipulator->GetBrushManagerPtr();
 
 	mButtonActive.Caption = "Active";
-	mButtonActive.Style = kFB2States;
+	mButtonActive.Style.SetPropertyValue(kFB2States);
 	mButtonActive.State = 0;
 	mButtonActive.OnClick.Add( this, (FBCallback) &ORManip_Sculpt_Tool::EventButtonActiveClick );
 
@@ -495,7 +495,7 @@ void ORManip_Sculpt_Tool::UIConfigure()
 
 	mLabelConstraintList.Caption = "Choose a constraint";
 
-	mListConstraints.Style = kFBDropDownList;
+	mListConstraints.Style.SetPropertyValue(kFBDropDownList);
 	mListConstraints.OnChange.Add( this, (FBCallback) &ORManip_Sculpt_Tool::EventListConstraintChange );
 	mEditExclusiveMode.Caption = "Exclusive Mode";
 	mEditExclusiveMode.Property = nullptr;
@@ -513,10 +513,10 @@ void ORManip_Sculpt_Tool::UIConfigure()
 
 	// Configure elements
 	
-	mContainerFalloffs.Orientation = kFBHorizontal;
+	mContainerFalloffs.Orientation.SetPropertyValue(kFBHorizontal);
 	mContainerFalloffs.ItemHeight = 60;
 	mContainerFalloffs.ItemWidth = 60;
-	mContainerFalloffs.IconPosition = kFBIconTop;
+	mContainerFalloffs.IconPosition.SetPropertyValue(kFBIconTop);
 	//mContainerFalloffs.Items.SetString( "Smooth~Linear~FastIn~FastOut~Top" );
 	mContainerFalloffs.OnChange.Add( this, (FBCallback) &ORManip_Sculpt_Tool::EventFalloffChange );
 
@@ -528,10 +528,10 @@ void ORManip_Sculpt_Tool::UIConfigure()
 	}
 
 	mLabelBrushes.Caption = "Brushes";
-	mContainerBrushes.Orientation = kFBVertical;
+	mContainerBrushes.Orientation.SetPropertyValue(kFBVertical);
 	mContainerBrushes.ItemHeight = 60;
 	mContainerBrushes.ItemWidth = 60;
-	mContainerBrushes.IconPosition = kFBIconTop;
+	mContainerBrushes.IconPosition.SetPropertyValue(kFBIconTop);
 	//mContainerBrushes.Items.SetString( "Move~Push~Pull~Smooth" );
 	mContainerBrushes.OnChange.Add( this, (FBCallback) &ORManip_Sculpt_Tool::EventBrushChange );
 
@@ -638,7 +638,7 @@ void ORManip_Sculpt_Tool::UIConfigDeformer()
 	mButtonSetBlendShape.OnClick.Add( this, (FBCallback) &ORManip_Sculpt_Tool::EventButtonDeformerBlendshapeAddClick );
 
 	mButtonOverrideExisting.Caption = "Override Existing";
-	mButtonOverrideExisting.Style = kFBCheckbox;
+	mButtonOverrideExisting.Style.SetPropertyValue(kFBCheckbox);
 	mButtonOverrideExisting.State = 0;
 
 	mEditAutoKeyframe.Property = &mManipulator->AutoKeyframe;
@@ -647,7 +647,7 @@ void ORManip_Sculpt_Tool::UIConfigDeformer()
 	mButtonSetKeyframe.Enabled = false;
 
 	mButtonUseKeyRange.Caption = "";
-	mButtonUseKeyRange.Style = kFBCheckbox;
+	mButtonUseKeyRange.Style.SetPropertyValue(kFBCheckbox);
 	mButtonUseKeyRange.State = 1;
 	mButtonUseKeyRange.OnClick.Add( this, (FBCallback) &ORManip_Sculpt_Tool::EventButtonUseKeyframeRangeClick );
 
@@ -960,12 +960,12 @@ void ORManip_Sculpt_Tool::EventSceneChange( HISender pSender, HKEvent pEvent )
 {
 	FBEventSceneChange lEvent(pEvent);
 
-	if (lEvent.Type == kFBSceneChangeAttach)
+	if (lEvent.Type.AsInt() == kFBSceneChangeAttach)
 	{
 		if (FBIS(lEvent.ChildComponent, FBConstraint) )
 			UpdateConstraintList();
 	}
-	if (lEvent.Type == kFBSceneChangeDetach)
+	if (lEvent.Type.AsInt() == kFBSceneChangeDetach)
 	{
 		if (FBIS(lEvent.ChildComponent, FBConstraint) )
 			UpdateConstraintList();

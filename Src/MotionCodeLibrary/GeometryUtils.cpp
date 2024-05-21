@@ -44,7 +44,7 @@ FBModel *MakeSnapshot(FBModel *pModel, const bool ResetXForm)
 
 	lMesh->GeometryBegin();
 
-	int uvCount, uvIndexCount;
+	int uvCount; // , uvIndexCount;
 
 	FBUV	*uvs = lMesh->GetUVSetDirectArray(uvCount);
 //	int *uvIndices = lMesh->GetUVSetIndexArray(uvIndexCount);
@@ -125,7 +125,7 @@ FBModel *MakeSnapshot(FBModel *pModel, const bool ResetXForm)
 		}
 		
 		// Step 2: copy polygons
-		FBGeometryMappingMode mapping = lMesh->MaterialMappingMode;
+		FBGeometryMappingMode mapping = static_cast<FBGeometryMappingMode>(lMesh->MaterialMappingMode.AsInt());
 		int polyCount = lMesh->PolygonCount();
 			
 		for (int i=0; i<polyCount; ++i)
@@ -153,7 +153,7 @@ FBModel *MakeSnapshot(FBModel *pModel, const bool ResetXForm)
 	// Step 3: finalize, prepare to display
 	pNewModel->Show = true;
 	// Adjust the shading mode.
-	pNewModel->ShadingMode  = kFBModelShadingTexture;
+	pNewModel->ShadingMode.SetPropertyValue(kFBModelShadingTexture);
 		
 	FBScene *pScene = FBSystem::TheOne().Scene;
 	for (int i=0; i<pScene->Components.GetCount(); ++i)
@@ -302,7 +302,7 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 		//
 		// material mapping
 
-		data.materialMapping = (int) (FBGeometryMappingMode) lMesh->MaterialMappingMode;
+		data.materialMapping = lMesh->MaterialMappingMode.AsInt();
 		
 		int lmaterialIndexCount = 0;
 		//int *lmaterialIndices = lMesh->GetMaterialIndexArray( lmaterialIndexCount );
@@ -374,8 +374,8 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 		//
 		// normals info
 
-		FBGeometryMappingMode lNormalMapping = lMesh->NormalMappingMode;
-		FBGeometryReferenceMode lNormalReferenceMode = lMesh->NormalReferenceMode;
+		FBGeometryMappingMode lNormalMapping = static_cast<FBGeometryMappingMode>(lMesh->NormalMappingMode.AsInt());
+		FBGeometryReferenceMode lNormalReferenceMode = static_cast<FBGeometryReferenceMode>(lMesh->NormalReferenceMode.AsInt());
 
 		data.normalMapping = (int) kFBGeometryMapping_BY_POLYGON_VERTEX;
 		data.normalReferenceMode = (int) kFBGeometryReference_INDEX_TO_DIRECT;

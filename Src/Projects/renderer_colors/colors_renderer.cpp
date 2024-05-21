@@ -268,8 +268,14 @@ void ColorsRendererCallback::RenderColorIds(FBRenderOptions *pRenderOptions)
 {
 
 	FBRenderer* lRenderer = FBSystem::TheOne().Renderer;
+
+#if(PRODUCT_VERSION >= 2023)
+    const int currentPane = lRenderer->GetSelectedPaneIndex();
+    FBCamera* lCamera = lRenderer->GetCameraInPane(currentPane);
+#else
     FBCamera* lCamera = lRenderer->CurrentCamera;
-    
+#endif
+
     FBMatrix lCameraMVPMatrix;
     lCamera->GetCameraMatrix( lCameraMVPMatrix, kFBModelViewProj );
 

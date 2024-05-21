@@ -147,8 +147,10 @@ bool CBoxPoseTransform::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FB
         if (pose == nullptr)
             continue;
 
-        FBStringList storedNames = pose->GetStoredObjectNames();
-
+		FBStringList storedNames;
+#if(PRODUCT_VERSION > 2018)
+		storedNames = pose->GetStoredObjectNames();
+#endif
         int nameIndex = -1;
 
         for (int j = 0, storedNamesCount = storedNames.GetCount(); j < storedNamesCount; ++j)

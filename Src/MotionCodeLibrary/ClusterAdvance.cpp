@@ -270,7 +270,7 @@ bool ClusterAdvance::Init(FBModel *pModel)
 			}
 
 			linkAssociateModel = pCluster->LinkGetAssociateModel(n);
-			FBClusterMode mode = pCluster->ClusterMode;
+			FBClusterMode mode = static_cast<FBClusterMode>(pCluster->ClusterMode.AsInt());
 			/*
 			if (mode != kFBClusterAdditive)
 			{
@@ -399,7 +399,7 @@ bool SkinCopy( FBModelList &modelList, FBModel *pDstModel )
 			
 				const char *linkName = pSrcCluster->LinkGetName(i);
 				FBModel *pSrcLinkModel = pSrcCluster->LinkGetModel(i);
-				const FBClusterMode mode = pSrcCluster->ClusterMode;
+				const FBClusterMode mode = static_cast<FBClusterMode>(pSrcCluster->ClusterMode.AsInt());
 				const double accuracy = pSrcCluster->ClusterAccuracy;
 				pSrcCluster->VertexGetTransform(pos, rot, scale);
 
@@ -429,7 +429,7 @@ bool SkinCopy( FBModelList &modelList, FBModel *pDstModel )
 
 				pDstCluster->LinkSetName(linkName, dstClusterIndex);
 				pDstCluster->LinkSetModel(pSrcLinkModel);
-				pDstCluster->ClusterMode = mode;
+				pDstCluster->ClusterMode.SetPropertyValue(mode);
 				pDstCluster->ClusterAccuracy = accuracy;
 				pDstCluster->VertexSetTransform(pos, rot, scale);
 

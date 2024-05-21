@@ -64,7 +64,7 @@ void BaseBrush::UIDestroy()
 void BaseBrush::UIConfig()
 {
 	mButtonOverride.Caption = "Override Common";
-	mButtonOverride.Style = kFBCheckbox;
+	mButtonOverride.Style.SetPropertyValue(kFBCheckbox);
 
 	mEditColor.Caption = "Color";
 	mEditRadius.Caption = "Radius";

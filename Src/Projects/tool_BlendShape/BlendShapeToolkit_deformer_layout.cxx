@@ -178,7 +178,7 @@ void BlendShapeDeformerLayout::UIConfigure()
 	mSpreadModels.OnCellChange.Add( this, (FBCallback) &BlendShapeDeformerLayout::EventSpreadChange );
 
 	mLabelChannels.Caption = "Channels:";
-	mListChannels.Style = kFBVerticalList;
+	mListChannels.Style.SetPropertyValue(kFBVerticalList);
 	mListChannels.OnChange.Add( this, (FBCallback) &BlendShapeDeformerLayout::EventChannelSelect );
 
 	mButtonChannelRename.Caption = "Rename";
@@ -187,11 +187,11 @@ void BlendShapeDeformerLayout::UIConfigure()
 	mButtonChannelPlot.OnClick.Add( this, (FBCallback) &BlendShapeDeformerLayout::EventButtonPlotClick );
 
 	mLabelShapes.Caption = "Shapes:";
-	mListShapes.Style = kFBVerticalList;
+	mListShapes.Style.SetPropertyValue(kFBVerticalList);
 	mListShapes.OnChange.Add( this, (FBCallback) &BlendShapeDeformerLayout::EventShapeSelect );
 
 	mButtonShapesTimeline.Caption = "Go to shape";
-	mButtonShapesTimeline.Style = kFBCheckbox;
+	mButtonShapesTimeline.Style.SetPropertyValue(kFBCheckbox);
 	mButtonShapesTimeline.State = 1;
 
 	mButtonShapesUpdate.Caption = "Update";
@@ -254,7 +254,7 @@ void BlendShapeDeformerLayout::UIReset()
 		if (pModel)
 			mSpreadModels.SetCell(i, 0, pModel->Name);
 
-		mSpreadModels.GetCell(i, 1).Style = kFBCellStyleMenu;
+		mSpreadModels.GetCell(i, 1).Style.SetPropertyValue(kFBCellStyleMenu);
 		mSpreadModels.SetCell(i, 1, strChannels);
 	}
 

@@ -78,7 +78,7 @@ void ORTool_BlendShape::EventConnectionStateNotify( HISender pSender, HKEvent pE
 	
 	FBEventSceneChange lEvent(pEvent);
 
-	if (lEvent.Type == kFBSceneChangeDetach)
+	if (lEvent.Type.AsInt() == kFBSceneChangeDetach)
 	{
 
 		for (int i=0; i<mContainerObjects.Items.GetCount(); ++i)
@@ -428,7 +428,7 @@ void ORTool_BlendShape::UIConfig()
 	// Configure button
 	mLabelObject.Caption = "Objects container: ";
 		
-	mContainerObjects.IconPosition = kFBIconLeft;
+	mContainerObjects.IconPosition.SetPropertyValue(kFBIconLeft);
 	mContainerObjects.OnDblClick.Add( this, (FBCallback) &ORTool_BlendShape::EventContainerDblClick );
 	mContainerObjects.OnDragAndDrop.Add( this, (FBCallback) &ORTool_BlendShape::EventContainerDragAndDrop );
 
@@ -442,7 +442,7 @@ void ORTool_BlendShape::UIConfig()
 	mButtonSave.OnClick.Add( this, (FBCallback) &ORTool_BlendShape::EventButtonSaveClick );
 
 	mButtonAutoAssign.Caption = "Auto assign";
-	mButtonAutoAssign.Style = kFBCheckbox;
+	mButtonAutoAssign.Style.SetPropertyValue(kFBCheckbox);
 	//mButtonAutoAssign.OnClick.Add( this, (FBCallback) &ORTool_BlendShape::EventButtonAutoAssignClick );
 		
 	mLabelCheck.Caption = "Check state: ";
@@ -461,7 +461,7 @@ void ORTool_BlendShape::UIConfigScrollBox()
 {
 	for (int i=0; i<MAX_PROPERTIES; ++i)
 	{
-		mButtonShapes[i].Style = kFBCheckbox;
+		mButtonShapes[i].Style.SetPropertyValue(kFBCheckbox);
 	}
 }
 
@@ -502,7 +502,7 @@ void ORTool_BlendShape::UIConfigPanel()
 	mButtonSnapshot.Caption = "Snapshot";
 	mButtonSnapshot.OnClick.Add( this, (FBCallback) &ORTool_BlendShape::EventButtonSnapshotClick );
 
-	mListCalcDeltaMode.Style = kFBDropDownList;
+	mListCalcDeltaMode.Style.SetPropertyValue(kFBDropDownList);
 	mListCalcDeltaMode.Items.SetString( "All~Only Pos. X~Only Neg. X" );
 	mListCalcDeltaMode.ItemIndex = 0;
 
@@ -510,7 +510,7 @@ void ORTool_BlendShape::UIConfigPanel()
 	mButtonCalcDelta.OnClick.Add( this, (FBCallback) &ORTool_BlendShape::EventButtonCalcDeltaClick );
 
 	mButtonCombineDeleteSource.Caption = "Delete source models";
-	mButtonCombineDeleteSource.Style = kFBCheckbox;
+	mButtonCombineDeleteSource.Style.SetPropertyValue(kFBCheckbox);
 	mButtonCombineDeleteSource.State = 1;
 	
 	mButtonCombine.Caption = "Combine models";
@@ -654,7 +654,7 @@ void ORTool_BlendShape::EventContainerDragAndDrop( HISender pSender, HKEvent pEv
 {
     FBEventDragAndDrop lDragAndDrop( pEvent );
 
-    switch( lDragAndDrop.State )
+    switch( lDragAndDrop.State.GetPropertyValue() )
     {
         case kFBDragAndDropDrag:
         {
@@ -1385,7 +1385,7 @@ void ORTool_BlendShape::EventButtonCalcDeltaClick( HISender pSender, HKEvent pEv
 		pModelDELTA->Selected = true;
 
 		// Adjust the shading mode.
-		pModelDELTA->ShadingMode  = kFBModelShadingTexture;
+		pModelDELTA->ShadingMode.SetPropertyValue(kFBModelShadingTexture);
 
 		for (int i=0; i<pList.GetCount(); ++i)
 			pList[i]->Selected = false;
@@ -1703,7 +1703,7 @@ void ORTool_BlendShape::EventButtonLoadClick( HISender pSender, HKEvent pEvent )
 	FBFilePopup	lPopup;
 	lPopup.Caption = "Choose a file for loading blendshapes";
 	lPopup.FileName = "*.xml";
-	lPopup.Style = kFBFilePopupOpen;
+	lPopup.Style.SetPropertyValue(kFBFilePopupOpen);
 
 	if (lPopup.Execute() )
 	{
@@ -1736,7 +1736,7 @@ void ORTool_BlendShape::EventButtonSaveClick( HISender pSender, HKEvent pEvent )
 	FBFilePopup	lPopup;
 	lPopup.Caption = "Choose a file for saving blendshapes";
 	lPopup.FileName = "*.xml";
-	lPopup.Style = kFBFilePopupSave;
+	lPopup.Style.SetPropertyValue(kFBFilePopupSave);
 
 	if (lPopup.Execute() )
 	{

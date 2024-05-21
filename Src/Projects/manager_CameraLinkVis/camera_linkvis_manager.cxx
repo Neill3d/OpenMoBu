@@ -25,6 +25,11 @@ FBRegisterCustomManager( CAMERA_LINKVIS__CLASS );         // Manager class name.
 FBGroup* Manager_CameraLinkVis::gGroup = nullptr;
 FBCamera* Manager_CameraLinkVis::gCamera = nullptr;
 
+namespace NLinkVis_Internal
+{
+	constexpr const char* GROUP_NAME = "LinkedGroup";
+}
+
 /************************************************
  *  FiLMBOX Creation
  ************************************************/
@@ -147,7 +152,7 @@ void Manager_CameraLinkVis::LeaveCamera(FBCamera *pCamera)
 {
 	if (pCamera == nullptr) return;
 
-	FBProperty *pProp = pCamera->PropertyList.Find( "LinkedGroup" );
+	FBProperty *pProp = pCamera->PropertyList.Find(NLinkVis_Internal::GROUP_NAME);
 	if (pProp)
 	{
 		const char *groupName = pProp->AsString();
@@ -159,7 +164,7 @@ void Manager_CameraLinkVis::EnterCamera(FBCamera *pCamera)
 {
 	if (pCamera == nullptr) return;
 
-	FBProperty *pProp = pCamera->PropertyList.Find( "LinkedGroup" );
+	FBProperty *pProp = pCamera->PropertyList.Find(NLinkVis_Internal::GROUP_NAME);
 	if (pProp)
 	{
 		const char *groupName = pProp->AsString();
@@ -177,7 +182,7 @@ FBCamera* Manager_CameraLinkVis::FindCameraByGroup(const char *groupName)
 
 		if (pCamera->SystemCamera == false)
 		{
-			FBProperty *lProp = pCamera->PropertyList.Find( "LinkedGroup" );
+			FBProperty *lProp = pCamera->PropertyList.Find(NLinkVis_Internal::GROUP_NAME);
 			if (lProp)
 			{
 				const char *lname = lProp->AsString();
@@ -196,7 +201,7 @@ void Manager_CameraLinkVis::EventSceneChange(HISender pSender, HKEvent pEvent)
 {
 	FBEventSceneChange sceneEvent(pEvent);
 
-	if (sceneEvent.Type == kFBSceneChangeRename)
+	if (sceneEvent.Type.AsInt() == kFBSceneChangeRename)
 	{
 		if ( FBIS(sceneEvent.Component, FBGroup) )
 		{
@@ -204,11 +209,11 @@ void Manager_CameraLinkVis::EventSceneChange(HISender pSender, HKEvent pEvent)
 			gCamera = FindCameraByGroup(gGroup->Name);
 		}
 	}
-	else if (sceneEvent.Type == kFBSceneChangeRenamed)
+	else if (sceneEvent.Type.AsInt() == kFBSceneChangeRenamed)
 	{
 		if (gGroup != nullptr && gCamera != nullptr)
 		{
-			FBProperty *lProp = gCamera->PropertyList.Find("LinkedGroup");
+			FBProperty *lProp = gCamera->PropertyList.Find(NLinkVis_Internal::GROUP_NAME);
 			if (lProp)
 			{
 				lProp->SetString( gGroup->Name );

@@ -197,7 +197,7 @@ void ORTextureAdvanceBlend::TextureLayerComposition(FBTime pTime,FBTime pTimeInC
 		
 		// base, back layer
 
-		const ECompositeShader shaderType = ECompositeShader(eCompositeShaderBlendNormal + BlendMode);
+		const ECompositeShader shaderType = ECompositeShader(eCompositeShaderBlendNormal + BlendMode.AsInt());
 
 		FBTexture *lMask = (Mask.GetCount()>0) ? FBCast<FBTexture>(Mask.GetAt(0)) : nullptr;
 		const bool lUseMask = UseMask && (lMask != nullptr);
