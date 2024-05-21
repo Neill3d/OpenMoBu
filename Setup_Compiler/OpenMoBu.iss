@@ -5,7 +5,7 @@
 #define MyAppVersion "2024.0"
 #define MyAppPublisher "Neill3d"
 #define MyAppURL "http://openmobu.org"
-#define MyAppExeName "Setup_OpenMoBu_2024_0"
+#define MyAppExeName "Setup_OpenMoBu_2024_1"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile:"infoBefore_en.txt"; InfoAfterFile: "infoAfter_en.txt"
@@ -45,7 +45,7 @@ ChangesEnvironment=true
 Name: "2017"; Description: "MotionBuilder 2017"
 Name: "2018"; Description: "MotionBuilder 2018"
 Name: "2019"; Description: "MotionBuilder 2019-2020"
-Name: "2022"; Description: "MotionBuilder 2022"
+;Name: "2022"; Description: "MotionBuilder 2022"
 Name: "2023"; Description: "MotionBuilder 2023"
 Name: "2024"; Description: "MotionBuilder 2024"
 Name: "2025"; Description: "MotionBuilder 2025"
@@ -65,7 +65,7 @@ Name: "MotionBuilder2018"; Description: "MotionBuilder 2018 plugins"; Types: 201
 ; full 2018 custom;
 Name: "MotionBuilder2019"; Description: "MotionBuilder 2019-2020 plugins"; Types: 2019
 ; full 2019 custom;
-Name: "MotionBuilder2022"; Description: "MotionBuilder 2022 plugins"; Types: 2022
+;Name: "MotionBuilder2022"; Description: "MotionBuilder 2022 plugins"; Types: 2022
 ; full 2022 custom;
 Name: "MotionBuilder2023"; Description: "MotionBuilder 2023 plugins"; Types: 2023
 ; full 2023 custom;
@@ -76,27 +76,38 @@ Name: "MotionBuilder2025"; Description: "MotionBuilder 2025 plugins"; Types: 202
 
 [Tasks]
 Name: envPath; Description: "Add to PATH variable" 
+
 Name: relationConstraintBox; GroupDescription: "Plugins:"; Description: "Relation Constraint Boxes";
 Name: relationConstraintBox\poseReader; GroupDescription: "Plugins:"; Description: "Pose Reader";
 Name: relationConstraintBox\poseTransform; GroupDescription: "Plugins:"; Description: "Pose Transform";
 Name: relationConstraintBox\boxRBF; GroupDescription: "Plugins:"; Description: "RBF Box";
 Name: relationConstraintBox\rayIntersect; GroupDescription: "Plugins:"; Description: "Ray Intersect";
 Name: relationConstraintBox\boxSpring; GroupDescription: "Plugins:"; Description: "Spring Box";
+
 Name: constraint; GroupDescription: "Plugins:"; Description: "Constrains";
 Name: constraint\attachmentConstraint; GroupDescription: "Plugins:"; Description: "Attachment Constraint";
 Name: constraint\drivenConstraint; GroupDescription: "Plugins:"; Description: "Driven Constraint";
 Name: constraint\twistExtraction; GroupDescription: "Plugins:"; Description: "Twist Extraction";
+
 Name: device; GroupDescription: "Plugins:"; Description: "Devices";
 Name: device\faceCap; GroupDescription: "Plugins:"; Description: "FaceCap Device";
 Name: device\projectTango; GroupDescription: "Plugins:"; Description: "Project Tango Device";
-Name: shaders; GroupDescription: "Plugins:"; Description: "Shaders";
-Name: shaders\superDynamicLighting; GroupDescription: "Plugins:"; Description: "Super Dynamic Lighting";
+
+Name: linkVisCamera; GroupDescription: "Plugins:"; Description: "Link Visibility To Camera";
 Name: lockCamera; GroupDescription: "Plugins:"; Description: "Lock Camera Manipulator";
-Name: postProcessing; GroupDescription: "Plugins:"; Description: "Post Processing FX";
+
+Name: graphics; GroupDescription: "Plugins:"; Description: "Graphics"
+Name: graphics\postProcessing; GroupDescription: "Plugins:"; Description: "Post Processing FX";
+Name: graphics\colorsRenderer; GroupDescription: "Plugins:"; Description: "Colors Renderer";
+Name: graphics\superDynamicLighting; GroupDescription: "Plugins:"; Description: "Super Dynamic Lighting Shader";
+Name: graphics\calculateNormals; GroupDescription: "Plugins:"; Description: "Shading Auto Normals Solver";
+Name: graphics\textures; GroupDescription: "Plugins:"; Description: "Advanced Blend Textures";
+
 Name: references; GroupDescription: "Plugins:"; Description: "References";
 Name: references\manager; GroupDescription: "Plugins:"; Description: "References Manager";
 Name: references\extension; GroupDescription: "Plugins:"; Description: "FBX References Extension";
-Name: calculateNormals; GroupDescription: "Plugins:"; Description: "Calculate Normals Solver";
+
+Name: blendshape; GroupDescription: "Plugins:"; Description: "Blendshape Toolkit";
 Name: volumeCalculator; GroupDescription: "Plugins:"; Description: "Optical MoCap Volume Calculator";
 
 Name: scripts; GroupDescription: "Scripts:"; Description: "Scripts";
@@ -123,10 +134,15 @@ Source: "..\Build\bin\2017\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\
 Source: "..\Build\bin\2017\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: device\projectTango
 
 Source: "..\Build\bin\2017\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: lockCamera
-Source: "..\Build\bin\2017\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: postProcessing
-Source: "..\Build\bin\2017\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2017\plugins\manager_CameraLinkVis.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: linkVisCamera
 
-Source: "..\Build\bin\2017\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: calculateNormals
+Source: "..\Build\bin\2017\plugins\renderer_colors.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: graphics\colorsRenderer
+Source: "..\Build\bin\2017\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: graphics\postProcessing
+Source: "..\Build\bin\2017\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: graphics\superDynamicLighting
+Source: "..\Build\bin\2017\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: graphics\calculateNormals
+Source: "..\Build\bin\2017\plugins\texture_advanceBlend.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: graphics\textures
+
+Source: "..\Build\bin\2017\plugins\tool_BlendShape.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: blendshape
 Source: "..\Build\bin\2017\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: volumeCalculator
 
 Source: "..\Build\bin\2017\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2017; Tasks: references\manager
@@ -156,10 +172,15 @@ Source: "..\Build\bin\2018\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\
 Source: "..\Build\bin\2018\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: device\projectTango
 
 Source: "..\Build\bin\2018\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: lockCamera
-Source: "..\Build\bin\2018\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: postProcessing
-Source: "..\Build\bin\2018\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2018\plugins\manager_CameraLinkVis.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: linkVisCamera
 
-Source: "..\Build\bin\2018\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: calculateNormals
+Source: "..\Build\bin\2018\plugins\renderer_colors.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: graphics\colorsRenderer
+Source: "..\Build\bin\2018\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: graphics\postProcessing
+Source: "..\Build\bin\2018\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: graphics\superDynamicLighting
+Source: "..\Build\bin\2018\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: graphics\calculateNormals
+Source: "..\Build\bin\2018\plugins\texture_advanceBlend.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: graphics\textures
+
+Source: "..\Build\bin\2018\plugins\tool_BlendShape.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: blendshape
 Source: "..\Build\bin\2018\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: volumeCalculator
 
 Source: "..\Build\bin\2018\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2018; Tasks: references\manager
@@ -189,10 +210,15 @@ Source: "..\Build\bin\2019\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\
 Source: "..\Build\bin\2019\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: device\projectTango
 
 Source: "..\Build\bin\2019\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: lockCamera
-Source: "..\Build\bin\2019\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: postProcessing
-Source: "..\Build\bin\2019\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2019\plugins\manager_CameraLinkVis.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: linkVisCamera
 
-Source: "..\Build\bin\2019\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: calculateNormals
+Source: "..\Build\bin\2019\plugins\renderer_colors.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: graphics\colorsRenderer
+Source: "..\Build\bin\2019\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: graphics\postProcessing
+Source: "..\Build\bin\2019\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: graphics\superDynamicLighting
+Source: "..\Build\bin\2019\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: graphics\calculateNormals
+Source: "..\Build\bin\2019\plugins\texture_advanceBlend.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: graphics\textures
+
+Source: "..\Build\bin\2019\plugins\tool_BlendShape.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: blendshape
 Source: "..\Build\bin\2019\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: volumeCalculator
 
 Source: "..\Build\bin\2019\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2019; Tasks: references\manager
@@ -208,36 +234,41 @@ Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMob
 
 ; 2022
 
-Source: "..\Build\bin\2022\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseReader
-Source: "..\Build\bin\2022\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseTransform
-Source: "..\Build\bin\2022\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\rayIntersect
+;Source: "..\Build\bin\2022\plugins\box_poseReader.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseReader
+;Source: "..\Build\bin\2022\plugins\box_poseTransform.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\poseTransform
+;Source: "..\Build\bin\2022\plugins\box_rayIntersect.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\rayIntersect
 ;Source: "..\bin\x64\plugins_2022\box_RBF.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxRBF
-Source: "..\Build\bin\2022\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxSpring
+;Source: "..\Build\bin\2022\plugins\box_spring.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: relationConstraintBox\boxSpring
 
-Source: "..\Build\bin\2022\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\attachmentConstraint
-Source: "..\Build\bin\2022\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\drivenConstraint
+;Source: "..\Build\bin\2022\plugins\constraint_attachment.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\attachmentConstraint
+;Source: "..\Build\bin\2022\plugins\constraint_driven.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\drivenConstraint
 ;Source: "..\bin\x64\plugins_2022\constraint_twistextraction.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: constraint\twistExtraction
 
-Source: "..\Build\bin\2022\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\faceCap
-Source: "..\Build\bin\2022\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\projectTango
+;Source: "..\Build\bin\2022\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\faceCap
+;Source: "..\Build\bin\2022\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: device\projectTango
 
-Source: "..\Build\bin\2022\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: lockCamera
-Source: "..\Build\bin\2022\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: postProcessing
-Source: "..\Build\bin\2022\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: shaders\superDynamicLighting
+;Source: "..\Build\bin\2022\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: lockCamera
+;Source: "..\Build\bin\2022\plugins\manager_CameraLinkVis.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: linkVisCamera
 
-Source: "..\Build\bin\2022\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: calculateNormals
-Source: "..\Build\bin\2022\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: volumeCalculator
+;Source: "..\Build\bin\2022\plugins\renderer_colors.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: graphics\colorsRenderer
+;Source: "..\Build\bin\2022\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: graphics\postProcessing
+;Source: "..\Build\bin\2022\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: graphics\superDynamicLighting
+;Source: "..\Build\bin\2022\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: graphics\calculateNormals
+;Source: "..\Build\bin\2022\plugins\texture_advanceBlend.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: graphics\textures
 
-Source: "..\Build\bin\2022\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\manager
-Source: "..\Build\bin\2022\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\extension
+;Source: "..\Build\bin\2022\plugins\tool_BlendShape.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: blendshape
+;Source: "..\Build\bin\2022\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: volumeCalculator
+
+;Source: "..\Build\bin\2022\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\manager
+;Source: "..\Build\bin\2022\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app}\bin\x64\plugins\FBX\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: references\extension
 
 
-Source: "..\Build\bin\2022\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2022
-Source: "..\Build\bin\2022\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2022
-Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
-Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
-Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\references
-Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\actions
+;Source: "..\Build\bin\2022\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2022
+;Source: "..\Build\bin\2022\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2022
+;Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
+;Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\startup
+;Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\references
+;Source: "..\PythonScripts\Actions\*"; DestDir: "{app}\bin\config\Scripts\OpenMobu\"; Flags: ignoreversion; Components: MotionBuilder2022; Tasks: scripts\actions
 
 ; 2023
 
@@ -255,10 +286,15 @@ Source: "..\Build\bin\2023\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\
 Source: "..\Build\bin\2023\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: device\projectTango
 
 Source: "..\Build\bin\2023\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: lockCamera
-Source: "..\Build\bin\2023\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: postProcessing
-Source: "..\Build\bin\2023\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2023\plugins\manager_CameraLinkVis.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: linkVisCamera
 
-Source: "..\Build\bin\2023\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: calculateNormals
+Source: "..\Build\bin\2023\plugins\renderer_colors.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: graphics\colorsRenderer
+Source: "..\Build\bin\2023\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: graphics\postProcessing
+Source: "..\Build\bin\2023\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: graphics\superDynamicLighting
+Source: "..\Build\bin\2023\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: graphics\calculateNormals
+Source: "..\Build\bin\2023\plugins\texture_advanceBlend.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: graphics\textures
+
+Source: "..\Build\bin\2023\plugins\tool_BlendShape.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: blendshape
 Source: "..\Build\bin\2023\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: volumeCalculator
 
 Source: "..\Build\bin\2023\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: references\manager
@@ -288,10 +324,15 @@ Source: "..\Build\bin\2024\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\
 Source: "..\Build\bin\2024\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: device\projectTango
 
 Source: "..\Build\bin\2024\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: lockCamera
-Source: "..\Build\bin\2024\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: postProcessing
-Source: "..\Build\bin\2024\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2024\plugins\manager_CameraLinkVis.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: linkVisCamera
 
-Source: "..\Build\bin\2024\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: calculateNormals
+Source: "..\Build\bin\2024\plugins\renderer_colors.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: graphics\colorsRenderer
+Source: "..\Build\bin\2024\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: graphics\postProcessing
+Source: "..\Build\bin\2024\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: graphics\superDynamicLighting
+Source: "..\Build\bin\2024\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: graphics\calculateNormals
+Source: "..\Build\bin\2024\plugins\texture_advanceBlend.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: graphics\textures
+
+Source: "..\Build\bin\2024\plugins\tool_BlendShape.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: blendshape
 Source: "..\Build\bin\2024\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: volumeCalculator
 
 Source: "..\Build\bin\2024\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: references\manager
@@ -321,10 +362,15 @@ Source: "..\Build\bin\2025\plugins\device_faceCap.dll"; DestDir: "{app}\bin\x64\
 Source: "..\Build\bin\2025\plugins\device_projectTango.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: device\projectTango
 
 Source: "..\Build\bin\2025\plugins\manip_lockcamera.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: lockCamera
-Source: "..\Build\bin\2025\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: postProcessing
-Source: "..\Build\bin\2025\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: shaders\superDynamicLighting
+Source: "..\Build\bin\2025\plugins\manager_CameraLinkVis.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: linkVisCamera
 
-Source: "..\Build\bin\2025\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: calculateNormals
+Source: "..\Build\bin\2025\plugins\renderer_colors.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: graphics\colorsRenderer
+Source: "..\Build\bin\2025\plugins\manager_PostProcessing.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: graphics\postProcessing
+Source: "..\Build\bin\2025\plugins\shader_SuperDynamicLighting.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: graphics\superDynamicLighting
+Source: "..\Build\bin\2025\plugins\solver_calculateNormals.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: graphics\calculateNormals
+Source: "..\Build\bin\2025\plugins\texture_advanceBlend.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: graphics\textures
+
+Source: "..\Build\bin\2025\plugins\tool_BlendShape.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: blendshape
 Source: "..\Build\bin\2025\plugins\misc_VolumeCalculator.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: volumeCalculator
 
 Source: "..\Build\bin\2025\plugins\manager_References.dll"; DestDir: "{app}\bin\x64\plugins\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: references\manager
