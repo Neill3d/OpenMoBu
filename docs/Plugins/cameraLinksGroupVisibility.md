@@ -15,6 +15,8 @@ When you press Refresh, it shows a current list of cameras and groups in the sce
 
 Then you have to select a camera that you would like to link with a group and select a group. When the link is established, then every next time you select the same camera, the correspondent assigned group should be selected as well.
 
+The tool you can find in PythonScripts\Startup\CameraAndGroupLinkingTool.py
+
 ### Samples
 
 test scene - MB_Scenes\manager_CameraLinksGroupVisibility.fbx
