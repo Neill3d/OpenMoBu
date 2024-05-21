@@ -113,6 +113,8 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 ### BlendShape Toolkit
 
+![blendshapeToolkit](Plugins/tool_sculpt_brush.jpg)
+
 - Blendshape manager - to manage the given model blendshapes, plus additional functionality to add/remove/duplicate, save/load from file, do a snapshot
 
 - Blenshape Sculpt - use brushes to create or modify a blendshape. it can be useful for making correction blendshapes on fly, as you can sculpt on top of current deformed mesh and it will generate a correspondent correction blendshape
