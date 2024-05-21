@@ -117,7 +117,7 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 - Blenshape Sculpt - use brushes to create or modify a blendshape. it can be useful for making correction blendshapes on fly, as you can sculpt on top of current deformed mesh and it will generate a correspondent correction blendshape
 
-[Read More...](Plugins\blendshapeToolkit.md)
+[Read More...](Plugins/blendshapeToolkit.md)
 
 ### Manager To Link Group Visibility with a Camera
 
