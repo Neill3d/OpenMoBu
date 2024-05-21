@@ -12,6 +12,10 @@ Internaly:
 - make snapshot, calculate delta, combine meshes and some pro features
 - deformer constraint - helper constraint to sculpt deformated meshes in real-time
 
+## Videos
+
+[Stylus Pen Pressure support](https://youtu.be/_d8tTWCfXo4?si=iTYQRCAZvvdJNuZQ)
+
 
 ## LOG
 
