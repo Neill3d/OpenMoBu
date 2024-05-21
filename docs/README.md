@@ -64,6 +64,8 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  A special user object, that helps to add post process filters on top of your camera view.
 
+[![MoPlugs](https://github.com/Neill3d/MoBu/blob/master/Documentation/Images/Bryan_usecase.jpg)]()
+
 [Read More...](Plugins/PostProcessingEffects.md)
 
 ### Super Dynamic Lighting Shader
