@@ -111,11 +111,13 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
  Tools, custom objects in the scene
 
-### BlendShape Manager and Sculpt
+### BlendShape Toolkit
 
 - Blendshape manager - to manage the given model blendshapes, plus additional functionality to add/remove/duplicate, save/load from file, do a snapshot
 
 - Blenshape Sculpt - use brushes to create or modify a blendshape. it can be useful for making correction blendshapes on fly, as you can sculpt on top of current deformed mesh and it will generate a correspondent correction blendshape
+
+[Read More...](Plugins\blendshapeToolkit.md)
 
 ### Manager To Link Group Visibility with a Camera
 
