@@ -15,6 +15,7 @@
 #include "math3d.h"
 #include "ClusterAdvance.h"
 #include "CmdFBX.h"
+#include "Logger.h"
 
 const char *g_szDefaultUVSet = "DefaultUVSet";
 
@@ -204,7 +205,7 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 	{
 		FBModel *pModel = modelList[nMesh];
 		FBString modelName(pModel->Name);
-		printf ("modelName - %s\n", static_cast<const char*>(modelName) );
+		LOGI ("modelName - %s\n", static_cast<const char*>(modelName) );
 
 		FBGeometry *lGeom = pModel->Geometry;
 		FBMesh *lMesh = (FBMesh*) lGeom;
@@ -263,7 +264,7 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 	{
 		FBModel *pModel = modelList[nMesh];
 		FBString modelName(pModel->Name);
-		printf ("modelName - %s\n", static_cast<const char*>(modelName) );
+		LOGI ("modelName - %s\n", static_cast<const char*>(modelName) );
 
 		FBGeometry *lGeom = pModel->Geometry;
 		FBMesh *lMesh = (FBMesh*) lGeom;
@@ -352,7 +353,7 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 			}
 			else
 			{
-				printf( "unset material id for poligon\n" );
+				LOGI( "unset material id for poligon\n" );
 				
 				if (pModel->Materials.GetCount() > 0)
 					info.materialId = materialList.Find( pModel->Materials[0] );
@@ -420,7 +421,7 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 			break;
 
 			default:
-				printf( "unsupported normal reference!\n" );
+				LOGE( "unsupported normal reference!\n" );
 			}
 
 			break;
@@ -451,13 +452,13 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 			}
 			else
 			{
-				printf( "unsupported normal mapping mode\n" );
+				LOGE( "unsupported normal mapping mode\n" );
 			}
 
 			break;
 
 		default:
-			printf("unsupported model mapping!\n");
+			LOGE("unsupported model mapping!\n");
 		}
 
 		normalsDirectCount += lnormalDirectCount;
@@ -524,7 +525,7 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 				break;
 
 				default:
-					printf( "unsupported uv reference!\n" );
+					LOGE( "unsupported uv reference!\n" );
 				}
 
 				break;
@@ -543,13 +544,13 @@ void FillInputModelData(FBModelList &modelList, InputModelData &data, FBArrayTem
 				}
 				else
 				{
-					printf( "unsupported uv mapping mode\n" );
+					LOGE( "unsupported uv mapping mode\n" );
 				}
 
 				break;
 
 			default:
-				printf("unsupported model mapping!\n");
+				LOGE("unsupported model mapping!\n");
 			}
 
 			uvDirectCount += luvDirectCount;

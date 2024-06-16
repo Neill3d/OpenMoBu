@@ -15,6 +15,7 @@
 #include <tchar.h>
 
 #include "CmdFBX.h"
+#include "Logger.h"
 
 // DONE: run cmdFBX application and fill data into the shared memory block
 
@@ -111,7 +112,7 @@ bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, Input
 	}
 	catch (const char *msg)
 	{
-		printf( "%s (error - %d)\n", msg, GetLastError() );
+		LOGE( "%s (error - %d)\n", msg, GetLastError() );
 		result = false;
 	}
 

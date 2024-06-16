@@ -5,7 +5,7 @@
 //
 // GitHub repository - https://github.com/Neill3d/OpenMoBu
 //
-// Author Sergey Solokhin (Neill3d) 2014-2017
+// Author Sergei Solokhin (Neill3d) 2014-2017
 //  e-mail to: neill3d@gmail.com
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -13,7 +13,7 @@
 
 #include "glslComputeShader.h"
 #include "FileUtils.h"
-//#include "graphics\CheckGLError_MOBU.h"
+#include "Logger.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -48,7 +48,6 @@ void CComputeProgram::Clear()
 void CComputeProgram::CreateGLObjects()
 {
 	Clear();
-	// TODO:
 }
 
 void CComputeProgram::ReCreateShaderObject()
@@ -73,10 +72,7 @@ bool CComputeProgram::PrepProgramFromBuffer(const char *bufferData, const char *
 		mShader = glCreateShader(GL_COMPUTE_SHADER);
 		glAttachShader(mProgram, mShader);
 
-
-		//
-		
-		if (false == loadComputeShaderFromBuffer(bufferData, shaderName, mShader, mProgram) )
+		if (!loadComputeShaderFromBuffer(bufferData, shaderName, mShader, mProgram) )
 		{
 			Clear();
 			return false;
@@ -100,9 +96,9 @@ bool CComputeProgram::PrepProgram(const char *filename)
 
 		//
 		FBString effectPath, effectFullName;
-		if (true == FindEffectLocation( filename, effectPath, effectFullName ) )
+		if (FindEffectLocation( filename, effectPath, effectFullName ) )
 		{
-			if (false == loadComputeShader(effectFullName, mShader, mProgram) )
+			if (!loadComputeShader(effectFullName, mShader, mProgram) )
 			{
 				Clear();
 				return false;
@@ -129,4 +125,121 @@ void CComputeProgram::UnBind()
 void CComputeProgram::DispatchPipeline(const int groups_x, const int groups_y, const int groups_z)
 {
 	glDispatchCompute(groups_x, groups_y, groups_z);
+}
+
+bool CComputeProgram::checkCompileStatus(GLuint shader, const char* shadername)
+{
+	GLint  compiled;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled)
+	{
+		LOGE("%s failed to compile:", shadername);
+		GLint  logSize;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logSize);
+		char* logMsg = new char[logSize];
+		glGetShaderInfoLog(shader, logSize, nullptr, logMsg);
+		LOGE(logMsg);
+		delete[] logMsg;
+
+		return false;
+	}
+	return true;
+}
+
+bool CComputeProgram::checkLinkStatus(GLuint program, const char* programName)
+{
+	GLint  linked;
+	glGetProgramiv(program, GL_LINK_STATUS, &linked);
+	if (!linked)
+	{
+		LOGE("Shader program %s failed to link", programName);
+		GLint  logSize;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logSize);
+		char* logMsg = new char[logSize];
+		glGetProgramInfoLog(program, logSize, nullptr, logMsg);
+		LOGE(logMsg);
+		delete[] logMsg;
+		
+		return false;
+	}
+	return true;
+}
+
+bool CComputeProgram::loadComputeShaderFromBuffer(const char* buffer, const char* shaderName, const GLuint shaderid, const GLuint programid)
+{
+	const GLcharARB* bufferARB = buffer;
+
+	GLuint shaderCompute = shaderid;
+	glShaderSource(shaderCompute, 1, &bufferARB, NULL);
+
+	if (GLEW_ARB_shading_language_include)
+	{
+		std::string rootPath = "/";
+		const char* SourceString = rootPath.c_str();
+		glCompileShaderIncludeARB(shaderCompute, 1, &SourceString, NULL);
+	}
+	else
+	{
+		glCompileShader(shaderCompute);
+	}
+
+	if (!checkCompileStatus(shaderCompute, shaderName))
+		return false;
+
+	GLuint programCompute = programid;
+	glLinkProgram(programCompute);
+	if (!checkLinkStatus(programCompute, shaderName))
+		return false;
+	
+	return true;
+}
+
+bool CComputeProgram::loadComputeShader(const char* computeShaderName, const GLuint shaderid, const GLuint programid)
+{
+	bool lSuccess = false;
+
+	FILE* fp = nullptr;
+	fopen_s(&fp, computeShaderName, "r");
+	if (fp)
+	{
+		fseek(fp, 0, SEEK_END);
+		size_t fileLen = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		char* buffer = new char[fileLen + 1];
+		if (!buffer)
+		{
+			fclose(fp);
+			return false;
+		}
+
+		GLint   len = (GLint)fileLen;
+
+		// read shader from file
+		memset(&buffer[0], 0, sizeof(char) * (len + 1));
+
+		size_t readlen = fread(buffer, sizeof(char), fileLen, fp);
+
+		// trick to zero all outside memory
+		memset(&buffer[readlen], 0, sizeof(char) * (len + 1 - readlen));
+
+		if (readlen == 0)
+		{
+			LOGE("glsl shader %s has a zero file size", computeShaderName );
+			fclose(fp);
+			delete[] buffer;
+
+			return 0;
+		}
+
+		if (loadComputeShaderFromBuffer(buffer, computeShaderName, shaderid, programid))
+		{
+			lSuccess = true;
+		}
+
+		delete[] buffer;
+		fclose(fp);
+	}
+
+	return lSuccess;
 }

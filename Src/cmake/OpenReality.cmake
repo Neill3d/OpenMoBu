@@ -95,7 +95,7 @@ if( QTDIR )
         set(QtExtras OpenGLWidgets)
     endif()
     
-    find_package(Qt${QT_VERSION_MAJOR} ${QtVersion} REQUIRED COMPONENTS Core Gui Svg Widgets Multimedia OpenGL UiTools WebEngineWidgets Xml ${QtExtras})
+    find_package(Qt${QT_VERSION_MAJOR} ${QtVersion} REQUIRED COMPONENTS Core Gui Svg Widgets Multimedia OpenGL UiTools Xml ${QtExtras})
 endif()
 
 CheckEnvVariable(PXR_USD_LOCATION)

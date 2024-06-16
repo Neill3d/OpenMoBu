@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "OGL_Utils.h"
 #include "CheckGLError.h"
+#include "Logger.h"
 
 #ifdef OGL_UTIL_CUBEMAP
 #include "nv_dds/nv_dds.h"
@@ -377,12 +378,12 @@ void GenerateFBO(const int Width, const int Height, GLuint &color_buffer_id, GLu
 
 	{
 		// something went wrong :(
-		//printf( "Failed to bind FBO with stencil\n" );
+		//LOGE( "Failed to bind FBO with stencil\n" );
 	}
 	else
 	{
 		// profit :)
-		//printf( "fbo setup is well!" );
+		//LOGE( "fbo setup is well!" );
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -419,7 +420,7 @@ bool BlitFBOToFBO(const GLint FBO, const int width, const int height, const GLin
 
 	if (FBO == 0 || defaultFBO == 0)
 	{
-		printf( "> BlitToDefaultFBO where FBO is empty !!\n" );
+		LOGE( "> BlitToDefaultFBO where FBO is empty !!\n" );
 		return false;
 	}
 	/*
@@ -430,7 +431,7 @@ bool BlitFBOToFBO(const GLint FBO, const int width, const int height, const GLin
 	/*
 	if (width != defWidth || height != defHeight)
 	{
-		printf( "> BlitToDefaultFBO where size is not equal !!\n" );
+		LOGE( "> BlitToDefaultFBO where size is not equal !!\n" );
 		return false;
 	}
 	*/
@@ -488,7 +489,7 @@ bool BlitFBOToFBOOffset(const GLint FBO, int x, int y, const int width, const in
 
 	if (FBO == 0 || defaultFBO == 0)
 	{
-		printf("> BlitToDefaultFBO where FBO is empty !!\n");
+		LOGE("> BlitToDefaultFBO where FBO is empty !!\n");
 		return false;
 	}
 	/*
@@ -499,7 +500,7 @@ bool BlitFBOToFBOOffset(const GLint FBO, int x, int y, const int width, const in
 	/*
 	if (width != defWidth || height != defHeight)
 	{
-	printf( "> BlitToDefaultFBO where size is not equal !!\n" );
+	LOGE( "> BlitToDefaultFBO where size is not equal !!\n" );
 	return false;
 	}
 	*/
@@ -863,7 +864,7 @@ bool PrepFrameBufferMS(const int width, const int height, const int samples, con
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		printf ( "framebuffer error!\n" );
+		LOGE ( "framebuffer error!\n" );
 		return false;
 	}
 
@@ -880,13 +881,13 @@ bool BlitFBOToFBO(const GLint FBO, const int width, const int height, const GLin
 
 	if (FBO == 0 || defaultFBO == 0)
 	{
-		printf( "> BlitToDefaultFBO where FBO is empty !!\n" );
+		LOGE( "> BlitToDefaultFBO where FBO is empty !!\n" );
 		return false;
 	}
 	
 	if (width != defWidth || height != defHeight)
 	{
-		printf( "> BlitToDefaultFBO where size is not equal !!\n" );
+		LOGE( "> BlitToDefaultFBO where size is not equal !!\n" );
 		return false;
 	}
 

@@ -13,6 +13,7 @@
 
 #include "ClusterAdvance.h"
 #include "math3d.h"
+#include "Logger.h"
 
 // Scale all the elements of a matrix.
 void MatrixScale(FBMatrix& pMatrix, double pValue)
@@ -135,7 +136,7 @@ FBMatrix LinkedVertex::CalculateDeformedPositionMatrix()
 				total += lWeight;
 			} break;
 		default:
-			printf( "only additive and normalize is supported!\n" );
+			LOGI( "only additive and normalize is supported!\n" );
 			break;
 		}
  	}

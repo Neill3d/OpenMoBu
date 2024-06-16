@@ -14,6 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include	"FrameBuffer.h"
 #include	"checkglerror.h"
+#include	"Logger.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // FrameBufferBase
@@ -98,7 +99,7 @@ bool FrameBuffer::IsOk() const
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		printf( "test framebuffer\n" );
+		LOGE( "test framebuffer\n" );
 	}
 
 	if ( currentFb != (int) mFrameBuffer )
@@ -196,7 +197,7 @@ bool FrameBuffer::AttachTexture(GLenum target, unsigned texId, const EAttachment
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		printf( "test framebuffer\n" );
+		LOGE( "test framebuffer\n" );
 	}
 
 	return true;
@@ -236,7 +237,7 @@ bool FrameBuffer::AttachTextureLayer(GLenum target, unsigned texId, unsigned lay
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		printf( "test framebuffer\n" );
+		LOGE( "test framebuffer\n" );
 	}
 
 	return true;

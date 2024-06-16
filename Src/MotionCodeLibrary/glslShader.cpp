@@ -251,7 +251,7 @@ void GLSLShader::loadlog( GLhandleARB object )
 #ifdef _DEBUG
 	if ( strlen(infoLog) > 0 )
 	{
-		printf( infoLog );
+		LOGI( infoLog );
 	}
 #endif
     if ( infoLog != buffer )

@@ -1,0 +1,64 @@
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// file: Particles_generation.glslfxh
+//
+//	Author Sergey Solokhin (Neill3d)
+//
+// GLSL shaders for Particles System
+//
+//	GitHub page - https://github.com/Neill3d/MoPlugs
+//	Licensed under BSD 3-Clause - https://github.com/Neill3d/MoPlugs/blob/master/LICENSE
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+namespace ParticlesSystem
+{
+	// prototype is in globals.glslfxh
+	GLSLShader Generation
+	{
+	
+		const vec2 randN1 = vec2(0.14, -0.07);
+		const vec2 randN2 = vec2(0.77, 1.01);
+		const vec2 randN3 = vec2(-0.38, 0.15);
+	
+		void GetRandomVolumePos(in vec2 randN, out vec4 pos)
+		{
+			vec4 lMax = gMax;
+			vec4 lMin = gMin;
+					
+			// if inherit emitter velocity, put particle on some random position during the way
+			if (gEmitterVelocity.w > 0.0)
+			{
+				vec4 delta = gEmitterVelocity;
+				delta *= rand(randN);
+				lMax -= delta;
+				lMin -= delta;
+			}
+			
+			vec3 rnd = vec3( rand(randN+randN1), rand(randN+randN2), rand(randN+randN3) );
+					
+			pos.x = (lMax.x - lMin.x) * rnd.x + lMin.x;
+			pos.y = (lMax.y - lMin.y) * rnd.y + lMin.y;
+			pos.z = (lMax.z - lMin.z) * rnd.z + lMin.z;
+			pos.w = 1.0;
+		}
+		
+		void GetRandomVolumeDir(out vec4 vel)
+		{
+		
+		}
+		
+		void GetRandomVolumeColor(in vec4 pos, out vec4 color)
+		{
+			vec4 lMax = gMax;
+			vec4 lMin = gMin;
+	
+			color.x = (pos.x - lMin.x) / (lMax.x - lMin.x);
+			color.y = (pos.y - lMin.y) / (lMax.y - lMin.y);
+			color.z = (pos.z - lMin.z) / (lMax.z - lMin.z);
+			color.w = 1.0;
+		}
+	}
+}

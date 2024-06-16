@@ -30,6 +30,7 @@ add_subdirectory( manip_lockCamera )
 add_subdirectory( manager_PostProcessing )
 
 add_subdirectory( shader_SuperDynamicLighting )
+add_subdirectory( shader_GPU_Particles )
 add_subdirectory( solver_calculateNormals )
 
 add_subdirectory( renderer_colors )

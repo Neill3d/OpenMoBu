@@ -1,6 +1,7 @@
 
 #include <windows.h>
 #include "FileUtils.h"
+#include <filesystem>
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -9,7 +10,7 @@
 //
 // GitHub repository - https://github.com/Neill3d/OpenMoBu
 //
-// Author Sergey Solokhin (Neill3d) 2014-2017
+// Author Sergei Solokhin (Neill3d) 2014-2017
 //  e-mail to: neill3d@gmail.com
 //
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -40,31 +41,47 @@ bool FindEffectLocation(const char *effect, FBString &out_path, FBString &out_fu
 {
 	FBSystem	&lSystem = FBSystem::TheOne();
 	
-	out_path = lSystem.UserConfigPath;
-	out_fullname = out_path + "\\";
-	out_fullname = out_fullname + effect;
+	bool found = std::filesystem::exists(effect);
 
-	bool found = false;
-
-	if ( IsFileExists(out_fullname) == true )
+	if (found)
 	{
-		found = true;
+		out_fullname = effect;
+		const int delimPos = std::max(0, std::max(out_fullname.ReverseFind('/'), out_fullname.ReverseFind('\\')));
+		out_path = out_fullname.Left(delimPos);
 	}
 	else
 	{
-		
+		out_path = lSystem.UserConfigPath;
+
+		char buffer[MAX_PATH];
+		memset(buffer, 0, sizeof(char) * MAX_PATH);
+		sprintf_s(buffer, sizeof(char) * MAX_PATH, "%s\\%s", static_cast<const char*>(out_path), effect);
+
+		if (std::filesystem::exists(buffer))
+		{
+			out_fullname = buffer;
+			return true;
+		}
+	}
+	
+	if (!found)
+	{
 		FBStringList paths;
 #ifndef ORSDK2013
 		paths = lSystem.GetPluginPath();
 #endif
+		char buffer[MAX_PATH];
+
 		for (int i=0; i<paths.GetCount(); ++i)
 		{
 			out_path = paths[i];
-			out_fullname = out_path + "\\";
-			out_fullname = out_fullname + effect;
 
-			if (IsFileExists(out_fullname) == true)
+			memset(buffer, 0, sizeof(char) * MAX_PATH);
+			sprintf_s(buffer, sizeof(char) * MAX_PATH, "%s\\%s", static_cast<const char*>(out_path), effect);
+
+			if (std::filesystem::exists(buffer))
 			{
+				out_fullname = buffer;
 				found = true;
 				break;
 			}

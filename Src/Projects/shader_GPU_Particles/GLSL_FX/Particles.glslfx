@@ -1,0 +1,1879 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// file: Particles.glslfx
+//
+//	Author Sergey Solokhin (Neill3d)
+//
+// GLSL shaders for Particles System
+//
+//	GitHub page - https://github.com/Neill3d/MoPlugs
+//	Licensed under BSD 3-Clause - https://github.com/Neill3d/MoPlugs/blob/master/LICENSE
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#extension GL_ARB_separate_shader_objects : enable
+
+
+ConstantBuffer global evaluateBlock
+{
+	uniform mat4					gTM;			// emitter transform
+	uniform mat4					gRotationTM;	// only rotation
+	uniform mat4					gNormalTM;
+	uniform	mat4					gTextureTM;		// transform matrix for a texture when inherit colors from emitter surface
+
+	uniform vec4					gDirection;		// vec3 - direction, 4th - use normals as dir or not
+	
+	uniform float					gDirSpreadHor;	// spread direction vector in horizontal plane
+	uniform float					gDirSpreadVer;	// spread in vertical plane
+	uniform float					gEmitSpeed;
+	uniform float					gSpeedSpread;
+	
+	//uniform vec4					gDirRandom;
+	//uniform vec4					gVelocity;		// start particle velocity
+	//uniform vec4					gVelRandom;		// randomize start velocity
+	uniform vec4					gEmitterVelocity; // use this velocity to inherit emitter speed
+	//uniform vec4					gEmitterPivot;
+	//uniform vec4					gAngularVelocity;	// rotation around pivot of the emitter
+
+	//uniform mat4					gEmitterDeltaTM;
+
+	uniform vec4					gRotation;
+	uniform vec4					gRotationSpread;
+	uniform vec4					gAngularVelocity;
+	uniform vec4					gAngularVelocitySpread;
+
+	uniform vec4					gDynamic;		// 1st - mass, 2nd - damping
+	uniform vec4					gGravity;		// vec3 - gravity direction XYZ, 4-th component - use or not to use gravity
+	uniform vec4					gFlags;			// 1st - useForces, 2nd - useCollisions, 3rd - emitter type(0.0-vertices, 1.0-volume)
+	uniform vec4					gTurbulence;
+	uniform vec4					gFloor;			// 1st - use/not use, 2nd - friction, 3rd - Y level
+	uniform	vec4					gMin;			// local min
+	uniform	vec4					gMax;			// local max
+
+	uniform int						gPositionCount;	// number of position and normal vertices (emitter positions)
+	uniform	int						gNumCollisions;
+	uniform	int						gNumForces;
+	uniform int						gUseEmitterTexture;	
+	
+	uniform float 					gLauncherLifetime;                                                    
+	uniform float 					gShellLifetime;  
+	uniform float					gShellLifetimeVariation;	// a percent of randomization                                                     
+	uniform float 					gSecondaryShellLifetime;  
+
+	uniform int						gUseSizeAttenuation;
+	uniform int						gUseColorAttenuation;
+	uniform float					gSizeVariation;
+	uniform float					gColorVariation;	
+	
+	uniform	float					gSize;
+	uniform	float					gInheritEmitterColor;
+	uniform	float					gUseEmitterMask;
+	uniform float					gSkipAlphaLimit;		// skip generating trasparency particles
+	
+	uniform	vec4					gEmitColor;
+	uniform	vec4					gEmitColor2;
+	uniform	vec4					gEmitColor3;
+
+	uniform float					gGenerateOnMotionLimit;
+	uniform float					gUseEmitColor2;
+	uniform float					gUseEmitColor3;
+	uniform float					gEvalTemp3;
+}
+
+/////////////////////////////////////////////////////////// render block
+
+ConstantBuffer global renderBlock
+{
+	uniform		mat4			gMV;
+	uniform		mat4			gVP;
+	uniform		mat4			gInvTransposeMV;
+	uniform		mat4			gTexMatrix;
+
+	uniform		vec4			gCameraPos;
+	uniform		vec4			gScreenSize;
+
+	uniform		vec4			gColor;
+	
+	uniform 	float			gPointFalloff;
+	uniform		float			gUseSizeCurve;
+	uniform		float			gUseColorCurve;
+	uniform		float			gTransparencyFactor;
+	
+	uniform		float			gMinPointScale;
+	uniform		float			gMaxPointScale;
+	uniform		float			gPointScaleDistance;
+	uniform		float			gUseColorMap;
+}
+
+//////////////////////////////////////////////////////////// terrainBlock
+ConstantBuffer global terrainBlock
+{
+	uniform 	mat4 			gTerrainVP;       
+
+	uniform 	vec4 			gTerrainOffset;
+	uniform 	vec4 			gTerrainScale;
+	
+	//uniform mat4 gVP;       
+	//uniform 	uvec2 			gTerrainColorAddress;  
+	uniform 	float 			gTerrainFarPlane;
+}
+
+///////////////////////////////////////////////////////////////
+//
+
+uniform		float	gDeltaTimeMillis;
+uniform		float	gTime;
+
+uniform		mat4	gTerrainModelTM;
+
+//////////////////////////////////////////////////////////
+
+RasterizationState rasterStateFill
+{
+    LINE_WIDTH = 1;
+    POLYGON_MODE={FRONT_AND_BACK, FILL};
+}
+RasterizationState rasterStateWire
+{
+    LINE_WIDTH = 2;
+    POLYGON_MODE={FRONT_AND_BACK, LINE};
+}
+DepthStencilState dstStateFloor
+{
+    DEPTH_TEST = true;
+    DEPTH_WRITEMASK = true;
+    DEPTH_FUNC = LEQUAL;
+}
+//////////////////////////////////////////////////////////////
+// GLSL Globals : meaning that all the GLSL domains (vertex, fragments etc.) will have a copy
+// of these data
+//
+GLSLShader 
+{
+    #version 430 compatibility
+	#extension GL_NV_shader_buffer_load : enable
+	#extension GL_NV_shader_atomic_float : enable
+	#extension GL_ARB_shader_storage_buffer_object : require
+	#extension GL_ARB_shader_draw_parameters : require
+	#extension GL_ARB_gpu_shader5 : enable
+	#extension GL_ARB_enhanced_layouts : enable
+	
+	// this extensions don't exist on quadro 4000
+	#extension GL_ARB_bindless_texture : enable
+	#extension GL_ARB_gpu_shader_int64 : enable
+	
+	//
+	#define PARTICLE_TYPE_LAUNCHER 0.0f                                                 
+	#define PARTICLE_TYPE_SHELL 1.0f                                                    
+	#define PARTICLE_TYPE_SECONDARY_SHELL 2.0f   
+
+	#define		USE_TERRAIN			gTerrain.w
+	#define		TERRAIN_FRICTION	gTerrain.x
+
+	#define		DIRECTION			gDirection.xyz
+	#define		USE_NORMALS_AS_DIR	gDirection.w
+
+	#define		MASS				gDynamic.x
+	#define		DAMPING				gDynamic.y
+
+	#define		USE_GRAVITY			gGravity.w
+	#define		GRAVITY				gGravity.xyz
+
+	#define 	USE_TURBULENCE		gTurbulence.w
+	#define		NOISE_FREQ			gTurbulence.x
+	#define		NOISE_SPEED			gTurbulence.y
+	#define		NOISE_AMP			gTurbulence.z
+
+	#define		USE_FORCES			gFlags.x
+	#define		USE_COLLISIONS		gFlags.y
+	#define		EMITTER_TYPE		gFlags.z
+
+	#define		EMITTER_TYPE_VERTICES	0.0
+	#define		EMITTER_TYPE_VOLUME		1.0
+	#define		EMITTER_TYPE_SURFACE	2.0
+	
+	#define		FORCE_WIND				1.0
+	#define		FORCE_DRAG				2.0
+	#define		FORCE_MOTOR				3.0
+
+	#define		USE_FLOOR			gFloor.w
+	#define		FLOOR_FRICTION		gFloor.y
+	#define		FLOOR_LEVEL			gFloor.z
+	
+	// emitter surface
+	struct TTriangle
+	{
+		vec4	p[3];
+		vec4	n;
+		vec2	uv[3];
+		
+		vec2	temp;	// to align type
+	};
+	
+	const float PiPi = 6.2831853;
+	const float PI = 3.14159265;
+	const float PI_2 = 1.57079632;
+	const float PI_4 = 0.785398163;
+	
+	const vec2 randN1 = vec2(0.14, -0.07);
+	const vec2 randN2 = vec2(0.77, 1.01);
+	const vec2 randN3 = vec2(-0.38, 0.15);
+	
+	// DONE: can be overrided in different techniques, depends on user choise
+	highp float rand(vec2 co);
+	void GetRandomDir(in vec4 inDir, in vec2 dirRnd, out vec4 dir);
+	float GetRandomSpeed(float randomF);
+	
+	// choose a shader between volume, vertex and surface generation
+	void GetEmitPos(in vec2 randN, out vec4 pos, out int vertIndex, out vec3 bary);
+	// return emitter vertex speed (for generate on motion feature)
+	void GetEmitDir(in int vertIndex, in float randomF, out vec4 vel);
+	void GetEmitterVelocity(in int vertIndex, out vec4 vel);
+	void GetEmitColor(in vec4 pos, in int vertIndex, in vec3 bary, out vec4 color);
+	
+	// choose between launcher pre-defined or dynamic generation
+	// return emitter vertex speed ( for generate on motion feature )
+	float GenerateNewParticle(in float randomF, inout vec4 pos, inout vec4 vel, inout vec4 rot, inout vec4 rotVel, inout vec4 color);
+
+
+	vec4 Color_UnPack (float depth);
+    float Color_Pack (vec4 colour);
+
+}
+
+//#include "Particles_generation.glslfxh"
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Functions that we will use to output fragments in various ways
+//
+
+////////////////////////////////////////////////////////////////////
+/// Evaluate things
+////////////////////////////////////////////////////////////////////
+
+namespace Evaluate
+{
+	
+	// prototype is in globals.glslfxh
+	
+	GLSLShader ColorCode
+	{
+		vec4 Color_UnPack (float x)
+		{
+			float a,b,c,d;
+			a = floor(x*255.0/64.0)*64.0/255.0;
+			x -= a;
+			b = floor(x*255.0/16.0)*16.0/255.0;
+			x -= b;
+			b *= 4.0;
+			c = floor(x*255.0/4.0)*4.0/255.0;
+			x -= c;
+			c *= 16.0;
+			d = x*255.0 * 64.0 / 255.0; // scan be simplified to just x*64.0
+			
+			return vec4(a,b,c,d);
+		}
+
+
+		float Color_Pack (vec4 colour)
+		{
+			float x = 1.0/255.0 * (floor(colour.x*255.0/64.0)*64.0 + floor(colour.y*255.0/64.0)*16.0 + floor(colour.z*255.0/64.0)*4.0 + floor(colour.a*255.0/64.0));
+			return x;
+		}
+	}
+
+	GLSLShader	RandomCode
+	{
+		highp float rand(vec2 co)
+		{
+			highp float a = 12.9898;
+			highp float b = 78.233;
+			highp float c = 43758.5453;
+			highp float dt= dot(co.xy ,vec2(a,b));
+			highp float sn= mod(dt,3.14);
+			return fract(sin(sn) * c);
+		}
+		
+		//
+		// out float r, out float theta, out float phi
+		void ConvertUnitVectorToSpherical(const vec4 v, out vec3 sv)
+		{
+			sv.x = sqrt(v.x*v.x + v.y*v.y + v.z*v.z); // r
+			sv.y = atan( v.y,  v.x ); // theta
+			sv.z = atan( sqrt(v.x*v.x+v.y*v.y), v.z ); // phi
+		}
+
+		// const float r, const float theta, const float phi
+		void ConvertSphericalToUnitVector(vec3 sv, out vec4 v)
+		{
+			v.x = sv.x * cos(sv.y) * sin(sv.z);
+			v.y = sv.x * sin(sv.y) * sin(sv.z);
+			v.z = sv.x * cos(sv.z);
+			v.w = 1.0;
+		}
+
+		void GetRandomDir(in vec4 inDir, in vec2 dirRnd, out vec4 dir)                                                   
+		{
+			//float r, theta, phi;
+			vec3 sv;
+
+			ConvertUnitVectorToSpherical(inDir, sv);
+
+			sv.y += dirRnd.x * PI;
+			sv.z += dirRnd.y * PiPi;
+			
+			ConvertSphericalToUnitVector(sv, dir);
+		} 
+		
+		float GetRandomSpeed(float randomF)
+		{
+			float rnd = 2.0*gEmitSpeed*rand(vec2(randomF, 1.0))-gEmitSpeed;
+			return (gEmitSpeed - rnd * gSpeedSpread);
+		}
+	}
+	
+	// use pre-defined launcher data
+	GLSLShader PreGenerated
+	{
+		float GenerateNewParticle(in float randomF, inout vec4 pos, inout vec4 vel, inout vec4 rot, inout vec4 rotVel, inout vec4 color)
+		{
+			vec4 newpos = gTM * vec4(pos.xyz, 1.0);
+			pos.xyz = newpos.xyz;
+			
+			vel = gRotationTM * vec4(vel.xyz, 1.0);
+			vel.xyz = vel.xyz + gEmitterVelocity.w * gEmitterVelocity.xyz; 
+			//vel = gEmitterDeltaTM * vel;	// inherit emitter movement
+	
+			// new lifetime
+			color.y = gShellLifetime + (rand(vec2(randomF,0.487)) * 2.0 - 1.0) * gShellLifetime * gShellLifetimeVariation;
+			color.z = 0.0; // Age1 = 0.0;     
+			color.w = 1.0; // Index1 = 1.0; // rand(vec2(randomF, 1.0));
+
+			return 0.0;
+		}
+	}
+	
+	// dynamic new shell generation in a shader code
+	
+	GLSLShader EmitFromVolume
+	{
+		//
+		//
+		void GetEmitPos(in vec2 randN, out vec4 pos, out int vertIndex, out vec3 bary)
+		{
+			vec4 lMax = gMax;
+			vec4 lMin = gMin;
+					
+			// if inherit emitter velocity, put particle on some random position during the way
+			/*
+			vec4 delta = gEmitterVelocity * gEmitterVelocity.w;
+			delta = delta * rand(randN);
+			lMax = lMax - delta;
+			lMin = lMin - delta;
+			*/
+			
+			vec3 rnd = vec3( rand(randN+randN1), rand(randN+randN2), rand(randN+randN3) );
+			
+			
+			pos.x = (lMax.x - lMin.x) * rnd.x + lMin.x;
+			pos.y = (lMax.y - lMin.y) * rnd.y + lMin.y;
+			pos.z = (lMax.z - lMin.z) * rnd.z + lMin.z;
+			pos.w = 1.0;
+			
+			//pos = gTM * pos;
+		}
+		
+		void GetEmitDir(in int vertIndex, in float randomF, out vec4 vel)
+		{
+			GetRandomDir(gDirection, vec2(gDirSpreadHor * rand(vec2(randomF, 2.03)), gDirSpreadVer * rand(vec2(randomF, 0.789))), vel);
+		}
+		
+		void GetEmitterVelocity(in int vertIndex, out vec4 vel)
+		{
+			vel = vec4(gEmitterVelocity.w * gEmitterVelocity.xyz, 1.0);
+		}
+
+		void GetEmitColor(in vec4 pos, in int vertIndex, in vec3 bary, out vec4 color)
+		{
+			vec4 lMax = gMax;
+			vec4 lMin = gMin;
+	
+			color.x = (pos.x - lMin.x) / (lMax.x - lMin.x);
+			color.y = (pos.y - lMin.y) / (lMax.y - lMin.y);
+			color.z = (pos.z - lMin.z) / (lMax.z - lMin.z);
+			color.w = 1.0;
+		}
+	}
+	
+	/////////////////////////////////////
+	//
+	GLSLShader EmitFromVertices
+	{
+		uniform 	TTriangle 	*gEmitMesh;
+		uniform 	TTriangle 	*gEmitPrevMesh;
+		layout(binding=0) 		uniform		sampler2D	gEmitTexture;	// particles will inherit texture texel under the surface point
+		layout(binding=1)		uniform		sampler2D	gEmitMask;	// mask out particles emitting (model UV-based mask)
+		
+		void GetEmitPos(in vec2 randN, out vec4 out_pos, out int vertIndex, out vec3 bary)
+		{
+			
+			TTriangle	*surfaceData = gEmitMesh;
+			
+			float rnd = rand(randN) * gPositionCount;
+			int triIndex = (int) rnd;
+
+			rnd = clamp(2.0 * rand(randN+randN1), 0.0, 1.0);
+			int rndIndex = int(rnd);
+			
+			vec4 lpos = vec4(0.0);
+			
+			lpos = surfaceData[triIndex].p[rndIndex];
+			vertIndex = triIndex * 3 + rndIndex;
+			
+			//out_pos = gTM * vec4(lpos.xyz, 1.0);
+			out_pos = vec4(lpos.xyz, 1.0);
+		}
+
+		void GetEmitDir(in int vertIndex, in float randomF, out vec4 vel) 
+		{
+			int triIndex = vertIndex / 3;
+			TTriangle	*surfaceData = gEmitMesh;
+			
+			vec4 indir = surfaceData[triIndex].n;
+
+			// DONE: randomize normal vector !!
+			GetRandomDir(indir, vec2(gDirSpreadHor * rand(vec2(randomF, 2.03)), gDirSpreadVer * rand(vec2(randomF, 0.789))), vel);
+		}   
+
+		void GetEmitterVelocity(in int vertIndex, out vec4 vel)
+		{
+			int triIndex = vertIndex / 3;
+			// accumulate velocity from a geometry movement
+			vel = gEmitMesh[triIndex].p[0] - gEmitPrevMesh[triIndex].p[0];
+		}
+
+		void GetEmitColor(in vec4 pos, in int vertIndex, in vec3 bary, out vec4 color)
+		{
+			int triIndex = vertIndex / 3;
+			TTriangle	*surfaceData = gEmitMesh;
+			
+			// read from texture image
+
+			vec2 uv0 = surfaceData[triIndex].uv[0];
+			vec2 uv1 = surfaceData[triIndex].uv[1];
+			vec2 uv2 = surfaceData[triIndex].uv[2];
+
+			uv0 *= bary.x;
+			uv1 *= bary.y;
+			uv2 *= bary.z;
+
+			vec2 uv = uv0 + uv1 + uv2;
+
+			// color
+			if (gUseEmitterTexture > 0)
+			{
+				vec4 texcoords = gTextureTM * vec4(uv.x, uv.y, 0.0, 1.0);
+				color = texture(gEmitTexture, texcoords.st);
+			}
+			else
+			{
+				color = surfaceData[triIndex].n;
+			}
+			// mask
+			if (gUseEmitterMask > 0)
+			{
+				color.a = texture(gEmitMask, uv).a;
+			}
+		}
+	}
+	
+	////////////////////////////////////////
+	//
+	GLSLShader EmitFromSurface
+	{
+		//layout(location=6) flat in TTriangle	*inMesh[];
+		uniform 	TTriangle 	*gEmitMesh;
+		uniform 	TTriangle 	*gEmitPrevMesh;
+		layout(binding=0) 		uniform		sampler2D	gEmitTexture;	// particles will inherit texture texel under the surface point
+		layout(binding=1)		uniform		sampler2D	gEmitMask;	// mask out particles emitting (model UV-based mask)
+		
+		void GetEmitPos(in vec2 randN, out vec4 pos, out int vertIndex, out vec3 bary)
+		{
+			
+			TTriangle	*surfaceData = gEmitMesh;
+
+			float rnd = rand(randN) * gPositionCount;
+			int triIndex = (int) rnd;
+
+			// barycentric coords
+			float rnd1 = rand(randN+randN1);
+			float rnd2 = rand(randN+randN2);
+
+			bary.x = 1.0 - sqrt(rnd1);
+			bary.y = sqrt(rnd1) * (1.0 - rnd2);
+			bary.z = sqrt(rnd1) * rnd2; 
+
+			vec4 p0 = surfaceData[triIndex].p[0];
+			vec4 p1 = surfaceData[triIndex].p[1];
+			vec4 p2 = surfaceData[triIndex].p[2];
+
+			p0 *= bary.x;
+			p1 *= bary.y;
+			p2 *= bary.z;
+
+			vec4 P = p0 + p1 + p2;
+			vertIndex = triIndex * 3;
+
+			//pos = gTM * vec4(P.xyz, 1.0);
+			pos = vec4(P.xyz, 1.0);
+			// TODO: extrusion dist is not used !
+		}
+		
+		void GetEmitDir(in int vertIndex, in float randomF, out vec4 vel)
+		{
+			int triIndex = vertIndex / 3;
+			TTriangle	*surfaceData = gEmitMesh;
+			TTriangle	*prevData = gEmitPrevMesh;
+
+			vec4 indir = surfaceData[triIndex].n;
+
+			// DONE: randomize normal vector !!
+			GetRandomDir(indir, vec2(gDirSpreadHor * rand(vec2(randomF, 2.03)), gDirSpreadVer * rand(vec2(randomF, 0.789))), vel);
+		}
+		
+		void GetEmitterVelocity(in int vertIndex, out vec4 vel)
+		{
+			int triIndex = vertIndex / 3;
+			// accumulate velocity from a geometry movement
+			vel = gEmitMesh[triIndex].p[0] - gEmitPrevMesh[triIndex].p[0];
+		}
+
+		void GetEmitColor(in vec4 pos, in int vertIndex, in vec3 bary, out vec4 color)
+		{
+			int triIndex = vertIndex / 3;
+			TTriangle	*surfaceData = gEmitMesh;
+			
+			// read from texture image
+
+			vec2 uv0 = surfaceData[triIndex].uv[0];
+			vec2 uv1 = surfaceData[triIndex].uv[1];
+			vec2 uv2 = surfaceData[triIndex].uv[2];
+
+			uv0 *= bary.x;
+			uv1 *= bary.y;
+			uv2 *= bary.z;
+
+			vec2 uv = uv0 + uv1 + uv2;
+
+			// color
+			if (gUseEmitterTexture > 0)
+			{
+				vec4 texcoords = gTextureTM * vec4(uv.x, uv.y, 0.0, 1.0);
+				color = texture(gEmitTexture, texcoords.st);
+			}
+			else
+			{
+				color = surfaceData[triIndex].n;
+			}
+			// mask
+			if (gUseEmitterMask > 0)
+			{
+				color.a = texture(gEmitMask, uv).a;
+			}
+		}
+	}
+	
+	//////////////////////////////////////////////////////
+	//
+	GLSLShader DynamicGeneration
+	{
+		
+		void GetRandomColor(in vec4 incolor, in float randomF, in float variation, out vec4 outcolor)
+		{
+			if (variation <= 0.0)
+			{
+				outcolor = incolor;
+				return;
+			}
+
+			vec4 varcolor = vec4(rand(vec2(randomF, 3.07)), rand(vec2(randomF, -4.04)), rand(vec2(randomF, 1.01)), 0.0);
+			varcolor = varcolor * vec4(2.0 * variation);
+			varcolor = varcolor - vec4(variation, variation, variation, 0.0);
+			
+			outcolor = clamp(incolor + varcolor, vec4(0.0), vec4(1.0) );
+		}
+		
+		float GetRandomSize(in float randomF)
+		{
+			float f = 2.0 * gSize * gSizeVariation * rand(vec2(randomF, 10.10));
+			return gSize + (f - gSize * gSizeVariation);
+		}
+		
+		vec4 quat_axis_angle(vec3 axis, float angle_radians) 
+		{
+		  vec4 q;
+		  q.xyz = normalize(axis);
+		  q.xyz = q.xyz * sin(0.5*angle_radians);
+		  q.w = cos(0.5 * angle_radians);
+		  return q;
+		}
+
+		vec4 quat_mul(vec4 q0, vec4 q1) {
+		  vec4 d;
+		  d.x = q0.w * q1.x + q0.x * q1.w + q0.y * q1.z - q0.z * q1.y;
+		  d.y = q0.w * q1.y - q0.x * q1.z + q0.y * q1.w + q0.z * q1.x;
+		  d.z = q0.w * q1.z + q0.x * q1.y - q0.y * q1.x + q0.z * q1.w;
+		  d.w = q0.w * q1.w - q0.x * q1.x - q0.y * q1.y - q0.z * q1.z;
+		  return d;
+		}
+
+		vec4 quat_euler_angles(float pitch, float yaw, float roll) {
+		  /* TODO(bill): Do without multiplication, i.e. make it faster */
+		  vec4 q, p, y, r;
+		  p = quat_axis_angle(vec3(1.0, 0.0, 0.0), pitch);
+		  y = quat_axis_angle(vec3(0.0, 1.0, 0.0), yaw);
+		  r = quat_axis_angle(vec3(0.0, 0.0, 1.0), roll);
+
+		  q = quat_mul(y, p);
+		  q = quat_mul(q, r);
+
+		  return q;
+		}
+
+		// return emitter vertex speed
+		float GenerateNewParticle(in float randomF, inout vec4 pos, inout vec4 vel, inout vec4 rot, inout vec4 rotVel, inout vec4 packedColor)
+		{
+			vec4 newPos = vec4(0.0);
+			vec4 Dir = vec4(0.0);
+			vec4 emitterVel = vec4(0.0); 
+			if (USE_NORMALS_AS_DIR == 0.0)
+				//Dir = gDirection;
+				GetRandomDir(gDirection, vec2(gDirSpreadHor * rand(vec2(randomF, 2.03)), gDirSpreadVer * rand(vec2(randomF, 0.789))), Dir);
+			
+			vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
+			
+			int vertIndex = 0;
+			vec3 baryCoords;
+			
+			GetEmitPos(vec2(randomF, 0.487), newPos, vertIndex, baryCoords);
+			GetEmitterVelocity(vertIndex, emitterVel);
+
+			if (USE_NORMALS_AS_DIR > 0.0)
+				GetEmitDir(vertIndex, randomF, Dir);
+			
+			if (gInheritEmitterColor > 0)
+			{
+				GetEmitColor(newPos, vertIndex, baryCoords, color);
+			}
+			else
+			{
+				float colorChoise = rand(vec2(randomF, 15.15));
+				GetRandomColor(gEmitColor, randomF, gColorVariation, color);
+
+				if ( gUseEmitColor2 > 0.0 && colorChoise > 0.66 )
+				{
+					GetRandomColor(gEmitColor2, randomF, gColorVariation, color);
+				}
+				if ( gUseEmitColor3 > 0.0 && colorChoise < 0.33 )
+				{
+					GetRandomColor(gEmitColor3, randomF, gColorVariation, color);
+				}
+			}
+
+			float newSize = GetRandomSize(randomF);
+			//newPos = inverse(gEmitterDeltaTM) * vec4(newPos.xyz, 1.0);
+			newPos = gTM * vec4(newPos.xyz, 1.0);
+			pos = vec4(newPos.xyz - emitterVel.xyz, newSize);
+			//pos = vec4(newPos.xyz, newSize);
+
+			Dir = gRotationTM * vec4( normalize(Dir.xyz), 1.0 );
+			Dir.xyz = GetRandomSpeed(randomF) * Dir.xyz;
+			//vel = gEmitterDeltaTM * vec4(Dir.xyz, 1.0);
+			vel.xyz = Dir.xyz + emitterVel.xyz;
+			vel.w = randomF;
+
+			rot = quat_euler_angles(gRotation.x, gRotation.y, gRotation.z);
+			rotVel = vec4(gAngularVelocity.xyz, 1.0);
+
+			packedColor.x = Color_Pack(color);
+			packedColor.y = gShellLifetime + (rand(vec2(randomF,0.487)) * 2.0 - 1.0) * gShellLifetime * gShellLifetimeVariation;
+			packedColor.z = 0.0;
+			packedColor.w = 1.0;
+
+			return length(emitterVel);
+		}
+	}
+	
+    ////////////////////////////////////////////////////////////////////
+    /// EVALUATE's VERTEX PROGRAM ///////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+    GLSLShader VS_EMIT
+    {
+		//layout (location = 0) in vec4 OldPosition;	// w - Type                                                
+		layout (location = 0) in vec4 Position;	// w- particle size                                    
+		layout (location = 1) in vec4 Velocity;
+		layout (location = 2) in vec4 Color; // r - color, g - lifetime, b-age, a-index
+		layout (location = 3) in vec4 Rot; // quaternion
+		layout (location = 4) in vec4 RotVel; 
+		                                                                    
+		layout(location=0) out vec4 Position0;                                                                 
+		layout(location=1) out vec4 Velocity0;                       
+		layout(location=2) out vec4 Color0;                                         
+		layout(location=3) out vec4 Rot0;                                                                  
+		layout(location=4) out vec4 RotVel0;
+		
+		
+		//////////////////////////////////////////////////////////
+		//
+		void main()                                                                         
+		{                                                                                        
+			Position0 = Position;                                                           
+			Velocity0 = Velocity;                                                           
+			Color0 = vec4(Color.xyz, 10.0); // Index0 = 10.0;
+			Rot0 = Rot;  
+			RotVel0 = RotVel; 
+		}
+    }
+	
+    ////////////////////////////////////////////////////////////////////
+    /// WIRE's FRAGMENT PROGRAM ///////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+    GLSLShader GS_EMIT
+    {
+		precision highp int;
+
+		layout(points) in;                                                                  
+		layout(points, max_vertices = 2) out;                                                      
+                                                                 
+		layout(location=0) in vec4 Position0[];                                                                
+		layout(location=1) in vec4 Velocity0[];                                                                
+		layout(location=2) in vec4 Color0[];   
+		layout(location=3) in vec4 Rot0[];  
+		layout(location=4) in vec4 RotVel0[];                                                                
+		 
+
+		// everything in this block goes to buffer 0
+        layout (xfb_buffer = 0, xfb_stride = 80) out block1 {
+            //layout (xfb_offset = 0)  vec4 OldPosition1; // a goes to byte offset 0 of buffer 0
+            layout (xfb_offset = 0) vec4 Position1; // b goes to offset 16 of buffer 0
+			layout (xfb_offset = 16) vec4 Velocity1; // b goes to offset 16 of buffer 0
+			layout (xfb_offset = 32) vec4 Color1; // b goes to offset 16 of buffer 0
+			layout (xfb_offset = 48) vec4 Rot1; // float Age1; // b goes to offset 16 of buffer 0
+			layout (xfb_offset = 64) vec4 RotVel1; // float Index1; // b goes to offset 16 of buffer 0
+        };
+		
+		
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// MAIN
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		void main()                                                                         
+		{                        
+			mat4 ltm = gTM;
+		
+			float Age = Color0[0].z; // + gDeltaTimeMillis;                                         
+			float lifetime = Color0[0].y;
+
+			float randomF = gTime + gl_PrimitiveIDIn;
+			
+			if ( gFlags.x > 0.0 && lifetime < 0.0 && Age >= -lifetime) 
+			{	
+				vec4 newPosition = Position0[0];
+				vec4 newVelocity = Velocity0[0];
+				vec4 newRotation = Rot0[0];
+				vec4 newRotVel = RotVel0[0];
+				vec4 newColor = Color0[0];
+				
+				// launcher has a negative size value
+				newPosition.w = -1.0 * newPosition.w;
+				
+				float l = GenerateNewParticle(randomF, newPosition, newVelocity, newRotation, newRotVel, newColor);
+				
+				if (newColor.a > gSkipAlphaLimit && l > gGenerateOnMotionLimit)
+				{
+					Position1 = newPosition;
+					Velocity1 = newVelocity; 	
+					Rot1 = newRotation;
+					RotVel1 = newRotVel;
+					Color1 = newColor;
+				
+					EmitVertex();                                                           
+					EndPrimitive();                                                         
+				}
+				// reset launcher age to next time (one launch per second)
+				Age = -1.0f * lifetime - 1.0;  
+			}
+			
+			//
+			if (lifetime != 0.0)
+			{
+				// keep particle (launcher or shell)
+				
+				Position1 = Position0[0];
+				Velocity1 = Velocity0[0]; 	
+				Rot1 = Rot0[0];      
+				RotVel1 = RotVel0[0];
+				Color1 = vec4(Color0[0].x, lifetime, Age, Color0[0].w);
+				EmitVertex();                                                               
+				EndPrimitive();   
+			}
+		}
+    }
+	
+}
+
+
+namespace Render
+{
+	GLSLShader VS_Points
+	{
+		
+		layout (location = 0) in vec4 Position;
+		layout (location = 2) in vec4 Color;
+		
+		//out float 	life;
+		out vec4	pcolor;
+		out vec3	wv;
+		
+		out gl_PerVertex {
+            vec4 gl_Position;		// 16 bytes
+			float gl_PointSize;
+        };
+
+		layout(binding=6) uniform sampler1D	ColorCurve;
+
+		void main()                                                                         
+		{           
+			float spriteSize = Position.w; // gBillboardSize;
+		
+			// Calculate point scale based on distance from the viewer
+			// to compensate for the fact that gl_PointSize is the point
+			// size in rasterized points / pixels.
+			
+			vec4 eyePos = gMV * vec4(Position.xyz, 1.0);
+			vec4 projVoxel = gVP * vec4(spriteSize,spriteSize,eyePos.z,eyePos.w);
+			vec2 projSize = gScreenSize.zw * projVoxel.xy / projVoxel.w;
+			gl_PointSize = 0.25 * (projSize.x+projSize.y);
+			gl_Position = gVP * eyePos;
+
+			// float normLife = Age / lifetime;
+			float life = clamp(Color.z / (Color.y+0.001), 0.0, 1.0);
+
+			pcolor = Color_UnPack(Color.x);
+			
+			// clip the launchers
+			if (spriteSize <= 0.0)
+			{
+				gl_Position.w = 0.0;
+			}
+			else
+			if (gUseColorCurve > 0.0)
+			{
+				pcolor = pcolor * texture(ColorCurve, life);
+			}
+			pcolor.w *= gTransparencyFactor;
+			//pcolor *= 1.0 / 255.0;
+
+			//pcolor = vec4(1.0, 0.0, 0.0, 1.0);
+			//float f = DecodeExp(pcolor);
+			//pcolor = EncodeExp(f);
+			
+			//float f = Color_Pack(pcolor);
+			//pcolor = Color_UnPack(f);
+			//pcolor.a = 1.0;
+
+			wv = eyePos.xyz;
+		} 
+	}
+	
+	
+	GLSLShader FS_Points
+	{                                                 
+		//in float life;
+		in vec4 	pcolor;
+		in vec3		wv;
+		//in vec2 gl_PointCoord ;                                                                
+
+		layout(location=0) out vec4 	outColor;
+		layout(location=1) out vec4		outNormal;	// output a view space normal
+		layout(location=2) out vec4		outMask;
+		layout(location=3) out vec4		outPosition;
+		
+		layout(binding=0) uniform sampler2D		ColorSampler;
+
+		void main()                                                                         
+		{       
+			//if (life >= 0.99 || life == 0.0) discard;
+		
+			vec4 color = pcolor;
+					
+			if (gUseColorMap > 0.0)
+			{
+				vec4 puv = gTexMatrix * vec4(gl_PointCoord.s, gl_PointCoord.t, 0.0, 1.0);
+				color = color * texture(ColorSampler, puv.st);
+			}
+
+			if (gPointFalloff > 0.0)
+			{
+				vec2 v = vec2(0.5) - gl_PointCoord.st;
+				float f = clamp(1.0 - 2.0 * sqrt( v.x * v.x + v.y * v.y ), 0.0, 1.0);
+				color.a = color.a * f;
+			}
+
+			outColor = color;
+			outNormal = vec4(normalize(wv), 1.0); // vec4(0.0, 1.0, 0.0, 0.0); // vec4( normalize(inNw), albedo.w );
+			//outNormal = normalize(inNw);
+			
+			outPosition = vec4(wv, 1.0); // fMesh->lightmap);
+			outMask = vec4(0.0); // theShader->mask;
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////
+	// Billboard
+	
+	GLSLShader VS_Billboard
+	{
+		layout (location = 0) in vec4 Position;                                        
+		layout (location = 2) in vec4 Color;
+		layout (location = 3) in vec4 Rotate;
+
+		//out float 	life;
+		out vec4	color0;
+		out vec4	wv0;
+		out vec4	rotate0;
+
+		out gl_PerVertex {
+            vec4 gl_Position;		// 16 bytes
+        };
+
+		layout(binding=6) uniform sampler1D	ColorCurve;
+
+		void main()                                                                         
+		{           
+			float spriteSize = Position.w; // gBillboardSize;
+		
+			// Calculate point scale based on distance from the viewer
+			// to compensate for the fact that gl_PointSize is the point
+			// size in rasterized points / pixels.
+			
+			vec4 eyePos = gMV * vec4(Position.xyz, 1.0);
+			gl_Position = vec4(Position.xyz, 1.0); // gVP * eyePos;
+			rotate0 = Rotate;
+
+			vec4 lColor = Color_UnPack(Color.x);
+			
+			// clip the launchers
+			if (spriteSize <= 0.0)
+			{
+				gl_Position.w = 0.0;
+			}
+			else
+			if (gUseColorCurve > 0.0)
+			{
+				float life = clamp(Color.z / (Color.y+0.001), 0.0, 1.0);
+				lColor = lColor * texture(ColorCurve, life);
+			}
+			lColor.w *= gTransparencyFactor;
+
+			color0 = lColor;
+			wv0 = vec4(eyePos.xyz, spriteSize);
+		} 
+	}
+	
+	GLSLShader GS_Quads
+	{
+		layout(points) in;                                                 
+		layout(triangle_strip) out;
+		layout(max_vertices = 4) out;                                                       
+		in gl_PerVertex
+		{
+			vec4 gl_Position;
+		} gl_in[];
+
+		in vec4 color0[];
+		in vec4 wv0[];
+		in vec4 rotate0[];
+
+		out gl_PerVertex
+		{
+			vec4 gl_Position;
+		};
+		out vec2 TexCoord;  
+		out vec4 color1;                                                                
+		out vec3 wv1;
+
+		float Epsilon = 0.001;
+
+		vec3 rotate_vector( vec4 quat, vec3 vec )
+		{
+			return vec + 2.0 * cross( cross( vec, quat.xyz ) + quat.w * vec, quat.xyz );
+		}
+
+		void main()                                                                         
+		{
+			float size = wv0[0].w;
+			
+			vec4 Pos = gl_in[0].gl_Position;
+			vec3 rotv;
+			//
+			vec2 va = vec2(-0.5, -0.5) * size;
+			rotv = Pos.xyz + rotate_vector( rotate0[0], vec3(va, 0.0) );
+			gl_Position = gVP * gMV * vec4(rotv.xyz, Pos.w);                                             
+			TexCoord = vec2(0.0, 0.0);
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			vec2 vb = vec2(-0.5, 0.5) * size;
+			rotv = Pos.xyz + rotate_vector( rotate0[0], vec3(vb, 0.0) );
+			gl_Position = gVP * gMV * vec4(rotv.xyz, Pos.w);                                             
+			TexCoord = vec2(0.0, 1.0);    
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			vec2 vd = vec2(0.5, -0.5) * size;
+			rotv = Pos.xyz + rotate_vector( rotate0[0], vec3(vd, 0.0) );
+			gl_Position = gVP * gMV * vec4(rotv.xyz, Pos.w);                                             
+			TexCoord = vec2(1.0, 0.0);                                                      
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			vec2 vc = vec2(0.5, 0.5) * size;
+			rotv = Pos.xyz + rotate_vector( rotate0[0], vec3(vc, 0.0) );
+			gl_Position = gVP * gMV * vec4(rotv.xyz, Pos.w);                                             
+			TexCoord = vec2(1.0, 1.0);                                                      
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			EndPrimitive();                                                                 
+		} 
+	}
+
+	GLSLShader GS_Billboard
+	{
+		layout(points) in;                                                 
+		layout(triangle_strip) out;
+		layout(max_vertices = 4) out;                                                       
+		in gl_PerVertex
+		{
+			vec4 gl_Position;
+		} gl_in[];
+
+		in vec4 color0[];
+		in vec4 wv0[];
+
+		out gl_PerVertex
+		{
+			vec4 gl_Position;
+		};
+		out vec2 TexCoord;  
+		out vec4 color1;                                                                
+		out vec3 wv1;
+
+		float Epsilon = 0.001;
+
+		void main()                                                                         
+		{
+			float size = wv0[0].w;
+			
+			vec4 Pos = gMV * gl_in[0].gl_Position;
+			
+			//
+			vec2 va = Pos.xy + vec2(-0.5, -0.5) * size;
+			gl_Position = gVP * vec4(va, Pos.zw);                                             
+			TexCoord = vec2(0.0, 0.0);
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			vec2 vb = Pos.xy + vec2(-0.5, 0.5) * size;
+			gl_Position = gVP * vec4(vb, Pos.zw);                                             
+			TexCoord = vec2(0.0, 1.0);    
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			vec2 vd = Pos.xy + vec2(0.5, -0.5) * size;
+			gl_Position = gVP * vec4(vd, Pos.zw);                                             
+			TexCoord = vec2(1.0, 0.0);                                                      
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			vec2 vc = Pos.xy + vec2(0.5, 0.5) * size;
+			gl_Position = gVP * vec4(vc, Pos.zw);                                             
+			TexCoord = vec2(1.0, 1.0);                                                      
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			EndPrimitive();                                                                 
+		} 
+	}
+	
+	GLSLShader FS_Billboard
+	{
+		in vec2 TexCoord;
+		in vec4 color1; 
+		in vec3 wv1;
+
+		layout(location=0) out vec4 	outColor;
+		layout(location=1) out vec4		outNormal;	// output a view space normal
+		layout(location=2) out vec4		outMask;
+		layout(location=3) out vec4		outPosition;  
+		                                                          
+		layout(binding=0) uniform sampler2D		ColorSampler;
+
+		//
+		void main()                                                                         
+		{   
+			//if (life1 >= 0.99) discard;
+		  
+			vec4 color = color1;
+			
+			if (gUseColorMap > 0.0)
+			{
+				vec4 puv = gTexMatrix * vec4(TexCoord.s, TexCoord.t, 0.0, 1.0);
+				color = color * texture(ColorSampler, puv.st);
+			}
+
+			if (gPointFalloff > 0.0)
+			{
+				vec2 v = vec2(0.5) - TexCoord.st;
+				float f = clamp(1.0 - 2.0 * sqrt( v.x * v.x + v.y * v.y ), 0.0, 1.0);
+				color.a = color.a * f;
+			}
+			
+			outColor = color;
+			outNormal = vec4(normalize(wv1), 1.0); // vec4(0.0, 1.0, 0.0, 0.0); // vec4( normalize(inNw), albedo.w );
+			//outNormal = normalize(inNw);
+			
+			outPosition = vec4(wv1, 1.0); // fMesh->lightmap);
+			outMask = vec4(0.0); // theShader->mask;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////
+	// Stretched Billboard
+
+	GLSLShader VS_StretchedBillboard
+	{
+		layout (location = 0) in vec4 Position;                                        
+		layout (location = 1) in vec4 Velocity; // .w - Total Lifetime
+		layout (location = 2) in vec4 Color;
+		
+		//out float 	life;
+		out vec4	velocity0;
+		out vec4	color0;
+		out vec4	wv0;
+		
+		out gl_PerVertex {
+            vec4 gl_Position;		// 16 bytes
+        };
+
+		layout(binding=6) uniform sampler1D	ColorCurve;
+
+		void main()                                                                         
+		{           
+			float spriteSize = Position.w; // gBillboardSize;
+		
+			// Calculate point scale based on distance from the viewer
+			// to compensate for the fact that gl_PointSize is the point
+			// size in rasterized points / pixels.
+			
+			vec4 eyePos = vec4(Position.xyz, 1.0); // gMV * 
+			gl_Position = eyePos; // gVP * eyePos;
+
+			velocity0 = Velocity;
+
+			vec4 lColor = Color_UnPack(Color.x);
+			
+			// clip the launchers
+			if (spriteSize <= 0.0)
+			{
+				gl_Position.w = 0.0;
+			}
+			else
+			if (gUseColorCurve > 0.0)
+			{
+				float life = clamp(Color.y / (Color.z+0.001), 0.0, 1.0);
+				lColor = lColor * texture(ColorCurve, life);
+			}
+			lColor.w *= gTransparencyFactor;
+
+			color0 = lColor;
+			wv0 = vec4(eyePos.xyz, spriteSize);
+		} 
+	}
+	
+	GLSLShader GS_StretchedBillboard
+	{
+		layout(points) in;                                                 
+		layout(triangle_strip) out;
+		layout(max_vertices = 4) out;                                                       
+		in gl_PerVertex
+		{
+			vec4 gl_Position;
+		} gl_in[];
+
+		in vec4 velocity0[];
+		in vec4 color0[];
+		in vec4 wv0[];
+
+		out gl_PerVertex
+		{
+			vec4 gl_Position;
+		};
+		out vec2 TexCoord;  
+		out vec4 color1;                                                                
+		out vec3 wv1;
+
+		float Epsilon = 0.001;
+
+		void main()                                                                         
+		{
+			mat3 Modelview = mat3(gMV);
+			
+			float size = wv0[0].w;
+			
+
+			vec3 p = gl_in[0].gl_Position.xyz;
+			float l = 0.1 * length(velocity0[0].xyz);
+			vec3 oldPos = p - gDeltaTimeMillis * l * l * normalize(velocity0[0].xyz);
+
+			float w = size * 0.5;
+			float h = w * 2.0;
+			vec3 u = Modelview * (p - oldPos);
+			
+			// Determine 't', which represents Z-aligned magnitude.
+			// By default, t = 0.0.
+			// If velocity aligns with Z, increase t towards 1.0.
+			// If total speed is negligible, increase t towards 1.0.
+			float t = 0.0;
+			float nz = abs(normalize(u).z);
+			if (nz > 1.0 - Epsilon)
+				t = (nz - (1.0 - Epsilon)) / Epsilon;
+			else if (dot(u,u) < Epsilon)
+				t = (Epsilon - dot(u,u)) / Epsilon;
+				
+			// Compute screen-space velocity:
+			u.z = 0.0;
+			u = normalize(u);
+		 
+			// Lerp the orientation vector if screen-space velocity is negligible:
+			u = normalize(mix(u, vec3(1,0,0), t));
+			h = mix(h, w, t);
+
+			// Compute the change-of-basis matrix for the billboard:
+			vec3 v = vec3(-u.y, u.x, 0);
+			vec3 a = u * Modelview;
+			vec3 b = v * Modelview;
+			vec3 c = cross(a, b);
+			mat3 basis = mat3(a, b, c);
+
+			// Compute the four offset vectors:
+			vec3 N = basis * vec3(0,w,0);
+			vec3 S = basis * vec3(0,-w,0);
+			vec3 E = basis * vec3(-h,0,0);
+			vec3 W = basis * vec3(h,0,0);
+			
+			vec3 va = p+S+W;
+			vec3 vb = p+N+W;
+			vec3 vd = p+S+E;
+			vec3 vc = p+N+E;
+			
+			//
+			gl_Position = gVP * gMV * vec4(va, 1.0);                                             
+			TexCoord = vec2(0.0, 0.0);
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			gl_Position = gVP * gMV * vec4(vb, 1.0);                                             
+			TexCoord = vec2(0.0, 1.0);    
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;	
+			EmitVertex();                                                                   
+
+			gl_Position = gVP * gMV * vec4(vd, 1.0);                                             
+			TexCoord = vec2(1.0, 0.0);                                                      
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			gl_Position = gVP * gMV * vec4(vc, 1.0);                                             
+			TexCoord = vec2(1.0, 1.0);                                                      
+			color1 = color0[0];
+			wv1 = wv0[0].xyz;
+			EmitVertex();                                                                   
+
+			EndPrimitive();                                                                
+		} 
+	}
+
+	/*
+	GLSLShader VS_StretchedBillboard
+	{
+		
+		layout (location = 0) in vec4 OldPosition;                                             
+		layout (location = 1) in vec4 Position;
+		out float life0;
+		out vec3 oldPosition0;
+
+		out gl_PerVertex {
+            vec4 gl_Position;		// 16 bytes
+        };
+
+		void main()                                                                         
+		{                                                                                   
+			gl_Position = vec4(Position.xyz, 1.0);   
+			life0 = Position.w;
+			oldPosition0 = OldPosition.xyz;
+		} 	
+	}
+
+	GLSLShader GS_StretchedBillboard
+	{
+
+		layout(points) in;                                                                  
+		layout(triangle_strip) out;                                                         
+		layout(max_vertices = 4) out;                                                       
+		in float life0[];
+		in vec3 oldPosition0[];
+
+		out vec2 TexCoord;  
+		out float life1;                                                                
+
+		float Epsilon = 0.001;
+
+		void main()                                                                         
+		{
+			mat3 Modelview = mat3(gMV);
+			
+			float size = gBillboardSize;
+			if (UseSizeCurve == 1)
+			{
+				size = texture( SizeCurve, life0[0] ).r;
+			}
+			
+			vec3 p = gl_in[0].gl_Position.xyz;
+			float w = size * 0.5;
+			float h = w * 2.0;
+			vec3 u = Modelview * (p - oldPosition0[0]);
+			
+			// Determine 't', which represents Z-aligned magnitude.
+			// By default, t = 0.0.
+			// If velocity aligns with Z, increase t towards 1.0.
+			// If total speed is negligible, increase t towards 1.0.
+			float t = 0.0;
+			float nz = abs(normalize(u).z);
+			if (nz > 1.0 - Epsilon)
+				t = (nz - (1.0 - Epsilon)) / Epsilon;
+			else if (dot(u,u) < Epsilon)
+				t = (Epsilon - dot(u,u)) / Epsilon;
+				
+			// Compute screen-space velocity:
+			u.z = 0.0;
+			u = normalize(u);
+		 
+			// Lerp the orientation vector if screen-space velocity is negligible:
+			u = normalize(mix(u, vec3(1,0,0), t));
+			h = mix(h, w, t);
+
+			// Compute the change-of-basis matrix for the billboard:
+			vec3 v = vec3(-u.y, u.x, 0);
+			vec3 a = u * Modelview;
+			vec3 b = v * Modelview;
+			vec3 c = cross(a, b);
+			mat3 basis = mat3(a, b, c);
+
+			// Compute the four offset vectors:
+			vec3 N = basis * vec3(0,w,0);
+			vec3 S = basis * vec3(0,-w,0);
+			vec3 E = basis * vec3(-h,0,0);
+			vec3 W = basis * vec3(h,0,0);
+			
+			vec3 va = p+S+W;
+			vec3 vb = p+N+W;
+			vec3 vd = p+S+E;
+			vec3 vc = p+N+E;
+			
+			//
+			gl_Position = gVP * gMV * vec4(va, 1.0);                                             
+			TexCoord = vec2(0.0, 0.0);
+			life1 = life0[0];
+			EmitVertex();                                                                   
+
+			gl_Position = gVP * gMV * vec4(vb, 1.0);                                             
+			TexCoord = vec2(0.0, 1.0);    
+			life1 = life0[0];	
+			EmitVertex();                                                                   
+
+			gl_Position = gVP * gMV * vec4(vd, 1.0);                                             
+			TexCoord = vec2(1.0, 0.0);                                                      
+			life1 = life0[0];
+			EmitVertex();                                                                   
+
+			gl_Position = gVP * gMV * vec4(vc, 1.0);                                             
+			TexCoord = vec2(1.0, 1.0);                                                      
+			life1 = life0[0];
+			EmitVertex();                                                                   
+
+			EndPrimitive();                                                                 
+		} 
+	}
+	*/
+	//////////////////////////////////////////////////////////////////////////////////////////
+	// INSTANCES
+		
+	GLSLShader VS_Instancing
+	{
+
+		layout (location = 0) in vec4 Position;
+		layout (location = 1) in vec4 Normal;
+		layout (location = 2) in vec2 TexCoord;
+
+		// particle attributes
+		layout (location = 4) in vec4 ParticlePosition;
+		layout (location = 5) in vec4 Velocity; // .w - Total Lifetime
+		layout (location = 6) in vec4 Color;
+		layout (location = 7) in vec4 Rotation; // .w - Age
+
+		out vec3 lNormal;
+		out float life;
+		out vec4 pcolor;
+		out vec3	wv;
+		out vec2 puv;
+
+		out gl_PerVertex {
+            vec4 gl_Position;		// 16 bytes
+        };
+
+		layout(binding=6) uniform sampler1D	ColorCurve;
+
+		vec3 rotate_vector( vec4 quat, vec3 vec )
+		{
+			return vec + 2.0 * cross( cross( vec, quat.xyz ) + quat.w * vec, quat.xyz );
+		}
+
+		void main()                                                                         
+		{   
+			float size = ParticlePosition.w; // gBillboardSize;
+			// float normLife = Age / lifetime;
+			life = clamp(Color.z / (Color.y+0.001), 0.0, 1.0);
+
+			vec3 pos = ParticlePosition.xyz + size * rotate_vector( Rotation, Position.xyz );
+			//vec4 pos = size * Position + ParticlePosition;
+			vec4 vPosition = gMV * vec4(pos.xyz, 1.0);
+			gl_Position = gVP * vPosition;
+			wv = vPosition.xyz;
+
+			vec3 rotate_n = rotate_vector( Rotation, Normal.xyz );
+			vec4 n = gInvTransposeMV * vec4(rotate_n, 1.0);
+			lNormal = n.xyz;
+
+			//
+			pcolor = Color_UnPack(Color.x);
+			puv = (gTexMatrix * vec4(TexCoord.s, TexCoord.t, 0.0, 1.0)).st;
+
+			// clip the launchers
+			if (size <= 0.0)
+			{
+				gl_Position.w = 0.0;
+			}
+			else
+			if (gUseColorCurve > 0.0)
+			{
+				pcolor = pcolor * texture(ColorCurve, life);
+			}
+			pcolor.w *= gTransparencyFactor;
+		} 
+	}
+
+	GLSLShader FS_InstancingSimple
+	{
+		
+		in vec3 lNormal;
+		in float life;
+		in vec4 pcolor;
+		in vec3	wv;
+		in vec2 puv;                                                   
+
+		layout(location=0) out vec4 	outColor;
+		layout(location=1) out vec4		outNormal;	// output a view space normal
+		layout(location=2) out vec4		outMask;
+		layout(location=3) out vec4		outPosition;
+		
+		layout(binding=0) uniform sampler2D		ColorSampler;
+
+		float ApplyLight(in vec3 L, in vec3 N)
+		{
+			float lambertTerm = clamp(dot(N, L), 0.0, 1.0);
+			vec3 E = normalize(wv);
+			vec3 R = reflect(-L, N);
+			float specular = clamp(pow(max(dot(R, E), 0.0), 64.0), 0.0, 1.0);
+
+			return lambertTerm + specular;
+		}
+
+		void main()                                                                         
+		{
+			vec3 lightDir[2];
+			lightDir[0] = normalize(vec3(1.0, 1.0, 1.0));
+			lightDir[1] = normalize(vec3(-1.0, -1.0, -1.0));
+			
+			vec3 n = normalize(lNormal);
+			
+			float diffuse = ApplyLight(lightDir[0], n);
+			diffuse += ApplyLight(lightDir[1], n);
+
+			vec4 color = pcolor;
+			
+			if (gUseColorMap > 0.0)
+			{
+				color = color * texture(ColorSampler, puv);
+			}
+			//
+			outColor = vec4(diffuse * color.xyz, color.w);
+						
+			outNormal = vec4(n, 1.0); // vec4(0.0, 1.0, 0.0, 0.0); 
+			outPosition = vec4(wv, 1.0); // fMesh->lightmap);
+			outMask = vec4(0.0); // theShader->mask;
+		}
+	}
+
+	GLSLShader FS_InstancingFlat
+	{
+		
+		in vec3 lNormal;
+		in float life;
+		in vec4 pcolor;
+		in vec3	wv;
+		in vec2 puv;                                                   
+
+		layout(location=0) out vec4 	outColor;
+		layout(location=1) out vec4		outNormal;	// output a view space normal
+		layout(location=2) out vec4		outMask;
+		layout(location=3) out vec4		outPosition;
+		
+		layout(binding=0) uniform sampler2D		ColorSampler;
+
+		void main()                                                                         
+		{
+			vec3 n = normalize(lNormal);
+			vec4 color = pcolor;
+			
+			if (gUseColorMap > 0.0)
+			{
+				color = color * texture(ColorSampler, puv);
+			}
+			//
+			outColor = color;
+					
+			outNormal = vec4(n, 1.0); // vec4(0.0, 1.0, 0.0, 0.0); 
+			outPosition = vec4(wv, 1.0); // fMesh->lightmap);
+			outMask = vec4(0.0); // theShader->mask;
+		}
+	}
+
+
+	GLSLShader FS_InstancingDynamic
+	{
+		
+		in vec3 lNormal;
+		in float life;
+		in vec4 pcolor;
+		in vec3	wv;
+		in vec2 puv;                                                   
+
+		layout(location=0) out vec4 	outColor;
+		layout(location=1) out vec4		outNormal;	// output a view space normal
+		layout(location=2) out vec4		outMask;
+		layout(location=3) out vec4		outPosition;
+		
+		layout(binding=0) uniform sampler2D		ColorSampler;
+
+		void main()                                                                         
+		{
+			
+			vec3 n = normalize(lNormal);
+			float diffuse = clamp(dot( normalize(lNormal), normalize(gCameraPos.xyz) ), 0.0, 1.0);
+			
+			vec4 color = pcolor;
+			
+			if (gUseColorMap > 0.0)
+			{
+				color = color * texture(ColorSampler, puv);
+			}
+			//
+			outColor = vec4(diffuse * color.xyz, color.w);
+						
+			outNormal = vec4(n, 1.0); // vec4(0.0, 1.0, 0.0, 0.0); 
+			outPosition = vec4(wv, 1.0); // fMesh->lightmap);
+			outMask = vec4(0.0); // theShader->mask;
+		}
+	}
+}
+
+// DONE: convert glsl 330 into glsl 420 syntax
+namespace Terrain
+{
+	GLSLShader VS_Prepare
+	{
+		layout(location = 0) in vec4	Position;
+		out float Depth;
+
+		out gl_PerVertex {
+            vec4 gl_Position;		// 16 bytes
+        };
+		
+		void main()                                                                         
+		{                           
+			vec4 pos = gTerrainModelTM * vec4(Position.xyz, 1.0);
+			float temp = pos.z;
+			pos.z = pos.y;
+			pos.y = -temp;
+			
+			Depth = pos.z;
+			
+			gl_Position = gTerrainVP * pos;
+		} 
+	}
+ 
+	GLSLShader FS_Prepare
+	{
+		
+		in float Depth;                                                               
+		out vec4 FragColor;
+		/*
+		vec4 packFloatToVec4i(const float value)
+		{
+		  const vec4 bitSh = vec4(256.0*256.0*256.0, 256.0*256.0, 256.0, 1.0);
+		  const vec4 bitMsk = vec4(0.0, 1.0/256.0, 1.0/256.0, 1.0/256.0);
+		  vec4 res = fract(value * bitSh);
+		  res -= res.xxyz * bitMsk;
+		  return res;
+		}
+		*/
+		void main()                                                                         
+		{         
+			//gl_FragColor = packFloatToVec4i(Depth);
+			FragColor = vec4(Depth, Depth, Depth, 1.0);
+		}
+	}
+	
+	GLSLShader VS_Render
+	{
+		layout (location = 0) in vec3 Position; 
+		out vec2 uv;                                            
+
+		out gl_PerVertex {
+            vec4 gl_Position;		// 16 bytes
+        };
+		
+		void main()                                                                         
+		{                                                                                   
+			gl_Position = gTerrainVP * vec4(Position.xyz, 1.0);  
+			
+			uv = (Position.xz - gTerrainOffset.xz) / gTerrainScale.xz;
+		} 
+	}
+
+	GLSLShader FS_Render
+	{
+		layout(binding=0) uniform		sampler2D	gTerrainColorSampler;
+		
+		in vec2 uv;
+		out vec4 FragColor;                                                                 
+
+		float unpackFloatFromVec4i(const vec4 value)
+		{
+		  const vec4 bitSh = vec4(1.0/(256.0*256.0*256.0), 1.0/(256.0*256.0), 1.0/256.0, 1.0);
+		  return(dot(value, bitSh));
+		}
+
+		void main()                                                                         
+		{
+			float Depth = texture(gTerrainColorSampler, uv).s;
+			
+			vec4 color = vec4(Depth, Depth, Depth, 1.0);	
+			FragColor = color;
+		}
+	}
+	
+	// only if bindless textures supported
+	GLSLShader FS_RenderBindless
+	{
+		uniform 	uint64_t 		gTerrainColorAddress;  
+		
+		in vec2 uv;
+		out vec4 FragColor;                                                                 
+
+		float unpackFloatFromVec4i(const vec4 value)
+		{
+		  const vec4 bitSh = vec4(1.0/(256.0*256.0*256.0), 1.0/(256.0*256.0), 1.0/256.0, 1.0);
+		  return(dot(value, bitSh));
+		}
+
+		void main()                                                                         
+		{
+			sampler2D sm = sampler2D(gTerrainColorAddress);
+			//float Depth = unpackFloatFromVec4i( texture(sm, uv) );
+			float Depth = texture(sm, uv).s;
+			FragColor = vec4(Depth, Depth, Depth, 1.0);
+			//FragColor = vec4(Depth.x, Depth.y, 0.0, 1.0);
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+// Material Technique
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+Technique Init
+{
+    Pass init
+    {
+        PolygonOffset = {1.0,1.0};
+        DEPTH_TEST = True;
+        DEPTH_FUNC = LEQUAL;
+        DEPTH_MASK = True;
+    }
+}
+
+Technique volumeEmitter
+{
+	Pass p0
+	{
+		VertexProgram = Evaluate::VS_EMIT;
+		GeometryProgram = {Evaluate::ColorCode, Evaluate::RandomCode, Evaluate::EmitFromVolume, Evaluate::DynamicGeneration, Evaluate::GS_EMIT};
+	}
+}
+
+Technique verticesEmitter
+{
+	Pass p0
+	{
+		VertexProgram = Evaluate::VS_EMIT;
+		GeometryProgram = {Evaluate::ColorCode, Evaluate::RandomCode, Evaluate::EmitFromVertices, Evaluate::DynamicGeneration, Evaluate::GS_EMIT};
+	}
+}
+
+Technique surfaceEmitter
+{
+	Pass p0
+	{
+		VertexProgram = Evaluate::VS_EMIT;
+		GeometryProgram = {Evaluate::ColorCode, Evaluate::RandomCode, Evaluate::EmitFromSurface, Evaluate::DynamicGeneration, Evaluate::GS_EMIT};
+	}
+}
+
+Technique emitPreGenerated
+{
+	Pass p0
+	{
+		VertexProgram = Evaluate::VS_EMIT;
+		GeometryProgram = {Evaluate::ColorCode, Evaluate::RandomCode, Evaluate::PreGenerated, Evaluate::GS_EMIT};
+	}
+}
+
+///////////////////////////////////////////
+Technique renderPoints
+{
+	Pass p0
+	{
+		VertexProgram = {Evaluate::ColorCode, Render::VS_Points};
+		FragmentProgram = Render::FS_Points;
+	}
+}
+
+Technique renderQuads
+{
+	Pass p0
+	{
+		VertexProgram = {Evaluate::ColorCode, Render::VS_Billboard};
+		GeometryProgram = Render::GS_Quads;
+		FragmentProgram = Render::FS_Billboard;
+	}
+}
+
+Technique renderBillboards
+{
+	Pass p0
+	{
+		VertexProgram = {Evaluate::ColorCode, Render::VS_Billboard};
+		GeometryProgram = Render::GS_Billboard;
+		FragmentProgram = Render::FS_Billboard;
+	}
+}
+
+Technique renderStretchedBillboards
+{
+	Pass p0
+	{
+		VertexProgram = {Evaluate::ColorCode, Render::VS_StretchedBillboard};
+		GeometryProgram = Render::GS_StretchedBillboard;
+		FragmentProgram = Render::FS_Billboard;
+	}
+}
+
+Technique renderInstancesSimple
+{
+	Pass p0
+	{
+		VertexProgram = {Evaluate::ColorCode, Render::VS_Instancing};
+		FragmentProgram = Render::FS_InstancingSimple;
+	}
+}
+
+Technique renderInstancesFlat
+{
+	Pass p0
+	{
+		VertexProgram = {Evaluate::ColorCode, Render::VS_Instancing};
+		FragmentProgram = Render::FS_InstancingFlat;
+	}
+}
+
+Technique renderInstancesDynamic
+{
+	Pass p0
+	{
+		VertexProgram = {Evaluate::ColorCode, Render::VS_Instancing};
+		FragmentProgram = Render::FS_InstancingDynamic;
+	}
+}
+
+////////////////////////////////////////////
+Technique terrainPrepare
+{
+	Pass p0
+	{
+		VertexProgram = Terrain::VS_Prepare;
+		FragmentProgram = Terrain::FS_Prepare;
+	}
+}
+
+Technique terrainPreview
+{
+	Pass p0
+	{
+		VertexProgram = Terrain::VS_Render;
+		FragmentProgram = Terrain::FS_Render;
+	}
+}
+
+Technique terrainPreviewBindless
+{
+	Pass p0
+	{
+		VertexProgram = Terrain::VS_Render;
+		FragmentProgram = Terrain::FS_RenderBindless;
+	}
+}
