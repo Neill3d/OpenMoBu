@@ -103,7 +103,7 @@ void DrawCircle(const float radius, const int segs)
 	
 }
 
-void DrawCircleBillboard(FBCamera *pCamera, const float radius, const int segs, const FBVector3d pos)
+void DrawCircleBillboard(FBCamera *pCamera, const float radius, const int segs, const FBVector3d& pos)
 {
 	float t = 0.0f;
 	float maxt = 2.0f * (float) M_PI;
@@ -138,7 +138,7 @@ void DrawCircleBillboard(FBCamera *pCamera, const float radius, const int segs, 
 	glPopMatrix();
 }
 
-void DrawCircleBillboard(const float radius, const int segs, const FBMatrix m)
+void DrawCircleBillboard(const float radius, const int segs, const FBMatrix& m)
 {
 	float t = 0.0f;
 	float maxt = 2.0f * 3.1415f;
@@ -164,7 +164,7 @@ void DrawCircleBillboard(const float radius, const int segs, const FBMatrix m)
 	glPopMatrix();
 }
 
-void DrawCircleBillboardFill(FBCamera *pCamera, const float radius, const int segs, const FBVector3d pos, const FBVector4d innerColor, const FBVector4d outerColor)
+void DrawCircleBillboardFill(FBCamera *pCamera, const float radius, const int segs, const FBVector3d& pos, const FBVector4d& innerColor, const FBVector4d& outerColor)
 {
 	float t = 0.0f;
 	float maxt = 2.0f * (float) M_PI;
@@ -244,7 +244,6 @@ ColorPropertyTexture::ColorPropertyTexture(const int textureWidth, FBPropertyAni
 	: mTextureWidth(textureWidth)
 	, mProp(prop)
 {
-	mTexId = 0;
 }
 
 //! a destructor
@@ -341,7 +340,6 @@ DoublePropertyTexture::DoublePropertyTexture(const int textureWidth, FBPropertyA
 	: mTextureWidth(textureWidth)
 	, mProp(prop)
 {
-	mTexId = 0;
 }
 
 //! a destructor

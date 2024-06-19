@@ -19,12 +19,12 @@
 class BufferTexture
 {
 private:
-	GLuint						mSize;		//!< size of buffer array in bytes
-	GLuint						mCount;		//!< number of vertices which generate particles
-	GLuint						mBufferId;
-	GLuint						mTextureId;
+	GLuint						mSize{ 0 };		//!< size of buffer array in bytes
+	GLuint						mCount{ 0 };		//!< number of vertices which generate particles
+	GLuint						mBufferId{ 0 };
+	GLuint						mTextureId{ 0 };
 
-	int							mTempChannelId;
+	int							mTempChannelId{ 0 };
 public:
 	//! a constructor
 	BufferTexture();

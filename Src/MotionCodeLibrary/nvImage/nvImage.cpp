@@ -86,7 +86,7 @@ Image::~Image() {
 //
 ////////////////////////////////////////////////////////////
 void Image::freeData() {
-    for (vector<GLubyte*>::iterator it = _data.begin(); it != _data.end(); it++) {
+    for (vector<GLubyte*>::iterator it = _data.begin(); it != _data.end(); ++it) {
         delete []*it;
     }
     _data.clear();

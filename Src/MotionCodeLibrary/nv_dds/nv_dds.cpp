@@ -503,7 +503,7 @@ bool CDDSImage::load(const unsigned char *memory, bool flipImage)
 //
 // filename - fully qualified name of DDS image
 // flipImage - specifies whether image is flipped on load, default is true
-bool CDDSImage::load(string filename, bool flipImage)
+bool CDDSImage::load(const string& filename, bool flipImage)
 {
     assert(filename.length() != 0);
     
@@ -709,7 +709,7 @@ void CDDSImage::write_texture(const CTexture &texture, FILE *fp)
     }
 }
 
-bool CDDSImage::save(std::string filename, bool flipImage)
+bool CDDSImage::save(const std::string& filename, bool flipImage)
 {
     assert(m_valid);
     assert(m_type != TextureNone);

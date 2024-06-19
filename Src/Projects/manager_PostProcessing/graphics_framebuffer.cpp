@@ -37,20 +37,7 @@ const GLuint AttachedFrameBufferData::prepTexture(GLuint id, int width, int heig
 // MainFrameBuffer::TexturesPack
 
 MainFrameBuffer::texture_pack::texture_pack()
-{
-	color_texture = 0;
-	depth_texture = 0;
-	stencil_texture = 0;
-	accum_texture = 0;
-
-	depthRBO = 0;
-	accumRBO = 0;
-
-#ifdef MANY_ATTACHMENTS
-	normal_texture = 0;
-	mask_texture = 0;
-#endif
-}
+{}
 
 MainFrameBuffer::texture_pack::~texture_pack()
 {
@@ -109,7 +96,6 @@ void MainFrameBuffer::texture_pack::deleteTextures()
 
 MainFrameBuffer::MainFrameBuffer()
 {
-	
 	InitialValues();
 }
 

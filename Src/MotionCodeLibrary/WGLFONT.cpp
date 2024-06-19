@@ -43,7 +43,7 @@
 //using	namespace	CEOGL;
 
 //////////////////////////////////////////////
-WGLFont*   a_pDefaultFont;
+WGLFont* a_pDefaultFont{ nullptr };
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -54,9 +54,10 @@ WGLFont::WGLFont()
 	g_FontListID = 0;
 }
 
-WGLFont::WGLFont( HDC hDC, LPSTR strFontName, int height ) {
-	g_hDC = hDC;
-	m_height = height;
+WGLFont::WGLFont( HDC hDC, LPSTR strFontName, int height ) 
+	: g_hDC(hDC)
+	, m_height(height)
+{
 	g_FontListID = CreateOpenGLFont( strFontName, height );
 }
 

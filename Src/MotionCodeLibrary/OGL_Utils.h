@@ -189,7 +189,7 @@ public:
 
 protected:
 
-	GLuint				cubeId;
+	GLuint				cubeId = 0;
 
 	// information about load status
 	unsigned int		memorySize;

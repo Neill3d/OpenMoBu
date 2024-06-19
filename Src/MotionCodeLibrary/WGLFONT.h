@@ -49,20 +49,20 @@
 	 */
 	class WGLFont  // : public	Singleton<WGLFont>
 	{
-		UINT g_FontListID;
+		UINT g_FontListID{ 0 };
 
 		// This will save our old font and select it back in at the end of our program.
 		// We need this because we use SelectObject() to select in the new font.
 		// We don't want any memory leaks :)
-		HFONT hOldFont;
+		HFONT hOldFont{ 0 };
 
-		int m_height;
+		int m_height{ 0 };
 
-		float mX;
-		float mY;
+		float mX{ 0.0f };
+		float mY{ 0.0f };
 
 		// global HDC
-		HDC		g_hDC;
+		HDC		g_hDC{ 0 };
 
 		UINT CreateOpenGLFont(LPSTR strFontName, int height);
 

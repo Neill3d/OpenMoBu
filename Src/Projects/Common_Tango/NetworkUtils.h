@@ -112,9 +112,9 @@ namespace Network {
 
     private:
 #if PLATFORM == PLATFORM_WINDOWS
-        SOCKET	handle;
+        SOCKET	handle{ 0 };
 #else
-        int handle;
+        int handle{ 0 };
 #endif
     };
 

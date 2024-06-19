@@ -36,38 +36,26 @@ protected:
 	struct buffer_info
 	{
 	protected:
-		double		scaleFactor;	// supersampling scale factor
+		double		scaleFactor{ 1.0 };	//!< supersampling scale factor
 
-		int			depthSamples;
-		int			coverageSamples;
+		int			depthSamples{ 0 };
+		int			coverageSamples{ 0 };
 
-		int			format;
+		int			format{ 0 };
 
-		// viewport original buffer size
-		int			width;
-		int			height;
-		// scaled supersampling buffer size
-		int			bufw;
-		int			bufh;
+		/// viewport original buffer size
+		int			width{ 0 };
+		int			height{ 0 };
+		/// scaled supersampling buffer size
+		int			bufw{ 0 };
+		int			bufh{ 0 };
 
 	public:
 		buffer_info()
-		{
-			scaleFactor = 1.0;
-
-			depthSamples = 0;
-			coverageSamples = 0;
-
-			format = 0;
-
-			width = 0;
-			height = 0;
-			bufw = 0;
-			bufh = 0;
-		}
+		{}
 
 		bool NotEqual(double _scaleFactor, int _depthSamples, int _coverageSamples,
-			int _width, int _height)
+			int _width, int _height) const
 		{
 			return (scaleFactor != _scaleFactor || depthSamples != _depthSamples 
 				|| coverageSamples != _coverageSamples || width != _width || height != _height );
@@ -108,28 +96,28 @@ protected:
 	};
 
 	
-	GLuint		fbo_attached;
+	GLuint		fbo_attached{ 0 };
 
-	GLuint		fbobig;
-	GLuint		fboms;
-	GLuint		fbo;
+	GLuint		fbobig{ 0 };
+	GLuint		fboms{ 0 };
+	GLuint		fbo{ 0 };
 
 	buffer_info		mainInfo;
-	buffer_info		extendedInfo;	// mobu offline render buffer
+	buffer_info		extendedInfo;	//!< mobu offline render buffer
 	
 	struct texture_pack
 	{
-		GLuint		color_texture;
-		GLuint		depth_texture;
-		GLuint		stencil_texture;	// this could be useful to compatibility with mobu reflection shader
-		GLuint		accum_texture;
+		GLuint		color_texture{ 0 };
+		GLuint		depth_texture{ 0 };
+		GLuint		stencil_texture{ 0 };	//!< this could be useful to compatibility with mobu reflection shader
+		GLuint		accum_texture{ 0 };
 
-		GLuint		depthRBO;
-		GLuint		accumRBO;
+		GLuint		depthRBO{ 0 };
+		GLuint		accumRBO{ 0 };
 
 #ifdef MANY_ATTACHMENTS
-		GLuint		normal_texture;
-		GLuint		mask_texture;
+		GLuint		normal_texture{ 0 };
+		GLuint		mask_texture{ 0 };
 #endif
 
 		texture_pack();
@@ -138,14 +126,14 @@ protected:
 		void deleteTextures();
 	};
 
-	// allocate memory for all of this
+	/// allocate memory for all of this
 
 	texture_pack	textures_big;
 	texture_pack	textures_ms;
-	// if textures are scaled, then downsample them another textures
+	/// if textures are scaled, then downsample them another textures
 	texture_pack	textures;
 
-	// used for offline renderer to attach our own textures
+	/// used for offline renderer to attach our own textures
 	texture_pack	textures_extended;
 
 	// common info

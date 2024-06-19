@@ -20,14 +20,7 @@
 
 //! a constructor
 BufferTexture::BufferTexture()
-{
-	mSize = 0;
-	mCount = 0;
-	mBufferId = 0;
-	mTextureId = 0;
-
-	mTempChannelId = 0;
-}
+{}
 
 //! a destructor
 BufferTexture::~BufferTexture()

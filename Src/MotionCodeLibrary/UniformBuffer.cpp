@@ -19,8 +19,6 @@
 UniformBufferCG::UniformBufferCG()
 	: CGPUBuffer()
 {
-	param = nullptr;
-	buffer = nullptr;
 }
 
 UniformBufferCG::~UniformBufferCG()
@@ -77,9 +75,6 @@ void UniformBufferCG::Free()
 
 CGPUBuffer::CGPUBuffer()
 {
-	mBuffer = 0;
-	mBufferSize = 0;
-	mBufferCount = 0;
 }
 
 void CGPUBuffer::Free()
@@ -148,7 +143,6 @@ void CGPUBufferSSBO::Bind(const GLuint unitId)
 CGPUBufferNV::CGPUBufferNV()
 	: CGPUBuffer()
 {
-	mBufferPtr = 0;
 }
 
 CGPUBufferNV::~CGPUBufferNV()
@@ -343,17 +337,6 @@ void CGPUBufferNV::BindAsUniform(const GLuint programId, const GLint uniformLoc,
 
 CGPUBufferDoubleNV::CGPUBufferDoubleNV()
 {
-	mEvaluationId = 0;
-	mRenderId = 1;
-
-	mBuffers[0]=0;
-	mBuffers[1]=0;
-
-	mHasUpdated = false;
-
-	mBufferPtr = 0;
-	mCount = 0;
-
 }
 
 CGPUBufferDoubleNV::~CGPUBufferDoubleNV()

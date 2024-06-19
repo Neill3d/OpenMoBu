@@ -164,7 +164,7 @@ FbxNode* CreateSnapshot(FbxScene* pScene, const char* pName, const InputModelDat
 	if (data.uvSetName != nullptr)
 	{
 		FbxGeometryElementUV* lUVElement1 = lMesh->CreateElementUV( data.uvSetName );
-		FBX_ASSERT( lUVElement1 != NULL);
+		FBX_ASSERT( lUVElement1 != nullptr);
 
 		lUVElement1->SetMappingMode( FbxGeometryElement::EMappingMode(data.uvSetMapping) );
 		lUVElement1->SetReferenceMode( FbxGeometryElement::EReferenceMode(data.uvSetReferenceMode) );
@@ -544,23 +544,22 @@ size_t InputModelData::PolyInfo::CopyToMemory(void *memory)
 
 size_t InputModelData::DeformedVertex::CopyToMemory(void *memory)
 {
-	int *intPtr = (int*) memory;
+	int* intPtr = reinterpret_cast<int*>(memory);
 	*intPtr = index;
 	intPtr++;
-	float *floatptr = (float*) intPtr;
-	*floatptr = weight;
+	memcpy(intPtr, &weight, sizeof(float));
 
 	return (sizeof(int) + sizeof(float));
 }
 
 size_t InputModelData::Cluster::CopyToMemory(void *memory)
 {
-	unsigned char *szptr = (unsigned char*) memory;
+	unsigned char *szptr = reinterpret_cast<unsigned char*>(memory);
 
 	memcpy( szptr, name, sizeof(char) * STRING_MAX_LENGTH );
 	szptr += sizeof(char) * STRING_MAX_LENGTH;
 
-	*( (int*) szptr ) = parent;
+	memcpy(szptr, &parent, sizeof(int));
 	szptr += sizeof(int);
 
 	memcpy( szptr, modelname, sizeof(char) * STRING_MAX_LENGTH );
@@ -580,10 +579,11 @@ size_t InputModelData::Cluster::CopyToMemory(void *memory)
 	memcpy( szptr, LinkScaling, sizeof(double) * 3 );
 	szptr += sizeof(double) * 3;
 
-	*( (int*) szptr ) = mode;
+	memcpy(szptr, &mode, sizeof(int));
 	szptr += sizeof(int);
 
-	*( (int*) szptr ) = (int) vertices.size();
+	const int32_t numberOfVertices = static_cast<int32_t>(vertices.size());
+	memcpy(szptr, &numberOfVertices, sizeof(int));
 	szptr += sizeof(int);
 
 	for (auto iter=vertices.begin(); iter!=vertices.end(); ++iter)
@@ -599,16 +599,15 @@ void	InputModelData::CopyToMemory(void *memory)
 {
 	size_t size = 0;
 
-	unsigned char *szPtr = (unsigned char*) memory;
-	int *intPtr = (int*) memory;
-
-	auto fn_putInt = [&] (const int value) {
-		intPtr = (int*) szPtr;
-		*intPtr = value;
-		szPtr += sizeof(int);
+	unsigned char *szPtr = reinterpret_cast<unsigned char*>(memory);
+	
+	auto fn_putInt = [&szPtr] (const int32_t value) {
+		
+		memcpy(szPtr, &value, sizeof(int32_t));
+		szPtr += sizeof(int32_t);
 	};
 
-	fn_putInt( (int) positions.size() );
+	fn_putInt( static_cast<int32_t>(positions.size()) );
 
 	size = sizeof(Float4) * positions.size();
 	if (size > 0)
@@ -620,7 +619,7 @@ void	InputModelData::CopyToMemory(void *memory)
 
 	// material
 	fn_putInt(materialMapping);
-	fn_putInt( (int) materialIndices.size() );
+	fn_putInt( static_cast<int>(materialIndices.size()) );
 
 	size = sizeof(int) * materialIndices.size();
 	if (size > 0)
@@ -630,7 +629,7 @@ void	InputModelData::CopyToMemory(void *memory)
 	}
 
 	// poly info
-	fn_putInt( (int) polyInfo.size() );
+	fn_putInt( static_cast<int32_t>(polyInfo.size()) );
 
 	for (auto iter=polyInfo.begin(); iter!=polyInfo.end(); ++iter)
 	{
@@ -643,7 +642,7 @@ void	InputModelData::CopyToMemory(void *memory)
 	fn_putInt( normalMapping );
 	fn_putInt( normalReferenceMode );
 
-	fn_putInt( (int) normalsDirect.size() );
+	fn_putInt( static_cast<int32_t>(normalsDirect.size()) );
 	size = sizeof(Float4) * normalsDirect.size();
 	if (size > 0)
 	{
@@ -651,7 +650,7 @@ void	InputModelData::CopyToMemory(void *memory)
 		szPtr += size;
 	}
 
-	fn_putInt( (int) normalIndices.size() );
+	fn_putInt( static_cast<int32_t>(normalIndices.size()) );
 	size = sizeof(int) * normalIndices.size();
 	if (size > 0)
 	{
@@ -676,14 +675,14 @@ void	InputModelData::CopyToMemory(void *memory)
 	fn_putInt( uvSetMapping );
 	fn_putInt( uvSetReferenceMode );
 
-	fn_putInt( (int) uvs.size() );
+	fn_putInt( static_cast<int32_t>(uvs.size()) );
 	size = sizeof(Float2) * uvs.size();
 	if (size > 0)
 	{
 		memcpy( szPtr, uvs.data(), size );
 		szPtr += size;
 	}
-	fn_putInt( (int) uvIndices.size() );
+	fn_putInt( static_cast<int32_t>(uvIndices.size()) );
 	size = sizeof(int) * uvIndices.size();
 	if (size > 0)
 	{
@@ -701,7 +700,7 @@ void	InputModelData::CopyToMemory(void *memory)
 
 	// clusters
 
-	fn_putInt( (int) clusters.size() );
+	fn_putInt( static_cast<int32_t>(clusters.size()) );
 	for (auto iter=clusters.begin(); iter!=clusters.end(); ++iter)
 	{
 		size_t localsize = (*iter)->CopyToMemory(szPtr);
@@ -713,7 +712,7 @@ size_t InputModelData::PolyInfo::InitFromMemory(void *memory)
 {
 	Free();
 
-	int *intPtr = (int *) memory;
+	int *intPtr = reinterpret_cast<int*>(memory);
 	materialId = *intPtr;
 	intPtr++;
 	vertexCount = *intPtr;
@@ -730,22 +729,22 @@ size_t InputModelData::PolyInfo::InitFromMemory(void *memory)
 
 size_t InputModelData::DeformedVertex::InitFromMemory(void *memory)
 {
-	unsigned char *szptr = (unsigned char*) memory;
-	index = *( (int*) szptr );
-	szptr += sizeof(int);
-	weight = *( (float*) szptr );
+	int32_t* szptr = reinterpret_cast<int32_t*>(memory);
+	index = *szptr;
+	szptr += 1;
+	memcpy(&weight, szptr, sizeof(float));
 	
-	return (sizeof(int) + sizeof(float) );
+	return sizeof(int) + sizeof(float);
 }
 
 size_t InputModelData::Cluster::InitFromMemory(void *memory)
 {
-	unsigned char *szptr = (unsigned char*) memory;
+	unsigned char *szptr = reinterpret_cast<unsigned char*>(memory);
 
 	memcpy( name, szptr, sizeof(char)*STRING_MAX_LENGTH );
 	szptr += sizeof(char) * STRING_MAX_LENGTH;
 
-	parent = *( (int*) szptr );
+	memcpy(&parent, szptr, sizeof(int));
 	szptr += sizeof(int);
 
 	memcpy( modelname, szptr, sizeof(char)*STRING_MAX_LENGTH );
@@ -765,10 +764,11 @@ size_t InputModelData::Cluster::InitFromMemory(void *memory)
 	memcpy( LinkScaling, szptr, sizeof(double)*3 );
 	szptr += sizeof(double) * 3;
 
-	mode = *( (int*) szptr );
+	memcpy(&mode, szptr, sizeof(int));
 	szptr += sizeof(int);
 
-	int value = *( (int*) szptr );
+	int value = 0;
+	memcpy(&value, szptr, sizeof(int));
 	szptr += sizeof(int);
 
 	vertices.resize(value);
@@ -781,80 +781,78 @@ size_t InputModelData::Cluster::InitFromMemory(void *memory)
 	return ComputeTotalSize();
 }
 
-void	InputModelData::InitFromMemory(void *memory)
+void InputModelData::InitFromMemory(void *memory)
 {
-	unsigned char *szPtr = (unsigned char *) memory;
-	int *intPtr = (int*) szPtr;
-	int value;
-	size_t size = 0;
+	unsigned char *szPtr = static_cast<unsigned char*>(memory);
+	
+	size_t newSize = 0;
 
-	auto fn_getInt = [&] () -> int {
-		intPtr = (int*) szPtr;
-		value = *intPtr;
+	auto fn_getInt = [&szPtr] () -> int {
+		
+		int value = 0;
+		memcpy(&value, szPtr, sizeof(int));
 		szPtr += sizeof(int);
+
 		return value;
 	};
 
 	// positions
 
-	fn_getInt();
-	positions.resize( value );
-	if (value > 0)
+	newSize = static_cast<size_t>(fn_getInt());
+	positions.resize( newSize );
+	if (newSize > 0)
 	{
-		size = sizeof(Float4) * value;
-		memcpy( positions.data(), szPtr, size );
-		szPtr += size;
+		newSize = sizeof(Float4) * newSize;
+		memcpy( positions.data(), szPtr, newSize );
+		szPtr += newSize;
 	}
 
 	// material
 
-	fn_getInt();
-	materialMapping = value;
+	materialMapping = fn_getInt();
 	
-	fn_getInt();
-	materialIndices.resize(value);
-	if (value > 0) {
-		size = sizeof(int) * value;
-		memcpy( materialIndices.data(), szPtr, size );
-		szPtr += size;
+	newSize = static_cast<size_t>(fn_getInt());
+	materialIndices.resize(newSize);
+	if (newSize > 0) {
+		newSize = sizeof(int) * newSize;
+		memcpy( materialIndices.data(), szPtr, newSize );
+		szPtr += newSize;
 	}
 
 	// poly info
 
-	fn_getInt();
-	polyInfo.resize( value );
-	if (value > 0)
+	newSize = static_cast<size_t>(fn_getInt());
+	polyInfo.resize( newSize );
+	if (newSize > 0)
 	{
 		for (auto iter=polyInfo.begin(); iter!=polyInfo.end(); ++iter)
 		{
-			size_t localsize = iter->InitFromMemory(szPtr);
+			const size_t localsize = iter->InitFromMemory(szPtr);
 			szPtr += localsize;
 		}
 	}
 
 	// normals
 
-	fn_getInt();
-	normalMapping = value;
-	fn_getInt();
-	normalReferenceMode = value;
+	normalMapping = fn_getInt();
+	normalReferenceMode = fn_getInt();
 
-	fn_getInt();
-	normalsDirect.resize( value );
-	if (value > 0)
+	newSize = static_cast<size_t>(fn_getInt());
+	normalsDirect.resize( newSize );
+	if (newSize > 0)
 	{
-		size = sizeof(Float4) * value;
-		memcpy( normalsDirect.data(), szPtr, size );
-		szPtr += size;
+		newSize = sizeof(Float4) * newSize;
+		memcpy( normalsDirect.data(), szPtr, newSize);
+		szPtr += newSize;
 	}
 
-	fn_getInt();
-	normalIndices.resize( value );
-	if (value > 0)
+	newSize = static_cast<size_t>(fn_getInt());
+	normalIndices.resize(newSize);
+	if (newSize > 0)
 	{
-		size = sizeof(int) * value;
-		memcpy( normalIndices.data(), szPtr, size );
-		szPtr += size;
+		newSize = sizeof(int) * newSize;
+		memcpy( normalIndices.data(), szPtr, newSize);
+		szPtr += newSize;
 	}
 
 	// transformation
@@ -871,27 +869,25 @@ void	InputModelData::InitFromMemory(void *memory)
 	memcpy( uvSetName, szPtr, sizeof(char) * STRING_MAX_LENGTH );
 	szPtr += sizeof(char) * STRING_MAX_LENGTH;
 
-	fn_getInt();
-	uvSetMapping = value;
-	fn_getInt();
-	uvSetReferenceMode = value;
+	uvSetMapping = fn_getInt();
+	uvSetReferenceMode = fn_getInt();
 
-	fn_getInt();
-	uvs.resize(value);
-	if (value > 0)
+	newSize = static_cast<size_t>(fn_getInt());
+	uvs.resize(newSize);
+	if (newSize > 0)
 	{
-		size = sizeof(Float2) * value;
-		memcpy( uvs.data(), szPtr, size );
-		szPtr += size;
+		newSize = sizeof(Float2) * newSize;
+		memcpy( uvs.data(), szPtr, newSize);
+		szPtr += newSize;
 	}
 
-	fn_getInt();
-	uvIndices.resize(value);
-	if (value > 0)
+	newSize = static_cast<size_t>(fn_getInt());
+	uvIndices.resize(newSize);
+	if (newSize > 0)
 	{
-		size = sizeof(int) * value;
-		memcpy( uvIndices.data(), szPtr, size );
-		szPtr += size;
+		newSize = sizeof(int) * newSize;
+		memcpy( uvIndices.data(), szPtr, newSize);
+		szPtr += newSize;
 	}
 
 	// properties
@@ -904,9 +900,9 @@ void	InputModelData::InitFromMemory(void *memory)
 
 	// clusters
 
-	fn_getInt();
+	newSize = static_cast<size_t>(fn_getInt());
 	
-	for (int i=0; i<value; ++i)
+	for (size_t i=0; i<newSize; ++i)
 	{
 		Cluster *pCluster = new Cluster();
 		size_t localsize = pCluster->InitFromMemory(szPtr);

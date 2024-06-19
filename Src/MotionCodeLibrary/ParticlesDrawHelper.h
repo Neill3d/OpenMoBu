@@ -22,9 +22,9 @@
 //void DrawString(int pX, int pY, const char* pText);
 
 void DrawCircle(const float radius, const int segs);
-void DrawCircleBillboard(FBCamera *pCamera, const float radius, const int segs, const FBVector3d pos);
-void DrawCircleBillboard(const float radius, const int segs, const FBMatrix m);
-void DrawCircleBillboardFill(FBCamera *pCamera, const float radius, const int segs, const FBVector3d pos, const FBVector4d innerColor, const FBVector4d outerColor);
+void DrawCircleBillboard(FBCamera *pCamera, const float radius, const int segs, const FBVector3d& pos);
+void DrawCircleBillboard(const float radius, const int segs, const FBMatrix& m);
+void DrawCircleBillboardFill(FBCamera *pCamera, const float radius, const int segs, const FBVector3d& pos, const FBVector4d& innerColor, const FBVector4d& outerColor);
 
 void DrawSphere(float radius, int segcount );
 void DrawHemisphere(double r, int lats, int longs);
@@ -44,7 +44,7 @@ public:
 	bool Generate(FBPropertyAnimatableColorAndAlpha	*prop=nullptr);
 	void Free();
 
-	GLuint		GetTextureId() {
+	GLuint		GetTextureId() const {
 		return mTexId;
 	}
 	FBPropertyAnimatableColorAndAlpha *GetProperty()
@@ -57,12 +57,12 @@ public:
 	}
 
 private:
-	int			mTextureWidth;	// number of samplers evaluated into the texture
+	int			mTextureWidth{ 0 };	//!< number of samplers evaluated into the texture
 
-	int			mWidth;
-	GLuint		mTexId;
+	int			mWidth{ 0 };
+	GLuint		mTexId{ 0 };
 
-	FBPropertyAnimatableColorAndAlpha	*mProp;
+	FBPropertyAnimatableColorAndAlpha* mProp{ nullptr };
 };
 
 
@@ -80,7 +80,7 @@ public:
 	bool Generate(FBPropertyAnimatableDouble	*prop=nullptr);
 	void Free();
 
-	GLuint		GetTextureId() {
+	GLuint		GetTextureId() const {
 		return mTexId;
 	}
 	FBPropertyAnimatableDouble *GetProperty()
@@ -93,10 +93,10 @@ public:
 	}
 
 private:
-	int			mTextureWidth;
+	int			mTextureWidth{ 0 };
 
-	int			mWidth;
-	GLuint		mTexId;
+	int			mWidth{ 0 };
+	GLuint		mTexId{ 0 };
 
-	FBPropertyAnimatableDouble		*mProp;
+	FBPropertyAnimatableDouble* mProp{ nullptr };
 };

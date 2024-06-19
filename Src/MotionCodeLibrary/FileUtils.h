@@ -24,3 +24,27 @@ bool IsFileExists ( const char *filename );
 // search first of all in mobu config folder, then in all plugins folders
 //
 bool FindEffectLocation(const char *effect, FBString &out_path, FBString &out_fullname);
+
+/// <summary>
+/// open file for reading and keep it open for a class life scope
+/// </summary>
+class FileReadScope
+{
+public:
+	FileReadScope(const char* filename)
+	{
+		fopen_s(&fp, filename, "r");
+	}
+
+	~FileReadScope()
+	{
+		if (fp)
+			fclose(fp);
+	}
+
+	FILE* Get() const { return fp; }
+
+private:
+
+	FILE* fp{ nullptr };
+};

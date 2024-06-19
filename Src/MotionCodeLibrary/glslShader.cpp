@@ -11,18 +11,13 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <stdio.h>
 #include "glslShader.h"
 #include "CheckGLError.h"
+#include "FileUtils.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                            GLSLShader
 
-
-
-GLSLShader::GLSLShader() {
-    vertex = 0;
-    fragment = 0;
-    programObj = 0;
-	memset(mHeaderText, 0, sizeof(char)*256);
-}
+GLSLShader::GLSLShader() 
+{}
 
 
 bool GLSLShader::ReCompileShaders( const char* vertex_file, const char* fragment_file )
@@ -77,26 +72,25 @@ bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file
 {
 	Free();
 
-	FILE *fp = nullptr;
-	fopen_s(&fp, vertex_file, "r");
-	if (fp)
 	{
-		vertex = glCreateShaderObjectARB( GL_VERTEX_SHADER_ARB );
-		LoadShader( vertex, fp );
+		FileReadScope readVertex(vertex_file);
 
-		fclose(fp);
+		if (FILE* fp = readVertex.Get())
+		{
+			vertex = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+			LoadShader(vertex, fp);
+		}
 	}
-	
-		
-	fopen_s(&fp, fragment_file, "r");
-	if (fp)
+
 	{
-		fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
-		LoadShader( fragment, fp );
+		FileReadScope readFragment(fragment_file);
 
-		fclose(fp);
+		if (FILE* fp = readFragment.Get())
+		{
+			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+			LoadShader(fragment, fp);
+		}
 	}
-	
 
 	if (vertex > 0 && fragment > 0)
 	{
@@ -131,16 +125,15 @@ bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 
 	vertex = _vertex;
 
-	FILE *fp = nullptr;
-	fopen_s(&fp, fragment_file, "r");
-	if (fp)
 	{
-		fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
-		LoadShader( fragment, fp );
+		FileReadScope readFragment(fragment_file);
 
-		fclose(fp);
+		if (FILE* fp = readFragment.Get())
+		{
+			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+			LoadShader(fragment, fp);
+		}
 	}
-	
 
 	if (vertex > 0 && fragment > 0)
 	{
@@ -182,7 +175,7 @@ bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
 
   const GLcharARB*  bufferARB = buffer;
 
-  GLint   len = (GLint) fileLen;
+  GLint   len = static_cast<GLint>(fileLen);
   GLint   compileStatus;
 
   // read shader from file
@@ -237,7 +230,7 @@ void GLSLShader::loadlog( GLhandleARB object )
     {
         infoLog = (GLcharARB*) malloc ( logLength );
 
-        if ( infoLog == NULL )
+        if ( infoLog == nullptr )
         {
             //ERR( "ERROR: Could not allocate log buffer" );
             return;

@@ -248,23 +248,23 @@ public:
 
 protected:
     
-    bool						mIsFirst;				// running system first time
+	bool						mIsFirst{ true };				//!< running system first time
 
 	std::random_device					rd;
-	std::mt19937						e2;		// engine
-	std::uniform_real_distribution<>	dist;	// distribution
+	std::mt19937						e2;		//!< engine
+	std::uniform_real_distribution<>	dist;	//!< distribution
 
-	evaluateBlock				mEvaluateData;			// common exchange parameters between UI and evaluate shader
+	evaluateBlock				mEvaluateData;			//!< common exchange parameters between UI and evaluate shader
 	renderBlock					mRenderData;
 
 	bool						mNeedReset;
-	unsigned int				mMaxParticles;			// initial amount of particles
+	unsigned int				mMaxParticles;			//!< initial amount of particles
 	unsigned int				mParticleCount;
 	bool						mUseRate;
 	unsigned int				mParticleRate;
 	unsigned int				mLifeTime;		
 
-    double						mTime;					// lets use high definition timer
+	double						mTime{ 0.0 };					//!< lets use high definition timer
 
 	float						mPointSize;
 	float						mPointSizeVariation;
@@ -339,8 +339,8 @@ protected:
 
 	unsigned int				mTotalCycles;
 
-    unsigned int				mCurrVB;
-    unsigned int				mCurrTFB;
+	unsigned int				mCurrVB{ 0 };
+	unsigned int				mCurrTFB{ 1 };
     GLuint						mParticleBuffer[2];
     GLuint						mTransformFeedback[2];
 
@@ -356,16 +356,16 @@ protected:
 	//BufferTexture				mPositionTexture;	// hold vertices positions in a buffer texture
 	//BufferTexture				mNormalTexture;		// hold vertices normals in a buffer texture
 
-	unsigned int				mSurfaceBack;
-	unsigned int				mSurfaceFront;
+	unsigned int				mSurfaceBack{ 0 };
+	unsigned int				mSurfaceFront{ 1 };
 	CGPUBufferNV				mBufferSurface[2];
 
 	GLuint						mTexture;
 
-	GLuint						mSizeTextureId;
-	GLuint						mColorTextureId;
+	GLuint						mSizeTextureId{ 0 };
+	GLuint						mColorTextureId{ 0 };
 
-	GLuint						mNoiseTexture;	// 3d texture for the turbulence field
+	GLuint						mNoiseTexture{ 0 };	// 3d texture for the turbulence field
 
 
 	void RenderPoints();

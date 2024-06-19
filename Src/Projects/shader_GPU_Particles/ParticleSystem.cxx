@@ -147,16 +147,8 @@ ParticleSystem::ParticleSystem(unsigned int maxparticles)
 	: e2(rd())
 	, dist(0, 1.0)
 	, mConnections(nullptr)
+	, mMaxParticles(maxparticles)
 {
-	mMaxParticles = maxparticles;
-
-	mCurrVB = 0;
-	mCurrTFB = 1;
-
-	mSurfaceBack = 0;
-	mSurfaceFront = 1;
-
-	mIsFirst = true;
 	mTime = 0;
 
 	mNeedReset = true;
@@ -181,11 +173,6 @@ ParticleSystem::ParticleSystem(unsigned int maxparticles)
 	glDebugMessageCallback( DebugOGL_Callback, nullptr );
 #endif
 	
-	mNoiseTexture = 0;
-
-	mColorTextureId = 0;
-	mSizeTextureId = 0;
-
 	mShader = QueryShader();
 
 	mPerModelUserData.isFirst = true;

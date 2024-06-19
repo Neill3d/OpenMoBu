@@ -158,9 +158,8 @@ namespace Network {
 /////////////////////////////////////////////////////////////////////
 // Socket
 
-	Socket::Socket() {
-		handle = 0;
-	}
+	Socket::Socket() 
+	{}
 
 	Socket::~Socket() {
 		Close();

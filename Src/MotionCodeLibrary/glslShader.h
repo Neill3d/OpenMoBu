@@ -14,22 +14,22 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <stdio.h>
 #include <GL\glew.h>
 
-//
-// profile for GLSL, OpenGL 2.0+
-//
+///
+/// profile for GLSL, OpenGL 2.0+
+///
 class GLSLShader
 {
-  // vertex shader handle
-  GLhandleARB     vertex;
+	/// vertex shader handle
+	GLhandleARB     vertex{ 0 };
 
-  // fragment handle
-  GLhandleARB     fragment;
+	/// fragment handle
+	GLhandleARB     fragment{ 0 };
 
-  // v & f
-  GLhandleARB     programObj;
+	/// v & f
+	GLhandleARB     programObj{ 0 };
 
-  // shader header text (defines)
-  char          mHeaderText[256];
+	/// shader header text (defines)
+	char          mHeaderText[256]{ 0 };
 
   bool LoadShader( GLhandleARB shader, FILE *file );
   void loadlog( GLhandleARB object );

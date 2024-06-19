@@ -1383,10 +1383,10 @@ TiXmlDeclaration::TiXmlDeclaration( const char * _version,
 									const char * _encoding,
 									const char * _standalone )
 	: TiXmlNode( TiXmlNode::DECLARATION )
+	, version(_version)
+	, encoding(_encoding)
+	, standalone(_standalone)
 {
-	version = _version;
-	encoding = _encoding;
-	standalone = _standalone;
 }
 
 
@@ -1395,10 +1395,10 @@ TiXmlDeclaration::TiXmlDeclaration(	const std::string& _version,
 									const std::string& _encoding,
 									const std::string& _standalone )
 	: TiXmlNode( TiXmlNode::DECLARATION )
+	, version(_version)
+	, encoding(_encoding)
+	, standalone(_standalone)
 {
-	version = _version;
-	encoding = _encoding;
-	standalone = _standalone;
 }
 #endif
 

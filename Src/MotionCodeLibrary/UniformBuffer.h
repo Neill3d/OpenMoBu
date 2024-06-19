@@ -17,22 +17,22 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-//
-// There are two variant to share buffer in shader - SSBO or nVidia pointer
-//
+///
+/// There are two variant to share buffer in shader - SSBO or nVidia pointer
+///
 class CGPUBuffer
 {
 public:
 
-	//! a constructor
+	/// a constructor
 	CGPUBuffer();
 
-	// a destructor
+	/// a destructor
 	virtual ~CGPUBuffer();
 
 	virtual void Free();
 
-	// size in bytes, data is a pointer to the data struct
+	/// size in bytes, data is a pointer to the data struct
 	virtual void UpdateData(const size_t elemSize, const size_t count, const void *buffer)
 	{}
 
@@ -60,11 +60,11 @@ public:
 	}
 
 protected:
-	// SSBO for texture addresses
-	GLuint							mBuffer; // TODO: SSBO or texture buffer pointer
+	/// SSBO for texture addresses
+	GLuint							mBuffer{ 0 }; //!< TODO: SSBO or texture buffer pointer
 
-	size_t			mBufferSize;	// one element size
-	size_t			mBufferCount;	// number of elements in the buffer
+	size_t			mBufferSize{ 0 };	//!< one element size
+	size_t			mBufferCount{ 0 };	//!< number of elements in the buffer
 };
 
 #ifdef USE_CG
@@ -88,8 +88,8 @@ public:
 
 private:
 
-	CGparameter					param;
-	CGbuffer					buffer;
+	CGparameter					param{ nullptr };
+	CGbuffer					buffer{ nullptr };
 	//GLuint						bufferGL;
 
 protected:
@@ -150,7 +150,7 @@ public:
 
 private:
 
-	GLuint64		mBufferPtr;
+	GLuint64		mBufferPtr{ 0 };
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,17 +185,17 @@ public:
 
 private:
 
-	int				mCount;
+	int				mCount{ 0 };
 
-	long			mEvaluationId;		//!< head buffer for evaluation
-	long			mRenderId;
+	long			mEvaluationId{ 0 };		//!< head buffer for evaluation
+	long			mRenderId{ 1 };
 	
 
-	bool			mHasUpdated;
+	bool			mHasUpdated{ false };
 
-	GLuint			mBuffers[2];
+	GLuint			mBuffers[2]{ 0 };
 
-	GLuint64		mBufferPtr;
+	GLuint64		mBufferPtr{ 0 };
 
 	void		Free();
 };

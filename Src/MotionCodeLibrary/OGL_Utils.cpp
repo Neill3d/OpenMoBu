@@ -943,7 +943,6 @@ bool BlitFBOToScreen(const GLint defaultFBO, const int defWidth, const int defHe
 
 OGLCubeMap::OGLCubeMap()
 {
-	cubeId = 0;
 }
 
 OGLCubeMap::~OGLCubeMap()
