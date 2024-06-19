@@ -28,6 +28,21 @@
 #include <GL\glew.h>
 #include "ResourceUtils.h"
 
+/// <summary>
+/// a method to transfer shared library logs into motionbuilder logs output
+/// </summary>
+void LOGE(const char* pFormatString, ...)
+{
+	char buffer[256];
+	va_list args;
+	va_start(args, pFormatString);
+	vsnprintf(buffer, 255, pFormatString, args);
+
+	FBTrace(buffer);
+
+	va_end(args);
+}
+
 //--- Library declaration.
 FBLibraryDeclare( solvercalculatenormals )
 {

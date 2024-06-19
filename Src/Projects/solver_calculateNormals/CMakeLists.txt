@@ -1,7 +1,7 @@
 
 project(solver_calculateNormals LANGUAGES CXX)
 
-file(GLOB_RECURSE SRCS *.cxx *.cpp *.h *.cs)
+file(GLOB_RECURSE SRCS *.cxx *.cpp *.h *.glsl)
 add_library(${PROJECT_NAME} SHARED ${SRCS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include ${CMAKE_SOURCE_DIR}/MotionCodeLibrary)
@@ -10,10 +10,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include $
 # GLSL shaders in the project
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include ${CMAKE_SOURCE_DIR}/MotionCodeLibrary)
 
-set_source_files_properties(GLSL_CS/recomputeNormals.cs PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(GLSL_CS/recomputeNormalsZero.cs PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(GLSL_CS/recomputeNormalsNorm.cs PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties(GLSL_CS/recomputeNormalsDup.cs PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(GLSL_CS/recomputeNormals.glsl PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(GLSL_CS/recomputeNormalsZero.glsl PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(GLSL_CS/recomputeNormalsNorm.glsl PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(GLSL_CS/recomputeNormalsDup.glsl PROPERTIES HEADER_FILE_ONLY TRUE)
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)

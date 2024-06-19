@@ -371,10 +371,10 @@ bool SolverCalculateNormals::LoadShaders()
 	}
 	lPath += "/x64/plugins";
 
-	constexpr const char* shader_normals_zero = "/GLSL_CS/recomputeNormalsZero.cs";
-	constexpr const char* shader_recompute_normals = "/GLSL_CS/recomputeNormals.cs";
-	constexpr const char* shader_normals_norm = "/GLSL_CS/recomputeNormalsNorm.cs";
-	constexpr const char* shader_normals_dup = "/GLSL_CS/recomputeNormalsDup.cs";
+	constexpr const char* shader_normals_zero = "/GLSL_CS/recomputeNormalsZero.glsl";
+	constexpr const char* shader_recompute_normals = "/GLSL_CS/recomputeNormals.glsl";
+	constexpr const char* shader_normals_norm = "/GLSL_CS/recomputeNormalsNorm.glsl";
+	constexpr const char* shader_normals_dup = "/GLSL_CS/recomputeNormalsDup.glsl";
 
 	if (!mProgramZero.PrepProgram(shader_normals_zero) )
 		return false;

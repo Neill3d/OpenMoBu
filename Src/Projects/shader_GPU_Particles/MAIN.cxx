@@ -66,6 +66,9 @@ static void NVFXMessageCallback(const char* msg)
 	FBTrace(msg);
 }
 
+/// <summary>
+/// a method to transfer shared library logs into motionbuilder logs output
+/// </summary>
 void LOGE(const char* pFormatString, ...)
 {
 	char buffer[256];
