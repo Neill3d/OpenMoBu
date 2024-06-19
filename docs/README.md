@@ -97,6 +97,12 @@ For more information, please visit [FaceCap official website](https://bannaflak.
 
 [Read More...](Plugins/solverCalculateNormals.md)
 
+### GPU Particles
+
+Particle system that is evaluated on gpu
+
+[Read More...](Plugins/GPUParticlesShader.md)
+
 ## References Manager and FBX Extension
 
  This is a set of 2 plugins, one command line console application and python scripts in order to stabilize and extend the functionality of referenced models (support for shaders) in motionbuilder scene.
