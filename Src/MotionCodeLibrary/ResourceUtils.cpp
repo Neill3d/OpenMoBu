@@ -87,7 +87,7 @@ BOOL GetAppVersion( char *LibName, WORD *MajorVersion, WORD *MinorVersion, WORD 
 	if (!lpData) 
 		return FALSE;
 
-	if( !GetFileVersionInfo( LibName, dwHandle, dwLen, lpData ) )
+	if(!dwHandle || !GetFileVersionInfo( LibName, dwHandle, dwLen, lpData ) )
 	{
 		free (lpData);
 		return FALSE;

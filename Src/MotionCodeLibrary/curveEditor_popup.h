@@ -117,18 +117,18 @@ public:
 
 private:
 	
-	int						mSelectedMarker;
+	int						mSelectedMarker{ -1 };
 
 	ColorPropertyTexture	mTexture;
-	bool					mNeedUpdate;
+	bool					mNeedUpdate{ true };
 
-	bool					mDown;
-	OperationMode			mOperationMode;
+	bool					mDown{ false };
+	OperationMode			mOperationMode{ OperationSelect };
 
-	FBPopup					*mPopup;
+	FBPopup* mPopup{ nullptr };
 
-	int						mWidth;
-	int						mHeight;
+	int						mWidth{ 0 };
+	int						mHeight{ 0 };
 };
 
 

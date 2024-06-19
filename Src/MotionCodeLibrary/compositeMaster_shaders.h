@@ -212,10 +212,10 @@ const char *GetCompositeShaderFragmentName( const ECompositeShader shader );
 
 struct ShaderBaseLocations
 {
-	bool status;
+	bool status{ false };
 
-	GLint		maskSampler;
-	GLint		maskInverse;
+	GLint		maskSampler{ -1 };
+	GLint		maskInverse{ -1 };
 
 	ShaderBaseLocations()
 	{
@@ -259,7 +259,7 @@ struct ShaderBaseLocations
 
 struct	ShaderBlitLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
+	GLint		sampler{ 0 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -284,17 +284,17 @@ struct	ShaderBlitLocations : public ShaderBaseLocations
 
 struct ShaderBlendLocations : public ShaderBaseLocations
 {
-	GLint		aSampler;
-	GLint		bSampler;
+	GLint		aSampler{ 0 };
+	GLint		bSampler{ 0 };
 	
-	GLint		opacity;
+	GLint		opacity{ 0 };
 
-	GLint		doBlendWithAColor;
-	GLint		blendColor;
+	GLint		doBlendWithAColor{ 0 };
+	GLint		blendColor{ 0 };
 
 	// composite mask
-	GLint		maskSampler;
-	GLint		maskInverse;
+	GLint		maskSampler{ 0 };
+	GLint		maskInverse{ 0 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -338,8 +338,8 @@ struct ShaderBlendLocations : public ShaderBaseLocations
 
 struct ShaderBlurLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
-	GLint		scale;
+	GLint		sampler{ 0 };
+	GLint		scale{ 0 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -368,10 +368,10 @@ struct ShaderBlurLocations : public ShaderBaseLocations
 
 struct ShaderProcessNormalsLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
-	GLint		colorX;
-	GLint		colorY;
-	GLint		colorZ;
+	GLint		sampler{ 0 };
+	GLint		colorX{ 0 };
+	GLint		colorY{ 0 };
+	GLint		colorZ{ 0 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -404,9 +404,9 @@ struct ShaderProcessNormalsLocations : public ShaderBaseLocations
 
 struct ShaderPosterizationLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
-	GLint		numberOfColors;
-	GLint		gamma;
+	GLint		sampler{ 0 };
+	GLint		numberOfColors{ 0 };
+	GLint		gamma{ 0 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -437,21 +437,21 @@ struct ShaderPosterizationLocations : public ShaderBaseLocations
 
 struct ShaderChangeColorLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
+	GLint		sampler{ -1 };
 
-	GLint		color1;
-	GLint		replace1;
-	GLint		weights1;
+	GLint		color1{ -1 };
+	GLint		replace1{ -1 };
+	GLint		weights1{ -1 };
 
-	GLint		changeColor;
+	GLint		changeColor{ -1 };
 
-	GLint		color2;
-	GLint		replace2;
-	GLint		weights2;
+	GLint		color2{ -1 };
+	GLint		replace2{ -1 };
+	GLint		weights2{ -1 };
 
-	GLint		color3;
-	GLint		replace3;
-	GLint		weights3;
+	GLint		color3{ -1 };
+	GLint		replace3{ -1 };
+	GLint		weights3{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -516,7 +516,7 @@ struct ShaderChangeColorLocations : public ShaderBaseLocations
 
 struct ShaderLUTLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
+	GLint		sampler{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -543,17 +543,17 @@ struct ShaderLUTLocations : public ShaderBaseLocations
 
 struct ShaderFilmGrainLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
+	GLint		sampler{ -1 };
 
-	GLint		textureWidth;
-	GLint		textureHeight;
-	GLint		timer;
+	GLint		textureWidth{ -1 };
+	GLint		textureHeight{ -1 };
+	GLint		timer{ -1 };
 
-	GLint		grainAmount;
-	GLint		colored;
-	GLint		colorAmount;
-	GLint		grainSize;
-	GLint		lumAmount;
+	GLint		grainAmount{ -1 };
+	GLint		colored{ -1 };
+	GLint		colorAmount{ -1 };
+	GLint		grainSize{ -1 };
+	GLint		lumAmount{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -603,12 +603,12 @@ struct ShaderFilmGrainLocations : public ShaderBaseLocations
 
 struct ShaderFXAALocations : public ShaderBaseLocations
 {
-	GLint		sampler;
+	GLint		sampler{ -1 };
 
 	// vec2
 	// {x_} = 1.0/screenWidthInPixels
     // {_y} = 1.0/screenHeightInPixels
-	GLint		RCPFrame;
+	GLint		RCPFrame{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -637,7 +637,7 @@ struct ShaderFXAALocations : public ShaderBaseLocations
 
 struct ShaderCrossHatchLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
+	GLint		sampler{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -664,9 +664,9 @@ struct ShaderCrossHatchLocations : public ShaderBaseLocations
 
 struct ShaderSolidColorLocations : public ShaderBaseLocations
 {
-	GLint		solidColor;
-	GLint		bottomColor;
-	GLint		gradient;
+	GLint		solidColor{ -1 };
+	GLint		bottomColor{ -1 };
+	GLint		gradient{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -693,9 +693,9 @@ struct ShaderSolidColorLocations : public ShaderBaseLocations
 
 struct ShaderCSBLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
-	GLint		csb;
-	GLint		hue;
+	GLint		sampler{ -1 };
+	GLint		csb{ -1 };
+	GLint		hue{ -1 };
 	
 	virtual void OnInit(GLSLShader *pShader, bool maskState) override
 	{
@@ -721,10 +721,10 @@ struct ShaderCSBLocations : public ShaderBaseLocations
 
 struct ShaderHalfToneLocations : public ShaderBaseLocations
 {
-	GLint		sampler;
-	GLint		width;
-	GLint		height;
-	GLint		frequency;
+	GLint		sampler{ -1 };
+	GLint		width{ -1 };
+	GLint		height{ -1 };
+	GLint		frequency{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -752,32 +752,32 @@ struct ShaderHalfToneLocations : public ShaderBaseLocations
 
 struct ShaderDOFLocations : public ShaderBaseLocations
 {
-	GLint				depthSampler;
-	GLint				colorSampler;
+	GLint				depthSampler{ -1 };
+	GLint				colorSampler{ -1 };
 
-	GLint				focalDistance;
-	GLint				focalRange;
-	GLint				FStop;
-	GLint				zNear;
-	GLint				zFar;
-	GLint				width;
-	GLint				height;
-	GLint				autoFocus;
-	GLint				blurForeground;
-	GLint				vignetting;
-	GLint				samples;
-	GLint				rings;
-	GLint				CoC;
-	GLint				threshold;
-	GLint				gain;
-	GLint				bias;
-	GLint				fringe;
-	GLint				noise;
+	GLint				focalDistance{ -1 };
+	GLint				focalRange{ -1 };
+	GLint				FStop{ -1 };
+	GLint				zNear{ -1 };
+	GLint				zFar{ -1 };
+	GLint				width{ -1 };
+	GLint				height{ -1 };
+	GLint				autoFocus{ -1 };
+	GLint				blurForeground{ -1 };
+	GLint				vignetting{ -1 };
+	GLint				samples{ -1 };
+	GLint				rings{ -1 };
+	GLint				CoC{ -1 };
+	GLint				threshold{ -1 };
+	GLint				gain{ -1 };
+	GLint				bias{ -1 };
+	GLint				fringe{ -1 };
+	GLint				noise{ -1 };
 
-	GLint				pentagon;
-	GLint				feather;
-	GLint				logarithmic;
-	GLint				highQualityDepth;
+	GLint				pentagon{ -1 };
+	GLint				feather{ -1 };
+	GLint				logarithmic{ -1 };
+	GLint				highQualityDepth{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -883,26 +883,26 @@ struct ShaderDOFLocations : public ShaderBaseLocations
 
 struct ShaderFogLocations : public ShaderBaseLocations
 {
-	GLint				alphaSampler;
-	GLint				alphaValid;
-	GLint				depthSampler;
-	GLint				colorSampler;
+	GLint				alphaSampler{ -1 };
+	GLint				alphaValid{ -1 };
+	GLint				depthSampler{ -1 };
+	GLint				colorSampler{ -1 };
 
-	GLint				volumeObject;
+	GLint				volumeObject{ -1 };
 
-	GLint				color;
-	GLint				density;
-	GLint				zNear;
-	GLint				zFar;
-	GLint				fogNear;
-	GLint				fogFar;
-	GLint				fogBorder;
-	GLint				logarithmic;
-	GLint				highQualityDepth;
+	GLint				color{ -1 };
+	GLint				density{ -1 };
+	GLint				zNear{ -1 };
+	GLint				zFar{ -1 };
+	GLint				fogNear{ -1 };
+	GLint				fogFar{ -1 };
+	GLint				fogBorder{ -1 };
+	GLint				logarithmic{ -1 };
+	GLint				highQualityDepth{ -1 };
 
-	GLint				invModel;
-	GLint				volumeMin;
-	GLint				volumeMax;
+	GLint				invModel{ -1 };
+	GLint				volumeMin{ -1 };
+	GLint				volumeMax{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -1013,8 +1013,8 @@ struct ShaderFogLocations : public ShaderBaseLocations
 
 struct ShaderMaskLocations : public ShaderBaseLocations
 {
-	GLint				maskSampler;
-	GLint				colorSampler;
+	GLint				maskSampler{ -1 };
+	GLint				colorSampler{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -1033,24 +1033,24 @@ struct ShaderMaskLocations : public ShaderBaseLocations
 
 struct ShaderToonLinesLocations : public ShaderBaseLocations
 {
-	GLint				zNear;
-	GLint				zFar;
+	GLint				zNear{ -1 };
+	GLint				zFar{ -1 };
 
-	GLint				colorSampler;		// non-AA texture
-	GLint				depthSampler;		// AA texture
-	GLint				normalSampler;	// AA texture
+	GLint				colorSampler{ -1 };		// non-AA texture
+	GLint				depthSampler{ -1 };		// AA texture
+	GLint				normalSampler{ -1 };	// AA texture
 
-	GLint				numberOfSamples;	// number of samples in AA
+	GLint				numberOfSamples{ -1 };	// number of samples in AA
 
-	GLint				screenWidth;
-	GLint				screenHeight;
+	GLint				screenWidth{ -1 };
+	GLint				screenHeight{ -1 };
 
-	GLint				falloff;
+	GLint				falloff{ -1 };
 
-	GLint				texCoordOffsets;
+	GLint				texCoordOffsets{ -1 };
 
-	GLint				logarithmic;
-	GLint				highQualityDepth;
+	GLint				logarithmic{ -1 };
+	GLint				highQualityDepth{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -1124,29 +1124,29 @@ struct ShaderToonLinesLocations : public ShaderBaseLocations
 
 struct ShaderSSAOLocations : public ShaderBaseLocations
 {
-	GLint				zNear;
-	GLint				zFar;
+	GLint				zNear{ -1 };
+	GLint				zFar{ -1 };
 
-	GLint				colorSampler;
-	GLint				depthSampler;
-	GLint				normalSampler;
+	GLint				colorSampler{ -1 };
+	GLint				depthSampler{ -1 };
+	GLint				normalSampler{ -1 };
 
-	GLint				distance;
-	GLint				filterRadius;
-	GLint				gamma;
-	GLint				contrast;
-	GLint				onlyAO;
+	GLint				distance{ -1 };
+	GLint				filterRadius{ -1 };
+	GLint				gamma{ -1 };
+	GLint				contrast{ -1 };
+	GLint				onlyAO{ -1 };
 	
-	GLint				invProj;
-	GLint				viewMatrix;
+	GLint				invProj{ -1 };
+	GLint				viewMatrix{ -1 };
 
-	GLint				numberOfSamples;	// number of samples in AA
+	GLint				numberOfSamples{ -1 };	// number of samples in AA
 
-	GLint				screenWidth;
-	GLint				screenHeight;
+	GLint				screenWidth{ -1 };
+	GLint				screenHeight{ -1 };
 
-	GLint				logarithmic;
-	GLint				highQualityDepth;
+	GLint				logarithmic{ -1 };
+	GLint				highQualityDepth{ -1 };
 
 	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
 	{
@@ -1394,8 +1394,8 @@ private:
 
 private:
 
-	GLSLShader				*mShader;
-	ShaderBaseLocations		*mLocations;
+	GLSLShader* mShader{ nullptr };
+	ShaderBaseLocations* mLocations{ nullptr };
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1666,5 +1666,5 @@ public:
 
 private:
 
-	CompositeShaderManagerImpl	*impl;
+	CompositeShaderManagerImpl* impl{ nullptr };
 };

@@ -482,15 +482,20 @@ bool CompositeShaderManagerImpl::CheckAndLoadShader( const ECompositeShader shad
 
 const GLSLShader* CompositeShaderManagerImpl::GetShaderPtr( const ECompositeShader shader, const bool useMask )
 {
+	const int32_t shaderIndex = static_cast<int32_t>(shader);
+
+	if (shaderIndex < 0 || shaderIndex >= ECompositeShader::eCompositeShaderCount)
+		return nullptr;
+
 	GLSLShader* pShader = nullptr;
 
 	if (useMask)
 	{
-		pShader = mShadersWithMask[shader];
+		pShader = mShadersWithMask[shaderIndex];
 	}
 	else
 	{
-		pShader = mShadersNoMask[shader];
+		pShader = mShadersNoMask[shaderIndex];
 	}
 
 	
@@ -500,13 +505,13 @@ const GLSLShader* CompositeShaderManagerImpl::GetShaderPtr( const ECompositeShad
 
 		pShader = new GLSLShader();
 		ShaderBaseLocations *pLocations = CreateShaderLocations(shader);
-		mShaderUseMask[shader] = useMask;
+		mShaderUseMask[shaderIndex] = useMask;
 
 		FBString strHeader("#version 120\n");
 		if (shader >= eCompositeShaderBlendNormal && shader <= eCompositeShaderBlendPhoenix)
-			strHeader = strHeader + CompositeBlendTypeToString( (ECompositeBlendType) ((int)shader - (int)eCompositeShaderBlendNormal) );
+			strHeader = strHeader + CompositeBlendTypeToString( (ECompositeBlendType) (shaderIndex - (int)eCompositeShaderBlendNormal) );
 		else if (shader >= eCompositeShaderFogNormal && shader <= eCompositeShaderFogPhoenix)
-			strHeader = strHeader + CompositeBlendTypeToString( (ECompositeBlendType) ((int)shader - (int)eCompositeShaderFogNormal) );
+			strHeader = strHeader + CompositeBlendTypeToString( (ECompositeBlendType) (shaderIndex - (int)eCompositeShaderFogNormal) );
 		
 		if (useMask)
 			strHeader = strHeader + "#define USE_MASK\n";
@@ -517,13 +522,13 @@ const GLSLShader* CompositeShaderManagerImpl::GetShaderPtr( const ECompositeShad
 		{
 			if (useMask)
 			{
-				mShadersWithMask[shader] = pShader;
-				mShaderLocWithMask[shader] = pLocations;
+				mShadersWithMask[shaderIndex] = pShader;
+				mShaderLocWithMask[shaderIndex] = pLocations;
 			}
 			else
 			{
-				mShadersNoMask[shader] = pShader;
-				mShaderLocNoMask[shader] = pLocations;
+				mShadersNoMask[shaderIndex] = pShader;
+				mShaderLocNoMask[shaderIndex] = pLocations;
 			}
 		}
 	}

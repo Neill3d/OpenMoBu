@@ -730,12 +730,12 @@ void GPUshader_Particles::DoResetAll()
 
 void GPUshader_Particles::DoColorCurve()
 {
-	ORPopup_ColorEditor	ColorCurveEditor;
+	std::unique_ptr<ORPopup_ColorEditor> ColorCurveEditor(new ORPopup_ColorEditor());
 
-	ColorCurveEditor.Caption = FBString( Name, " - Color curve editor" );
-	ColorCurveEditor.Modal = true;
-	ColorCurveEditor.SetUp( this, &ColorCurveHolder );
-	ColorCurveEditor.Show();
+	ColorCurveEditor->Caption = FBString( Name, " - Color curve editor" );
+	ColorCurveEditor->Modal = true;
+	ColorCurveEditor->SetUp( this, &ColorCurveHolder );
+	ColorCurveEditor->Show();
 
 	mNeedUpdatePropertyTexture = true;
 	//mParticleSystem.UpdatePropertyTextures();
@@ -743,12 +743,12 @@ void GPUshader_Particles::DoColorCurve()
 
 void GPUshader_Particles::DoSizeCurve()
 {
-	ORPopup_CurveEditor	SizeCurveEditor;
+	std::unique_ptr<ORPopup_CurveEditor> SizeCurveEditor(new ORPopup_CurveEditor);
 
-	SizeCurveEditor.Caption = FBString( Name, " - Size curve editor" );
-	SizeCurveEditor.Modal = true;
-	SizeCurveEditor.SetUp( nullptr, &SizeCurveHolder );
-	SizeCurveEditor.Show();
+	SizeCurveEditor->Caption = FBString( Name, " - Size curve editor" );
+	SizeCurveEditor->Modal = true;
+	SizeCurveEditor->SetUp( nullptr, &SizeCurveHolder );
+	SizeCurveEditor->Show();
 
 	mNeedUpdatePropertyTexture = true;
 	//mParticleSystem.UpdatePropertyTextures();
@@ -1295,9 +1295,9 @@ void GPUshader_Particles::LocalShadeModel( FBRenderOptions* pRenderOptions, FBMo
 		// Get current camera
 		FBCamera*	lCamera	 = pRenderOptions->GetRenderingCamera();
 
-		if ( lCamera && FBIS(lCamera, FBCameraSwitcher) )
+		if ( FBIS(lCamera, FBCameraSwitcher) )
 		{
-			lCamera = ( (FBCameraSwitcher*) lCamera)->CurrentCamera;
+			lCamera = ( reinterpret_cast<FBCameraSwitcher*>(lCamera))->CurrentCamera;
 		}
 
 		FBVector3d pos;
@@ -1323,8 +1323,8 @@ void GPUshader_Particles::LocalShadeModel( FBRenderOptions* pRenderOptions, FBMo
 			renderData.gCameraPos.vec_array[i] = (float) pos[i];
 		}
 
-		renderData.gScreenSize.z = (float) lCamera->CameraViewportWidth;
-		renderData.gScreenSize.w = (float) lCamera->CameraViewportHeight;
+		renderData.gScreenSize.z = static_cast<float>(lCamera->CameraViewportWidth.AsInt());
+		renderData.gScreenSize.w = static_cast<float>(lCamera->CameraViewportHeight.AsInt());
 	}
 	/*
 	else

@@ -73,7 +73,7 @@ public:
 	void FillForceData( GPUParticles::TForce &forcedata );
 
 protected:
-    int mPickedSubItem;
+	int mPickedSubItem{ -1 };
 };
 
 

@@ -39,7 +39,10 @@ bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, Input
 	if ((hMem = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, szMemoryName)) == NULL) {
 		// cannot open shared memory, so we are the first process: create it
 		hMem = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size, szMemoryName);
-		memory = MapViewOfFile(hMem, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
+		if (hMem)
+		{
+			memory = MapViewOfFile(hMem, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
+		}
 	}
 	else
 	{
@@ -50,7 +53,10 @@ bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, Input
 	{
 		data.CopyToMemory(memory);
 		// let the other process know we've written something
-		SetEvent(hEvent);
+		if (hEvent)
+		{
+			SetEvent(hEvent);
+		}
 	}
 
 
@@ -116,8 +122,8 @@ bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, Input
 		result = false;
 	}
 
-	CloseHandle( hMem );
-	CloseHandle( hEvent );
+	if (hMem) CloseHandle( hMem );
+	if (hEvent) CloseHandle( hEvent );
 
 	return result;
 }
@@ -139,7 +145,7 @@ bool CmdMakeSnapshotFBX_Receive(InputModelData *data)
 	
 		memory = MapViewOfFile(hMem, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
 
-		if(WaitForSingleObject(hEvent, 5000) == WAIT_OBJECT_0 ) {
+		if(hEvent && WaitForSingleObject(hEvent, 5000) == WAIT_OBJECT_0 ) {
 			
 			data->InitFromMemory( memory );
 			

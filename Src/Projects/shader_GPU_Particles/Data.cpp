@@ -145,9 +145,9 @@ bool	Data :: saveToFile ( const char * name ) const
 	if ( fd == -1 )
 		return false;
 
-	write ( fd, bits, length );
+	const int bytesWritten = write ( fd, bits, length );
 	close ( fd );
 
-	return true;
+	return bytesWritten == length;
 
 }

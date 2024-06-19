@@ -116,30 +116,29 @@ struct InputModelData
 
 	struct Cluster
 	{
-		char		name[STRING_MAX_LENGTH];
+		char		name[STRING_MAX_LENGTH]{ 0 };
 
-		int			parent;		// -1 means no parent
+		int			parent{ -1 };		// -1 means no parent
 
-		char		modelname[STRING_MAX_LENGTH];
+		char		modelname[STRING_MAX_LENGTH]{ 0 };
 
 		// current pose
-		double		LclPosition[3];
-		double		LclRotation[3];
-		double		LclScaling[3];
+		double		LclPosition[3]{ 0.0 };
+		double		LclRotation[3]{ 0.0 };
+		double		LclScaling[3]{ 1.0 };
 
 		// link matrix
-		double		LinkPosition[3];
-		double		LinkRotation[3];
-		double		LinkScaling[3];
+		double		LinkPosition[3]{ 0.0 };
+		double		LinkRotation[3]{ 0.0 };
+		double		LinkScaling[3]{ 1.0 };
 
-		int			mode;		// link mode ( total one, normalized, additive )
+		int			mode{ 0 };		// link mode ( total one, normalized, additive )
 
 		std::vector<DeformedVertex>		vertices;
 
 		//! a constructor
 		Cluster()
-		{
-		}
+		{}
 
 		~Cluster()
 		{
@@ -147,8 +146,7 @@ struct InputModelData
 		}
 
 		void Free()
-		{
-		}
+		{}
 
 		bool operator <( const Cluster &other ) const
 		{

@@ -64,7 +64,7 @@ public:
 	void	FillCollisionData( GPUParticles::TCollision	&coldata );
 
 protected:
-    int mPickedSubItem;
+	int mPickedSubItem{ -1 };
 };
 
 

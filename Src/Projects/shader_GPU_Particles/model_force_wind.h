@@ -78,7 +78,7 @@ public:
 	void FillForceData( GPUParticles::TForce &forcedata, const float elapsedTime );
 
 protected:
-    int					mPickedSubItem;
+	int					mPickedSubItem{ -1 };
 
 	FBVector4d			mWind1;
 	FBVector4d			mWind2;

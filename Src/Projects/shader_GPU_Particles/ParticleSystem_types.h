@@ -164,7 +164,7 @@ struct terrainBlock
 	
 	//uniform mat4 gVP;       
 	//GLuint64		gTerrainColorAddress;  
-	float 			gTerrainFarPlane;
+	float 			gTerrainFarPlane{ 1.0f };
 };
 
 // emitter surface

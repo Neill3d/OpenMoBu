@@ -146,17 +146,17 @@ protected:
 
 		
 	// ! Use particles system shader (terrain technique)
-	GPUParticles::ParticleShaderFX		*mShader;
+	GPUParticles::ParticleShaderFX* mShader{ nullptr };
 
-	bool							mNeedUpdate;
+	bool							mNeedUpdate{ true };
 	FBVector3d						mLastTranslation;
 	FBTime							mLastTimelineTime;
 
 	FrameBuffer						mBuffer;	// for generating height map
-	GLuint							mTextureId;
-	GLuint64						mTextureAddress;
+	GLuint							mTextureId{ 0 };
+	GLuint64						mTextureAddress{ 0 };
 
-	HGLRC							mLastContext;
+	HGLRC							mLastContext{ 0 };
 
 	void CreateGeometry();
 

@@ -150,17 +150,7 @@ void ORPopup_CurveEditor::SetUp(FBAnimationNode *node, FBPropertyAnimatable *pPr
 
 ColorView::ColorView()
 	: FBView()
-{
-	mWidth = 0;
-	mHeight = 0;
-	mPopup = nullptr;
-
-	mNeedUpdate = true;
-
-	mOperationMode = OperationSelect;
-
-	mSelectedMarker = -1;
-}
+{}
 
 ColorView::~ColorView()
 {
@@ -214,7 +204,7 @@ void ColorView::ViewExpose()
 
 	glColor3f(1.0, 0.0, 0.0);
 	FBAnimationNode *pNode = lProp->GetAnimationNode();
-	if (pNode || (pNode->Nodes.GetCount() == 4)) 
+	if (pNode && (pNode->Nodes.GetCount() == 4)) 
 	{
 		FBAnimationNode *rNode = pNode->Nodes[0];
 
@@ -270,9 +260,8 @@ void ColorView::ViewInput(int pMouseX,int pMouseY,FBInputType pAction,int pButto
 		{
 			mSelectedMarker = -1;
 
-			
 			FBAnimationNode *pNode = lProp->GetAnimationNode();
-			if (pNode || (pNode->Nodes.GetCount() == 4)) 
+			if (pNode && (pNode->Nodes.GetCount() == 4)) 
 			{
 				FBTime time;
 				time.SetSecondDouble( 1.0 / mWidth * pMouseX);
@@ -291,7 +280,7 @@ void ColorView::ViewInput(int pMouseX,int pMouseY,FBInputType pAction,int pButto
 
 			mSelectedMarker = -1;
 			FBAnimationNode *pNode = lProp->GetAnimationNode();
-			if (pNode || (pNode->Nodes.GetCount() == 4)) 
+			if (pNode && (pNode->Nodes.GetCount() == 4)) 
 			{
 				FBAnimationNode *rNode = pNode->Nodes[0];
 
@@ -335,7 +324,7 @@ void ColorView::ViewInput(int pMouseX,int pMouseY,FBInputType pAction,int pButto
 	else if (pAction == kFBMotionNotify && mDown && (mSelectedMarker >=0) && (mOperationMode == OperationMove) )
 	{
 		FBAnimationNode *pNode = lProp->GetAnimationNode();
-		if (pNode || (pNode->Nodes.GetCount() == 4)) 
+		if (pNode && (pNode->Nodes.GetCount() == 4)) 
 		{
 			FBAnimationNode *rNode = pNode->Nodes[0];
 			FBAnimationNode *gNode = pNode->Nodes[1];
@@ -376,7 +365,7 @@ void ColorView::SetColor(const FBColorAndAlpha color)
 	{
 		FBPropertyAnimatableColorAndAlpha *lProp = mTexture.GetProperty();
 		FBAnimationNode *pNode = lProp->GetAnimationNode();
-		if (pNode || (pNode->Nodes.GetCount() == 4)) 
+		if (pNode && (pNode->Nodes.GetCount() == 4)) 
 		{
 			FBAnimationNode *rNode = pNode->Nodes[0];
 			FBAnimationNode *gNode = pNode->Nodes[1];

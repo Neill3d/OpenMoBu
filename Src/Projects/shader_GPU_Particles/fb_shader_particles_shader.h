@@ -384,30 +384,30 @@ public:
 protected:
 	FBSystem				mSystem;
 
-	bool					mIsOfflineRenderer;
+	bool					mIsOfflineRenderer{ false };
 
     FBMaterial				*mMaterial;
-    int						mRenderFrameId;
+	int						mRenderFrameId{ 0 };
 
 	// make it unique per model
 	//std::map<FBModel*, double>	mLastFrameTimeMap;
 	//std::map<FBModel*, bool>	mIsResetDoneMap;
 	//double					mLastFrameTime;
 
-	bool	firstBeginRender;
-	bool	firstShadeModel;
+	bool	firstBeginRender{ true };
+	bool	firstShadeModel{ true };
 
-	bool		mLastResetState;
-	bool		mLastResetAllState;
+	bool		mLastResetState{ false };
+	bool		mLastResetAllState{ false };
 
-	unsigned int		mTotalCycles;		// total simulation cycles
-	unsigned int		mDisplayedCount;
+	unsigned int		mTotalCycles{ 0 };		// total simulation cycles
+	unsigned int		mDisplayedCount{ 0 };
 
 	//bool					mIsFirst;
 	FBTime					mLastTimelineTime;
 	//bool					mIsResetDone;
 
-	int						mLastRenderFrameId;
+	int						mLastRenderFrameId{ -1 };
 
 	bool					mNeedReloadShaders;
 	bool					mNeedUpdatePropertyTexture;
@@ -415,14 +415,14 @@ protected:
 	// TODO: use rotation for calculating velocity
 	//FBVector3d				mLastEmitterPos; // for calculating velocity (need for option inherit emitter velocity)
 
-	bool						mUseSizeCurve;
-	bool						mUseColorCurve;
+	bool						mUseSizeCurve{ false };
+	bool						mUseColorCurve{ false };
 
 	ColorPropertyTexture		mColorCurve;		// animate color during lifetime
 	DoublePropertyTexture		mSizeCurve;			// animate size during lifetime
 
 	GPUParticles::ParticleSystemConnections		mParticleConnections;
-	std::map<FBModel*, GPUParticles::ParticleSystem*>	mParticleMap;
+	std::unordered_map<FBModel*, GPUParticles::ParticleSystem*>	mParticleMap;
 
 	void SyncForcesPropWithComponents();
 	void RemoveForceFromComponents();

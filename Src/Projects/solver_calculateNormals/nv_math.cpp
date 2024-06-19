@@ -964,7 +964,8 @@ quat::quat(nv_scalar *q)
     w = q[3];
 }
 
-quat::quat(nv_scalar x, nv_scalar y, nv_scalar z, nv_scalar w) : x(x), y(y), z(z), w(w)
+quat::quat(nv_scalar _x, nv_scalar _y, nv_scalar _z, nv_scalar _w) 
+    : x(_x), y(_y), z(_z), w(_w)
 {
 }
 
