@@ -29,7 +29,7 @@
 #include "FileUtils.h"
 
 #define PARTICLES_EFFECT				"Particles.glslfx"
-#define PREP_SURFACE_COMPUTE_SHADER		"\\GLSL_CS\\prepSurfaceData.cs"
+#define PREP_SURFACE_COMPUTE_SHADER		"\\GLSL_CS\\prepSurfaceData.glsl"
 
 //--- Library declaration
 FBLibraryDeclare( gpushader_particles )
@@ -102,13 +102,13 @@ bool FBLibrary::LibReady()	{
 	{
 		GPUParticles::ParticleShaderFX::SetShaderEffectLocation( effectFullName, effectFullName.GetLen() );
 
-		FBString computeLocation(effectPath, "\\GLSL_CS\\Particles_simulation.cs");
+		FBString computeLocation(effectPath, "\\GLSL_CS\\Particles_simulation.glsl");
 		GPUParticles::ParticleShaderFX::SetComputeShaderLocation( computeLocation, computeLocation.GetLen() );
 
-		FBString computeSelfCollisionsLocation(effectPath, "\\GLSL_CS\\Particles_selfcollisions.cs");
+		FBString computeSelfCollisionsLocation(effectPath, "\\GLSL_CS\\Particles_selfcollisions.glsl");
 		GPUParticles::ParticleShaderFX::SetComputeSelfCollisionsShaderLocation( computeSelfCollisionsLocation, computeSelfCollisionsLocation.GetLen() );
 
-		FBString computeIntegrateLocation(effectPath, "\\GLSL_CS\\Particles_integrate.cs");
+		FBString computeIntegrateLocation(effectPath, "\\GLSL_CS\\Particles_integrate.glsl");
 		GPUParticles::ParticleShaderFX::SetComputeIntegrateLocation( computeIntegrateLocation, computeIntegrateLocation.GetLen() );
 
 		FBString strComputeSurfaceData(effectPath, PREP_SURFACE_COMPUTE_SHADER);

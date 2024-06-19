@@ -19,7 +19,7 @@ set_target_properties(nvFXParser PROPERTIES
 
 project(shader_GPUParticles LANGUAGES CXX)
 
-file(GLOB_RECURSE SRCS *.cxx *.cpp *.h *.vsh *.fsh *.glslfx *.glslfx)
+file(GLOB_RECURSE SRCS *.cxx *.cpp *.h *.vsh *.fsh *.glslfx *.glslfxh *.glsl)
 add_library(${PROJECT_NAME} SHARED ${SRCS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include ${CMAKE_SOURCE_DIR}/MotionCodeLibrary)
