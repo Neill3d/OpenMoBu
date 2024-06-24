@@ -321,6 +321,17 @@ bool GLSLShader::setUniformVector( const char *name, const float x, const float 
   return true;
 }
 
+bool GLSLShader::setUniformVector3f(const char* name, const float x, const float y, const float z)
+{
+	if (!programObj) return false;
+	int loc = glGetUniformLocationARB(programObj, name);
+	if (loc < 0)
+		return false;
+
+	glUniform3fARB(loc, x, y, z);
+	return true;
+}
+
 bool GLSLShader::setUniformVector2f( const char *name, const float x, const float y )
 {
   if (!programObj) return false;

@@ -1943,7 +1943,7 @@ PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shade
 	return newEffect;
 }
 
-const bool PostEffectChain::CheckShadersPath(const char* path) const
+bool PostEffectChain::CheckShadersPath(const char* path)
 {
 	const char* test_shaders[] = {
 		SHADER_DEPTH_LINEARIZE_VERTEX,
@@ -1976,45 +1976,24 @@ bool PostEffectChain::LoadShaders()
 {
 	FreeShaders();
 
-	FBString shaders_path(mSystem.ApplicationPath);
-	shaders_path = shaders_path + "\\plugins";
-
-	bool status = true;
-
-	if (!CheckShadersPath(shaders_path))
-	{
-		status = false;
-		
-		const FBStringList& plugin_paths = mSystem.GetPluginPath();
-
-		for (int i = 0; i < plugin_paths.GetCount(); ++i)
-		{
-			if (CheckShadersPath(plugin_paths[i]))
-			{
-				shaders_path = plugin_paths[i];
-				status = true;
-				break;
-			}
-		}
-	}
-
-	if (status == false)
+	char shadersPath[MAX_PATH];
+	if (!FindEffectLocation(CheckShadersPath, shadersPath, MAX_PATH))
 	{
 		FBTrace("[PostProcessing] Failed to find shaders location!\n");
 		return false;
 	}
-	
-	FBTrace("[PostProcessing] Shaders Location - %s\n", shaders_path);
 
-	mFishEye.reset(ShaderFactory(SHADER_TYPE_FISHEYE, shaders_path));
-	mColor.reset(ShaderFactory(SHADER_TYPE_COLOR, shaders_path));
-	mVignetting.reset(ShaderFactory(SHADER_TYPE_VIGNETTE, shaders_path));
-	mFilmGrain.reset(ShaderFactory(SHADER_TYPE_FILMGRAIN, shaders_path));
-	mLensFlare.reset(ShaderFactory(SHADER_TYPE_LENSFLARE, shaders_path));
-	mSSAO.reset(ShaderFactory(SHADER_TYPE_SSAO, shaders_path));
-	mDOF.reset(ShaderFactory(SHADER_TYPE_DOF, shaders_path));
-	mDisplacement.reset(ShaderFactory(SHADER_TYPE_DISPLACEMENT, shaders_path));
-	mMotionBlur.reset(ShaderFactory(SHADER_TYPE_MOTIONBLUR, shaders_path));
+	FBTrace("[PostProcessing] Shaders Location - %s\n", shadersPath);
+
+	mFishEye.reset(ShaderFactory(SHADER_TYPE_FISHEYE, shadersPath));
+	mColor.reset(ShaderFactory(SHADER_TYPE_COLOR, shadersPath));
+	mVignetting.reset(ShaderFactory(SHADER_TYPE_VIGNETTE, shadersPath));
+	mFilmGrain.reset(ShaderFactory(SHADER_TYPE_FILMGRAIN, shadersPath));
+	mLensFlare.reset(ShaderFactory(SHADER_TYPE_LENSFLARE, shadersPath));
+	mSSAO.reset(ShaderFactory(SHADER_TYPE_SSAO, shadersPath));
+	mDOF.reset(ShaderFactory(SHADER_TYPE_DOF, shadersPath));
+	mDisplacement.reset(ShaderFactory(SHADER_TYPE_DISPLACEMENT, shadersPath));
+	mMotionBlur.reset(ShaderFactory(SHADER_TYPE_MOTIONBLUR, shadersPath));
 
 	// load shared shaders (blur, mix)
 
@@ -2034,8 +2013,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a depth linearize shader");
 		}
 
-		FBString vertex_path(shaders_path, SHADER_DEPTH_LINEARIZE_VERTEX);
-		FBString fragment_path(shaders_path, SHADER_DEPTH_LINEARIZE_FRAGMENT);
+		FBString vertex_path(shadersPath, SHADER_DEPTH_LINEARIZE_VERTEX);
+		FBString fragment_path(shadersPath, SHADER_DEPTH_LINEARIZE_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -2064,8 +2043,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a blur shader");
 		}
 
-		vertex_path = FBString(shaders_path, SHADER_BLUR_VERTEX);
-		fragment_path = FBString(shaders_path, SHADER_BLUR_FRAGMENT);
+		vertex_path = FBString(shadersPath, SHADER_BLUR_VERTEX);
+		fragment_path = FBString(shadersPath, SHADER_BLUR_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -2099,8 +2078,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a mix shader");
 		}
 
-		vertex_path = FBString(shaders_path, SHADER_MIX_VERTEX);
-		fragment_path = FBString(shaders_path, SHADER_MIX_FRAGMENT);
+		vertex_path = FBString(shadersPath, SHADER_MIX_VERTEX);
+		fragment_path = FBString(shadersPath, SHADER_MIX_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -2131,8 +2110,8 @@ bool PostEffectChain::LoadShaders()
 			throw std::exception("failed to allocate memory for a downscale shader");
 		}
 
-		vertex_path = FBString(shaders_path, SHADER_DOWNSCALE_VERTEX);
-		fragment_path = FBString(shaders_path, SHADER_DOWNSCALE_FRAGMENT);
+		vertex_path = FBString(shadersPath, SHADER_DOWNSCALE_VERTEX);
+		fragment_path = FBString(shadersPath, SHADER_DOWNSCALE_FRAGMENT);
 
 		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
 		{

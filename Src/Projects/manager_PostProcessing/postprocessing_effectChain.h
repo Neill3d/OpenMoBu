@@ -533,7 +533,7 @@ protected:
 	void FreeShaders();
 
 private:
-	const bool CheckShadersPath(const char* path) const;
+	static bool CheckShadersPath(const char* path);
 
 };
 

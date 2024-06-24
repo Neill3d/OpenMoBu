@@ -20,6 +20,21 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 // for back compatibility
 extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 
+/// <summary>
+/// a method to transfer shared library logs into motionbuilder logs output
+/// </summary>
+void LOGE(const char* pFormatString, ...)
+{
+	char buffer[256];
+	va_list args;
+	va_start(args, pFormatString);
+	vsnprintf(buffer, 255, pFormatString, args);
+
+	FBTrace(buffer);
+
+	va_end(args);
+}
+
 //--- Library declaration
 FBLibraryDeclare( manager_postprocessing )
 {

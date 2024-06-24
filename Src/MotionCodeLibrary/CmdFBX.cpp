@@ -13,6 +13,7 @@
 
 #include <Windows.h>
 #include <tchar.h>
+#include <string>
 
 #include "CmdFBX.h"
 #include "Logger.h"
@@ -69,9 +70,10 @@ bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, Input
 
 	try
 	{
-
-		FBString out_path, out_fullpath;
-		if ( FindEffectLocation( "\\cmdFBX.exe", out_path, out_fullpath ) == false)
+		const char* appFilename{ "\\cmdFBX.exe" };
+		char location[MAX_PATH];
+		
+		if ( !FindEffectLocation(appFilename, location, MAX_PATH) )
 			throw "failed to find cmdFBX";
 
 		// filename is a path for saving temp fbx !!
@@ -88,14 +90,17 @@ bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, Input
 		//std::string		out_fullpath("D:\\Program Files\\Autodesk\\MotionBuilder 2017\\bin\\x64\\plugins\\cmdFBX.exe");
 
 		// prepare command line with filename and unique name
-		out_fullpath += " ";
-		out_fullpath += filename;
-		out_fullpath += " ";
-		out_fullpath += uniqueName;
-
+		
+		std::string fullpath = location;
+		fullpath += appFilename;
+		fullpath += " ";
+		fullpath += filename;
+		fullpath += " ";
+		fullpath += uniqueName;
+		
 		// Start the child process. 
 		if( !CreateProcess( NULL,   // No module name (use command line)
-			out_fullpath,        // Command line
+			const_cast<char*>(fullpath.c_str()),        // Command line
 			NULL,           // Process handle not inheritable
 			NULL,           // Thread handle not inheritable
 			FALSE,          // Set handle inheritance to FALSE

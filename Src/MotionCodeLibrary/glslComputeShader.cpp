@@ -93,12 +93,12 @@ bool CComputeProgram::PrepProgram(const char *filename)
 		mShader = glCreateShader(GL_COMPUTE_SHADER);
 		glAttachShader(mProgram, mShader);
 
-
 		//
-		FBString effectPath, effectFullName;
-		if (FindEffectLocation( filename, effectPath, effectFullName ) )
+		char effectPath[256];
+		if (FindEffectLocation( filename, effectPath, 256 ) )
 		{
-			if (!loadComputeShader(effectFullName, mShader, mProgram) )
+			strcat_s(effectPath, 256, filename);
+			if (!loadComputeShader(effectPath, mShader, mProgram) )
 			{
 				Clear();
 				return false;
@@ -136,7 +136,8 @@ bool CComputeProgram::checkCompileStatus(GLuint shader, const char* shadername)
 		LOGE("%s failed to compile:", shadername);
 		GLint  logSize;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logSize);
-		char* logMsg = new char[logSize];
+		char* logMsg = new char[logSize+1];
+		memset(logMsg, 0, sizeof(char) * (logSize + 1));
 		glGetShaderInfoLog(shader, logSize, nullptr, logMsg);
 		LOGE(logMsg);
 		delete[] logMsg;
@@ -155,7 +156,8 @@ bool CComputeProgram::checkLinkStatus(GLuint program, const char* programName)
 		LOGE("Shader program %s failed to link", programName);
 		GLint  logSize;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logSize);
-		char* logMsg = new char[logSize];
+		char* logMsg = new char[logSize + 1];
+		memset(logMsg, 0, sizeof(char) * (logSize + 1));
 		glGetProgramInfoLog(program, logSize, nullptr, logMsg);
 		LOGE(logMsg);
 		delete[] logMsg;
@@ -198,48 +200,25 @@ bool CComputeProgram::loadComputeShader(const char* computeShaderName, const GLu
 {
 	bool lSuccess = false;
 
-	FILE* fp = nullptr;
-	fopen_s(&fp, computeShaderName, "r");
-	if (fp)
+	FileReadScope FileRead(computeShaderName);
+
+	if (!FileRead.Get())
+		return false;
+
+	const size_t fileLen = FileRead.GetFileSize();
+	std::vector<char> buffer(fileLen + 1, 0);
+	
+	// read shader from file
+	const size_t readlen = fread(buffer.data(), sizeof(char), fileLen, FileRead.Get());
+
+	if (readlen == 0)
 	{
-		fseek(fp, 0, SEEK_END);
-		size_t fileLen = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-
-		char* buffer = new char[fileLen + 1];
-		if (!buffer)
-		{
-			fclose(fp);
-			return false;
-		}
-
-		GLint   len = (GLint)fileLen;
-
-		// read shader from file
-		memset(&buffer[0], 0, sizeof(char) * (len + 1));
-
-		size_t readlen = fread(buffer, sizeof(char), fileLen, fp);
-
-		// trick to zero all outside memory
-		memset(&buffer[readlen], 0, sizeof(char) * (len + 1 - readlen));
-
-		if (readlen == 0)
-		{
-			LOGE("glsl shader %s has a zero file size", computeShaderName );
-			fclose(fp);
-			delete[] buffer;
-
-			return 0;
-		}
-
-		if (loadComputeShaderFromBuffer(buffer, computeShaderName, shaderid, programid))
-		{
-			lSuccess = true;
-		}
-
-		delete[] buffer;
-		fclose(fp);
+		LOGE("glsl shader %s has a zero file size", computeShaderName);
+		return false;
 	}
 
-	return lSuccess;
+	// trick to zero all outside memory
+	memset(&buffer[readlen], 0, sizeof(char) * (fileLen + 1 - readlen));
+
+	return loadComputeShaderFromBuffer(buffer.data(), computeShaderName, shaderid, programid);
 }

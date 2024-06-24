@@ -874,19 +874,20 @@ bool CompositeShaderManagerImpl::InitShader(const char *vertex_filename, const c
 	
 	try
 	{
-		
-		if (false == FindEffectLocation( fragment_filename, effectPath, effectFullName ) )
+		char effectPath[MAX_PATH];
+
+		if ( !FindEffectLocation( fragment_filename, effectPath, MAX_PATH ) )
 			throw std::exception( "Failed to locate shader files" );
 
 		// most of shaders share the same simple vertex shader
 		if (vertex_filename == nullptr)
 		{
-			if (false == pShader->LoadShaders( GetVertexShader(), FBString(effectPath, fragment_filename) ) )
+			if ( !pShader->LoadShaders( GetVertexShader(), FBString(effectPath, fragment_filename) ) )
 				throw std::exception( "Failed to load shader" );
 		}	
 		else
 		{
-			if (false == pShader->LoadShaders( FBString(effectPath, vertex_filename), FBString(effectPath, fragment_filename) ) )
+			if ( !pShader->LoadShaders( FBString(effectPath, vertex_filename), FBString(effectPath, fragment_filename) ) )
 				throw std::exception( "Failed to load shader" );
 		}
 

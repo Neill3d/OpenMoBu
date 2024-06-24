@@ -13,8 +13,9 @@
 #include "vertex-buffer.h"
 #include "text-buffer.h"
 #include "markup.h"
-#include "shader.h"
 
+#include "nv_math.h"
+#include "glslShader.h"
 
 //////////////////////////
 //
@@ -43,8 +44,15 @@ private:
 	markup_t		normal;
 	float			mBounds[4];
 
-	font_manager_t * font_manager;
-	text_buffer_t *buffer;	// store pen position and characters
+	NVMath::mat4 model;
+	NVMath::mat4 view;
+	NVMath::mat4 projection;
+
+	font_manager_t* font_manager;
+	text_buffer_t* buffer;	// store pen position and characters
+
+	static GLSLShader* g_glslShader;
+	static int		g_shaderCounter;
 };
 
 #endif

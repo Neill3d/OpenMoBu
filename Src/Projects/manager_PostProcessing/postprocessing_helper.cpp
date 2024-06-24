@@ -204,8 +204,10 @@ size_t RgEtc1_CompressSingleImage(unsigned char *stream, int imagewidth, int ima
 //
 
 void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight,
-	FBModel *pCamera, double farPlane, double nearPlane, vec3 *points)
+	FBModel *pCamera, double farPlane, double nearPlane, NVMath::vec3 *points)
 {
+	using namespace NVMath;
+
 	FBMatrix modelview, invmodelview;
 	FBVector3d camerapos;
 
@@ -283,8 +285,10 @@ void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight,
 // DONE: FIX culling winding
 
 void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeight,
-	FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, vec3 *points)
+	FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, NVMath::vec3 *points)
 {
+	using namespace NVMath;
+
 	if (!pCamera)
 		return;
 

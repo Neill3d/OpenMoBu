@@ -58,6 +58,7 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
   bool setUniformUINT ( const char *name, const GLint value );
   bool setUniformFloat( const char *name, const float value );
   bool setUniformVector( const char * name, const float x, const float y, const float z, const float w );
+  bool setUniformVector3f(const char* name, const float x, const float y, const float z);
   bool setUniformVector2f( const char *name, const float x, const float y );
   bool setUniformMatrix33( const char * name, const float *m );
   bool setUniformMatrix( const char * name, const float *m );
