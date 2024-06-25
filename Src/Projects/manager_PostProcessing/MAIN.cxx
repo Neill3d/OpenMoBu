@@ -47,6 +47,7 @@ FBLibraryDeclare( manager_postprocessing )
 	FBLibraryRegister(ORManip_Template);
 	//FBLibraryRegisterStorable(ORHUDElementCustom);
 
+	FBLibraryRegister(FXMaskingShader);
 }
 FBLibraryDeclareEnd;
 

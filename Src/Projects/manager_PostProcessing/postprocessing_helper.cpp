@@ -17,6 +17,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <thread>
 
+#include <GL/glew.h>
+#include "fxmaskingshader.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -370,4 +372,75 @@ void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeigh
 	points[6] = fc + far_height*up + far_width*right; // up right
 	points[7] = fc - far_height*up + far_width*right; // bottom right
 
+}
+
+void RenderModel(FBModel* model)
+{
+	FBModelVertexData* vertexData = model->ModelVertexData;
+	const int patchCount = vertexData->GetSubPatchCount();
+
+	// needed for primitives indices
+	vertexData->VertexArrayMappingRelease();
+	vertexData->EnableOGLVertexData();
+
+	for (int i = 0; i < patchCount; ++i)
+	{
+		vertexData->DrawSubPatch(i);
+	}
+
+	vertexData->DisableOGLVertexData();
+}
+
+void RenderMaskedModels(FBCamera* camera)
+{
+	if (FBIS(camera, FBCameraSwitcher))
+	{
+		camera = ((FBCameraSwitcher*)camera)->CurrentCamera;
+	}
+
+	FBMatrix mv, mp;
+	camera->GetCameraMatrix(mv, kFBModelView);
+	camera->GetCameraMatrix(mp, kFBProjection);
+
+	double nearPlane = camera->NearPlaneDistance;
+	double farPlane = camera->FarPlaneDistance;
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadMatrixd(mp);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadMatrixd(mv);
+
+	FBScene* scene = FBSystem::TheOne().Scene;
+
+	for (int i = 0, count = scene->Shaders.GetCount(); i < count; ++i)
+	{
+		FBShader* shader = scene->Shaders[i];
+		if (FBIS(shader, FXMaskingShader))
+		{
+			// TODO: set uniforms for a mask channels !
+
+			const int dstCount = shader->GetDstCount();
+
+			for (int j = 0; j < dstCount; ++j)
+			{
+				if (FBIS(shader->GetDst(j), FBModel))
+				{
+					FBModel* maskObject = FBCast<FBModel>(shader->GetDst(j));
+					FBModelVertexData* vertexData = maskObject->ModelVertexData;
+
+					if (vertexData && vertexData->IsDrawable())
+					{
+						RenderModel(maskObject);
+					}
+				}
+			}
+		}
+	}
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
 }
