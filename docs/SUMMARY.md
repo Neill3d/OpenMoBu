@@ -1,9 +1,8 @@
 # Table of contents
 
-* [Introduction](README.md)
+* [OpenMoBu documentation](README.md)
 * [HowToCompile](HowToCompile.md)
 * [How To Install](HowToInstall.md)
-* [OpenMoBu documentation](<README (1).md>)
 * [Script Device](ScriptDevice.md)
 * [Plugins](plugins/README.md)
   * [GPU Particles Shader](Plugins/GPUParticlesShader.md)
