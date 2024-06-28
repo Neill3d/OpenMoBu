@@ -1,11 +1,12 @@
 ---
+description: Open Source scripts and plugins for Autodesk MotionBuilder
 layout:
   title:
     visible: true
   description:
     visible: true
   tableOfContents:
-    visible: true
+    visible: false
   outline:
     visible: false
   pagination:
@@ -14,26 +15,28 @@ layout:
 
 # OpenMoBu documentation
 
-Collection of scripts and plugins for Autodesk MotionBuilder
+
 
 ## Introduction Videos
 
-[Stream Video Part 1](https://www.youtube.com/live/sgzunIbNcp4?si=kTXzdfnZ3FnkiIdv)
+{% embed url="https://www.youtube.com/live/sgzunIbNcp4?si=kTXzdfnZ3FnkiIdv" %}
 
 ## Pages
 
-Articles on different topics
+{% content-ref url="HowToInstall.md" %}
+[HowToInstall.md](HowToInstall.md)
+{% endcontent-ref %}
 
-[How To Install](HowToInstall.md)
-
-[How To Compile/Build](HowToCompile.md)
-
-[Script Device](ScriptDevice.md)
-
-
+{% content-ref url="HowToCompile.md" %}
+[HowToCompile.md](HowToCompile.md)
+{% endcontent-ref %}
 
 {% content-ref url="plugins/" %}
 [plugins](plugins/)
+{% endcontent-ref %}
+
+{% content-ref url="ScriptDevice.md" %}
+[ScriptDevice.md](ScriptDevice.md)
 {% endcontent-ref %}
 
 ## About the project
