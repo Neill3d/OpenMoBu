@@ -2,13 +2,13 @@
 
 This is a manager to control a group visiblity by activation of a camera. When a camera has an additional property "LinkedGroup", then a group with such name will toggle its visibility based on a camera being current in the viewport or not.
 
-![cameraLinkVisManager](../Plugins/cameraLinkVis\_manager.jpg)
+![cameraLinkVisManager](../../Plugins/cameraLinkVis\_manager.jpg)
 
 ## Python Tool Camera Linking Tool
 
 A tool that helps to track a relations between cameras and groups and automatically assign data into "LinkedGroup" user property in a camera.
 
-![cameraLinkVisTool](../Plugins/cameraLinkVis\_tool.jpg)
+![cameraLinkVisTool](../../Plugins/cameraLinkVis\_tool.jpg)
 
 When you press Refresh, it shows a current list of cameras and groups in the scene.
 

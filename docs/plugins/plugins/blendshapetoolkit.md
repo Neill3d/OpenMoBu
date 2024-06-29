@@ -2,9 +2,9 @@
 
 Tools for creating corrective blendshapes for Models.
 
-blendshapes tool - manage and animate your mesh blendshapes list ![blendshapes\_tool](../Plugins/tool\_blendshape\_manager.jpg)
+blendshapes tool - manage and animate your mesh blendshapes list ![blendshapes\_tool](../../Plugins/tool\_blendshape\_manager.jpg)
 
-Sculpting brush - modify your mesh ![blendshapes\_sculpt](../Plugins/tool\_sculpt\_brush.jpg)
+Sculpting brush - modify your mesh ![blendshapes\_sculpt](../../Plugins/tool\_sculpt\_brush.jpg)
 
 Internaly:
 

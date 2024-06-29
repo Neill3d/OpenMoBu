@@ -15,7 +15,7 @@ layout:
 
 # OpenMoBu documentation
 
-
+[OpenMobu Github repository](https://github.com/Neill3d/OpenMoBu)
 
 ## Introduction Videos
 
@@ -31,12 +31,18 @@ layout:
 [HowToCompile.md](HowToCompile.md)
 {% endcontent-ref %}
 
-{% content-ref url="plugins/" %}
-[plugins](plugins/)
+{% content-ref url="plugins/plugins/" %}
+[plugins](plugins/plugins/)
 {% endcontent-ref %}
 
-{% content-ref url="ScriptDevice.md" %}
-[ScriptDevice.md](ScriptDevice.md)
+{% content-ref url="scripts/python-scripts-overview.md" %}
+[python-scripts-overview.md](scripts/python-scripts-overview.md)
+{% endcontent-ref %}
+
+## Articles
+
+{% content-ref url="articles/scriptdevice.md" %}
+[scriptdevice.md](articles/scriptdevice.md)
 {% endcontent-ref %}
 
 ## About the project

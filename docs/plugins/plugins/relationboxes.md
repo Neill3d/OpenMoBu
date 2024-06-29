@@ -4,7 +4,7 @@
 
 Rigging for correction joints
 
-![PoseReaderBox](../Plugins/relationBox\_PoseReader.jpg)
+![PoseReaderBox](../../Plugins/relationBox\_PoseReader.jpg)
 
 Category - OpenMobu
 
@@ -14,7 +14,7 @@ Could be very useful for rigging, when you want to operate with correction joint
 
 There is a test scene to demonstrate a rig setup on the left shoulder of a skeleton.
 
-[Example scene](../../MB\_Scenes/relationBox\_PoseReader.fbx)
+[Example scene](../../../MB\_Scenes/relationBox\_PoseReader.fbx)
 
 [Video on Youtube](https://youtu.be/kSSu6DMcXNI?si=dn8zvbA9cIwPQVcN)
 
@@ -22,35 +22,35 @@ There is a test scene to demonstrate a rig setup on the left shoulder of a skele
 
 extract transform and blend from stored poses
 
-![PoseTransformBox](../Plugins/box\_poseTransform.jpg)
+![PoseTransformBox](../../Plugins/box\_poseTransform.jpg)
 
 Category - OpenMobu
 
-[Sample scene - relationBox\_PoseTransform.fbx](../../MB\_Scenes/relationBox\_PoseTransform.fbx)
+[Sample scene - relationBox\_PoseTransform.fbx](../../../MB\_Scenes/relationBox\_PoseTransform.fbx)
 
 ## Look Rotation Box
 
 calculate a rotation to look at a given target point
 
-![LookRotationBox](../Plugins/relationBox\_LookRotation.jpg)
+![LookRotationBox](../../Plugins/relationBox\_LookRotation.jpg)
 
 Category - OpenMobu
 
-[Sample scene - relationBox\_LookRotation.fbx](../../MB\_Scenes/relationBox\_LookRotation.fbx)
+[Sample scene - relationBox\_LookRotation.fbx](../../../MB\_Scenes/relationBox\_LookRotation.fbx)
 
 ## RayIntersect Box
 
 calculate an intersection point between ray and a mesh
 
-![RayIntersectBox](../Plugins/relationBox\_RayIntersect.jpg)
+![RayIntersectBox](../../Plugins/relationBox\_RayIntersect.jpg)
 
 Category - OpenMobu
 
-[Sample scene - relationBox\_RayIntersect.fbx](../../MB\_Scenes/relationBox\_RayIntersect.fbx)
+[Sample scene - relationBox\_RayIntersect.fbx](../../../MB\_Scenes/relationBox\_RayIntersect.fbx)
 
 ## Quaternion math boxes
 
-![QuaternionBoxes](../Plugins/relationBox\_quaternionMath.jpg)
+![QuaternionBoxes](../../Plugins/relationBox\_quaternionMath.jpg)
 
 Boxes Category - Quaternion
 
@@ -66,7 +66,7 @@ List of boxes:
 * Quaternion To Euler
 * RotateBy
 
-[Sample scene - relationBox\_QuaternionMath.fbx](../../MB\_Scenes/relationBox\_QuaternionMath.fbx)
+[Sample scene - relationBox\_QuaternionMath.fbx](../../../MB\_Scenes/relationBox\_QuaternionMath.fbx)
 
 ## RBF Box
 
@@ -74,7 +74,7 @@ Radial Basis Function node, rigging for correction joints
 
 Interpole input between n-dimentional targets
 
-![RBFBox](../Plugins/relationBox\_RBF.jpg)
+![RBFBox](../../Plugins/relationBox\_RBF.jpg)
 
 Category - OpenMobu
 
@@ -83,33 +83,33 @@ Boxes:
 * RBFVector
 * RBFVector 4
 
-[Sample scene - relationBox\_RBF.fbx](../../MB\_Scenes/relationBox\_RBF.fbx)
+[Sample scene - relationBox\_RBF.fbx](../../../MB\_Scenes/relationBox\_RBF.fbx)
 
 ## Sphere Coords Box
 
 Convert Euler Rotation into Sphere Coords. In that case we could avoid gimbal lock effect on rotation and do a relation based on a polar coords on a sphere surface. Could be a nice suit for rigging correction joints.
 
-![SphereCoordsBox](../Plugins/relationBox\_sphereCoords.jpg)
+![SphereCoordsBox](../../Plugins/relationBox\_sphereCoords.jpg)
 
 Category - OpenMobu
 
-[Sample scene - relationBox\_SphereCoords.fbx](../../MB\_Scenes/relationBox\_SphereCoords.fbx)
+[Sample scene - relationBox\_SphereCoords.fbx](../../../MB\_Scenes/relationBox\_SphereCoords.fbx)
 
-[Sample scene - relationBox\_SphereCoords\_ExtractRotationXZ.fbx](../../MB\_Scenes/relationBox\_SphereCoords\_ExtractRotationXZ.fbx)
+[Sample scene - relationBox\_SphereCoords\_ExtractRotationXZ.fbx](../../../MB\_Scenes/relationBox\_SphereCoords\_ExtractRotationXZ.fbx)
 
 ## Spring Box
 
 spring dynamics, secondary motion
 
-A box for relation constraint ![This is an image](../Plugins/springbox.jpg)
+A box for relation constraint ![This is an image](../../Plugins/springbox.jpg)
 
 Spring box math based on fundamental formule F = -kx
 
 [A short demo video on Youtube](http://youtu.be/rAToQEmg\_LY)
 
-[Sample scene - relationBox\_Spring.fbx](../../MB\_Scenes/relationBox\_Spring.fbx)
+[Sample scene - relationBox\_Spring.fbx](../../../MB\_Scenes/relationBox\_Spring.fbx)
 
-[Sample scene - relationBox\_SpringAndCamera.fbx](../../MB\_Scenes/relationBox\_SpringAndCamera.fbx)
+[Sample scene - relationBox\_SpringAndCamera.fbx](../../../MB\_Scenes/relationBox\_SpringAndCamera.fbx)
 
 | Parameter  | Description                                                                                                                                                                                                                                                                     | Default Value |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |

@@ -3,20 +3,30 @@
 * [OpenMoBu documentation](README.md)
 * [HowToCompile](HowToCompile.md)
 * [How To Install](HowToInstall.md)
-* [Script Device](ScriptDevice.md)
-* [Plugins](plugins/README.md)
-  * [GPU Particles Shader](Plugins/GPUParticlesShader.md)
-  * [Post Processing Effects](plugins/postprocessingeffects.md)
-  * [References Manager](plugins/referencesmanager.md)
-  * [Spring box](plugins/springbox.md)
-  * [Surface Attachment Constraint](plugins/attachmentconstraint.md)
-  * [Blendshape Toolkit](plugins/blendshapetoolkit.md)
-  * [Camera Links Group Visibility](plugins/cameralinksgroupvisibility.md)
-  * [Twist Extraction Constraint](plugins/constraint\_twistextraction.md)
-  * [Driven Property Constraint](plugins/drivenpropertyconstraint.md)
-  * [Lock Camera Manipulator](plugins/manipulator\_lockcamera.md)
-  * [Optical Volume Calculator](plugins/opticalvolumecalculator.md)
-  * [Relation Constraint Boxes](plugins/relationboxes.md)
-  * [Super Dynamic Lighting Shader](plugins/shader\_superdynamiclighting.md)
-  * [Solver Auto Calculate Normals](plugins/solvercalculatenormals.md)
-  * [Textures Plugins](plugins/textures.md)
+
+## 📔 Articles
+
+* [Script Device](articles/scriptdevice.md)
+
+## 📦 Plugins
+
+* [Plugins Overview](plugins/plugins/README.md)
+  * [GPU Particles Shader](plugins/plugins/gpuparticlesshader.md)
+  * [Post Processing Effects](plugins/plugins/postprocessingeffects.md)
+  * [References Manager](plugins/plugins/referencesmanager.md)
+  * [Spring box](plugins/plugins/springbox.md)
+  * [Surface Attachment Constraint](plugins/plugins/attachmentconstraint.md)
+  * [Blendshape Toolkit](plugins/plugins/blendshapetoolkit.md)
+  * [Camera Links Group Visibility](plugins/plugins/cameralinksgroupvisibility.md)
+  * [Twist Extraction Constraint](plugins/plugins/constraint\_twistextraction.md)
+  * [Driven Property Constraint](plugins/plugins/drivenpropertyconstraint.md)
+  * [Lock Camera Manipulator](plugins/plugins/manipulator\_lockcamera.md)
+  * [Optical Volume Calculator](plugins/plugins/opticalvolumecalculator.md)
+  * [Relation Constraint Boxes](plugins/plugins/relationboxes.md)
+  * [Super Dynamic Lighting Shader](plugins/plugins/shader\_superdynamiclighting.md)
+  * [Solver Auto Calculate Normals](plugins/plugins/solvercalculatenormals.md)
+  * [Textures Plugins](plugins/plugins/textures.md)
+
+## 📜 Scripts
+
+* [Python Scripts Overview](scripts/python-scripts-overview.md)
