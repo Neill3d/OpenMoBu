@@ -23,12 +23,12 @@ layout:
 
 ## Pages
 
-{% content-ref url="HowToInstall.md" %}
-[HowToInstall.md](HowToInstall.md)
+{% content-ref url="setup/howtoinstall.md" %}
+[howtoinstall.md](setup/howtoinstall.md)
 {% endcontent-ref %}
 
-{% content-ref url="HowToCompile.md" %}
-[HowToCompile.md](HowToCompile.md)
+{% content-ref url="setup/howtocompile.md" %}
+[howtocompile.md](setup/howtocompile.md)
 {% endcontent-ref %}
 
 {% content-ref url="plugins/plugins/" %}

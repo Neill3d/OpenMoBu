@@ -1,8 +1,11 @@
 # Table of contents
 
 * [OpenMoBu documentation](README.md)
-* [HowToCompile](HowToCompile.md)
-* [How To Install](HowToInstall.md)
+
+## 🛠️ Setup
+
+* [How To Install](setup/howtoinstall.md)
+* [How To Compile](setup/howtocompile.md)
 
 ## 📔 Articles
 
