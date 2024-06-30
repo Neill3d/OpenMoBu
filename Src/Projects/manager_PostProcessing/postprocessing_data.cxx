@@ -68,6 +68,14 @@ const char * FBPropertyBaseEnum<EFlareType>::mStrings[] = {
 	0
 };
 
+const char* FBPropertyBaseEnum<EMaskingChannel>::mStrings[] = {
+	"Mask A",
+	"Mask B",
+	"Mask C",
+	"Mask D",
+	0
+};
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
 /*
@@ -245,8 +253,16 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Top Clip Percent", "Common Setup");
 	AddPropertyView("Bottom Clip Percent", "Common Setup");
 
+	AddPropertyView("Use Composite Masking", "Common Setup");
+	AddPropertyView("Enable Masking For All Effects", "Common Setup");
+	AddPropertyView("Global Masking Channel", "Common Setup");
+	AddPropertyView("Debug Display Masking", "Common Setup");
+
 	//
 	AddPropertyView("SSAO Setup", "", true);
+
+	AddPropertyView("SSAO Use Masking", "SSAO Setup");
+	AddPropertyView("SSAO Masking Channel", "SSAO Setup");
 
 	AddPropertyView("SSAO Radius", "SSAO Setup");
 	AddPropertyView("SSAO Intensity", "SSAO Setup");
@@ -263,6 +279,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	//
 	AddPropertyView("Depth Of Field Setup", "", true);
+
+	AddPropertyView("Depth Of Field Use Masking", "Depth Of Field Setup");
+	AddPropertyView("Depth Of Field Masking Channel", "Depth Of Field Setup");
 
 	AddPropertyView("Use Camera DOF Properties", "Depth Of Field Setup");
 	AddPropertyView("Reset DOF", "Depth Of Field Setup");
@@ -309,6 +328,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	//
 	AddPropertyView("Color Correction Setup", "", true);
 
+	AddPropertyView("Color Correction Use Masking", "Color Correction Setup");
+	AddPropertyView("Color Correction Masking Channel", "Color Correction Setup");
+
 	AddPropertyView("Chromatic Aberration", "Color Correction Setup");
 	AddPropertyView("Chromatic Aberration Direction", "Color Correction Setup");
 
@@ -330,6 +352,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	//
 	AddPropertyView("Lens Flare Setup", "", true);
+
+	AddPropertyView("Flare Use Masking", "Lens Flare Setup");
+	AddPropertyView("Flare Masking Channel", "Lens Flare Setup");
 
 	//Louis 
 	AddPropertyView("Flare Type", "Lens Flare Setup");
@@ -359,6 +384,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	//
 	AddPropertyView("Displacement Setup", "", true);
 
+	AddPropertyView("Disp Use Masking", "Displacement Setup");
+	AddPropertyView("Disp Use Masking Channel", "Displacement Setup");
+
 	AddPropertyView("Use Quake Water Effect", "Displacement Setup");
 	
 	AddPropertyView("Disp Use Play Time", "Displacement Setup");
@@ -371,6 +399,8 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	//
 	AddPropertyView("Fish Eye Setup", "", true);
+	AddPropertyView("Fish Eye Use Masking", "Fish Eye Setup");
+	AddPropertyView("Fish Eye Masking Channel", "Fish Eye Setup");
 	AddPropertyView("Fish Eye Order", "Fish Eye Setup");
 	AddPropertyView("Fish Eye Amount", "Fish Eye Setup");
 	AddPropertyView("Fish Eye Lens Radius", "Fish Eye Setup");
@@ -378,6 +408,8 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	//
 	AddPropertyView("Film Grain Setup", "", true);
+	AddPropertyView("Grain Use Masking", "Film Grain Setup");
+	AddPropertyView("Grain Masking Channel", "Film Grain Setup");
 	AddPropertyView("Grain Use Play Time", "Film Grain Setup");
 	AddPropertyView("Grain Time Speed", "Film Grain Setup");
 	AddPropertyView("Grain Amount", "Film Grain Setup");
@@ -388,6 +420,8 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	//
 	AddPropertyView("Vignetting Setup", "", true);
+	AddPropertyView("Vignetting Use Masking", "Vignetting Setup");
+	AddPropertyView("Vignetting Masking Channel", "Vignetting Setup");
 	AddPropertyView("Vignetting Amount", "Vignetting Setup");
 	AddPropertyView("Vignetting Outer Border", "Vignetting Setup");
 	AddPropertyView("Vignetting Inner Border", "Vignetting Setup");
@@ -441,9 +475,18 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, UpperClip, "Bottom Clip Percent", nullptr, nullptr);
 	FBPropertyPublish(this, LowerClip, "Top Clip Percent", nullptr, nullptr);
 
+	// composite masking
+	FBPropertyPublish(this, UseCompositeMasking, "Use Composite Masking", nullptr, nullptr);
+	FBPropertyPublish(this, EnableMaskingForAllEffects, "Enable Masking For All Effects", nullptr, nullptr);
+	FBPropertyPublish(this, GlobalMaskingChannel, "Global Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, DebugDisplyMasking, "Debug Display Masking", nullptr, nullptr);
+
 	// SSAO
 
 	FBPropertyPublish(this, SSAO, "SSAO", nullptr, nullptr);
+
+	FBPropertyPublish(this, SSAO_UseMasking, "SSAO Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_MaskingChannel, "SSAO Masking Channel", nullptr, nullptr);
 
 	FBPropertyPublish(this, SSAO_Radius, "SSAO Radius", nullptr, nullptr);
 
@@ -462,6 +505,9 @@ bool PostPersistentData::FBCreate()
 	// Depth Of Field
 
 	FBPropertyPublish(this, DepthOfField, "Depth Of Field", nullptr, nullptr);
+
+	FBPropertyPublish(this, DOF_UseMasking, "Depth Of Field Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, DOF_MaskingChannel, "Depth Of Field Masking Channel", nullptr, nullptr);
 
 	FBPropertyPublish(this, UseCameraDOFProperties, "Use Camera DOF Properties", nullptr, nullptr);
 	FBPropertyPublish(this, ResetDOF, "Reset DOF", nullptr, ActionResetDOF);
@@ -514,6 +560,9 @@ bool PostPersistentData::FBCreate()
 
 	FBPropertyPublish(this, ColorCorrection, "Color Correction", nullptr, nullptr);
 
+	FBPropertyPublish(this, ColorCorrection_UseMasking, "Color Correction Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, ColorCorrection_MaskingChannel, "Color Correction Masking Channel", nullptr, nullptr);
+
 	FBPropertyPublish(this, ChromaticAberration, "Chromatic Aberration", nullptr, nullptr);
 	FBPropertyPublish(this, ChromaticAberrationDirection, "Chromatic Aberration Direction", nullptr, nullptr);
 
@@ -536,6 +585,8 @@ bool PostPersistentData::FBCreate()
 	// Lens Flare
 
 	FBPropertyPublish(this, LensFlare, "Lens Flare", nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_UseMasking, "Flare Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_MaskingChannel, "Flare Masking Channel", nullptr, nullptr);
 
 	//Louis 
 	FBPropertyPublish(this, FlareType, "Flare Type", nullptr, nullptr);
@@ -565,6 +616,8 @@ bool PostPersistentData::FBCreate()
 	// Displacement
 
 	FBPropertyPublish(this, Displacement, "Displacement", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_UseMasking, "Disp Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_MaskingChannel, "Disp Masking Channel", nullptr, nullptr);
 
 	FBPropertyPublish(this, UseQuakeWaterEffect, "Use Quake Water Effect", nullptr, nullptr);
 
@@ -579,6 +632,9 @@ bool PostPersistentData::FBCreate()
 	// Fish Eye
 
 	FBPropertyPublish(this, FishEye, "Fish Eye", nullptr, nullptr);
+	FBPropertyPublish(this, FishEye_UseMasking, "Fish Eye Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, FishEye_MaskingChannel, "Fish Eye Masking Channel", nullptr, nullptr);
+
 	FBPropertyPublish(this, FishEyeAmount, "Fish Eye Amount", nullptr, nullptr);
 	FBPropertyPublish(this, FishEyeLensRadius, "Fish Eye Lens Radius", nullptr, nullptr);
 	FBPropertyPublish(this, FishEyeSignCurvature, "Fish Eye Sign Curvature", nullptr, nullptr);
@@ -587,6 +643,8 @@ bool PostPersistentData::FBCreate()
 	// Film Grain
 
 	FBPropertyPublish(this, FilmGrain, "Film Grain", nullptr, nullptr);
+	FBPropertyPublish(this, FilmGrain_UseMasking, "Grain Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, FilmGrain_MaskingChannel, "Grain Masking Channel", nullptr, nullptr);
 
 	FBPropertyPublish(this, FG_UsePlayTime, "Grain Use Play Time", nullptr, nullptr);
 	FBPropertyPublish(this, FG_TimeSpeed, "Grain Time Speed", nullptr, nullptr);
@@ -600,6 +658,8 @@ bool PostPersistentData::FBCreate()
 	// Vignetting 
 
 	FBPropertyPublish(this, Vignetting, "Vignetting", nullptr, nullptr);
+	FBPropertyPublish(this, Vign_UseMasking, "Vignetting Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, Vign_MaskingChannel, "Vignetting Masking Channel", nullptr, nullptr);
 
 	FBPropertyPublish(this, VignAmount, "Vignetting Amount", nullptr, nullptr);
 	FBPropertyPublish(this, VignOut, "Vignetting Outer Border", nullptr, nullptr);
@@ -741,17 +801,23 @@ void PostPersistentData::DefaultValues()
 	GenerateMipMaps = false;
 	UseCameraObject = true;
 
+	UseCompositeMasking = true;
+	EnableMaskingForAllEffects = false;
+	DebugDisplyMasking = false;
+
 	AutoClipFromHUD = true;
 	UpperClip = 0.0;
 	LowerClip = 0.0;
 
 	FishEye = false;
+	FishEye_UseMasking = false;
 	FishEyeAmount = 100.0;
 	FishEyeLensRadius = 3.0;
 	FishEyeSignCurvature = 3.8;
 	FishEyeOrder = 0;
 	
 	ColorCorrection = false;
+	ColorCorrection_UseMasking = false;
 	ChromaticAberration = false;
 	ChromaticAberrationDirection = FBVector2d(1.0, 1.0);
 	Contrast = 0.0;
@@ -769,6 +835,7 @@ void PostPersistentData::DefaultValues()
 
 	//
 	Vignetting = false;
+	Vign_UseMasking = false;
 	VignAmount = 100.0;
 	VignOut = 130.0; // 1.3
 	VignIn = 0.0;
@@ -776,6 +843,7 @@ void PostPersistentData::DefaultValues()
 
 	//
 	FilmGrain = false;
+	FilmGrain_UseMasking = false;
 	FG_UsePlayTime = false;
 	FG_TimeSpeed = 100.0;
 
@@ -787,6 +855,7 @@ void PostPersistentData::DefaultValues()
 
 	//
 	LensFlare = false;
+	LensFlare_UseMasking = false;
 
 	//Louis
 	EFlareType defaultFlareType = flare1;
@@ -813,6 +882,7 @@ void PostPersistentData::DefaultValues()
 
 	//
 	SSAO = false;
+	SSAO_UseMasking = false;
 
 	SSAO_Intensity = 150.0; // * 0.01
 	SSAO_Radius = 2.0;
@@ -832,6 +902,7 @@ void PostPersistentData::DefaultValues()
 	LoadFarValueFromConfig();
 
 	DepthOfField = false;
+	DOF_UseMasking = false;
 
 	UseCameraDOFProperties = false;
 	DebugBlurValue = false;
@@ -876,7 +947,7 @@ void PostPersistentData::DefaultValues()
 
 	//
 	Displacement = false;
-
+	Disp_UseMasking = false;
 	UseQuakeWaterEffect = false;
 	
 	Disp_UsePlayTime = false;
@@ -1495,4 +1566,14 @@ void PostPersistentData::PopClipSettings()
 {
 	UpperClip = mTempUpper;
 	LowerClip = mTempLower;
+}
+
+bool PostPersistentData::HasAnyActiveMasking() const
+{
+	if (!UseCompositeMasking)
+		return false;
+
+	return (EnableMaskingForAllEffects || FishEye_UseMasking || ColorCorrection_UseMasking
+		|| Vign_UseMasking || FilmGrain_UseMasking || LensFlare_UseMasking
+		|| SSAO_UseMasking || DOF_UseMasking || Disp_UseMasking);
 }

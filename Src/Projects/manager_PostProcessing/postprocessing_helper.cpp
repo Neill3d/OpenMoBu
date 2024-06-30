@@ -376,6 +376,12 @@ void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeigh
 
 void RenderModel(FBModel* model)
 {
+	FBMatrix modelMatrix;
+	model->GetMatrix(modelMatrix);
+
+	glPushMatrix();
+	glMultMatrixd(modelMatrix);
+
 	FBModelVertexData* vertexData = model->ModelVertexData;
 	const int patchCount = vertexData->GetSubPatchCount();
 
@@ -389,6 +395,8 @@ void RenderModel(FBModel* model)
 	}
 
 	vertexData->DisableOGLVertexData();
+
+	glPopMatrix();
 }
 
 void RenderMaskedModels(FBCamera* camera)
@@ -402,8 +410,8 @@ void RenderMaskedModels(FBCamera* camera)
 	camera->GetCameraMatrix(mv, kFBModelView);
 	camera->GetCameraMatrix(mp, kFBProjection);
 
-	double nearPlane = camera->NearPlaneDistance;
-	double farPlane = camera->FarPlaneDistance;
+	//double nearPlane = camera->NearPlaneDistance;
+	//double farPlane = camera->FarPlaneDistance;
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -427,10 +435,10 @@ void RenderMaskedModels(FBCamera* camera)
 			{
 				if (FBIS(shader->GetDst(j), FBModel))
 				{
-					FBModel* maskObject = FBCast<FBModel>(shader->GetDst(j));
+					FBModel* maskObject = static_cast<FBModel*>(shader->GetDst(j));
 					FBModelVertexData* vertexData = maskObject->ModelVertexData;
 
-					if (vertexData && vertexData->IsDrawable())
+					if (vertexData != nullptr && vertexData->IsDrawable())
 					{
 						RenderModel(maskObject);
 					}

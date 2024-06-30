@@ -40,20 +40,20 @@ public:
 protected:
 
 	//Louis
-	EFlareType		FlareType;
-	//FBSystem		mSystem;
-
+	EFlareType		FlareType{ EFlareType::flare1 };
+	
 	// shader locations
 
 	struct SubShader
 	{
 	public:
-		enum { LOCATIONS_COUNT = 13 };
+		enum { LOCATIONS_COUNT = 14 };
 		union
 		{
 			struct
 			{
 				// locations
+				GLint		useMaskingLoc;
 				//Louis
 				GLint		seed;
 
@@ -84,8 +84,8 @@ protected:
 		FBSystem mSystem;
 
 
-		int				m_NumberOfPasses;
-		float			m_DepthAttenuation;
+		int				m_NumberOfPasses{ 1 };
+		float			m_DepthAttenuation{ 1.0f };
 
 		std::vector<FBVector3d>	m_LightPositions; // window xy and depth (for attenuation)
 		std::vector<FBColor>	m_LightColors;

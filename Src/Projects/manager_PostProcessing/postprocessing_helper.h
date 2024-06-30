@@ -31,6 +31,15 @@ enum EFlareType
 	flare3,
 };
 
+// 
+enum EMaskingChannel
+{
+	eMaskA,
+	eMaskB,
+	eMaskC,
+	eMaskD
+};
+
 /////////////////////
 /*
 struct CompressImageHeader
@@ -55,4 +64,4 @@ size_t CompressImageEnd();
 void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, NVMath::vec3 *points);
 void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, NVMath::vec3 *points);
 
-void RenderMaskedModels();
+void RenderMaskedModels(FBCamera* camera);

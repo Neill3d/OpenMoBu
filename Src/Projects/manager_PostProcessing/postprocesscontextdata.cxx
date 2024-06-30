@@ -242,7 +242,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
                 mEffectChain.Prep(mPaneSettings[nPane], localViewport[2], localViewport[3], pCamera);
 
-                if (true == mEffectChain.Process(currBuffers, sysTimeSecs)
+                if (mEffectChain.Process(currBuffers, sysTimeSecs)
                     && nullptr != mShaderSimple.get())
                 {
                     CHECK_GL_ERROR();

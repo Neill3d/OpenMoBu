@@ -21,6 +21,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "Framebuffer.h"
 
 #include <memory>
+#include <bitset>
 
 //////////////////////////////
 
@@ -38,9 +39,16 @@ enum
 	SHADER_TYPE_COUNT
 };
 
-////////////////////////////////////////////////////////////////////////////////////////
-// One Effect in a chain
+enum class CompositionMask : uint32_t
+{
+	NO_MASK = 0,
+	MASK_A = 0 >> 1,
+	// TODO:
+};
 
+/// <summary>
+/// base class for every effect in a post processing chain
+/// </summary>
 struct PostEffectBase
 {
 public:
@@ -56,13 +64,13 @@ public:
 	virtual const char *GetVertexFname(const int shaderIndex) abstract;
 	virtual const char *GetFragmentFname(const int shaderIndex) abstract;
 
-	// load and initialize shader from a specified location
+	/// load and initialize shader from a specified location
 	bool Load(const int shaderIndex, const char *vname, const char *fname);
 
 	virtual bool PrepUniforms(const int shaderIndex);
-	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera);		// grab main UI values for the effect
+	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera);		//!< grab main UI values for the effect
 
-	// new feature to have several passes for a specified effect
+	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const;
 	virtual bool PrepPass(const int pass);
 
@@ -76,7 +84,14 @@ protected:
 	int mCurrentShader{ 0 };
 	std::vector<GLSLShader*>	mShaders;
 
-	void SetCurrentShader(const int index) { mCurrentShader = index; }
+	std::bitset<4>	mCompositionMask;
+
+	struct BaseLocations
+	{
+		GLint	mUseCompositionMask;
+	};
+
+ 	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();
 };
 
@@ -196,7 +211,7 @@ protected:
 			GLint		mUpperClip;
 			GLint		mLowerClip;
 
-			GLint		mLocAmount;	// amount of an effect applied
+			GLint		mLocAmount;	//!< amount of an effect applied
 			GLint		mLocVignOut;
 			GLint		mLocVignIn;
 			GLint		mLocVignFade;
@@ -247,8 +262,8 @@ protected:
 
 			GLint		timer;
 
-			GLint		grainamount; // = 0.05; //grain amount
-			GLint		colored; // = false; //colored noise?
+			GLint		grainamount; //!< = 0.05; //grain amount
+			GLint		colored; //!< = false; //colored noise?
 			GLint		coloramount; // = 0.6;
 			GLint		grainsize; // = 1.6; //grain particle size (1.5 - 2.5)
 			GLint		lumamount; // = 1.0; //
@@ -373,6 +388,7 @@ public:
 
 	FrameBuffer *GetBufferDepthPtr();
 	FrameBuffer *GetBufferBlurPtr();
+	FrameBuffer* GetBufferMaskPtr();
 
 	FrameBuffer *GetBufferDownscalePtr();
 
@@ -423,10 +439,12 @@ protected:
 	std::unique_ptr<FrameBuffer>			mBufferPost0;
 	std::unique_ptr<FrameBuffer>			mBufferPost1;
 
-	std::unique_ptr<FrameBuffer>			mBufferDepth;	// buffer to store a linearize depth
+	std::unique_ptr<FrameBuffer>			mBufferDepth;		//!< buffer to store a linearize depth
 	std::unique_ptr<FrameBuffer>			mBufferBlur;
 
-	std::unique_ptr<FrameBuffer>			mBufferDownscale;	// output for a preview
+	std::unique_ptr<FrameBuffer>			mBufferDownscale;	//!< output for a preview
+
+	std::unique_ptr<FrameBuffer>			mBufferMasking;		//!< render models into mask texture
 
 	// last local buffers resize
 	int								mWidth;
@@ -481,7 +499,7 @@ public:
 	~PostEffectChain();
 
 	void ChangeContext();
-	// w,h - local buffer size for processing, pCamera - current pane camera for processing
+	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
 	bool Prep(PostPersistentData *pData, int w, int h, FBCamera *pCamera);
 
 	bool BeginFrame(PostEffectBuffers *buffers);
@@ -510,9 +528,9 @@ protected:
 
 	// shared shaders
 	
-	std::unique_ptr<GLSLShader>			mShaderDepthLinearize;	// linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
-	std::unique_ptr<GLSLShader>			mShaderBlur;	// needed for SSAO
-	std::unique_ptr<GLSLShader>			mShaderMix;		// needed for SSAO
+	std::unique_ptr<GLSLShader>			mShaderDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
+	std::unique_ptr<GLSLShader>			mShaderBlur;	//!< needed for SSAO
+	std::unique_ptr<GLSLShader>			mShaderMix;		//!< needed for SSAO
 	std::unique_ptr<GLSLShader>			mShaderDownscale;
 
 	// order execution chain
@@ -535,6 +553,15 @@ protected:
 private:
 	static bool CheckShadersPath(const char* path);
 
+	/// <summary>
+	/// return true if a global masking active and any of effects uses a masking
+	/// </summary>
+	bool HasMaskUsedByEffect() const;
+
+	/// <summary>
+	/// return true if there is any model with FXMaskingShader, so that we could render it into a masking texture
+	/// </summary>
+	bool HasAnyMaskedObject() const;
 };
 
 

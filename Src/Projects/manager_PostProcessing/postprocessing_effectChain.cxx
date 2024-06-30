@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_effectMotionBlur.h"
 #include "postprocessing_effectLensFlare.h"
 #include "postprocessing_helper.h"
+#include "fxmaskingshader.h"
 
 #define SHADER_FISH_EYE_NAME			"Fish Eye"
 #define SHADER_FISH_EYE_VERTEX			"\\GLSL\\fishEye.vsh"
@@ -918,7 +919,7 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 	// resize fbos
 	const int flags = FrameBuffer::eCreateColorTexture | FrameBuffer::eCreateDepthTexture | FrameBuffer::eDeleteFramebufferOnCleanup;
 
-	if (nullptr == mBufferPost0.get())
+	if (!mBufferPost0.get())
 	{
 		mBufferPost0.reset(new FrameBuffer(1, 1, flags));
 		
@@ -933,7 +934,7 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 		mBufferPost0->SetClamp(0, GL_CLAMP_TO_EDGE);
 		mBufferPost0->SetFilter(0, (filterMips) ? FrameBuffer::filterMipmap : FrameBuffer::filterLinear);
 	}
-	if (nullptr == mBufferPost1.get())
+	if (!mBufferPost1.get())
 	{
 		mBufferPost1.reset(new FrameBuffer(1, 1, flags));
 		
@@ -949,7 +950,7 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 		mBufferPost1->SetFilter(0, (filterMips) ? FrameBuffer::filterMipmap : FrameBuffer::filterLinear);
 	}
 
-	if (nullptr == mBufferDepth.get())
+	if (!mBufferDepth.get())
 	{
 		mBufferDepth.reset(new FrameBuffer(1, 1));
 		mBufferDepth->SetColorFormat(0, GL_RED);
@@ -959,44 +960,49 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 		mBufferDepth->SetClamp(0, GL_CLAMP_TO_EDGE);
 	}
 
-	if (nullptr == mBufferBlur.get())
+	if (!mBufferBlur.get())
 	{
 		mBufferBlur.reset(new FrameBuffer(1, 1));
 	}
 
-	if (nullptr == mBufferDownscale.get())
+	if (!mBufferDownscale.get())
 	{
 		mBufferDownscale.reset(new FrameBuffer(1, 1));
 	}
 
-	if (false == mBufferPost0->ReSize(w, h))
+	if (!mBufferMasking.get())
+		mBufferMasking.reset(new FrameBuffer(1, 1));
+
+	if (!mBufferPost0->ReSize(w, h))
 		lSuccess = false;
-	if (false == mBufferPost1->ReSize(w, h))
+	if (!mBufferPost1->ReSize(w, h))
 		lSuccess = false;
-	if (false == mBufferDepth->ReSize(w, h))
+	if (!mBufferDepth->ReSize(w, h))
 		lSuccess = false;
-	if (false == mBufferBlur->ReSize(w, h))
+	if (!mBufferBlur->ReSize(w, h))
+		lSuccess = false;
+	if (!mBufferMasking->ReSize(w, h))
 		lSuccess = false;
 
-	if (true == useScale)
+	if (useScale)
 	{
-		double sw = 0.01 * (double)w * scaleFactor;
-		double sh = 0.01 * (double)h * scaleFactor;
+		const double sw = 0.01 * static_cast<double>(w) * scaleFactor;
+		const double sh = 0.01 * static_cast<double>(h) * scaleFactor;
 
 		// find nearest power of two
-		mPreviewWidth = nearestPowerOf2((unsigned int)sw);
-		mPreviewHeight = nearestPowerOf2((unsigned int)sh);
+		mPreviewWidth = nearestPowerOf2(static_cast<unsigned int>(sw));
+		mPreviewHeight = nearestPowerOf2(static_cast<unsigned int>(sh));
 
 		//mPreviewWidth = 256;
 		//mPreviewHeight = 128;
 
-		if (true == mBufferDownscale->ReSize(mPreviewWidth, mPreviewHeight))
+		if (mBufferDownscale->ReSize(mPreviewWidth, mPreviewHeight))
 		{
 			AllocPreviewTexture(mPreviewWidth, mPreviewHeight);
 		}
 	}
 
-	if (true == lSuccess)
+	if (lSuccess)
 	{
 		if (mPBOs[0] > 0)
 		{
@@ -1011,12 +1017,12 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 
 bool PostEffectBuffers::Ok()
 {
-	if (nullptr == mBufferPost0.get() || nullptr == mBufferPost1.get() || nullptr == mBufferDepth.get() || nullptr == mBufferBlur.get())
+	if (!mBufferPost0.get() || !mBufferPost1.get() || !mBufferDepth.get() || !mBufferBlur.get() || !mBufferMasking.get())
 	{
 		return false;
 	}
-	if (0 == mBufferPost0->GetFrameBuffer() || 0 == mBufferPost1->GetFrameBuffer() || 0 == mBufferDepth->GetFrameBuffer()
-		|| 0 == mBufferBlur->GetFrameBuffer())
+	if (!mBufferPost0->GetFrameBuffer() || !mBufferPost1->GetFrameBuffer() || !mBufferDepth->GetFrameBuffer()
+		|| !mBufferBlur->GetFrameBuffer() || !mBufferMasking->GetFrameBuffer())
 	{
 		return false;
 	}
@@ -1031,6 +1037,7 @@ void PostEffectBuffers::FreeBuffers()
 	mBufferDepth.reset(nullptr);
 	mBufferBlur.reset(nullptr);
 	mBufferDownscale.reset(nullptr);
+	mBufferMasking.reset(nullptr);
 }
 
 const GLuint PostEffectBuffers::PrepAndGetBufferObject()
@@ -1056,6 +1063,11 @@ FrameBuffer *PostEffectBuffers::GetBufferDepthPtr()
 FrameBuffer *PostEffectBuffers::GetBufferBlurPtr()
 {
 	return mBufferBlur.get();
+}
+
+FrameBuffer* PostEffectBuffers::GetBufferMaskPtr()
+{
+	return mBufferMasking.get();
 }
 
 FrameBuffer *PostEffectBuffers::GetBufferDownscalePtr()
@@ -1486,14 +1498,41 @@ bool PostEffectChain::BeginFrame(PostEffectBuffers *buffers)
 	*/
 }
 
+bool PostEffectChain::HasMaskUsedByEffect() const
+{
+	if (!mSettings.Ok())
+		return false;
+
+	return mSettings->HasAnyActiveMasking();
+}
+
+bool PostEffectChain::HasAnyMaskedObject() const
+{
+	FBScene* scene = mSystem.Scene;
+
+	for (int i = 0; i < scene->Shaders.GetCount(); ++i)
+	{
+		FBShader* shader = scene->Shaders[i];
+		if (FBIS(shader, FXMaskingShader))
+		{
+			for (int j = 0; j < shader->GetDstCount(); ++j)
+			{
+				if (FBIS(shader->GetDst(j), FBModel))
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 {
 	mIsCompressedDataReady = false;
 
-	if (false == buffers->Ok())
+	if (!buffers->Ok())
 		return false;
 
-	if (false == mSettings.Ok())
+	if (!mSettings.Ok())
 		return false;
 
 	// prepare chain count and order
@@ -1584,6 +1623,39 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	{
 		mChain[count] = mVignetting.get();
 		count += 1;
+	}
+
+	bool isMaskTextureBinded = false;
+	if (HasMaskUsedByEffect() && HasAnyMaskedObject() && mLastCamera)
+	{
+		FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+		maskBuffer->Bind();
+
+		glViewport(0, 0, maskBuffer->GetWidth(), maskBuffer->GetHeight());
+
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glColor3d(1.0, 1.0, 1.0);
+		RenderMaskedModels(mLastCamera);
+
+		maskBuffer->UnBind();
+
+		// bind a mask texture, debug draw on a screen
+
+		if (mSettings->DebugDisplyMasking)
+		{
+			BlitFBOToFBO(maskBuffer->GetFrameBuffer(), maskBuffer->GetWidth(), maskBuffer->GetHeight(),
+				buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
+			buffers->SwapBuffers();
+			return true;
+		}
+
+		const GLuint maskTextureId = maskBuffer->GetColorObject();
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, maskTextureId);
+		glActiveTexture(GL_TEXTURE0);
+		isMaskTextureBinded = true;
 	}
 
 	if (mSettings->SSAO)
@@ -1861,15 +1933,18 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	{
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0);
 	}
 	if (mSettings->SSAO)
 	{
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, 0);
-		glActiveTexture(GL_TEXTURE0);
 	}
-
+	if (isMaskTextureBinded)
+	{
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	glActiveTexture(GL_TEXTURE0);
 	return lSuccess;
 }
 

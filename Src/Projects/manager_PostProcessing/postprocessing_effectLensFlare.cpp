@@ -82,6 +82,12 @@ bool PostEffectLensFlare::SubShader::PrepUniforms(GLSLShader* mShader)
 		GLint loc = mShader->findLocation("sampler0");
 		if (loc >= 0)
 			glUniform1i(loc, 0);
+		loc = mShader->findLocation("maskSampler");
+		if (loc >= 0)
+			glUniform1i(loc, 4);
+
+		useMaskingLoc = mShader->findLocation("useMasking");
+
 		//Louis
 		seed = mShader->findLocation("flareSeed");
 
@@ -132,6 +138,7 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 	m_NumberOfPasses = 1;
 	bool lSuccess = false;
 	
+	bool useMasking = pData->EnableMaskingForAllEffects || pData->LensFlare_UseMasking;
 	
 	double seedValue = 30.0;
 	if (shaderIndex > 0 && pData->IsLazyLoadReady())
@@ -207,6 +214,9 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
+
+		if (useMaskingLoc >= 0)
+			glUniform1f(useMaskingLoc, (useMasking) ? 1.0f : 0.0f);
 
 		if (seed >= 0)
 		{

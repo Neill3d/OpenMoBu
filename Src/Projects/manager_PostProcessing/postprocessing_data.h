@@ -82,6 +82,11 @@ public: // PROPERTIES
 
 	FBPropertyBool				DrawHUDLayer;
 
+	FBPropertyBool				UseCompositeMasking; //!< a global toggle for the masking effect, every effect has own local masking settings
+	FBPropertyBool				EnableMaskingForAllEffects; //!< with this option, we are going to activate masking for every effect
+	FBPropertyBaseEnum<EMaskingChannel>	GlobalMaskingChannel;
+	FBPropertyBool				DebugDisplyMasking; //!< output masking texture into the viewport for a test purpose
+
 	// make effect local for a specified camera (override global effect)
 	FBPropertyBool				UseCameraObject;
 	FBPropertyListObject		Camera;
@@ -96,14 +101,19 @@ public: // PROPERTIES
 
 	// DONE: fish eye props here
 	FBPropertyAnimatableBool	FishEye;
+	FBPropertyBool				FishEye_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	FishEye_MaskingChannel;
 	FBPropertyAnimatableDouble	FishEyeAmount;
 	FBPropertyAnimatableDouble	FishEyeLensRadius;
 	FBPropertyAnimatableDouble	FishEyeSignCurvature;
-	FBPropertyInt				FishEyeOrder;	// used for ordering effects by UI Tool
+	FBPropertyInt				FishEyeOrder;	//!< used for ordering effects by UI Tool
 
 	// color correction props here
 	FBPropertyAnimatableBool	ColorCorrection;
 	
+	FBPropertyBool				ColorCorrection_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	ColorCorrection_MaskingChannel;
+
 	FBPropertyBool					ChromaticAberration;	// ca
 	FBPropertyAnimatableVector2d	ChromaticAberrationDirection;
 
@@ -113,7 +123,7 @@ public: // PROPERTIES
 
 	FBPropertyAnimatableDouble		Gamma;
 
-	FBPropertyBool					Inverse;	// inverse colors
+	FBPropertyBool					Inverse;	//!< inverse colors
 
 	FBPropertyBool					Bloom;
 	FBPropertyAnimatableDouble		BloomMinBright;
@@ -127,6 +137,9 @@ public: // PROPERTIES
 	// Vignetting
 	FBPropertyAnimatableBool	Vignetting;
 
+	FBPropertyBool				Vign_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	Vign_MaskingChannel;
+
 	FBPropertyAnimatableDouble		VignAmount;
 	FBPropertyAnimatableDouble		VignOut;
 	FBPropertyAnimatableDouble		VignIn;
@@ -135,17 +148,23 @@ public: // PROPERTIES
 	// Film Grain
 	FBPropertyAnimatableBool	FilmGrain;
 
+	FBPropertyBool				FilmGrain_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	FilmGrain_MaskingChannel;
+
 	FBPropertyBool					FG_UsePlayTime;
 	FBPropertyAnimatableDouble		FG_TimeSpeed;
 
 	FBPropertyAnimatableDouble		FG_GrainAmount;
-	FBPropertyBool					FG_Colored;	// colored noise ?
+	FBPropertyBool					FG_Colored;	//!< colored noise ?
 	FBPropertyAnimatableDouble		FG_ColorAmount;
-	FBPropertyAnimatableDouble		FG_GrainSize;	// grain particle size (1.5 - 2.5)
+	FBPropertyAnimatableDouble		FG_GrainSize;	//!< grain particle size (1.5 - 2.5)
 	FBPropertyAnimatableDouble		FG_LumAmount;
 
 	// Lens Flare
 	FBPropertyAnimatableBool	LensFlare;
+
+	FBPropertyBool				LensFlare_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	LensFlare_MaskingChannel;
 
 	//Louis
 	FBPropertyBaseEnum<EFlareType>	FlareType;
@@ -175,6 +194,9 @@ public: // PROPERTIES
 	// SSAO
 	FBPropertyAnimatableBool	SSAO;
 
+	FBPropertyBool				SSAO_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	SSAO_MaskingChannel;
+
 	FBPropertyAnimatableDouble		SSAO_Radius;
 	
 	FBPropertyAnimatableDouble		SSAO_Intensity;
@@ -188,30 +210,36 @@ public: // PROPERTIES
 	//
 	FBPropertyAnimatableBool	MotionBlur;
 
+	FBPropertyBool				MotionBlur_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	MotionBlur_MaskingChannel;
+
 	FBPropertyAnimatableDouble	MotionBlurAmount;
 
 	// 3d DOF
 	FBPropertyAnimatableBool	DepthOfField;
 
-	FBPropertyBool				UseCameraDOFProperties;	// take focal distance, focal range and focus object from camera properties !
+	FBPropertyBool				DOF_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	DOF_MaskingChannel;
+
+	FBPropertyBool				UseCameraDOFProperties;	//!< take focal distance, focal range and focus object from camera properties !
 
 	FBPropertyAction			ResetDOF;
 
-	FBPropertyBool				DebugBlurValue; // output only computed blur gradient
-	FBPropertyAction			DebugFarDistance; // check if camera far distance is too big for glsl float
-	FBPropertyAction			FixCameraSettings; // update camera far plane, and turns off real-time camera effects
+	FBPropertyBool				DebugBlurValue; //!< output only computed blur gradient
+	FBPropertyAction			DebugFarDistance; //!< check if camera far distance is too big for glsl float
+	FBPropertyAction			FixCameraSettings; //!< update camera far plane, and turns off real-time camera effects
 
 	FBPropertyAnimatableDouble		FocalDistance;
 	FBPropertyAnimatableDouble		FocalRange;
 	FBPropertyAnimatableDouble		FStop;
 
-	FBPropertyAnimatableBool		AutoFocus;		// autofocus to some point (instead of focal distance)
-	FBPropertyListObject			FocusObject;	//  get a screen position of a specified tm
+	FBPropertyAnimatableBool		AutoFocus;		//!< autofocus to some point (instead of focal distance)
+	FBPropertyListObject			FocusObject;	//!<  get a screen position of a specified tm
 	
 	FBPropertyAction				FocusObjectCreate;
 	FBPropertyAction				FocusObjectSelect;
 	
-	FBPropertyBool					BlurForeground;	// flag to make everything clean in foreground
+	FBPropertyBool					BlurForeground;	//!< flag to make everything clean in foreground
 
 	FBPropertyBool					ManualFocus;
 	FBPropertyAnimatableDouble		ManualNear;
@@ -220,31 +248,34 @@ public: // PROPERTIES
 	FBPropertyAnimatableDouble		ManualFarFalloff;
 
 	FBPropertyBool					UseFocusPoint;
-	FBPropertyAnimatableVector2d	FocusPoint;		// relative screen coord to grab a depth distance from
+	FBPropertyAnimatableVector2d	FocusPoint;		//!< relative screen coord to grab a depth distance from
 
 	FBPropertyBool						FastPreview;	//!< mode for using pre-calculated blur instead of clean DOF processing
 	FBPropertyBaseEnum<EBlurQuality>	PreviewQuality;
 	FBPropertyDouble					PreviewBlurAmount;
 
-	FBPropertyInt					Samples;	// samples of the first ring
-	FBPropertyInt					Rings;		// ring count
+	FBPropertyInt					Samples;	//!< samples of the first ring
+	FBPropertyInt					Rings;		//!< ring count
 
-	FBPropertyAnimatableDouble		CoC;	// circle of confusion size in mm (35 mm film = 0.03mm)
+	FBPropertyAnimatableDouble		CoC;	//!< circle of confusion size in mm (35 mm film = 0.03mm)
 
-	FBPropertyAnimatableDouble		Threshold;	// highlight threshold
-	FBPropertyAnimatableDouble		Gain;		// highlight gain
+	FBPropertyAnimatableDouble		Threshold;	//!< highlight threshold
+	FBPropertyAnimatableDouble		Gain;		//!< highlight gain
 
-	FBPropertyAnimatableDouble		Bias;	// bokeh edge bias
-	FBPropertyAnimatableDouble		Fringe;	// bokeh chromatic aberration/fringing
+	FBPropertyAnimatableDouble		Bias;	//!< bokeh edge bias
+	FBPropertyAnimatableDouble		Fringe;	//!< bokeh chromatic aberration/fringing
 
-	FBPropertyBool					Noise;	// use noise instead of pattern for sample dithering
+	FBPropertyBool					Noise;	//!< use noise instead of pattern for sample dithering
 
-	FBPropertyBool					Pentagon;		// use pentagon as bokeh shape
-	FBPropertyAnimatableDouble		PentagonFeather;	// pentagon shape feather
+	FBPropertyBool					Pentagon;		//!< use pentagon as bokeh shape
+	FBPropertyAnimatableDouble		PentagonFeather;	//!< pentagon shape feather
 	
 	//
 	// Displacement effect
 	FBPropertyAnimatableBool	Displacement;
+
+	FBPropertyBool				Disp_UseMasking;
+	FBPropertyBaseEnum<EMaskingChannel>	Disp_MaskingChannel;
 
 	FBPropertyBool				UseQuakeWaterEffect;
 
@@ -257,27 +288,27 @@ public: // PROPERTIES
 	FBPropertyAnimatableDouble	Disp_SinCyclesY;
 
 	// output viewport information
-	FBPropertyInt				ViewerWidth;	// read-only, size of a whole viewer
-	FBPropertyInt				ViewerHeight;	// read-only
-	FBPropertyInt				LocalWidth;		// read-only, size of a effect processing FBO
-	FBPropertyInt				LocalHeight;	// read-only
-	FBPropertyInt				ColorBits;	// read-only, should be 32 by default
-	FBPropertyInt				DepthBits;	// read-only, should be 24 by default
+	FBPropertyInt				ViewerWidth;	//!< read-only, size of a whole viewer
+	FBPropertyInt				ViewerHeight;	//!< read-only
+	FBPropertyInt				LocalWidth;		//!< read-only, size of a effect processing FBO
+	FBPropertyInt				LocalHeight;	//!< read-only
+	FBPropertyInt				ColorBits;	//!< read-only, should be 32 by default
+	FBPropertyInt				DepthBits;	//!< read-only, should be 24 by default
 
 	// output a compressed downscaled image
 	FBPropertyBool				OutputPreview;
-	FBPropertyInt				OutputUpdateRate;	// how many times per second we are preparing a new preview
-	FBPropertyDouble			OutputScaleFactor;	// in percentage how small we should make a final video (+power of two)
-	FBPropertyDouble			OutputRatio;	// original aspect ratio
+	FBPropertyInt				OutputUpdateRate;	//!< how many times per second we are preparing a new preview
+	FBPropertyDouble			OutputScaleFactor;	//!< in percentage how small we should make a final video (+power of two)
+	FBPropertyDouble			OutputRatio;	//!< original aspect ratio
 	FBPropertyInt				OutputWidth;
 	FBPropertyInt				OutputHeight;
 	FBPropertyListObject		OutputVideo;
-	FBPropertyBool				OutputUseCompression; // enable / disable compression
+	FBPropertyBool				OutputUseCompression; //!< enable / disable compression
 	FBPropertyBaseEnum<EImageCompression>	OutputCompression;
 	FBPropertyInt				OutputCompressionCode;
 	FBPropertyInt				OutputUncompressSize;
-	FBPropertyInt				OutputCompressedSize;	// stats for a ETC1 compressed size
-	FBPropertyDouble			OutputCompressedTime;	// in secs
+	FBPropertyInt				OutputCompressedSize;	//!< stats for a ETC1 compressed size
+	FBPropertyDouble			OutputCompressedTime;	//!< in secs
 
 	FBPropertyBool				IsSynced;
 	FBPropertyVector4d			DeviceAddress;
@@ -325,6 +356,8 @@ public:
 	void PopClipSettings();
 
 	bool IsLazyLoadReady() { mLazyLoadCounter = (mLazyLoadCounter >= 0) ? mLazyLoadCounter-1 : -1; return mLazyLoadCounter < 0; }
+
+	bool HasAnyActiveMasking() const;
 
 protected:
 

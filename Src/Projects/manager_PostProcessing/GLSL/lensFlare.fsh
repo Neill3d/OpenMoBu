@@ -16,7 +16,9 @@
 
 
 uniform sampler2D sampler0;
+uniform sampler2D maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -138,6 +140,11 @@ void main (void)
 	}
 	
 	vec4 color = texture2D( sampler0, tx ); 
+	vec4 mask = vec4(0.0, 0.0, 0.0, 0.0);
+	if (useMasking > 0.0)
+	{
+		mask = texture2D( maskSampler, tx );
+	}
 	
 	vec2 fragCoord = gl_FragCoord.xy;
 	vec2 iResolution = vec2(textureWidth, textureHeight);
@@ -171,6 +178,6 @@ void main (void)
 		f *= smoothstep(0.0, feather, distToBorder);
 	}
 	
-	color.rgb = color.rgb + f * flareColor;
+	color.rgb = mix(color.rgb + f * flareColor, color, mask.r * useMasking);
 	gl_FragData [0] =  color;
 }
