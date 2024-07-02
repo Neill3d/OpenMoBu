@@ -18,7 +18,9 @@
 uniform	sampler2D	colorSampler;
 uniform sampler2D	depthSampler;
 uniform sampler2D	blurSampler;
+uniform sampler2D	maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 

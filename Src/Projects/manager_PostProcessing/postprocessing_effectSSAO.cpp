@@ -78,61 +78,52 @@ const char *PostEffectSSAO::GetFragmentFname(const int)
 
 bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 {
-	bool lSuccess = false;
-
 	GLSLShader* mShader = mShaders[shaderIndex];
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
 
-		GLint loc = mShader->findLocation("colorSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		loc = mShader->findLocation("depthSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 2);
-		loc = mShader->findLocation("texRandom");
-		if (loc >= 0)
-			glUniform1i(loc, 4);
+	mShader->Bind();
 
-		mLoc.upperClip = mShader->findLocation("upperClip");
-		mLoc.lowerClip = mShader->findLocation("lowerClip");
+	GLint loc = mShader->findLocation("colorSampler");
+	if (loc >= 0)
+		glUniform1i(loc, 0);
+	loc = mShader->findLocation("depthSampler");
+	if (loc >= 0)
+		glUniform1i(loc, 2);
+	loc = mShader->findLocation("texRandom");
+	if (loc >= 0)
+		glUniform1i(loc, 4);
 
-		mLoc.clipInfo = mShader->findLocation("gClipInfo");
+	PrepareUniformLocations(mShader);
 
-		mLoc.projInfo = mShader->findLocation("projInfo");
-		mLoc.projOrtho = mShader->findLocation("projOrtho");
-		mLoc.InvQuarterResolution= mShader->findLocation("InvQuarterResolution");
-		mLoc.InvFullResolution= mShader->findLocation("InvFullResolution");
+	mLoc.clipInfo = mShader->findLocation("gClipInfo");
 
-		mLoc.RadiusToScreen= mShader->findLocation("RadiusToScreen");
-		mLoc.R2 = mShader->findLocation("R2");
-		mLoc.NegInvR2 = mShader->findLocation("NegInvR2");
-		mLoc.NDotVBias = mShader->findLocation("NDotVBias");
+	mLoc.projInfo = mShader->findLocation("projInfo");
+	mLoc.projOrtho = mShader->findLocation("projOrtho");
+	mLoc.InvQuarterResolution= mShader->findLocation("InvQuarterResolution");
+	mLoc.InvFullResolution= mShader->findLocation("InvFullResolution");
 
-		mLoc.AOMultiplier = mShader->findLocation("AOMultiplier");
-		mLoc.PowExponent = mShader->findLocation("PowExponent");
+	mLoc.RadiusToScreen= mShader->findLocation("RadiusToScreen");
+	mLoc.R2 = mShader->findLocation("R2");
+	mLoc.NegInvR2 = mShader->findLocation("NegInvR2");
+	mLoc.NDotVBias = mShader->findLocation("NDotVBias");
 
-		mLoc.OnlyAO = mShader->findLocation("OnlyAO");
-		mLoc.hbaoRandom = mShader->findLocation("g_Jitter");
+	mLoc.AOMultiplier = mShader->findLocation("AOMultiplier");
+	mLoc.PowExponent = mShader->findLocation("PowExponent");
 
-		mShader->UnBind();
+	mLoc.OnlyAO = mShader->findLocation("OnlyAO");
+	mLoc.hbaoRandom = mShader->findLocation("g_Jitter");
 
-		//
-		InitMisc();
+	mShader->UnBind();
 
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	//
+	InitMisc();
+	return true;
 }
 
 bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
 	bool lSuccess = false;
-
-	const double upperClip = pData->UpperClip;
-	const double lowerClip = pData->LowerClip;
 
 	float znear = (float) pCamera->NearPlaneDistance;
 	float zfar = (float) pCamera->FarPlaneDistance;
@@ -230,11 +221,7 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 	{
 		mShader->Bind();
 
-		if (mLoc.upperClip >= 0)
-			glUniform1f(mLoc.upperClip, 0.01f * (float)upperClip);
-
-		if (mLoc.lowerClip >= 0)
-			glUniform1f(mLoc.lowerClip, 1.0f - 0.01f * (float)lowerClip);
+		UpdateUniforms(pData);
 
 		if (mLoc.clipInfo >= 0)
 			glUniform4fv(mLoc.clipInfo, 1, clipInfo);

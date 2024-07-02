@@ -51,6 +51,10 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define SHADER_DOWNSCALE_VERTEX				"\\GLSL\\downscale.vsh"
 #define SHADER_DOWNSCALE_FRAGMENT			"\\GLSL\\downscale.fsh"
 
+//
+extern void LOGE(const char* pFormatString, ...);
+
+
 /////////////////////////////////////////////////////////////////////////
 // EffectBase
 
@@ -79,6 +83,35 @@ void PostEffectBase::FreeShaders()
 	mShaders.clear();
 }
 
+void CommonEffectUniforms::PrepareUniformLocations(GLSLShader* shader)
+{
+	GLint loc = shader->findLocation("maskSampler");
+	if (loc >= 0)
+		glUniform1i(loc, 4);
+
+	useMaskLoc = shader->findLocation("useMasking");
+	upperClipLoc = shader->findLocation("upperClip");
+	lowerClipLoc = shader->findLocation("lowerClip");
+}
+
+void CommonEffectUniforms::UpdateUniforms(PostPersistentData* data)
+{
+	const bool useMasking = data->EnableMaskingForAllEffects || data->LensFlare_UseMasking;
+	const double _upperClip = data->UpperClip;
+	const double _lowerClip = data->LowerClip;
+
+	if (useMaskLoc >= 0)
+		glUniform1f(useMaskLoc, (useMasking) ? 1.0f : 0.0f);
+
+	if (upperClipLoc >= 0)
+	{
+		glUniform1f(upperClipLoc, 0.01f * (float)_upperClip);
+	}
+
+	if (lowerClipLoc >= 0)
+		glUniform1f(lowerClipLoc, 1.0f - 0.01f * (float)_lowerClip);
+}
+
 bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *fname)
 {
 	if (mShaders.size() > shaderIndex)
@@ -99,13 +132,13 @@ bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *
 
 		if (false == shader->LoadShaders(vname, fname))
 		{
-			throw std::exception("failed to locate and load shader files");
+			throw std::exception("failed to locate or load shader files");
 		}
 
 	}
 	catch (const std::exception &e)
 	{
-		FBTrace("Post Effect Chain ERROR: %s\n", e.what());
+		LOGE("Post Effect Chain (%s, %s) ERROR: %s\n", vname, fname, e.what());
 
 		delete shader;
 		shader = nullptr;
@@ -116,12 +149,6 @@ bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *
 	if (mShaders.size() > shaderIndex)
 	{
 		mShaders[shaderIndex] = shader;
-
-		//if (nullptr != mShader)
-		//{
-//			delete mShader;
-	//		mShader = nullptr;
-		//}
 	}
 	else
 	{
@@ -204,66 +231,47 @@ const char *PostEffectFishEye::GetFragmentFname(const int shaderIndex)
 
 bool PostEffectFishEye::PrepUniforms(const int shaderIndex)
 {
-	bool lSuccess = false;
-
 	GLSLShader* shader = mShaders[shaderIndex];
-	if (shader)
-	{
-		shader->Bind();
+	if (!shader)
+		return false;
 
-		GLint loc = shader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		upperClip = shader->findLocation("upperClip");
-		lowerClip = shader->findLocation("lowerClip");
+	shader->Bind();
 
-		mLocAmount = shader->findLocation("amount");
-		mLocLensRadius = shader->findLocation("lensradius");
-		mLocSignCurvature = shader->findLocation("signcurvature");
+	GLint loc = shader->findLocation("sampler0");
+	if (loc >= 0)
+		glUniform1i(loc, 0);
+	PrepareUniformLocations(shader);
 
-		shader->UnBind();
+	mLocAmount = shader->findLocation("amount");
+	mLocLensRadius = shader->findLocation("lensradius");
+	mLocSignCurvature = shader->findLocation("signcurvature");
 
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	shader->UnBind();
+	return true;
 }
 
 bool PostEffectFishEye::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
-	bool lSuccess = false;
-
-	const double _upperClip = pData->UpperClip;
-	const double _lowerClip = pData->LowerClip;
-
-	double amount = pData->FishEyeAmount;
-	double lensradius = pData->FishEyeLensRadius;
-	double signcurvature = pData->FishEyeSignCurvature;
+	const double amount = pData->FishEyeAmount;
+	const double lensradius = pData->FishEyeLensRadius;
+	const double signcurvature = pData->FishEyeSignCurvature;
 
 	GLSLShader* shader = GetShaderPtr();
-	if (shader)
-	{
-		shader->Bind();
+	if (!shader)
+		return false;
 
-		if (upperClip >= 0)
-			glUniform1f(upperClip, 0.01f * (float)_upperClip);
+	shader->Bind();
+	UpdateUniforms(pData);
 
-		if (lowerClip >= 0)
-			glUniform1f(lowerClip, 1.0f - 0.01f * (float)_lowerClip);
+	if (mLocAmount >= 0)
+		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));
+	if (mLocLensRadius >= 0)
+		glUniform1f(mLocLensRadius, static_cast<float>(lensradius));
+	if (mLocSignCurvature >= 0)
+		glUniform1f(mLocSignCurvature, static_cast<float>(signcurvature));
 
-		if (mLocAmount >= 0)
-			glUniform1f(mLocAmount, 0.01f * (float)amount);
-		if (mLocLensRadius >= 0)
-			glUniform1f(mLocLensRadius, (float)lensradius);
-		if (mLocSignCurvature >= 0)
-			glUniform1f(mLocSignCurvature, (float)signcurvature);
-
-		shader->UnBind();
-
-		lSuccess = true;
-	}
-	
-	return lSuccess;
+	shader->UnBind();
+	return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -300,41 +308,31 @@ const char *PostEffectColor::GetFragmentFname(const int)
 
 bool PostEffectColor::PrepUniforms(const int shaderIndex)
 {
-	bool lSuccess = false;
-
 	GLSLShader* shader = mShaders[shaderIndex];
-	if (shader)
-	{
-		shader->Bind();
+	if (!shader)
+		return false;
+	
+	shader->Bind();
 
-		GLint loc = shader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
+	GLint loc = shader->findLocation("sampler0");
+	if (loc >= 0)
+		glUniform1i(loc, 0);
 
-		mResolution = shader->findLocation("gResolution");
-		mChromaticAberration = shader->findLocation("gCA");
+	mResolution = shader->findLocation("gResolution");
+	mChromaticAberration = shader->findLocation("gCA");
 
-		mUpperClip = shader->findLocation("upperClip");
-		mLowerClip = shader->findLocation("lowerClip");
+	PrepareUniformLocations(shader);
 
-		mLocCSB = shader->findLocation("gCSB");
-		mLocHue = shader->findLocation("gHue");
+	mLocCSB = shader->findLocation("gCSB");
+	mLocHue = shader->findLocation("gHue");
 
-		shader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	shader->UnBind();
+	return true;
+		
 }
 
 bool PostEffectColor::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
-	bool lSuccess = false;
-
-	const double upperClip = pData->UpperClip;
-	const double lowerClip = pData->LowerClip;
-
 	const float chromatic_aberration = (pData->ChromaticAberration) ? 1.0f : 0.0f;
 	const FBVector2d ca_dir = pData->ChromaticAberrationDirection;
 
@@ -349,38 +347,31 @@ bool PostEffectColor::CollectUIValues(PostPersistentData *pData, int w, int h, F
 	double lightness = 0.01 * pData->Lightness;
 
 	GLSLShader* mShader = GetShaderPtr();
-	if (mShader)
+	if (!mShader)
+		return false;
+	
+	mShader->Bind();
+
+	if (mResolution >= 0)
 	{
-		mShader->Bind();
-
-		if (mResolution >= 0)
-		{
-			glUniform2f(mResolution, static_cast<float>(w), static_cast<float>(h));
-		}
-
-		if (mChromaticAberration >= 0)
-		{
-			glUniform4f(mChromaticAberration, static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
-		}
-
-		if (mUpperClip >= 0)
-			glUniform1f(mUpperClip, 0.01f * (float)upperClip);
-
-		if (mLowerClip >= 0)
-			glUniform1f(mLowerClip, 1.0f - 0.01f * (float)lowerClip);
-
-		if (mLocCSB >= 0)
-			glUniform4f(mLocCSB, (float)contrast, (float)saturation, (float)brightness, (float)gamma);
-
-		if (mLocHue >= 0)
-			glUniform4f(mLocHue, (float)hue, (float)hueSat, (float)lightness, inverse);
-
-		mShader->UnBind();
-
-		lSuccess = true;
+		glUniform2f(mResolution, static_cast<float>(w), static_cast<float>(h));
 	}
 
-	return lSuccess;
+	if (mChromaticAberration >= 0)
+	{
+		glUniform4f(mChromaticAberration, static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
+	}
+
+	UpdateUniforms(pData);
+
+	if (mLocCSB >= 0)
+		glUniform4f(mLocCSB, (float)contrast, (float)saturation, (float)brightness, (float)gamma);
+
+	if (mLocHue >= 0)
+		glUniform4f(mLocHue, (float)hue, (float)hueSat, (float)lightness, inverse);
+
+	mShader->UnBind();
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -415,72 +406,53 @@ const char *PostEffectVignetting::GetFragmentFname(const int)
 
 bool PostEffectVignetting::PrepUniforms(const int shaderIndex)
 {
-	bool lSuccess = false;
-
 	GLSLShader* mShader = mShaders[shaderIndex];
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
+	
+	mShader->Bind();
 
-		GLint loc = mShader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
+	GLint loc = mShader->findLocation("sampler0");
+	if (loc >= 0)
+		glUniform1i(loc, 0);
 
-		mUpperClip = mShader->findLocation("upperClip");
-		mLowerClip = mShader->findLocation("lowerClip");
+	PrepareUniformLocations(mShader);
 
-		mLocAmount = mShader->findLocation("amount");
-		mLocVignOut = mShader->findLocation("vignout");
-		mLocVignIn = mShader->findLocation("vignin");
-		mLocVignFade = mShader->findLocation("vignfade");
+	mLocAmount = mShader->findLocation("amount");
+	mLocVignOut = mShader->findLocation("vignout");
+	mLocVignIn = mShader->findLocation("vignin");
+	mLocVignFade = mShader->findLocation("vignfade");
 
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	mShader->UnBind();
+	return true;
 }
 
 bool PostEffectVignetting::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
-	bool lSuccess = false;
-
-	const double upperClip = pData->UpperClip;
-	const double lowerClip = pData->LowerClip;
-
-	double amount = pData->VignAmount;
-	double vignout = pData->VignOut;
-	double vignin = pData->VignIn;
-	double vignfade = pData->VignFade;
+	const double amount = pData->VignAmount;
+	const double vignout = pData->VignOut;
+	const double vignin = pData->VignIn;
+	const double vignfade = pData->VignFade;
 
 	GLSLShader* mShader = GetShaderPtr();
 
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
+	
+	mShader->Bind();
+	UpdateUniforms(pData);
+		
+	if (mLocAmount >= 0)
+		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));
+	if (mLocVignOut >= 0)
+		glUniform1f(mLocVignOut, 0.01f * static_cast<float>(vignout));
+	if (mLocVignIn >= 0)
+		glUniform1f(mLocVignIn, 0.01f * static_cast<float>(vignin));
+	if (mLocVignFade >= 0)
+		glUniform1f(mLocVignFade, static_cast<float>(vignfade));
 
-		if (mUpperClip >= 0)
-			glUniform1f(mUpperClip, 0.01f * (float)upperClip);
-
-		if (mLowerClip >= 0)
-			glUniform1f(mLowerClip, 1.0f - 0.01f * (float)lowerClip);
-
-		if (mLocAmount >= 0)
-			glUniform1f(mLocAmount, 0.01f * (float)amount);
-		if (mLocVignOut >= 0)
-			glUniform1f(mLocVignOut, 0.01f * (float)vignout);
-		if (mLocVignIn >= 0)
-			glUniform1f(mLocVignIn, 0.01f * (float)vignin);
-		if (mLocVignFade >= 0)
-			glUniform1f(mLocVignFade, (float)vignfade);
-
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	mShader->UnBind();
+	return true;
 }
 
 
@@ -516,91 +488,72 @@ const char *PostEffectFilmGrain::GetFragmentFname(const int)
 
 bool PostEffectFilmGrain::PrepUniforms(const int shaderIndex)
 {
-	bool lSuccess = false;
-
 	GLSLShader* mShader = mShaders[shaderIndex];
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
+	
+	mShader->Bind();
 
-		GLint loc = mShader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
+	GLint loc = mShader->findLocation("sampler0");
+	if (loc >= 0)
+		glUniform1i(loc, 0);
 
-		upperClip = mShader->findLocation("upperClip");
-		lowerClip = mShader->findLocation("lowerClip");
+	PrepareUniformLocations(mShader);
 
-		textureWidth = mShader->findLocation("textureWidth");
-		textureHeight = mShader->findLocation("textureHeight");
+	textureWidth = mShader->findLocation("textureWidth");
+	textureHeight = mShader->findLocation("textureHeight");
 
-		timer = mShader->findLocation("timer");
-		grainamount = mShader->findLocation("grainamount");
-		colored = mShader->findLocation("colored");
-		coloramount = mShader->findLocation("coloramount");
-		grainsize = mShader->findLocation("grainsize");
-		lumamount = mShader->findLocation("lumamount");
+	timer = mShader->findLocation("timer");
+	grainamount = mShader->findLocation("grainamount");
+	colored = mShader->findLocation("colored");
+	coloramount = mShader->findLocation("coloramount");
+	grainsize = mShader->findLocation("grainsize");
+	lumamount = mShader->findLocation("lumamount");
 
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	mShader->UnBind();
+	return true;
 }
 
 bool PostEffectFilmGrain::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
-	bool lSuccess = false;
-
-	const double _upperClip = pData->UpperClip;
-	const double _lowerClip = pData->LowerClip;
-
 	FBTime systemTime = (pData->FG_UsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
 
-	double timerMult = pData->FG_TimeSpeed;
-	double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
+	const double timerMult = pData->FG_TimeSpeed;
+	const double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
 	
-	double _grainamount = pData->FG_GrainAmount;
-	double _colored = (pData->FG_Colored) ? 1.0 : 0.0;
-	double _coloramount = pData->FG_ColorAmount;
-	double _grainsize = pData->FG_GrainSize;
-	double _lumamount = pData->FG_LumAmount;
+	const double _grainamount = pData->FG_GrainAmount;
+	const double _colored = (pData->FG_Colored) ? 1.0 : 0.0;
+	const double _coloramount = pData->FG_ColorAmount;
+	const double _grainsize = pData->FG_GrainSize;
+	const double _lumamount = pData->FG_LumAmount;
 
 	GLSLShader* mShader = GetShaderPtr();
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
+	
+	mShader->Bind();
+	UpdateUniforms(pData);
 
-		if (upperClip >= 0)
-			glUniform1f(upperClip, 0.01f * (float)_upperClip);
+	if (textureWidth >= 0)
+		glUniform1f(textureWidth, static_cast<float>(w));
+	if (textureHeight >= 0)
+		glUniform1f(textureHeight, static_cast<float>(h));
 
-		if (lowerClip >= 0)
-			glUniform1f(lowerClip, 1.0f - 0.01f * (float)_lowerClip);
+	if (timer >= 0)
+		glUniform1f(timer, static_cast<float>(_timer));
+	if (grainamount >= 0)
+		glUniform1f(grainamount, 0.01f * static_cast<float>(_grainamount));
+	if (colored >= 0)
+		glUniform1f(colored, static_cast<float>(_colored));
+	if (coloramount >= 0)
+		glUniform1f(coloramount, 0.01f * static_cast<float>(_coloramount));
+	if (grainsize>= 0)
+		glUniform1f(grainsize, 0.01f * static_cast<float>(_grainsize));
+	if (lumamount>= 0)
+		glUniform1f(lumamount, 0.01f * static_cast<float>(_lumamount));
 
-		if (textureWidth >= 0)
-			glUniform1f(textureWidth, (float)w);
-		if (textureHeight >= 0)
-			glUniform1f(textureHeight, (float)h);
-
-		if (timer >= 0)
-			glUniform1f(timer, (float)_timer);
-		if (grainamount >= 0)
-			glUniform1f(grainamount, 0.01f * (float)_grainamount);
-		if (colored >= 0)
-			glUniform1f(colored, (float)_colored);
-		if (coloramount >= 0)
-			glUniform1f(coloramount, 0.01f * (float)_coloramount);
-		if (grainsize>= 0)
-			glUniform1f(grainsize, 0.01f * (float)_grainsize);
-		if (lumamount>= 0)
-			glUniform1f(lumamount, 0.01f * (float)_lumamount);
-
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	mShader->UnBind();
+	return true;
 }
 
 
@@ -637,80 +590,69 @@ const char *PostEffectDOF::GetFragmentFname(const int)
 
 bool PostEffectDOF::PrepUniforms(const int shaderIndex)
 {
-	bool lSuccess = false;
-
 	GLSLShader* mShader = mShaders[shaderIndex];
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
 
-		GLint loc = mShader->findLocation("colorSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		loc = mShader->findLocation("depthSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 1);
+	mShader->Bind();
 
-		upperClip = mShader->findLocation("upperClip");
-		lowerClip = mShader->findLocation("lowerClip");
+	GLint loc = mShader->findLocation("colorSampler");
+	if (loc >= 0)
+		glUniform1i(loc, 0);
+	loc = mShader->findLocation("depthSampler");
+	if (loc >= 0)
+		glUniform1i(loc, 1);
 
-		focalDistance = mShader->findLocation("focalDistance");
-		focalRange = mShader->findLocation("focalRange");
+	PrepareUniformLocations(mShader);
 
-		textureWidth = mShader->findLocation("textureWidth");
-		textureHeight = mShader->findLocation("textureHeight");
+	focalDistance = mShader->findLocation("focalDistance");
+	focalRange = mShader->findLocation("focalRange");
 
-		zNear = mShader->findLocation("zNear");
-		zFar = mShader->findLocation("zFar");
+	textureWidth = mShader->findLocation("textureWidth");
+	textureHeight = mShader->findLocation("textureHeight");
 
-		fstop = mShader->findLocation("fstop");
+	zNear = mShader->findLocation("zNear");
+	zFar = mShader->findLocation("zFar");
 
-		samples = mShader->findLocation("samples");
-		rings = mShader->findLocation("rings");
+	fstop = mShader->findLocation("fstop");
 
-		blurForeground = mShader->findLocation("blurForeground");
+	samples = mShader->findLocation("samples");
+	rings = mShader->findLocation("rings");
 
-		manualdof = mShader->findLocation("manualdof");
-		ndofstart = mShader->findLocation("ndofstart");
-		ndofdist = mShader->findLocation("ndofdist");
-		fdofstart = mShader->findLocation("fdofstart");
-		fdofdist = mShader->findLocation("fdofdist");
+	blurForeground = mShader->findLocation("blurForeground");
 
-		focusPoint = mShader->findLocation("focusPoint");
+	manualdof = mShader->findLocation("manualdof");
+	ndofstart = mShader->findLocation("ndofstart");
+	ndofdist = mShader->findLocation("ndofdist");
+	fdofstart = mShader->findLocation("fdofstart");
+	fdofdist = mShader->findLocation("fdofdist");
 
-		CoC = mShader->findLocation("CoC");
+	focusPoint = mShader->findLocation("focusPoint");
 
-		autofocus = mShader->findLocation("autofocus");
-		focus = mShader->findLocation("focus");
+	CoC = mShader->findLocation("CoC");
 
-		threshold = mShader->findLocation("threshold");
-		gain = mShader->findLocation("gain");
+	autofocus = mShader->findLocation("autofocus");
+	focus = mShader->findLocation("focus");
 
-		bias = mShader->findLocation("bias");
-		fringe = mShader->findLocation("fringe");
+	threshold = mShader->findLocation("threshold");
+	gain = mShader->findLocation("gain");
 
-		noise = mShader->findLocation("noise");
+	bias = mShader->findLocation("bias");
+	fringe = mShader->findLocation("fringe");
 
-		pentagon = mShader->findLocation("pentagon");
-		feather = mShader->findLocation("feather");
+	noise = mShader->findLocation("noise");
 
-		debugBlurValue = mShader->findLocation("debugBlurValue");
+	pentagon = mShader->findLocation("pentagon");
+	feather = mShader->findLocation("feather");
 
-		mShader->UnBind();
+	debugBlurValue = mShader->findLocation("debugBlurValue");
 
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	mShader->UnBind();
+	return true;
 }
 
 bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
-	bool lSuccess = false;
-
-	const double _upperClip = pData->UpperClip;
-	const double _lowerClip = pData->LowerClip;
-
 	double _znear = pCamera->NearPlaneDistance;
 	double _zfar = pCamera->FarPlaneDistance;
 
@@ -789,69 +731,62 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBC
 	}
 
 	GLSLShader* mShader = GetShaderPtr();
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
+	
+	mShader->Bind();
 
-		if (upperClip >= 0)
-			glUniform1f(upperClip, 0.01f * (float)_upperClip);
+	UpdateUniforms(pData);
 
-		if (lowerClip >= 0)
-			glUniform1f(lowerClip, 1.0f - 0.01f * (float)_lowerClip);
+	if (textureWidth >= 0)
+		glUniform1f(textureWidth, (float)w);
+	if (textureHeight >= 0)
+		glUniform1f(textureHeight, (float)h);
 
-		if (textureWidth >= 0)
-			glUniform1f(textureWidth, (float)w);
-		if (textureHeight >= 0)
-			glUniform1f(textureHeight, (float)h);
+	if (focalDistance >= 0)
+		glUniform1f(focalDistance, (float)_focalDistance);
+	if (focalRange >= 0)
+		glUniform1f(focalRange, (float)_focalRange);
+	if (fstop >= 0)
+		glUniform1f(fstop, (float)_fstop);
 
-		if (focalDistance >= 0)
-			glUniform1f(focalDistance, (float)_focalDistance);
-		if (focalRange >= 0)
-			glUniform1f(focalRange, (float)_focalRange);
-		if (fstop >= 0)
-			glUniform1f(fstop, (float)_fstop);
+	if (zNear>= 0)
+		glUniform1f(zNear, (float)_znear);
+	if (zFar >= 0)
+		glUniform1f(zFar, (float)_zfar);
 
-		if (zNear>= 0)
-			glUniform1f(zNear, (float)_znear);
-		if (zFar >= 0)
-			glUniform1f(zFar, (float)_zfar);
+	if (samples >= 0)
+		glUniform1i(samples, _samples);
+	if (rings >= 0)
+		glUniform1i(rings, _rings);
 
-		if (samples >= 0)
-			glUniform1i(samples, _samples);
-		if (rings >= 0)
-			glUniform1i(rings, _rings);
+	if (blurForeground >= 0)
+		glUniform1f(blurForeground, (float)_blurForeground);
 
-		if (blurForeground >= 0)
-			glUniform1f(blurForeground, (float)_blurForeground);
+	if (CoC >= 0)
+		glUniform1f(CoC, 0.01f * (float)_CoC);
 
-		if (CoC >= 0)
-			glUniform1f(CoC, 0.01f * (float)_CoC);
+	if (blurForeground >= 0)
+		glUniform1f(blurForeground, (float)_blurForeground);
 
-		if (blurForeground >= 0)
-			glUniform1f(blurForeground, (float)_blurForeground);
+	if (threshold >= 0)
+		glUniform1f(threshold, 0.01f * (float)_threshold);
+	if (bias >= 0)
+		glUniform1f(bias, 0.01f * (float)_bias);
 
-		if (threshold >= 0)
-			glUniform1f(threshold, 0.01f * (float)_threshold);
-		if (bias >= 0)
-			glUniform1f(bias, 0.01f * (float)_bias);
+	if (fringe>= 0)
+		glUniform1f(fringe, 0.01f * (float)_fringe);
+	if (feather>= 0)
+		glUniform1f(feather, 0.01f * (float)_feather);
 
-		if (fringe>= 0)
-			glUniform1f(fringe, 0.01f * (float)_fringe);
-		if (feather>= 0)
-			glUniform1f(feather, 0.01f * (float)_feather);
+	if (debugBlurValue >= 0)
+		glUniform1f(debugBlurValue, (float)_debugBlurValue);
 
-		if (debugBlurValue >= 0)
-			glUniform1f(debugBlurValue, (float)_debugBlurValue);
+	if (focusPoint >= 0)
+		glUniform4f(focusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
 
-		if (focusPoint >= 0)
-			glUniform4f(focusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
-
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	mShader->UnBind();
+	return true;
 }
 
 
@@ -1743,6 +1678,9 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		
 		for (int i = 0; i < count; ++i)
 		{
+			if (!mChain[i])
+				continue;
+
 			mChain[i]->Bind();
 
 			for (int j = 0; j < mChain[i]->GetNumberOfPasses(); ++j)

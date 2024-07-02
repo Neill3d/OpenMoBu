@@ -13,7 +13,9 @@
 
 #version 120
 uniform sampler2D sampler0;
+uniform sampler2D maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -58,8 +60,18 @@ void main (void)
     FE = radius <= extent ? FE : posDevSpace;
     FE = curvature < EPSILON ? posDevSpace : FE;
 
-	vec2 texCoords = mix(Vertex_UV.st, vec2(FE), amount);
+    //
+    // masking
+    float f = amount;
+
+    if (useMasking > 0.0)
+    {
+        vec4 mask = texture2D( maskSampler, Vertex_UV.st );
+        f *= 1.0 - mask.r * useMasking;
+    }
+
+	vec2 texCoords = mix(Vertex_UV.st, vec2(FE), f);
 	vec4 color = texture2D(sampler0, texCoords);
+
     gl_FragColor = color;
-	//gl_FragColor = texture2D(sampler0, Vertex_UV.st);
 }

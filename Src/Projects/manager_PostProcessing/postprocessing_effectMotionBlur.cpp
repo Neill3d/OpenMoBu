@@ -63,14 +63,12 @@ bool PostEffectMotionBlur::PrepUniforms(const int shaderIndex)
 		if (loc >= 0)
 			glUniform1i(loc, 2);
 		
+		PrepareUniformLocations(mShader);
+
 		mLoc.zNear = mShader->findLocation("zNear");
 		mLoc.zFar = mShader->findLocation("zFar");
 
 		mLoc.dt = mShader->findLocation("dt");
-
-		mLoc.upperClip = mShader->findLocation("upperClip");
-		mLoc.lowerClip = mShader->findLocation("lowerClip");
-
 		mLoc.clipInfo = mShader->findLocation("gClipInfo");
 
 		mLoc.projInfo = mShader->findLocation("projInfo");
@@ -97,9 +95,6 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 
 	FBTime localTime = FBSystem::TheOne().LocalTime;
 	//FBTime systemTime = FBSystem::TheOne().SystemTime;
-
-	const double upperClip = pData->UpperClip;
-	const double lowerClip = pData->LowerClip;
 
 	const double _amount = pData->MotionBlurAmount;
 
@@ -202,11 +197,7 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 		if (mLoc.zFar >= 0)
 			glUniform1f(mLoc.zFar, zfar);
 
-		if (mLoc.upperClip >= 0)
-			glUniform1f(mLoc.upperClip, 0.01f * (float)upperClip);
-
-		if (mLoc.lowerClip >= 0)
-			glUniform1f(mLoc.lowerClip, 1.0f - 0.01f * (float)lowerClip);
+		UpdateUniforms(pData);
 
 		if (mLoc.clipInfo >= 0)
 			glUniform4fv(mLoc.clipInfo, 1, clipInfo);

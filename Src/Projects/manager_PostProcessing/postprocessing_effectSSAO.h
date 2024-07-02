@@ -15,7 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectSSAO
 
-struct PostEffectSSAO : public PostEffectBase
+struct PostEffectSSAO : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 
@@ -40,15 +40,12 @@ public:
 protected:
 
 	// shader locations
-	enum { LOCATIONS_COUNT = 15 };
+	enum { LOCATIONS_COUNT = 13 };
 	union 
 	{
 		struct
 		{
 			// locations
-
-			GLint		upperClip;
-			GLint		lowerClip;
 
 			GLint		clipInfo;
 

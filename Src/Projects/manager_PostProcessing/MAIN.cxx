@@ -25,7 +25,7 @@ extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 /// </summary>
 void LOGE(const char* pFormatString, ...)
 {
-	char buffer[256];
+	char buffer[512];
 	va_list args;
 	va_start(args, pFormatString);
 	vsnprintf(buffer, 255, pFormatString, args);

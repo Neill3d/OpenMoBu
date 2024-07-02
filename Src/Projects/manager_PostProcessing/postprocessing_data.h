@@ -366,15 +366,15 @@ protected:
 	FBSystem			mSystem;
 
     FBString			mText;
-	bool				mReloadShaders;
-	EPostAction			mPostAction;
+	bool				mReloadShaders{ false };
+	EPostAction			mPostAction{ EPostAction::ePostActionNone };
 
-	double				mResetFarPlane;
+	double				mResetFarPlane{ 0.0 };
 
-	double				mTempLower;
-	double				mTempUpper;
+	double				mTempLower{ 0.0 };
+	double				mTempUpper{ 0.0 };
 
-	int			mLazyLoadCounter;
+	int			mLazyLoadCounter{ 0 };
 
 	void		DefaultValues();
 	void		LoadFromConfig(const char *sessionFilter=nullptr);

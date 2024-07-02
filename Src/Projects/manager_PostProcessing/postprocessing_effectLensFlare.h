@@ -44,21 +44,16 @@ protected:
 	
 	// shader locations
 
-	struct SubShader
+	struct SubShader : public CommonEffectUniforms
 	{
 	public:
-		enum { LOCATIONS_COUNT = 14 };
+		enum { LOCATIONS_COUNT = 12 };
 		union
 		{
 			struct
 			{
-				// locations
-				GLint		useMaskingLoc;
 				//Louis
 				GLint		seed;
-
-				GLint		upperClip;
-				GLint		lowerClip;
 
 				GLint		amount;
 

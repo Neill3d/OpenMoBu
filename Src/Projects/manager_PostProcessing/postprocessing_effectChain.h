@@ -47,6 +47,27 @@ enum class CompositionMask : uint32_t
 };
 
 /// <summary>
+/// uniforms needed for a common effect functionality, masking, clipping, etc.
+/// </summary>
+struct CommonEffectUniforms
+{
+public:
+
+	void PrepareUniformLocations(GLSLShader* shader);
+
+	/// <summary>
+	/// must be called inside the binded glsl shader
+	/// </summary>
+	void UpdateUniforms(PostPersistentData* data);
+
+protected:
+	// common functionality of effects needs common uniforms
+	GLint lowerClipLoc{ -1 };
+	GLint upperClipLoc{ -1 };
+	GLint useMaskLoc{ -1 };
+};
+
+/// <summary>
 /// base class for every effect in a post processing chain
 /// </summary>
 struct PostEffectBase
@@ -93,12 +114,13 @@ protected:
 
  	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();
+
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectFishEye
 
-struct PostEffectFishEye : public PostEffectBase
+struct PostEffectFishEye : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 
@@ -119,14 +141,11 @@ public:
 
 protected:
 
-	enum { LOCATIONS_COUNT = 5 };
+	enum { LOCATIONS_COUNT = 3 };
 	union
 	{
 		struct
 		{
-			GLint		upperClip;
-			GLint		lowerClip;
-
 			GLint		mLocAmount;
 			GLint		mLocLensRadius;
 			GLint		mLocSignCurvature;
@@ -139,7 +158,7 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectColor
 
-struct PostEffectColor : public PostEffectBase
+struct PostEffectColor : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 	//! a constructor
@@ -159,16 +178,13 @@ public:
 protected:
 
 	// shader locations
-	enum { LOCATIONS_COUNT = 6 };
+	enum { LOCATIONS_COUNT = 4 };
 	union
 	{
 		struct
 		{
 			GLint		mResolution;
 			GLint		mChromaticAberration;
-
-			GLint		mUpperClip;
-			GLint		mLowerClip;
 
 			GLint		mLocCSB;
 			GLint		mLocHue;
@@ -181,7 +197,7 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectVignetting
 
-struct PostEffectVignetting : public PostEffectBase
+struct PostEffectVignetting : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 
@@ -203,14 +219,11 @@ public:
 protected:
 
 	// shader locations
-	enum {LOCATIONS_COUNT=6};
+	enum {LOCATIONS_COUNT=4};
 	union
 	{
 		struct
 		{
-			GLint		mUpperClip;
-			GLint		mLowerClip;
-
 			GLint		mLocAmount;	//!< amount of an effect applied
 			GLint		mLocVignOut;
 			GLint		mLocVignIn;
@@ -224,7 +237,7 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectFilmGrain
 
-struct PostEffectFilmGrain : public PostEffectBase
+struct PostEffectFilmGrain : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 
@@ -248,14 +261,11 @@ protected:
 	FBSystem		mSystem;
 
 	// shader locations
-	enum { LOCATIONS_COUNT = 10 };
+	enum { LOCATIONS_COUNT = 8 };
 	union
 	{
 		struct
 		{
-			GLint		upperClip;
-			GLint		lowerClip;
-
 			// locations
 			GLint		textureWidth;
 			GLint		textureHeight;
@@ -277,7 +287,7 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectDOF
 
-struct PostEffectDOF : public PostEffectBase
+struct PostEffectDOF : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 
@@ -299,15 +309,12 @@ public:
 protected:
 
 	// shader locations
-	enum { LOCATIONS_COUNT = 29 };
+	enum { LOCATIONS_COUNT = 27 };
 	union
 	{
 		struct
 		{
 			// locations
-			GLint		upperClip;
-			GLint		lowerClip;
-
 			GLint		focalDistance;
 			GLint		focalRange;
 

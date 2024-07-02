@@ -35,6 +35,9 @@ class GLSLShader
   void loadlog( GLhandleARB object );
 
 public:
+
+	static bool PRINT_WARNINGS;
+
   GLSLShader();
   void Free();
   virtual ~GLSLShader() {

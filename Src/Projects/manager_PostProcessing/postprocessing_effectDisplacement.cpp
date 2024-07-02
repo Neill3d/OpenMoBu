@@ -69,8 +69,7 @@ bool PostEffectDisplacement::PrepUniforms(const int shaderIndex)
 		if (loc >= 0)
 			glUniform1i(loc, 4);
 
-		mLoc.upperClip = shader->findLocation("upperClip");
-		mLoc.lowerClip = shader->findLocation("lowerClip");
+		PrepareUniformLocations(shader);
 
 		mLoc.iTime = shader->findLocation("iTime");
 		mLoc.iSpeed = shader->findLocation("iSpeed");
@@ -95,9 +94,6 @@ bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, int w, i
 
 	FBTime systemTime = (pData->Disp_UsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
 
-	const double upperClip = pData->UpperClip;
-	const double lowerClip = pData->LowerClip;
-
 	const double timerMult = pData->Disp_Speed;
 	const double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
 
@@ -111,14 +107,9 @@ bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, int w, i
 	{
 		GetShaderPtr()->Bind();
 
+		UpdateUniforms(pData);
+
 		// iTime
-		
-		if (mLoc.upperClip >= 0)
-			glUniform1f(mLoc.upperClip, 0.01f * (float)upperClip);
-
-		if (mLoc.lowerClip >= 0)
-			glUniform1f(mLoc.lowerClip, 1.0f - 0.01f * (float)lowerClip);
-
 		if (mLoc.iTime >= 0)
 			glUniform1f(mLoc.iTime, (float)_timer);
 

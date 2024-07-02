@@ -15,7 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectMotionBlur
 
-struct PostEffectMotionBlur : public PostEffectBase
+struct PostEffectMotionBlur : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 
@@ -40,21 +40,17 @@ public:
 protected:
 
 	// shader locations
-	enum { LOCATIONS_COUNT = 13 };
+	enum { LOCATIONS_COUNT = 10 };
 	union 
 	{
 		struct
 		{
 			// locations
-
 			GLint		zNear;
 			GLint		zFar;
 
 			GLint		dt;
 			
-			GLint		upperClip;
-			GLint		lowerClip;
-
 			GLint		clipInfo;
 
 			GLint		projInfo;

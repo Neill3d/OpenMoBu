@@ -15,7 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectDisplacement
 
-struct PostEffectDisplacement : public PostEffectBase
+struct PostEffectDisplacement : public PostEffectBase, public CommonEffectUniforms
 {
 public:
 
@@ -42,15 +42,12 @@ protected:
 	FBSystem		mSystem;
 
 	// shader locations
-	enum { LOCATIONS_COUNT = 9 };
+	enum { LOCATIONS_COUNT = 7 };
 	union 
 	{
 		struct
 		{
 			// locations
-
-			GLint		upperClip;
-			GLint		lowerClip;
 
 			GLint		iTime;
 			GLint		iSpeed;

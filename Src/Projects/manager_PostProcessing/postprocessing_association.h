@@ -66,9 +66,9 @@ public:
 	virtual bool MenuAction( int pMenuId, FBComponent* pFocusedObject);
 
 protected:
-	int mEditManipulatorId;		//!< The menu itme id for edit by manipulator association.
-	int mCloseManipulatorId;	//!< The menu itme id for close manipulator association.
-	int		mDuplicateId;
+	int mEditManipulatorId{ 0 };		//!< The menu itme id for edit by manipulator association.
+	int mCloseManipulatorId{ 0 };	//!< The menu itme id for close manipulator association.
+	int		mDuplicateId{ 0 };
 	FBSystem mSystem;
 };
 

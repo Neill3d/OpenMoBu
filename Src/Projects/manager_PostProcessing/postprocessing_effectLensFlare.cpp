@@ -82,18 +82,11 @@ bool PostEffectLensFlare::SubShader::PrepUniforms(GLSLShader* mShader)
 		GLint loc = mShader->findLocation("sampler0");
 		if (loc >= 0)
 			glUniform1i(loc, 0);
-		loc = mShader->findLocation("maskSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 4);
-
-		useMaskingLoc = mShader->findLocation("useMasking");
+		
+		PrepareUniformLocations(mShader);
 
 		//Louis
 		seed = mShader->findLocation("flareSeed");
-
-		upperClip = mShader->findLocation("upperClip");
-		lowerClip = mShader->findLocation("lowerClip");
-
 		amount = mShader->findLocation("amount");
 
 		textureWidth = mShader->findLocation("textureWidth");
@@ -138,16 +131,13 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 	m_NumberOfPasses = 1;
 	bool lSuccess = false;
 	
-	bool useMasking = pData->EnableMaskingForAllEffects || pData->LensFlare_UseMasking;
-	
 	double seedValue = 30.0;
 	if (shaderIndex > 0 && pData->IsLazyLoadReady())
 	{
 		pData->FlareSeed.GetData(&seedValue, sizeof(double));
 	}
 	
-	const double _upperClip = pData->UpperClip;
-	const double _lowerClip = pData->LowerClip;
+	
 
 	FBTime systemTime = (pData->FlareUsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
 
@@ -215,21 +205,13 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 	{
 		mShader->Bind();
 
-		if (useMaskingLoc >= 0)
-			glUniform1f(useMaskingLoc, (useMasking) ? 1.0f : 0.0f);
+		UpdateUniforms(pData);
 
 		if (seed >= 0)
 		{
 			glUniform1f(seed, static_cast<float>(seedValue));
 		}
-		if (upperClip >= 0)
-		{
-			glUniform1f(upperClip, 0.01f * (float)_upperClip);
-		}
-
-		if (lowerClip >= 0)
-			glUniform1f(lowerClip, 1.0f - 0.01f * (float)_lowerClip);
-
+		
 		if (amount >= 0)
 			glUniform1f(amount, 0.01f * (float)_amount);
 

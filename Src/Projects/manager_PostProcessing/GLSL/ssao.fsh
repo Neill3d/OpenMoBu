@@ -18,7 +18,9 @@
 uniform	sampler2D	colorSampler;
 uniform sampler2D	depthSampler;
 uniform sampler2D	texRandom;
+uniform sampler2D	maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -57,8 +59,6 @@ vec3 UVToView(vec2 uv, float eye_z)
 vec3 FetchViewPos(vec2 UV)
 {
   float ViewDepth = textureLod(depthSampler, UV, 0).x;	// texLinearDepth
-  //ViewDepth = reconstructCSZ(ViewDepth, gClipInfo);
-  
   return UVToView(UV, ViewDepth);
 }
 
@@ -112,22 +112,7 @@ vec2 RotateDirection(vec2 Dir, vec2 CosSin)
 //----------------------------------------------------------------------------------
 vec4 GetJitter()
 {
-/*
-#if AO_DEINTERLEAVED
-  // Get the current jitter vector from the per-pass constant buffer
-  return g_Jitter;
-#else
-  // (cos(Alpha),sin(Alpha),rand1,rand2)
-  return textureLod( texRandom, (gl_FragCoord.xy / AO_RANDOMTEX_SIZE), 0);
-#endif
-*/
-	// (cos(Alpha),sin(Alpha),rand1,rand2)
-	//return vec4(0.0);
-	//return texture2D(texRandom, vec2(0.0));
-	//return texture2DLod( texRandom, vec2(0.0), 0);
 	return texture2DLod( texRandom, (gl_FragCoord.xy / AO_RANDOMTEX_SIZE), 0);
-	
-	//return g_Jitter;
 }
 
 //----------------------------------------------------------------------------------
@@ -155,15 +140,8 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 
     for (float StepIndex = 0; StepIndex < NUM_STEPS; ++StepIndex)
     {
-		/*
-#if AO_DEINTERLEAVED
-      vec2 SnappedUV = round(RayPixels * Direction) * InvQuarterResolution + FullResUV;
-      vec3 S = FetchQuarterResViewPos(SnappedUV);
-#else
-	*/
       vec2 SnappedUV = round(RayPixels * Direction) * InvFullResolution + FullResUV;
       vec3 S = FetchViewPos(SnappedUV);
-//#endif
 
       RayPixels += StepSizePixels;
 
@@ -179,9 +157,6 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 
 void main()
 {
-	//float depth = texture2D(depthSampler, gl_TexCoord[0].st).x;
-	//float linear = reconstructCSZ(depth, gClipInfo);
-	
 	vec2 uv = gl_TexCoord[0].st;
 	
 	if (uv.y < upperClip || uv.y > lowerClip)
@@ -207,10 +182,16 @@ void main()
 	
 	vec4 outcolor = vec4(AO);
 	
+	vec4 mask = vec4(0.0);
+	if (useMasking > 0.0)
+	{
+		mask = texture2D( maskSampler, uv );
+	}
+
 	if (OnlyAO < 1.0)
 	{
 		vec4 srccolor = texture2D( colorSampler, uv );
-		outcolor = srccolor * outcolor;
+		outcolor = mix(srccolor * outcolor, srccolor,  useMasking);
 	}
 	
 	gl_FragColor = outcolor;	
