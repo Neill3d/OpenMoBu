@@ -124,9 +124,8 @@ bool ColorsRendererCallback::LoadShader()
 	const FBString fragment_filename( "\\GLSL\\renderer_colorRamp.fsh" );
 	const FBString vertex_filename( "\\GLSL\\renderer_colorRamp.vsh" );
 
-	FBString effectPath, effectFullName;
-
-	if (!FindEffectLocation( fragment_filename, effectPath, effectFullName ) )
+    char effectPath[256]{ 0 };
+	if (!FindEffectLocation( fragment_filename, effectPath, 256) )
 	{
 		FreeShader();
 		return false;

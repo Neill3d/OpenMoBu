@@ -156,9 +156,9 @@ void CFont::Init()
 	normal.strikethrough = 0;
 	normal.strikethrough_color = white;
 	
-	projection = NVMath::mat4_id;
-	model = NVMath::mat4_id;
-	view = NVMath::mat4_id;
+	projection = nv::mat4_id;
+	model = nv::mat4_id;
+	view = nv::mat4_id;
 }
 
 void CFont::Free()
@@ -242,14 +242,14 @@ void CFont::TextAdd(float x, float y, float _size, float rectw, float recth, con
 	//vec2 pen = { { x, y } };
 	//text_buffer_add_text(buffer, &pen, &normal, text, length);
 
-	model = NVMath::mat4_id;
+	model = nv::mat4_id;
 	
 	float stretch = 1.01f; // mBounds[2] / (0.8f * rectw);
 	float xoffset = 0.25f * mBounds[2] / length;
 	float yoffset = recth - 0.5f * (recth - mBounds[3]);
 
-	model.set_scale(NVMath::vec3(stretch, 1.0f, 1.0f));
-	model.set_translation(NVMath::vec3(x + xoffset, y + yoffset, 0.0f));
+	model.set_scale(nv::vec3(stretch, 1.0f, 1.0f));
+	model.set_translation(nv::vec3(x + xoffset, y + yoffset, 0.0f));
 	
 }
 
@@ -311,7 +311,7 @@ bool CFont::Display()
 
 void CFont::Resize(int width, int height)
 {
-	NVMath::ortho(projection, 0, width, 0, height, -1, 1);
+	nv::ortho(projection, 0, width, 0, height, -1, 1);
 }
 
 #endif

@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
     #include <windows.h>
 #endif
 
+#include "mobu_logging.h"
 #include "postprocessing_data.h"
 
 // for back compatibility
@@ -23,17 +24,8 @@ extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 /// <summary>
 /// a method to transfer shared library logs into motionbuilder logs output
 /// </summary>
-void LOGE(const char* pFormatString, ...)
-{
-	char buffer[512];
-	va_list args;
-	va_start(args, pFormatString);
-	vsnprintf(buffer, 255, pFormatString, args);
-
-	FBTrace(buffer);
-
-	va_end(args);
-}
+DEFINE_LOGI;
+DEFINE_LOGE;
 
 //--- Library declaration
 FBLibraryDeclare( manager_postprocessing )

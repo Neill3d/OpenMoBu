@@ -14,6 +14,13 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <fbsdk/fbsdk.h>
 #include <GL\glew.h>
 
+#include <cstdarg>
+#include "mobu_logging.h"
+
+//
+DEFINE_LOGI;
+DEFINE_LOGE;
+
 //--- Library declaration
 FBLibraryDeclare( superdynamiclighting )
 {

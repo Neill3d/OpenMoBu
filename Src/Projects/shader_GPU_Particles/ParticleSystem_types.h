@@ -52,27 +52,27 @@ namespace GPUParticles
 struct Particle
 {
 //    vec4				OldPos;				// in w store Particle Type  
-    vec4				Pos;				// in w - particle size (radius)
-    vec4				Vel;				// in w hold total lifetime
+	nv::vec4				Pos;				// in w - particle size (radius)
+	nv::vec4				Vel;				// in w hold total lifetime
 	// pack color into one float, and we have 3 free floats !
 
 	// r - packed color, g - total lifetime, b - age, a - index 
 
-	vec4				Color;				// inherit color from the emitter surface, custom color simulation
+	nv::vec4				Color;				// inherit color from the emitter surface, custom color simulation
     
 	// we store rotations in quaternions
-	vec4				Rot;				// in w - float				AgeMillis;			// current Age
-	vec4				RotVel;				// in w - float				Index;				// individual assigned index from 0.0 to 1.0 (normalized)
+	nv::vec4				Rot;				// in w - float				AgeMillis;			// current Age
+	nv::vec4				RotVel;				// in w - float				Index;				// individual assigned index from 0.0 to 1.0 (normalized)
 };
 
 struct evaluateBlock
 {
-	mat4					gTM;			// emitter transform
-	mat4					gRotationTM;	// only rotation
-	mat4					gNormalTM;
-	mat4					gTextureTM;
+	nv::mat4					gTM;			// emitter transform
+	nv::mat4					gRotationTM;	// only rotation
+	nv::mat4					gNormalTM;
+	nv::mat4					gTextureTM;
 
-	vec4					gDirection;		// vec3 - direction, 4th - use normals as dir or not
+	nv::vec4					gDirection;		// vec3 - direction, 4th - use normals as dir or not
 
 	float					gDirSpreadHor;	// spread direction vector in horizontal plane
 	float					gDirSpreadVer;	// spread in vertical plane
@@ -82,23 +82,23 @@ struct evaluateBlock
 	//vec4					gDirRandom;
 	//vec4					gVelocity;		// start particle velocity
 	//vec4					gVelRandom;		// randomize start velocity
-	vec4					gEmitterVelocity; // use this velocity to inherit emitter speed
+	nv::vec4					gEmitterVelocity; // use this velocity to inherit emitter speed
 	//vec4					gEmitterPivot;
 	//vec4					gAngularVelocity;
 	//mat4					gEmitterDeltaTM;	// computed diff between two frames
 	
-	vec4					gRotation;
-	vec4					gRotationSpread;
-	vec4					gAngularVelocity;
-	vec4					gAngularVelocitySpread;
+	nv::vec4					gRotation;
+	nv::vec4					gRotationSpread;
+	nv::vec4					gAngularVelocity;
+	nv::vec4					gAngularVelocitySpread;
 
-	vec4					gDynamic;		// 1st - mass, 2nd - damping
-	vec4					gGravity;		// vec3 - gravity direction XYZ, 4-th component - use or not to use gravity
-	vec4					gFlags;			// 1st - useForces, 2nd - useCollisions, 3rd - emitter type(0.0-vertices, 1.0-volume)
-	vec4					gTurbulence;
-	vec4					gFloor;			// 1st - use/not use, 2nd - friction, 3rd - Y level
-	vec4					gMin;
-	vec4					gMax;
+	nv::vec4					gDynamic;		// 1st - mass, 2nd - damping
+	nv::vec4					gGravity;		// vec3 - gravity direction XYZ, 4-th component - use or not to use gravity
+	nv::vec4					gFlags;			// 1st - useForces, 2nd - useCollisions, 3rd - emitter type(0.0-vertices, 1.0-volume)
+	nv::vec4					gTurbulence;
+	nv::vec4					gFloor;			// 1st - use/not use, 2nd - friction, 3rd - Y level
+	nv::vec4					gMin;
+	nv::vec4					gMax;
 
 	int						gPositionCount;	// number of position and normal vertices (emitter positions)
 	int						gNumCollisions;
@@ -120,9 +120,9 @@ struct evaluateBlock
 	float					gUseEmitterMask;
 	float					gSkipAlphaLimit;	// don't emit particles from a transparency pixel
 	
-	vec4					gEmitColor;
-	vec4					gEmitColor2;
-	vec4					gEmitColor3;
+	nv::vec4					gEmitColor;
+	nv::vec4					gEmitColor2;
+	nv::vec4					gEmitColor3;
 
 	float					gGenerateOnMotionLimit;
 	float					gUseEmitColor2;
@@ -133,15 +133,15 @@ struct evaluateBlock
 struct	renderBlock
 {
 
-	mat4		gMV;
-	mat4		gVP;
-	mat4		gInvTransposeMV;
-	mat4		gTexMatrix;
+	nv::mat4		gMV;
+	nv::mat4		gVP;
+	nv::mat4		gInvTransposeMV;
+	nv::mat4		gTexMatrix;
 
-	vec4		gCameraPos;
-	vec4		gScreenSize;
+	nv::vec4		gCameraPos;
+	nv::vec4		gScreenSize;
 	
-	vec4		gColor;
+	nv::vec4		gColor;
 
 	float		gPointFalloff;
 	float		gUseSizeCurve;
@@ -157,10 +157,10 @@ struct	renderBlock
 //
 struct terrainBlock
 {
-	mat4 			gTerrainVP;       
+	nv::mat4 			gTerrainVP;
 
-	vec4 			gTerrainOffset;
-	vec4 			gTerrainScale;
+	nv::vec4 			gTerrainOffset;
+	nv::vec4 			gTerrainScale;
 	
 	//uniform mat4 gVP;       
 	//GLuint64		gTerrainColorAddress;  
@@ -170,17 +170,17 @@ struct terrainBlock
 // emitter surface
 struct TTriangle
 {
-	vec4	p0;
-	vec4	p1;
-	vec4	p2;
+	nv::vec4	p0;
+	nv::vec4	p1;
+	nv::vec4	p2;
 
-	vec4	n;
+	nv::vec4	n;
 
-	vec2	uv0;
-	vec2	uv1;
-	vec2	uv2;
+	nv::vec2	uv0;
+	nv::vec2	uv1;
+	nv::vec2	uv2;
 
-	vec2	temp;	// to align type
+	nv::vec2	temp;	// to align type
 };
 
 // instance model
@@ -211,12 +211,12 @@ struct TMeshPatch
 // TODO: !! terrainAddress could be also a 3d texture of mesh voxels !!
 struct TCollision
 {
-	vec4			position;			// use .W as collision TYPE
-	vec4			velocity;
+	nv::vec4			position;			// use .W as collision TYPE
+	nv::vec4			velocity;
 	
 	//vec4			terrainOffset;	// stores in position
-	vec4			terrainScale;
-	vec4			terrainSize;		// texture dimentions
+	nv::vec4			terrainScale;
+	nv::vec4			terrainSize;		// texture dimentions
 
 	float 			radius;
 	float			friction;
@@ -224,21 +224,21 @@ struct TCollision
 	// terrain texture pointer (bindless texture)
 	GLuint64		terrainAddress;
 
-	mat4			tm;
-	mat4			invtm;
+	nv::mat4			tm;
+	nv::mat4			invtm;
 };
 
 struct	TForce
 {
-	vec4			position;
-	vec4			direction;		// use w as a force type
+	nv::vec4			position;
+	nv::vec4			direction;		// use w as a force type
 	float			magnitude;
 	float			radius;
 	float			noiseFreq;
 	float 			noiseSpeed;
-	vec4			turbulence;		// w - use turbulence or not, x-amplitude, y-frequency
-	vec4			wind1;			// special wind pre-calculated force
-	vec4			wind2;	
+	nv::vec4			turbulence;		// w - use turbulence or not, x-amplitude, y-frequency
+	nv::vec4			wind1;			// special wind pre-calculated force
+	nv::vec4			wind2;
 
 };
 
@@ -253,45 +253,45 @@ struct	TForce
 struct EvaluationExchange
 {
 	//
-	static void SetOrientation(evaluateBlock &data, const vec3 &rot, const vec3 &rotSpread, const vec3 &vel, const vec3 &velSpread);
-	static void SetDirection(evaluateBlock &data, const vec3 &dir, const float spreadH, const float spreadV, bool useNormals);
+	static void SetOrientation(evaluateBlock &data, const nv::vec3 &rot, const nv::vec3 &rotSpread, const nv::vec3 &vel, const nv::vec3 &velSpread);
+	static void SetDirection(evaluateBlock &data, const nv::vec3 &dir, const float spreadH, const float spreadV, bool useNormals);
 	static void SetSpeed(evaluateBlock &data, const float speed, const float spread, 
-		const vec4 &emittervel, vec4 pivot, vec4 angular, const double *TMdelta);
+		const nv::vec4 &emittervel, nv::vec4 pivot, nv::vec4 angular, const double *TMdelta);
 	//static void SetDirection(evaluateBlock &data, const vec3 &dir, const vec3 &random, bool useNormals);
 	//static void SetVelocity(evaluateBlock &data, const vec3 &vel, const vec3 &random, const vec4 &emittervel);
 	static void SetDynamicParameters(evaluateBlock &data, float mass, float damping);
-	static void SetGravity(evaluateBlock &data, const vec3 &gravityDir, bool useGravity);
+	static void SetGravity(evaluateBlock &data, const nv::vec3 &gravityDir, bool useGravity);
 	static void SetFlags(evaluateBlock &data, bool useForces, bool useCollisions, int emitterType);
 	static void SetTurbulence(evaluateBlock &data, const bool useTurbulence, const float freq, const float speed, const float amp);
 	static void SetFloorParamaters(evaluateBlock &data, bool useFloor, float friction, float level);
-	static void SetBoundingBox(evaluateBlock &data, const vec3 &bmin, const vec3 &bmax);
+	static void SetBoundingBox(evaluateBlock &data, const nv::vec3 &bmin, const nv::vec3 &bmax);
 };
 
 //
 struct CollisionExchange
 {
-	static void SetPosition(TCollision &data, const int type, const vec3 &pos);
-	static void SetVelocity(TCollision &data, const vec4 &value);
+	static void SetPosition(TCollision &data, const int type, const nv::vec3 &pos);
+	static void SetVelocity(TCollision &data, const nv::vec4 &value);
 	static void SetRadius(TCollision &data, const double value);
 	static void SetFriction(TCollision &data, const double value);
 	static void SetMatrix(TCollision &data, const double *value, const double *invvalue);
 
-	static void SetTerrainScale(TCollision &data, const vec4 &value);
-	static void SetTerrainSize(TCollision &data, const vec4 &value);
+	static void SetTerrainScale(TCollision &data, const nv::vec4 &value);
+	static void SetTerrainSize(TCollision &data, const nv::vec4 &value);
 	static void SetTerrainTextureAddress(TCollision &data, const GLuint64 address);
 };
 
 //
 struct ForceExchange
 {
-	static void SetPosition(TForce &data, int type, const vec3 &pos);
-	static void SetDirection(TForce &data, const vec3 &dir, const double w);
+	static void SetPosition(TForce &data, int type, const nv::vec3 &pos);
+	static void SetDirection(TForce &data, const nv::vec3 &dir, const double w);
 	static void SetMagnitude(TForce &data, const float value);
 	static void SetRadius(TForce &data, const double value);
 	static void SetTurbulence(TForce &data, const bool usage, const double amplitude, const double frequency);
-	static void SetTurbulence(TForce &data,  const vec3 &value, const double w);
-	static void SetWind1(TForce &data, const vec3 &value, const double w);
-	static void SetWind2(TForce &data, const vec3 &value, const double w);
+	static void SetTurbulence(TForce &data,  const nv::vec3 &value, const double w);
+	static void SetWind1(TForce &data, const nv::vec3 &value, const double w);
+	static void SetWind2(TForce &data, const nv::vec3 &value, const double w);
 	static void SetNoise(TForce &data, const double _useNoise, const double _noiseFreq, const double _noiseSpeed);
 };
 

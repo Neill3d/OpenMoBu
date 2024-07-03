@@ -26,15 +26,15 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 //
 struct TLight
 {
-	vec4 		attenuations;
+	nv::vec4 		attenuations;
 
-	vec3 		position;
+	nv::vec3 		position;
 	float		type;
 
-	vec3 		dir;
+	nv::vec3 		dir;
 	float		spotAngle;
 
-	vec3 		color;
+	nv::vec3 		color;
 	float		radius;
 
 	float		shadowMapLayer;
@@ -43,20 +43,20 @@ struct TLight
 	float		castSpecularOnObject;
 
 	//mat4		shadowVP;	// view projection matrix of a shadow map
-	vec4		shadowIndex;	// index and count in the shadow matrix array
-	vec4		normalizedFarPlanes;	// for cascaded shadows
+	nv::vec4		shadowIndex;	// index and count in the shadow matrix array
+	nv::vec4		normalizedFarPlanes;	// for cascaded shadows
 };
 
 struct TTransform
 {
-	mat4 	m4_World;
-	mat4	m4_View;
-	mat4	m4_Proj;
-	mat4	m4_Model;
+	nv::mat4 	m4_World;
+	nv::mat4	m4_View;
+	nv::mat4	m4_Proj;
+	nv::mat4	m4_Model;
 
-	mat4	normalMatrix;
+	nv::mat4	normalMatrix;
 
-	vec4	eyePos;
+	nv::vec4	eyePos;
 };
 
 
@@ -87,18 +87,18 @@ struct TMaterial
 	//
 	/// Current material
 	//
-	vec4		emissiveColor;
-	vec4     	diffuseColor;
-	vec4     	ambientColor;
-	vec4		reflectColor;
-	vec4     	transparencyColor;
-	vec4     	specularColor;
+	nv::vec4		emissiveColor;
+	nv::vec4     	diffuseColor;
+	nv::vec4     	ambientColor;
+	nv::vec4		reflectColor;
+	nv::vec4     	transparencyColor;
+	nv::vec4     	specularColor;
 
 	//
-	mat4		diffuseTransform;
-	mat4		transparencyTransform;
-	mat4		specularTransform;
-	mat4		normalTransform;
-	mat4		reflectTransform;
+	nv::mat4		diffuseTransform;
+	nv::mat4		transparencyTransform;
+	nv::mat4		specularTransform;
+	nv::mat4		normalTransform;
+	nv::mat4		reflectTransform;
 	// 160 in total
 };

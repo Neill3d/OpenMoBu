@@ -435,8 +435,8 @@ bool ORTextureParamBlend::InitShaders()
 	try
 	{
 		FreeShaders();
-
-		if (false == FindEffectLocation( gBlendFragmentShaders[0], effectPath, effectFullName ) )
+		char buffer[256]{ 0 };
+		if (false == FindEffectLocation( gBlendFragmentShaders[0], buffer, 256) )
 			throw std::exception( "Failed to locate shader files" );
 
 		// most of shaders share the same simple vertex shader
@@ -445,7 +445,7 @@ bool ORTextureParamBlend::InitShaders()
 		{
 			mShaders[i] = new GLSLShader();
 
-			if (false == mShaders[i]->LoadShaders( FBString(effectPath, gBlendVertexShaders[i]), FBString(effectPath, gBlendFragmentShaders[i]) ) )
+			if (false == mShaders[i]->LoadShaders( FBString(buffer, gBlendVertexShaders[i]), FBString(buffer, gBlendFragmentShaders[i]) ) )
 				throw std::exception( "Failed to load shader" );
 		
 			//

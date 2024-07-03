@@ -47,6 +47,11 @@ protected:
 	struct SubShader : public CommonEffectUniforms
 	{
 	public:
+
+		SubShader() = default;
+		virtual ~SubShader()
+		{}
+
 		enum { LOCATIONS_COUNT = 12 };
 		union
 		{
@@ -85,6 +90,7 @@ protected:
 		std::vector<FBVector3d>	m_LightPositions; // window xy and depth (for attenuation)
 		std::vector<FBColor>	m_LightColors;
 
+		const char* GetEnableMaskPropertyName() const override { return "Flare Use Masking"; }
 
 		void Init();
 		bool PrepUniforms(GLSLShader* mShader);

@@ -33,9 +33,12 @@ public:
 	// information
 	const char* GetCaption() override { return "Drag"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\Grab.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Grab.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\Grab.png"; 
 	}
@@ -60,9 +63,12 @@ public:
 	// information
 	const char* GetCaption() { return "Push"; }
 	const char* GetPicturePath() { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\Bulge.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Bulge.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\Bulge.png"; 
 	}
@@ -87,9 +93,12 @@ public:
 	// information
 	const char* GetCaption() override { return "Freeze"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\Freeze.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Freeze.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\Freeze.png";
 	}
@@ -114,9 +123,12 @@ public:
 	// information
 	const char* GetCaption() override { return "Smooth"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\Smooth.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Smooth.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\Smooth.png";
 	}
@@ -141,9 +153,12 @@ public:
 	// information
 	const char* GetCaption() override { return "Erase"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\Erase.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Erase.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\Erase.png";
 	}
@@ -168,9 +183,12 @@ public:
 	// information
 	const char* GetCaption() override { return "Paint"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\Paint.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Paint.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\Paint.png";
 	}
@@ -197,9 +215,12 @@ public:
 
 	const char* GetCaption() override { return "Linear"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\falloffLinear.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffLinear.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\falloffLinear.png";
 	}
@@ -224,9 +245,12 @@ public:
 
 	const char* GetCaption() override { return "Hard"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\falloffTop.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffTop.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\falloffTop.png";
 	}
@@ -250,9 +274,12 @@ public:
 
 	const char* GetCaption() override { return "Point"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\falloffPoint.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffPoint.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\falloffPoint.png";
 	}
@@ -276,9 +303,12 @@ public:
 
 	const char* GetCaption() override { return "Smooth"; }
 	const char* GetPicturePath() override { 
-		FBString out_path;
-		if (FindEffectLocation( "\\System\\BlendShapeToolkit\\falloffSmooth.png", out_path, FullPath ) == true)
+		char buffer[256]{ 0 };
+		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffSmooth.png", buffer, 256))
+		{
+			FullPath = buffer;
 			return FullPath;
+		}
 		
 		return "\\BlendShapeToolkit\\falloffSmooth.png";
 	}

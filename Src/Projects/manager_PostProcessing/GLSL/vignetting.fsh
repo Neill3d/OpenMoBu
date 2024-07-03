@@ -57,6 +57,6 @@ void main (void)
 		f *= 1.0 - mask.r * useMasking;
 	}
 	
-	color = mix(color, vigncolor, amount);
+	color = mix(color, vigncolor, f);
 	gl_FragData [0] =  color;
 }

@@ -18,8 +18,9 @@ using namespace GPUParticles;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-void EvaluationExchange::SetOrientation(evaluateBlock &data, const vec3 &rot, const vec3 &rotSpread, const vec3 &vel, const vec3 &velSpread)
+void EvaluationExchange::SetOrientation(evaluateBlock &data, const nv::vec3 &rot, const nv::vec3 &rotSpread, const nv::vec3 &vel, const nv::vec3 &velSpread)
 {
+	using namespace nv;
 	data.gRotation = vec4( rot.x * 3.1415 / 180.0, 
 		rot.y * 3.1415 / 180.0, 
 		rot.z * 3.1415 / 180.0, 0.0 );
@@ -30,9 +31,10 @@ void EvaluationExchange::SetOrientation(evaluateBlock &data, const vec3 &rot, co
 	data.gAngularVelocitySpread = vec4( velSpread.x, velSpread.y, velSpread.z, 0.0 );
 }
 
-void EvaluationExchange::SetDirection(evaluateBlock &data, const vec3 &dir, 
+void EvaluationExchange::SetDirection(evaluateBlock &data, const nv::vec3 &dir,
 	const float spreadH, const float spreadV, bool useNormals)
 {
+	using namespace nv;
 	vec3 ldir(dir);
 	float mag = ldir.normalize();
 
@@ -49,7 +51,7 @@ void EvaluationExchange::SetDirection(evaluateBlock &data, const vec3 &dir,
 	data.gDirSpreadVer = spreadV;
 }
 void EvaluationExchange::SetSpeed(evaluateBlock &data, const float speed, const float spread, 
-	const vec4 &emittervel, vec4 emitterPivot, vec4 angularVelocity, const double *TMdelta)
+	const nv::vec4 &emittervel, nv::vec4 emitterPivot, nv::vec4 angularVelocity, const double *TMdelta)
 {
 	data.gEmitSpeed = speed;
 	data.gSpeedSpread = spread;
@@ -66,7 +68,7 @@ void EvaluationExchange::SetDynamicParameters(evaluateBlock &data, float mass, f
 	data.gDynamic[0] = mass;
 	data.gDynamic[1] = damping;
 }
-void EvaluationExchange::SetGravity(evaluateBlock &data, const vec3 &gravityDir, bool useGravity)
+void EvaluationExchange::SetGravity(evaluateBlock &data, const nv::vec3 &gravityDir, bool useGravity)
 {
 	data.gGravity[0] = gravityDir[0];
 	data.gGravity[1] = gravityDir[1];
@@ -92,7 +94,7 @@ void EvaluationExchange::SetFloorParamaters(evaluateBlock &data, bool useFloor, 
 	data.gFloor[1] = friction;
 	data.gFloor[2] = level;
 }
-void EvaluationExchange::SetBoundingBox(evaluateBlock &data, const vec3 &bmin, const vec3 &bmax)
+void EvaluationExchange::SetBoundingBox(evaluateBlock &data, const nv::vec3 &bmin, const nv::vec3 &bmax)
 {
 	data.gMin = bmin;
 	data.gMax = bmax;
@@ -102,7 +104,7 @@ void EvaluationExchange::SetBoundingBox(evaluateBlock &data, const vec3 &bmin, c
 ////////////////////////////////////////////////////////////////////////////
 //
 
-void CollisionExchange::SetPosition(TCollision &data, const int type, const vec3 &pos)
+void CollisionExchange::SetPosition(TCollision &data, const int type, const nv::vec3 &pos)
 {
 	data.position[0]=pos[0];
 	data.position[1]=pos[1];
@@ -110,7 +112,7 @@ void CollisionExchange::SetPosition(TCollision &data, const int type, const vec3
 	data.position[3]= (double) type;
 }
 
-void CollisionExchange::SetVelocity(TCollision &data, const vec4 &value)
+void CollisionExchange::SetVelocity(TCollision &data, const nv::vec4 &value)
 {
 	data.velocity = value;
 }
@@ -134,11 +136,11 @@ void CollisionExchange::SetMatrix(TCollision &data, const double *value, const d
 	}
 }
 
-void CollisionExchange::SetTerrainScale(TCollision &data, const vec4 &value)
+void CollisionExchange::SetTerrainScale(TCollision &data, const nv::vec4 &value)
 {
 	data.terrainScale = value;
 }
-void CollisionExchange::SetTerrainSize(TCollision &data, const vec4 &value)
+void CollisionExchange::SetTerrainSize(TCollision &data, const nv::vec4 &value)
 {
 	data.terrainSize = value;
 }
@@ -150,7 +152,7 @@ void CollisionExchange::SetTerrainTextureAddress(TCollision &data, const GLuint6
 ////////////////////////////////////////////////////////////////////////////
 //
 
-void ForceExchange::SetPosition(TForce &data, int type, const vec3 &pos)
+void ForceExchange::SetPosition(TForce &data, int type, const nv::vec3 &pos)
 {
 	data.position[0]=pos[0];
 	data.position[1]=pos[1];
@@ -158,7 +160,7 @@ void ForceExchange::SetPosition(TForce &data, int type, const vec3 &pos)
 	data.position[3]= (float) type;
 }
 
-void ForceExchange::SetDirection(TForce &data, const vec3 &dir, const double w)
+void ForceExchange::SetDirection(TForce &data, const nv::vec3 &dir, const double w)
 {
 	data.direction[0]=dir[0];
 	data.direction[1]=dir[1];
@@ -183,21 +185,21 @@ void ForceExchange::SetTurbulence(TForce &data, const bool usage, const double a
 	data.turbulence[2] = 0.0f;
 	data.turbulence[3] = (usage) ? 1.0f : 0.0f;
 }
-void ForceExchange::SetTurbulence(TForce &data,  const vec3 &value, const double w)
+void ForceExchange::SetTurbulence(TForce &data,  const nv::vec3 &value, const double w)
 {
 	data.turbulence[0]=value[0];
 	data.turbulence[1]=value[1];
 	data.turbulence[2]=value[2];
 	data.turbulence[3]= w;
 }
-void ForceExchange::SetWind1(TForce &data, const vec3 &value, const double w)
+void ForceExchange::SetWind1(TForce &data, const nv::vec3 &value, const double w)
 {
 	data.wind1[0]=value[0];
 	data.wind1[1]=value[1];
 	data.wind1[2]=value[2];
 	data.wind1[3]= w;
 }
-void ForceExchange::SetWind2(TForce &data, const vec3 &value, const double w)
+void ForceExchange::SetWind2(TForce &data, const nv::vec3 &value, const double w)
 {
 	data.wind2[0]=value[0];
 	data.wind2[1]=value[1];

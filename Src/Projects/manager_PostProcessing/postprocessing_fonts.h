@@ -44,9 +44,9 @@ private:
 	markup_t		normal;
 	float			mBounds[4];
 
-	NVMath::mat4 model;
-	NVMath::mat4 view;
-	NVMath::mat4 projection;
+	nv::mat4 model;
+	nv::mat4 view;
+	nv::mat4 projection;
 
 	font_manager_t* font_manager;
 	text_buffer_t* buffer;	// store pen position and characters

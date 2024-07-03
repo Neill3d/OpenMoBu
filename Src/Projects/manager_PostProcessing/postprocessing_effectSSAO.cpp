@@ -86,13 +86,13 @@ bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 
 	GLint loc = mShader->findLocation("colorSampler");
 	if (loc >= 0)
-		glUniform1i(loc, 0);
+		glUniform1i(loc, GetColorSamplerSlot());
 	loc = mShader->findLocation("depthSampler");
 	if (loc >= 0)
-		glUniform1i(loc, 2);
+		glUniform1i(loc, GetDepthSamplerSlot());
 	loc = mShader->findLocation("texRandom");
 	if (loc >= 0)
-		glUniform1i(loc, 4);
+		glUniform1i(loc, GetRandomSamplerSlot());
 
 	PrepareUniformLocations(mShader);
 
@@ -123,32 +123,30 @@ bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 
 bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
 {
-	bool lSuccess = false;
-
-	float znear = (float) pCamera->NearPlaneDistance;
-	float zfar = (float) pCamera->FarPlaneDistance;
+	const float znear = (float) pCamera->NearPlaneDistance;
+	const float zfar = (float) pCamera->FarPlaneDistance;
 	FBCameraType cameraType;
 	pCamera->Type.GetData(&cameraType, sizeof(FBCameraType));
-	bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
-	//float fov = (float) pCamera->FieldOfView;
-
+	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
+	
 	// calculate a diagonal fov
 
 	// convert to mm
-	double filmWidth = 25.4 * pCamera->FilmSizeWidth;
-	double filmHeight = 25.4 * pCamera->FilmSizeHeight;
+	const double filmWidth = 25.4 * pCamera->FilmSizeWidth;
+	const double filmHeight = 25.4 * pCamera->FilmSizeHeight;
 
-	double diag = sqrt(filmWidth*filmWidth + filmHeight*filmHeight);
-	double focallen = pCamera->FocalLength;
+	const double diag = sqrt(filmWidth*filmWidth + filmHeight*filmHeight);
+	const double focallen = pCamera->FocalLength;
 
-	float fov = 2.0 * atan(diag / (focallen * 2.0));
+	const float fov = 2.0 * atan(diag / (focallen * 2.0));
 
-	float clipInfo[4];
-
-	clipInfo[0] = znear * zfar;
-	clipInfo[1] = znear - zfar;
-	clipInfo[2] = zfar;
-	clipInfo[3] = (perspective) ? 1.0f : 0.0f;
+	float clipInfo[4]
+	{
+		znear * zfar,
+		znear - zfar,
+		zfar,
+		(perspective) ? 1.0f : 0.0f
+	};
 
 	float onlyAO = (pData->OnlyAO) ? 1.0f : 0.0f;
 
@@ -162,17 +160,17 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 	float P[16];
 	for (int i = 0; i < 16; ++i)
 	{
-		P[i] = (float)dproj[i];
+		P[i] = static_cast<float>(dproj[i]);
 	}
 
-	float projInfoPerspective[] = {
+	const float projInfoPerspective[] = {
 		2.0f / (P[4 * 0 + 0]),       // (x) * (R - L)/N
 		2.0f / (P[4 * 1 + 1]),       // (y) * (T - B)/N
 		-(1.0f - P[4 * 2 + 0]) / P[4 * 0 + 0], // L/N
 		-(1.0f + P[4 * 2 + 1]) / P[4 * 1 + 1], // B/N
 	};
 
-	float projInfoOrtho[] = {
+	const float projInfoOrtho[] = {
 		2.0f / (P[4 * 0 + 0]),      // ((x) * R - L)
 		2.0f / (P[4 * 1 + 1]),      // ((y) * T - B)
 		-(1.0f + P[4 * 3 + 0]) / P[4 * 0 + 0], // L
@@ -181,7 +179,7 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 
 	int useOrtho = (false == perspective) ? 1 : 0;
 	int projOrtho = useOrtho;
-	float *projInfo = useOrtho ? projInfoOrtho : projInfoPerspective;
+	const float *projInfo = useOrtho ? projInfoOrtho : projInfoPerspective;
 
 	float projScale;
 	if (useOrtho){
@@ -217,61 +215,58 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 	int quarterHeight = ((h + 3) / 4);
 
 	GLSLShader* mShader = GetShaderPtr();
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	if (!mShader)
+		return false;
+	
+	mShader->Bind();
 
-		UpdateUniforms(pData);
+	UpdateUniforms(pData);
 
-		if (mLoc.clipInfo >= 0)
-			glUniform4fv(mLoc.clipInfo, 1, clipInfo);
+	if (mLoc.clipInfo >= 0)
+		glUniform4fv(mLoc.clipInfo, 1, clipInfo);
 
-		if (mLoc.OnlyAO >= 0)
-			glUniform1f(mLoc.OnlyAO, (float)onlyAO);
+	if (mLoc.OnlyAO >= 0)
+		glUniform1f(mLoc.OnlyAO, (float)onlyAO);
 
-		// proj
-		if (mLoc.projInfo >= 0)
-			glUniform4fv(mLoc.projInfo, 1, projInfo);
-		if (mLoc.projOrtho >= 0)
-			glUniform1i(mLoc.projOrtho, projOrtho);
+	// proj
+	if (mLoc.projInfo >= 0)
+		glUniform4fv(mLoc.projInfo, 1, projInfo);
+	if (mLoc.projOrtho >= 0)
+		glUniform1i(mLoc.projOrtho, projOrtho);
 
-		// pass radius
-		if (mLoc.RadiusToScreen >= 0)
-			glUniform1f(mLoc.RadiusToScreen, (float)RadiusToScreen);
-		if (mLoc.R2 >= 0)
-			glUniform1f(mLoc.R2, (float)R2);
-		if (mLoc.NegInvR2 >= 0)
-			glUniform1f(mLoc.NegInvR2, (float)negInvR2);
+	// pass radius
+	if (mLoc.RadiusToScreen >= 0)
+		glUniform1f(mLoc.RadiusToScreen, (float)RadiusToScreen);
+	if (mLoc.R2 >= 0)
+		glUniform1f(mLoc.R2, (float)R2);
+	if (mLoc.NegInvR2 >= 0)
+		glUniform1f(mLoc.NegInvR2, (float)negInvR2);
 
-		// ao
-		if (mLoc.PowExponent >= 0)
-			glUniform1f(mLoc.PowExponent, intensity);
-		if (mLoc.NDotVBias >= 0)
-			glUniform1f(mLoc.NDotVBias, bias);
-		if (mLoc.AOMultiplier >= 0)
-			glUniform1f(mLoc.AOMultiplier, aoMult);
+	// ao
+	if (mLoc.PowExponent >= 0)
+		glUniform1f(mLoc.PowExponent, intensity);
+	if (mLoc.NDotVBias >= 0)
+		glUniform1f(mLoc.NDotVBias, bias);
+	if (mLoc.AOMultiplier >= 0)
+		glUniform1f(mLoc.AOMultiplier, aoMult);
 
-		// resolution
-		if (mLoc.InvQuarterResolution >= 0)
-			glUniform2f(mLoc.InvQuarterResolution, 1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
-		if (mLoc.InvFullResolution >= 0)
-			glUniform2f(mLoc.InvFullResolution, 1.0f / float(w), 1.0f / float(h));
+	// resolution
+	if (mLoc.InvQuarterResolution >= 0)
+		glUniform2f(mLoc.InvQuarterResolution, 1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
+	if (mLoc.InvFullResolution >= 0)
+		glUniform2f(mLoc.InvFullResolution, 1.0f / float(w), 1.0f / float(h));
 
-		if (mLoc.hbaoRandom >= 0)
-			glUniform4fv(mLoc.hbaoRandom, 1, mRandom);
+	if (mLoc.hbaoRandom >= 0)
+		glUniform4fv(mLoc.hbaoRandom, 1, mRandom);
 
-		mShader->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	mShader->UnBind();
+	return true;
 }
 
 void PostEffectSSAO::Bind()
 {
 	// bind a random texture
-	glActiveTexture(GL_TEXTURE4);
+	glActiveTexture(GL_TEXTURE0 + GetRandomSamplerSlot());
 	glBindTexture(GL_TEXTURE_2D, hbao_random);
 	glActiveTexture(GL_TEXTURE0);
 
@@ -281,7 +276,7 @@ void PostEffectSSAO::Bind()
 void PostEffectSSAO::UnBind()
 {
 	// bind a random texture
-	glActiveTexture(GL_TEXTURE4);
+	glActiveTexture(GL_TEXTURE0 + GetRandomSamplerSlot());
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 

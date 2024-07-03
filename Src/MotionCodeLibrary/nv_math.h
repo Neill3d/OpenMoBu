@@ -41,7 +41,7 @@ Comments:
 #include <stdlib.h>
 #include <float.h>
 
-namespace NVMath
+namespace nv
 {
     typedef float nv_scalar;
 

@@ -31,11 +31,17 @@ public:
 	virtual const char *GetVertexFname(const int shaderIndex) override;
 	virtual const char *GetFragmentFname(const int shaderIndex) override;
 
+	const char* GetEnableMaskPropertyName() const override { return "SSAO Use Masking"; }
+
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
 	virtual void Bind() override;
 	virtual void UnBind() override;
+
+	static GLint GetColorSamplerSlot() { return 0; }
+	static GLint GetDepthSamplerSlot() { return 2; }
+	static GLint GetRandomSamplerSlot() { return 5; }
 
 protected:
 

@@ -61,7 +61,7 @@ size_t CompressImageEnd();
 
 ///////////////////
 
-void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, NVMath::vec3 *points);
-void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, NVMath::vec3 *points);
+void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, nv::vec3 *points);
+void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, nv::vec3 *points);
 
 void RenderMaskedModels(FBCamera* camera);

@@ -152,7 +152,7 @@ public:
 	void	SetTime(const float value);
 	void	SetDeltaTime(const float value);
 
-	void	UpdateTerrainModelTM(const mat4 &tm);
+	void	UpdateTerrainModelTM(const nv::mat4 &tm);
 	void	SetUniformTerrainTextureAddress(const GLuint64 address);
 	
 	const GLuint	GetEmitGeometryProgramId(const ETechEmitType	type) const

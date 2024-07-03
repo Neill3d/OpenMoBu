@@ -31,6 +31,8 @@ public:
 	const char *GetVertexFname(const int shaderIndex) override;
 	const char *GetFragmentFname(const int shaderIndex) override;
 
+	const char* GetEnableMaskPropertyName() const override { return "Disp Use Masking"; }
+
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 

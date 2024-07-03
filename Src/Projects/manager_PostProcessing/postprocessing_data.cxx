@@ -275,6 +275,8 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	//
 	AddPropertyView("Motion Blur Setup", "", true);
+	AddPropertyView("Motion Blur Use Masking", "Motion Blur Setup");
+	AddPropertyView("Motion Blur Masking Channel", "Motion Blur Setup");
 	AddPropertyView("Motion Blur Amount", "Motion Blur Setup");
 
 	//
@@ -385,7 +387,7 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Displacement Setup", "", true);
 
 	AddPropertyView("Disp Use Masking", "Displacement Setup");
-	AddPropertyView("Disp Use Masking Channel", "Displacement Setup");
+	AddPropertyView("Disp Masking Channel", "Displacement Setup");
 
 	AddPropertyView("Use Quake Water Effect", "Displacement Setup");
 	
@@ -500,6 +502,8 @@ bool PostPersistentData::FBCreate()
 
 	// Motion Blur
 	FBPropertyPublish(this, MotionBlur, "Motion Blur", nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlur_UseMasking, "Motion Blur Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlur_MaskingChannel, "Motion Blur Masking Channel", nullptr, nullptr);
 	FBPropertyPublish(this, MotionBlurAmount, "Motion Blur Amount", nullptr, nullptr);
 	
 	// Depth Of Field

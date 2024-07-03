@@ -35,6 +35,7 @@ namespace Graphics {
 
 	void SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
 	{
+		using namespace nv;
 		FBCamera *pCamera = pRenderOptions->GetRenderingCamera();
 
 		FBVector3d	eyePos;
@@ -67,7 +68,7 @@ namespace Graphics {
 
 	void SetTransform(TTransform &transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo)
 	{
-
+		using namespace nv;
 		FBMatrix lModelMatrix;
 		if (pInfo->GetFBModel())
 			pInfo->GetFBModel()->GetMatrix(lModelMatrix, kModelTransformation_Geometry);
@@ -262,7 +263,7 @@ namespace Graphics {
 	{
 	}
 
-	void CGPUShaderLights::UpdateTransformedLights(const mat4 &modelview, const mat4 &rotation, const mat4 &scaling)
+	void CGPUShaderLights::UpdateTransformedLights(const nv::mat4 &modelview, const nv::mat4 &rotation, const nv::mat4 &scaling)
 	{
 		mTransformedLights.resize(mLights.size());
 		mTransformedDirLights.resize(mDirLights.size());
@@ -926,6 +927,7 @@ namespace Graphics {
 
 	bool SuperShader::CCameraInfoCachePrep(FBCamera *pCamera, CCameraInfoCache &cache)
 	{
+		using namespace nv;
 		if (nullptr == pCamera)
 			return false;
 

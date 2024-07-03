@@ -314,8 +314,8 @@ void ForceGravity::FillForceData( TForce &data )
 		T = Direction;
 	}
 
-	ForceExchange::SetPosition( data, iEnabled, vec3((float)P[0], (float)P[1], (float)P[2]) );
-	ForceExchange::SetDirection( data, vec3((float)T[0], (float)T[1], (float)T[2]), 0.0);
+	ForceExchange::SetPosition( data, iEnabled, nv::vec3((float)P[0], (float)P[1], (float)P[2]) );
+	ForceExchange::SetDirection( data, nv::vec3((float)T[0], (float)T[1], (float)T[2]), 0.0);
 	ForceExchange::SetMagnitude( data, (float) Magnitude );
 	ForceExchange::SetRadius( data, (LocalInfluence) ? InfluenceRadius : 0.0 );
 	ForceExchange::SetTurbulence( data, Turbulence, Amplitude, Frequency );

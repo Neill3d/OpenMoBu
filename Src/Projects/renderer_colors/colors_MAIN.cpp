@@ -22,6 +22,10 @@
 	#include <windows.h>
 #endif
 
+#include "mobu_logging.h"
+
+DEFINE_LOGE;
+
 //--- Library declaration
 FBLibraryDeclare( orcustomrenderer )
 {

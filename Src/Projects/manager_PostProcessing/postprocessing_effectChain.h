@@ -60,6 +60,17 @@ public:
 	/// </summary>
 	void UpdateUniforms(PostPersistentData* data);
 
+	/// <summary>
+	/// a property name in @sa PostPersistentData
+	///  the property will be used to update useMasking glsl uniform value
+	/// </summary>
+	virtual const char* GetEnableMaskPropertyName() const = 0;
+
+	/// <summary>
+	/// glsl sampler slot binded for a mask texture
+	/// </summary>
+	static GLint GetMaskSamplerSlot() { return 4; }
+
 protected:
 	// common functionality of effects needs common uniforms
 	GLint lowerClipLoc{ -1 };
@@ -136,6 +147,8 @@ public:
 	virtual const char *GetVertexFname(const int shaderIndex) override;
 	virtual const char *GetFragmentFname(const int shaderIndex) override;
 
+	const char* GetEnableMaskPropertyName() const override { return "Fish Eye Use Masking"; }
+
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
@@ -171,6 +184,8 @@ public:
 	virtual const char *GetName() override;
 	virtual const char *GetVertexFname(const int shaderIndex) override;
 	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	const char* GetEnableMaskPropertyName() const override { return "Color Correction Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
@@ -213,6 +228,8 @@ public:
 	virtual const char *GetVertexFname(const int shaderIndex) override;
 	virtual const char *GetFragmentFname(const int shaderIndex) override;
 
+	const char* GetEnableMaskPropertyName() const override { return "Vignetting Use Masking"; }
+
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
 
@@ -252,6 +269,8 @@ public:
 	virtual const char *GetName() override;
 	virtual const char *GetVertexFname(const int shaderIndex) override;
 	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	const char* GetEnableMaskPropertyName() const override { return "Grain Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
@@ -302,6 +321,8 @@ public:
 	virtual const char *GetName() override;
 	virtual const char *GetVertexFname(const int shaderIndex) override;
 	virtual const char *GetFragmentFname(const int shaderIndex) override;
+
+	const char* GetEnableMaskPropertyName() const override { return "Depth Of Field Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;

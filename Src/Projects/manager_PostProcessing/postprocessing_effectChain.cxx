@@ -54,7 +54,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //
 extern void LOGE(const char* pFormatString, ...);
 
-
 /////////////////////////////////////////////////////////////////////////
 // EffectBase
 
@@ -85,10 +84,10 @@ void PostEffectBase::FreeShaders()
 
 void CommonEffectUniforms::PrepareUniformLocations(GLSLShader* shader)
 {
-	GLint loc = shader->findLocation("maskSampler");
+	const GLint loc = shader->findLocation("maskSampler");
 	if (loc >= 0)
-		glUniform1i(loc, 4);
-
+		glUniform1i(loc, GetMaskSamplerSlot());
+	
 	useMaskLoc = shader->findLocation("useMasking");
 	upperClipLoc = shader->findLocation("upperClip");
 	lowerClipLoc = shader->findLocation("lowerClip");
@@ -96,7 +95,8 @@ void CommonEffectUniforms::PrepareUniformLocations(GLSLShader* shader)
 
 void CommonEffectUniforms::UpdateUniforms(PostPersistentData* data)
 {
-	const bool useMasking = data->EnableMaskingForAllEffects || data->LensFlare_UseMasking;
+	const bool isEnabledEffectMasking = data->PropertyList.Find(GetEnableMaskPropertyName())->AsInt() > 0;
+	const bool useMasking = data->UseCompositeMasking && (data->EnableMaskingForAllEffects || isEnabledEffectMasking);
 	const double _upperClip = data->UpperClip;
 	const double _lowerClip = data->LowerClip;
 
@@ -1587,7 +1587,7 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		}
 
 		const GLuint maskTextureId = maskBuffer->GetColorObject();
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, maskTextureId);
 		glActiveTexture(GL_TEXTURE0);
 		isMaskTextureBinded = true;
@@ -1599,18 +1599,18 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 		// prep data
 
-		float znear = static_cast<float>(mLastCamera->NearPlaneDistance);
-		float zfar = static_cast<float>(mLastCamera->FarPlaneDistance);
+		const float znear = static_cast<float>(mLastCamera->NearPlaneDistance);
+		const float zfar = static_cast<float>(mLastCamera->FarPlaneDistance);
 		FBCameraType cameraType;
 		mLastCamera->Type.GetData(&cameraType, sizeof(FBCameraType));
-		bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
+		const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
 
-		float clipInfo[4];
-
-		clipInfo[0] = znear * zfar;
-		clipInfo[1] = znear - zfar;
-		clipInfo[2] = zfar;
-		clipInfo[3] = (perspective) ? 1.0f : 0.0f;
+		const float clipInfo[4]{
+			znear* zfar,
+			znear - zfar,
+			zfar,
+			(perspective) ? 1.0f : 0.0f
+		};
 
 		FrameBuffer *pBufferDepth = buffers->GetBufferDepthPtr();
 
@@ -1879,7 +1879,7 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	}
 	if (isMaskTextureBinded)
 	{
-		glActiveTexture(GL_TEXTURE4);
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	glActiveTexture(GL_TEXTURE0);
@@ -2157,6 +2157,7 @@ bool PostEffectChain::LoadShaders()
 
 	return lSuccess;
 }
+
 
 void PostEffectChain::FreeShaders()
 {

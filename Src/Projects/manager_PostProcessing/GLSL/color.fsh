@@ -12,8 +12,10 @@
 //	Special for Les Androids Associes
 //
 
-uniform	sampler2D		sampler0;
+uniform	sampler2D	sampler0;
+uniform sampler2D	maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -316,7 +318,8 @@ void main (void)
 		return;
 	}
 	
-	vec4 srccolor = texture2D ( sampler0, tx );
+	vec4 inputColor = texture2D ( sampler0, tx );
+	vec4 srccolor = inputColor;
 
 	if (gCA.w > 0.0)
 	{
@@ -340,5 +343,11 @@ void main (void)
 	
 	vec4 outColor = vec4( mix(color, inverseColor, inverse), 1.0);
 	
+	vec4 mask = vec4(0.0);
+	if (useMasking > 0.0)
+	{
+		mask = texture2D(maskSampler, tx);
+	}
+	outColor.rgb = mix(outColor, inputColor, mask.r * useMasking);
 	gl_FragColor = outColor;
 }

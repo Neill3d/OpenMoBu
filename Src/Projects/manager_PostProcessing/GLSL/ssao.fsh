@@ -176,23 +176,23 @@ void main()
 
 	// Get jitter vector for the current full-res pixel
 	vec4 Rand = GetJitter();
-
+	
 	float AO = ComputeCoarseAO(uv, RadiusPixels, Rand, ViewPosition, ViewNormal);
 	AO = pow(AO, PowExponent);
 	
-	vec4 outcolor = vec4(AO);
-	
-	vec4 mask = vec4(0.0);
 	if (useMasking > 0.0)
 	{
-		mask = texture2D( maskSampler, uv );
+		vec4 mask = texture2D( maskSampler, uv );
+		AO = mix(AO, 1.0, mask.r * useMasking);
 	}
 
+	vec4 outcolor = vec4(AO);
+	
 	if (OnlyAO < 1.0)
 	{
-		vec4 srccolor = texture2D( colorSampler, uv );
-		outcolor = mix(srccolor * outcolor, srccolor,  useMasking);
+		outcolor = texture2D( colorSampler, uv );
+		outcolor.rgb *= AO;
 	}
 	
-	gl_FragColor = outcolor;	
+	gl_FragColor = outcolor;		
 }

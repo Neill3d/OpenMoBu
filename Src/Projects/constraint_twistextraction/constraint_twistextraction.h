@@ -70,18 +70,18 @@ protected:
 	FBString mSourceName;
 	FBString mConstrainedName;
 
-	quat mOffsetRotation;
+	nv::quat mOffsetRotation;
 
-	vec3 mForwardVector;
-	vec3 mRotatedVector;
+	nv::vec3 mForwardVector;
+	nv::vec3 mRotatedVector;
 
 	FBRotationOrder mSourceRotationOrder;
 	FBRotationOrder mConstrainedRotationOrder;
 
 	void SetZero();
 
-	static void ShortestArcQuat(const vec3& rotatedVector, const vec3& forwardVector, quat& outQuaternion);
-	static void Orthogonal(const vec3& inVec, vec3& outVec);
+	static void ShortestArcQuat(const nv::vec3& rotatedVector, const nv::vec3& forwardVector, nv::quat& outQuaternion);
+	static void Orthogonal(const nv::vec3& inVec, nv::vec3& outVec);
 
 	static void SetAxis(HIObject pObject, axis pValue);
 };

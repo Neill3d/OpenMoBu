@@ -844,7 +844,7 @@ void ParticleShaderFX::SetDeltaTime(const float value)
 	fx_gDeltaTime->setValue1f(value);
 }
 
-void ParticleShaderFX::UpdateTerrainModelTM(const mat4 &tm)
+void ParticleShaderFX::UpdateTerrainModelTM(const nv::mat4 &tm)
 {
 	fx_terrainModelTM->updateMatrix4f( (float*)tm.mat_array, fx_passTerrainPrep);
 }

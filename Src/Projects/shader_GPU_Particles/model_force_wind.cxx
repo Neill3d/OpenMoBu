@@ -290,6 +290,7 @@ FBVector3d QuatMultVect(const FBQuaternion &q, const FBVector3d &p)
 
 void ForceWind::FillForceData( TForce &data, const float elapsedTime )
 {
+	using namespace nv;
 	FBVector4d wind1, wind2, wind3, wind4;
 
 	FBVector3d P, T(0.0, 0.0, 1.0);
@@ -383,7 +384,7 @@ void ForceWind::FillForceData( TForce &data, const float elapsedTime )
 
 		wind4 = FBVector4d(newWindDir[0]*wM, newWindDir[1]*wM, newWindDir[2]*wM);
 		FBVectorMatrixMult( wind4, m, wind4 );
-		ForceExchange::SetWind2( data, vec3( (float)wind4[0], (float)wind4[1], (float)wind4[2]), elapsedTime );
+		ForceExchange::SetWind2( data, nv::vec3( (float)wind4[0], (float)wind4[1], (float)wind4[2]), elapsedTime );
 	}
 
 	SetWindVectors( wind1, wind2, wind3, wind4 );

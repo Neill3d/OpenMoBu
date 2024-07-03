@@ -43,12 +43,12 @@ float fract (float f) {
   return f-(long)f;
 }
 
-vec4 fract(const vec4 &v)
+nv::vec4 fract(const nv::vec4 &v)
 {
-	return vec4( fract(v.x), fract(v.y), fract(v.z), fract(v.w) );
+	return nv::vec4( fract(v.x), fract(v.y), fract(v.z), fract(v.w) );
 }
 
-vec4 Color_UnPack (float x)
+nv::vec4 Color_UnPack (float x)
 {
 	float a,b,c,d;
 	a = floor(x*255.0/64.0)*64.0/255.0;
@@ -61,11 +61,11 @@ vec4 Color_UnPack (float x)
 	c *= 16.0;
 	d = x*255.0 * 64.0 / 255.0; // scan be simplified to just x*64.0
 			
-	return vec4(a,b,c,d);
+	return nv::vec4(a,b,c,d);
 }
 
 
-float Color_Pack (const vec4 &colour)
+float Color_Pack (const nv::vec4 &colour)
 {
 	float x = 1.0/255.0 * (floor(colour.x*255.0/64.0)*64.0 + floor(colour.y*255.0/64.0)*16.0 + floor(colour.z*255.0/64.0)*4.0 + floor(colour.w*255.0/64.0));
 	return x;
@@ -74,8 +74,9 @@ float Color_Pack (const vec4 &colour)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-void ParticleSystem::GetRandomVolumePos(const bool local, vec4 &pos)
+void ParticleSystem::GetRandomVolumePos(const bool local, nv::vec4 &pos)
 {
+	using namespace nv;
 	vec3 lMax = mEvaluateData.gMax;
 	vec3 lMin = mEvaluateData.gMin;
 			
@@ -106,21 +107,21 @@ void ParticleSystem::GetRandomVolumePos(const bool local, vec4 &pos)
  0 <= phi <= 360 deg (2Pi)
 */
 
-void ParticleSystem::ConvertUnitVectorToSpherical(const vec4 &v, float &r, float &theta, float &phi)
+void ParticleSystem::ConvertUnitVectorToSpherical(const nv::vec4 &v, float &r, float &theta, float &phi)
 {
 	r = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 	theta = atan2( v.y, v.x );
 	phi = atan2( sqrt(v.x*v.x + v.y*v.y), v.z );
 }
 
-void ParticleSystem::ConvertSphericalToUnitVector(const float r, const float theta, const float phi, vec4 &v)
+void ParticleSystem::ConvertSphericalToUnitVector(const float r, const float theta, const float phi, nv::vec4 &v)
 {
 	v.x = r * cos(theta) * sin(phi);
 	v.y = r * sin(theta) * sin(phi);
 	v.z = r * cos(phi);
 }
 
-void ParticleSystem::GetRandomDir(const vec4 &dir, const float randomH, const float randomV, vec4 &outdir)
+void ParticleSystem::GetRandomDir(const nv::vec4 &dir, const float randomH, const float randomV, nv::vec4 &outdir)
 {
 	float r, theta, phi;
 
@@ -140,15 +141,16 @@ float ParticleSystem::GetRandomSpeed()
 	return (mEvaluateData.gEmitSpeed - rnd * mEvaluateData.gSpeedSpread);
 }
 
-void ParticleSystem::GetRandomVolumeDir(vec4 &vel)                                                   
+void ParticleSystem::GetRandomVolumeDir(nv::vec4 &vel)
 {
 	const float randomH = mEvaluateData.gDirSpreadHor * (float) dist(e2);
 	const float randomV = mEvaluateData.gDirSpreadVer * (float) dist(e2);
 	GetRandomDir(mEvaluateData.gDirection, randomH, randomV, vel);
 }  
 
-void ParticleSystem::GetRandomVolumeColor(const vec4 &pos, vec4 &color)
+void ParticleSystem::GetRandomVolumeColor(const nv::vec4 &pos, nv::vec4 &color)
 {
+	using namespace nv;
 	vec3 lMax = mEvaluateData.gMax;
 	vec3 lMin = mEvaluateData.gMin;
 	
@@ -158,7 +160,7 @@ void ParticleSystem::GetRandomVolumeColor(const vec4 &pos, vec4 &color)
 	color.w = 1.0f;
 }
 
-void ParticleSystem::GetRandomVerticesPos(const bool local, vec4 &pos, int &vertIndex)
+void ParticleSystem::GetRandomVerticesPos(const bool local, nv::vec4 &pos, int &vertIndex)
 {
 	if (mSurfaceData.size() == 0)
 		return;
@@ -195,9 +197,9 @@ void ParticleSystem::GetRandomVerticesPos(const bool local, vec4 &pos, int &vert
 		pos = mEvaluateData.gTM * pos;
 }
 
-void ParticleSystem::GetRandomVerticesDir(const int vertIndex, vec4 &vel) 
+void ParticleSystem::GetRandomVerticesDir(const int vertIndex, nv::vec4 &vel)
 {
-
+	using namespace nv;
 	const int triIndex = vertIndex / 3;
 	vec4 indir = mSurfaceData[triIndex].n;
 
@@ -206,8 +208,9 @@ void ParticleSystem::GetRandomVerticesDir(const int vertIndex, vec4 &vel)
 	GetRandomDir(indir, randomH, randomV, vel);
 }   
 
-void ParticleSystem::GetRandomVerticesColor(const int vertIndex, vec4 &color)
+void ParticleSystem::GetRandomVerticesColor(const int vertIndex, nv::vec4 &color)
 {
+	using namespace nv;
 	if ( 0 == mSurfaceData.size() )
 		return;
 
@@ -267,8 +270,9 @@ void ParticleSystem::GetRandomVerticesColor(const int vertIndex, vec4 &color)
 	// TODO: emitter mask ?!
 }
 
-void ParticleSystem::GetRandomSurfacePos(const bool local, const double extrudeDist, vec4 &pos, int &vertIndex, float &r1, float &r2, float &r3)
+void ParticleSystem::GetRandomSurfacePos(const bool local, const double extrudeDist, nv::vec4 &pos, int &vertIndex, float &r1, float &r2, float &r3)
 {
+	using namespace nv;
 	if (mSurfaceData.size() == 0)
 		return;
 
@@ -320,8 +324,9 @@ void ParticleSystem::GetRandomSurfacePos(const bool local, const double extrudeD
 	pos += cp;
 }
 
-void ParticleSystem::GetRandomSurfaceDir(const int vertIndex, vec4 &vel) 
+void ParticleSystem::GetRandomSurfaceDir(const int vertIndex, nv::vec4 &vel)
 {
+	using namespace nv;
 	const int triIndex = vertIndex / 3;
 	vec4 indir = mSurfaceData[triIndex].n;
 	
@@ -332,8 +337,9 @@ void ParticleSystem::GetRandomSurfaceDir(const int vertIndex, vec4 &vel)
 
 
 
-void ParticleSystem::GetRandomSurfaceColor(const int vertIndex, float r1, float r2, float r3, vec4 &color)
+void ParticleSystem::GetRandomSurfaceColor(const int vertIndex, float r1, float r2, float r3, nv::vec4 &color)
 {
+	using namespace nv;
 	if ( 0 == mSurfaceData.size() )
 		return;
 
@@ -404,6 +410,7 @@ void ParticleSystem::GetRandomSurfaceColor(const int vertIndex, float r1, float 
 
 void ParticleSystem::GenerateParticle(const int emitType, const bool local, const double extrudeDist, Particle &particle)
 {
+	using namespace nv;
 	if (false == mInheritSurfaceColor)
 	{
 		vec4 color = GenerateParticleColor(mPointColor, mPointColorVariation);
