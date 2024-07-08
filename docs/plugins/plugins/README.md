@@ -14,6 +14,8 @@ layout:
 
 # Plugins Overview
 
+<figure><img src="../../.gitbook/assets/openmobu_plugins.jpg" alt=""><figcaption></figcaption></figure>
+
 ## Relation Constraint Boxes
 
 Those plugins are extended functionality of relation constraint which is a form of visual programming with node system and connections between nodes. The plugins add new nodes to the constraint.
