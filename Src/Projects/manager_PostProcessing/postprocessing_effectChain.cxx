@@ -14,8 +14,10 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_effectDisplacement.h"
 #include "postprocessing_effectMotionBlur.h"
 #include "postprocessing_effectLensFlare.h"
+#include "posteffectdof.h"
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
+#include "posteffectbuffers.h"
 
 #define SHADER_FISH_EYE_NAME			"Fish Eye"
 #define SHADER_FISH_EYE_VERTEX			"\\GLSL\\fishEye.vsh"
@@ -33,17 +35,18 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define SHADER_FILMGRAIN_VERTEX			"\\GLSL\\simple.vsh"
 #define SHADER_FILMGRAIN_FRAGMENT		"\\GLSL\\filmGrain.fsh"
 
-#define SHADER_DOF_NAME					"Depth Of Field"
-#define SHADER_DOF_VERTEX				"\\GLSL\\simple.vsh"
-#define SHADER_DOF_FRAGMENT				"\\GLSL\\dof.fsh"
-
 // shared shaders
 
 #define SHADER_DEPTH_LINEARIZE_VERTEX		"\\GLSL\\simple.vsh"
 #define SHADER_DEPTH_LINEARIZE_FRAGMENT		"\\GLSL\\depthLinearize.fsh"
 
+// this is a depth based blur, fo SSAO
 #define SHADER_BLUR_VERTEX					"\\GLSL\\simple.vsh"
 #define SHADER_BLUR_FRAGMENT				"\\GLSL\\blur.fsh"
+
+// this is a simple gaussian image blur
+#define SHADER_IMAGE_BLUR_VERTEX			"\\GLSL\\simple.vsh"
+#define SHADER_IMAGE_BLUR_FRAGMENT			"\\GLSL\\imageBlur.fsh"
 
 #define SHADER_MIX_VERTEX					"\\GLSL\\simple.vsh"
 #define SHADER_MIX_FRAGMENT					"\\GLSL\\mix.fsh"
@@ -557,767 +560,6 @@ bool PostEffectFilmGrain::CollectUIValues(PostPersistentData *pData, int w, int 
 }
 
 
-
-////////////////////////////////////////////////////////////////////////////////////
-// post DOF
-
-//! a constructor
-PostEffectDOF::PostEffectDOF()
-: PostEffectBase()
-{
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
-}
-
-//! a destructor
-PostEffectDOF::~PostEffectDOF()
-{
-
-}
-
-const char *PostEffectDOF::GetName()
-{
-	return SHADER_DOF_NAME;
-}
-const char *PostEffectDOF::GetVertexFname(const int)
-{
-	return SHADER_DOF_VERTEX;
-}
-const char *PostEffectDOF::GetFragmentFname(const int)
-{
-	return SHADER_DOF_FRAGMENT;
-}
-
-bool PostEffectDOF::PrepUniforms(const int shaderIndex)
-{
-	GLSLShader* mShader = mShaders[shaderIndex];
-	if (!mShader)
-		return false;
-
-	mShader->Bind();
-
-	GLint loc = mShader->findLocation("colorSampler");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-	loc = mShader->findLocation("depthSampler");
-	if (loc >= 0)
-		glUniform1i(loc, 1);
-
-	PrepareUniformLocations(mShader);
-
-	focalDistance = mShader->findLocation("focalDistance");
-	focalRange = mShader->findLocation("focalRange");
-
-	textureWidth = mShader->findLocation("textureWidth");
-	textureHeight = mShader->findLocation("textureHeight");
-
-	zNear = mShader->findLocation("zNear");
-	zFar = mShader->findLocation("zFar");
-
-	fstop = mShader->findLocation("fstop");
-
-	samples = mShader->findLocation("samples");
-	rings = mShader->findLocation("rings");
-
-	blurForeground = mShader->findLocation("blurForeground");
-
-	manualdof = mShader->findLocation("manualdof");
-	ndofstart = mShader->findLocation("ndofstart");
-	ndofdist = mShader->findLocation("ndofdist");
-	fdofstart = mShader->findLocation("fdofstart");
-	fdofdist = mShader->findLocation("fdofdist");
-
-	focusPoint = mShader->findLocation("focusPoint");
-
-	CoC = mShader->findLocation("CoC");
-
-	autofocus = mShader->findLocation("autofocus");
-	focus = mShader->findLocation("focus");
-
-	threshold = mShader->findLocation("threshold");
-	gain = mShader->findLocation("gain");
-
-	bias = mShader->findLocation("bias");
-	fringe = mShader->findLocation("fringe");
-
-	noise = mShader->findLocation("noise");
-
-	pentagon = mShader->findLocation("pentagon");
-	feather = mShader->findLocation("feather");
-
-	debugBlurValue = mShader->findLocation("debugBlurValue");
-
-	mShader->UnBind();
-	return true;
-}
-
-bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
-{
-	double _znear = pCamera->NearPlaneDistance;
-	double _zfar = pCamera->FarPlaneDistance;
-
-	double _focalDistance = pData->FocalDistance;
-	double _focalRange = pData->FocalRange;
-	double _fstop = pData->FStop;
-	int _samples = pData->Samples;
-	int _rings = pData->Rings;
-
-	float _useFocusPoint = (pData->UseFocusPoint) ? 1.0f : 0.0f;
-	FBVector2d _focusPoint = pData->FocusPoint;
-
-	double _blurForeground = (pData->BlurForeground) ? 1.0 : 0.0;
-
-	double _CoC = pData->CoC;
-	double _threshold = pData->Threshold;
-	
-//	double _gain = pData->Gain;
-	double _bias = pData->Bias;
-	double _fringe = pData->Fringe;
-	double _feather = pData->PentagonFeather;
-
-	double _debugBlurValue = (pData->DebugBlurValue) ? 1.0 : 0.0;
-
-	if (pData->UseCameraDOFProperties)
-	{
-		_focalDistance = pCamera->FocusSpecificDistance;
-		_focalRange = pCamera->FocusAngle;
-
-		FBModel *pInterest = nullptr;
-		FBCameraFocusDistanceSource cameraFocusDistanceSource;
-		pCamera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource));
-		if (kFBFocusDistanceCameraInterest == cameraFocusDistanceSource)
-			pInterest = pCamera->Interest;
-		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)
-			pInterest = pCamera->FocusModel;
-
-		if (nullptr != pInterest)
-		{
-			FBMatrix modelView, modelViewI;
-
-			((FBModel*)pCamera)->GetMatrix(modelView);
-			FBMatrixInverse(modelViewI, modelView);
-
-			FBVector3d lPos;
-			pInterest->GetVector(lPos);
-
-			FBTVector p(lPos[0], lPos[1], lPos[2], 1.0);
-			FBVectorMatrixMult(p, modelViewI, p);
-			double dist = p[0];
-
-			// Dont write to property
-			// FocalDistance = dist;
-			_focalDistance = dist;
-		}
-	}
-	else
-	if (pData->AutoFocus && pData->FocusObject.GetCount() > 0)
-	{
-		FBMatrix modelView, modelViewI;
-
-		((FBModel*)pCamera)->GetMatrix(modelView);
-		FBMatrixInverse(modelViewI, modelView);
-
-		FBVector3d lPos;
-		FBModel *pModel = (FBModel*)pData->FocusObject.GetAt(0);
-		pModel->GetVector(lPos);
-
-		FBTVector p(lPos[0], lPos[1], lPos[2]);
-		FBVectorMatrixMult(p, modelViewI, p);
-		double dist = p[0];
-
-		// Dont write to property
-		// FocalDistance = dist;
-		_focalDistance = dist;
-	}
-
-	GLSLShader* mShader = GetShaderPtr();
-	if (!mShader)
-		return false;
-	
-	mShader->Bind();
-
-	UpdateUniforms(pData);
-
-	if (textureWidth >= 0)
-		glUniform1f(textureWidth, (float)w);
-	if (textureHeight >= 0)
-		glUniform1f(textureHeight, (float)h);
-
-	if (focalDistance >= 0)
-		glUniform1f(focalDistance, (float)_focalDistance);
-	if (focalRange >= 0)
-		glUniform1f(focalRange, (float)_focalRange);
-	if (fstop >= 0)
-		glUniform1f(fstop, (float)_fstop);
-
-	if (zNear>= 0)
-		glUniform1f(zNear, (float)_znear);
-	if (zFar >= 0)
-		glUniform1f(zFar, (float)_zfar);
-
-	if (samples >= 0)
-		glUniform1i(samples, _samples);
-	if (rings >= 0)
-		glUniform1i(rings, _rings);
-
-	if (blurForeground >= 0)
-		glUniform1f(blurForeground, (float)_blurForeground);
-
-	if (CoC >= 0)
-		glUniform1f(CoC, 0.01f * (float)_CoC);
-
-	if (blurForeground >= 0)
-		glUniform1f(blurForeground, (float)_blurForeground);
-
-	if (threshold >= 0)
-		glUniform1f(threshold, 0.01f * (float)_threshold);
-	if (bias >= 0)
-		glUniform1f(bias, 0.01f * (float)_bias);
-
-	if (fringe>= 0)
-		glUniform1f(fringe, 0.01f * (float)_fringe);
-	if (feather>= 0)
-		glUniform1f(feather, 0.01f * (float)_feather);
-
-	if (debugBlurValue >= 0)
-		glUniform1f(debugBlurValue, (float)_debugBlurValue);
-
-	if (focusPoint >= 0)
-		glUniform4f(focusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
-
-	mShader->UnBind();
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-// post effect buffers
-
-#define GL_COMPRESSED_ETC1_RGB8_OES                      0x8D64 // ETC1 - GL_OES_compressed_ETC1_RGB8_texture
-
-PostEffectBuffers::PostEffectBuffers()
-{
-	mSrc = 0;
-	mDst = 1;
-
-	mWidth = 1;
-	mHeight = 1;
-
-	mPreviewSignal = false;
-	mPreviewRunning = false;
-	mPreviewWidth = 1;
-	mPreviewHeight = 1;
-
-	mCompressedPreviewId = 0;
-	mCompressionFormat = GL_RGB;
-	mCompressionInternal = GL_COMPRESSED_ETC1_RGB8_OES;
-	mCompressionType = GL_UNSIGNED_SHORT_5_6_5;
-	mCompressOnFlyId = 0;
-
-	mCurPBO = 0;
-	mPBOs[0] = mPBOs[1] = 0;
-}
-
-PostEffectBuffers::~PostEffectBuffers()
-{
-	ChangeContext();
-}
-
-void PostEffectBuffers::ChangeContext()
-{
-	FreeBuffers();
-	FreeTextures();
-}
-
-unsigned int nearestPowerOf2(unsigned int value)
-{
-	unsigned int v = value; // compute the next highest power of 2 of 32-bit v
-
-	v--;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	v++;
-
-	return v;
-}
-
-bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double scaleFactor, bool filterMips)
-{
-	bool lSuccess = true;
-
-	mWidth = w;
-	mHeight = h;
-
-	// resize fbos
-	const int flags = FrameBuffer::eCreateColorTexture | FrameBuffer::eCreateDepthTexture | FrameBuffer::eDeleteFramebufferOnCleanup;
-
-	if (!mBufferPost0.get())
-	{
-		mBufferPost0.reset(new FrameBuffer(1, 1, flags));
-		
-		//mBufferPost0->SetDepthFormat(GL_DEPTH);
-		//mBufferPost0->SetDepthInternalFormat(GL_DEPTH_COMPONENT32F);
-		//mBufferPost0->SetDepthType(GL_FLOAT);
-		
-		mBufferPost0->SetDepthFormat(GL_DEPTH_STENCIL);
-		mBufferPost0->SetDepthInternalFormat(GL_DEPTH24_STENCIL8);
-		mBufferPost0->SetDepthType(GL_UNSIGNED_INT_24_8);
-
-		mBufferPost0->SetClamp(0, GL_CLAMP_TO_EDGE);
-		mBufferPost0->SetFilter(0, (filterMips) ? FrameBuffer::filterMipmap : FrameBuffer::filterLinear);
-	}
-	if (!mBufferPost1.get())
-	{
-		mBufferPost1.reset(new FrameBuffer(1, 1, flags));
-		
-		//mBufferPost1->SetDepthFormat(GL_DEPTH);
-		//mBufferPost1->SetDepthInternalFormat(GL_DEPTH_COMPONENT32F);
-		//mBufferPost1->SetDepthType(GL_FLOAT);
-		
-		mBufferPost1->SetDepthFormat(GL_DEPTH_STENCIL);
-		mBufferPost1->SetDepthInternalFormat(GL_DEPTH24_STENCIL8);
-		mBufferPost1->SetDepthType(GL_UNSIGNED_INT_24_8);
-
-		mBufferPost1->SetClamp(0, GL_CLAMP_TO_EDGE);
-		mBufferPost1->SetFilter(0, (filterMips) ? FrameBuffer::filterMipmap : FrameBuffer::filterLinear);
-	}
-
-	if (!mBufferDepth.get())
-	{
-		mBufferDepth.reset(new FrameBuffer(1, 1));
-		mBufferDepth->SetColorFormat(0, GL_RED);
-		mBufferDepth->SetColorInternalFormat(0, GL_R32F);
-		mBufferDepth->SetColorType(0, GL_FLOAT);
-		mBufferDepth->SetFilter(0, FrameBuffer::filterNearest);
-		mBufferDepth->SetClamp(0, GL_CLAMP_TO_EDGE);
-	}
-
-	if (!mBufferBlur.get())
-	{
-		mBufferBlur.reset(new FrameBuffer(1, 1));
-	}
-
-	if (!mBufferDownscale.get())
-	{
-		mBufferDownscale.reset(new FrameBuffer(1, 1));
-	}
-
-	if (!mBufferMasking.get())
-		mBufferMasking.reset(new FrameBuffer(1, 1));
-
-	if (!mBufferPost0->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferPost1->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferDepth->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferBlur->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferMasking->ReSize(w, h))
-		lSuccess = false;
-
-	if (useScale)
-	{
-		const double sw = 0.01 * static_cast<double>(w) * scaleFactor;
-		const double sh = 0.01 * static_cast<double>(h) * scaleFactor;
-
-		// find nearest power of two
-		mPreviewWidth = nearestPowerOf2(static_cast<unsigned int>(sw));
-		mPreviewHeight = nearestPowerOf2(static_cast<unsigned int>(sh));
-
-		//mPreviewWidth = 256;
-		//mPreviewHeight = 128;
-
-		if (mBufferDownscale->ReSize(mPreviewWidth, mPreviewHeight))
-		{
-			AllocPreviewTexture(mPreviewWidth, mPreviewHeight);
-		}
-	}
-
-	if (lSuccess)
-	{
-		if (mPBOs[0] > 0)
-		{
-			glDeleteBuffers(2, mPBOs);
-			mPBOs[0] = mPBOs[1] = 0;
-		}
-		mCurPBO = 0;
-	}
-
-	return lSuccess;
-}
-
-bool PostEffectBuffers::Ok()
-{
-	if (!mBufferPost0.get() || !mBufferPost1.get() || !mBufferDepth.get() || !mBufferBlur.get() || !mBufferMasking.get())
-	{
-		return false;
-	}
-	if (!mBufferPost0->GetFrameBuffer() || !mBufferPost1->GetFrameBuffer() || !mBufferDepth->GetFrameBuffer()
-		|| !mBufferBlur->GetFrameBuffer() || !mBufferMasking->GetFrameBuffer())
-	{
-		return false;
-	}
-	
-	return true;
-}
-
-void PostEffectBuffers::FreeBuffers()
-{
-	mBufferPost0.reset(nullptr);
-	mBufferPost1.reset(nullptr);
-	mBufferDepth.reset(nullptr);
-	mBufferBlur.reset(nullptr);
-	mBufferDownscale.reset(nullptr);
-	mBufferMasking.reset(nullptr);
-}
-
-const GLuint PostEffectBuffers::PrepAndGetBufferObject()
-{
-	mSrc = 0;
-	mDst = 1;
-
-	return mBufferPost0->GetFrameBuffer();
-}
-
-FrameBuffer *PostEffectBuffers::GetSrcBufferPtr()
-{
-	return (0 == mSrc) ? mBufferPost0.get() : mBufferPost1.get();
-}
-FrameBuffer *PostEffectBuffers::GetDstBufferPtr()
-{
-	return (0 == mDst) ? mBufferPost0.get() : mBufferPost1.get();
-}
-FrameBuffer *PostEffectBuffers::GetBufferDepthPtr()
-{
-	return mBufferDepth.get();
-}
-FrameBuffer *PostEffectBuffers::GetBufferBlurPtr()
-{
-	return mBufferBlur.get();
-}
-
-FrameBuffer* PostEffectBuffers::GetBufferMaskPtr()
-{
-	return mBufferMasking.get();
-}
-
-FrameBuffer *PostEffectBuffers::GetBufferDownscalePtr()
-{
-	return mBufferDownscale.get();
-}
-
-void PostEffectBuffers::SwapBuffers()
-{
-	// swap buffers
-	int temp = mDst;
-	mDst = mSrc;
-	mSrc = temp;
-}
-
-// get a result of effect computation
-const GLuint PostEffectBuffers::GetFinalColor()
-{
-	return (0==mSrc) ? mBufferPost0->GetColorObject() : mBufferPost1->GetColorObject();
-}
-
-const GLuint PostEffectBuffers::GetFinalFBO()
-{
-	return (0 == mSrc) ? mBufferPost0->GetFrameBuffer() : mBufferPost1->GetFrameBuffer();
-}
-
-const GLuint PostEffectBuffers::GetPreviewColor()
-{
-	return (mBufferDownscale.get()) ? mBufferDownscale->GetColorObject() : 0;
-}
-
-const GLuint PostEffectBuffers::GetPreviewFBO()
-{
-	return (mBufferDownscale.get()) ? mBufferDownscale->GetFrameBuffer() : 0;
-}
-
-const GLuint PostEffectBuffers::GetPreviewCompressedColor()
-{
-	//return mBufferDownscale->GetColorObject();
-	return mCompressOnFlyId;
-	return mCompressedPreviewId;
-}
-
-void PostEffectBuffers::AllocPreviewTexture(int w, int h)
-{
-	FreeTextures();
-
-}
-
-void PostEffectBuffers::FreeTextures()
-{
-	if (mCompressedPreviewId > 0)
-	{
-		glDeleteTextures(1, &mCompressedPreviewId);
-		mCompressedPreviewId = 0;
-	}
-
-	if (mCompressOnFlyId > 0)
-	{
-		glDeleteTextures(1, &mCompressOnFlyId);
-		mCompressOnFlyId = 0;
-	}
-
-	if (mPBOs[0] > 0)
-	{
-		glDeleteBuffers(2, mPBOs);
-		mPBOs[0] = mPBOs[1] = 0;
-		mCurPBO = 0;
-	}
-}
-
-bool PostEffectBuffers::PreviewOpenGLCompress(EImageCompression	compressionType, GLint &compressionCode)
-{
-	if (nullptr == mBufferDownscale.get() || 0 == mBufferDownscale->GetColorObject())
-		return false;
-
-	if (0 == mBufferDownscale->GetColorObject())
-		return false;
-
-	if (mPreviewWidth <= 1 || mPreviewHeight <= 1)
-		return false;
-
-	size_t imageSize = mPreviewWidth * mPreviewHeight * 3;
-	mUnCompressSize = imageSize;
-
-	//glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
-	
-	if (0 == mPBOs[0])
-	{
-		glGenBuffers(2, mPBOs);
-
-		// create 2 pixel buffer objects, you need to delete them when program exits.
-		// glBufferDataARB with NULL pointer reserves only memory space.
-		for (int i = 0; i<2; ++i)
-		{
-			glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBOs[i]);
-			glBufferData(GL_PIXEL_PACK_BUFFER, imageSize, 0, GL_STREAM_DRAW);
-		}
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-	}
-
-	//
-	mCurPBO = 1 - mCurPBO;
-
-	// read pixels from framebuffer to PBO
-	mBufferDownscale->Bind();
-
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBOs[mCurPBO]);
-	glReadPixels(0, 0, mPreviewWidth, mPreviewHeight, GL_RGB, GL_UNSIGNED_BYTE, 0);
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-
-	mBufferDownscale->UnBind();
-	/*
-	const GLuint srcId = mBufferDownscale->GetColorObject();
-	glBindTexture(GL_TEXTURE_2D, srcId);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, mUnCompressData.data());
-	glBindTexture(GL_TEXTURE_2D, 0);
-	*/
-	//glMemoryBarrier(GL_PIXEL_BUFFER_BARRIER_BIT);
-
-	// map the PBO to process it's data by CPU
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBOs[1 - mCurPBO]);
-	//GLubyte *ptr = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-
-	//if (nullptr != ptr)
-	{
-		glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
-
-		if (0 == mCompressOnFlyId)
-		{
-			GLint internalFormat = GL_COMPRESSED_RGB;
-
-			switch (compressionType)
-			{
-			case eImageCompressionETC2:
-				internalFormat = GL_COMPRESSED_RGB8_ETC2;
-				break;
-			case eImageCompressionS3TC:
-				internalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-				break;
-			case eImageCompressionASTC:
-				internalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR;
-				break;
-			default:
-				internalFormat = GL_COMPRESSED_RGB;
-				break;
-			}
-			compressionCode = internalFormat;
-
-			glGenTextures(1, &mCompressOnFlyId);
-			glBindTexture(GL_TEXTURE_2D, mCompressOnFlyId);
-
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-			glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, mPreviewWidth, mPreviewHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0); // ptr);
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, mCompressOnFlyId);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mPreviewWidth, mPreviewHeight, GL_RGB, GL_UNSIGNED_BYTE, 0); // ptr);
-			//glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, mPreviewWidth, mPreviewHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, mUnCompressData.data());
-
-			// get stat
-			GLint compressed = 0;
-			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED, &compressed);
-
-			if (compressed == GL_TRUE)
-			{
-				GLint compressed_size;
-				GLint internalFormat;
-
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
-				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &compressed_size);
-
-				mCompressedSize = compressed_size;
-				compressionCode = internalFormat;
-			}
-
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-
-		//glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-	}
-
-	// back to conventional pixel operation
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-	
-	return true;
-}
-/*
-void PostEffectBuffers::MapCompressedData(const float timestamp, Network::CPacketImageHeader &header)
-{
-	glBindTexture(GL_TEXTURE_2D, mCompressOnFlyId);
-
-	GLint compressed = 0;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED, &compressed);
-
-	if (compressed == GL_TRUE)
-	{
-		GLint compressed_size;
-		GLint internalFormat;
-
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &compressed_size);
-
-		mCompressedData.resize(compressed_size + 1); // sizeof(CompressImageHeader));
-
-		//CompressImageHeader *pHeader = (CompressImageHeader*)mCompressedData.data();
-		//pHeader->timestamp = timestamp;
-		header.aspect = 1.0f * (float)mWidth / (float)mHeight;
-		header.width = (unsigned int)mPreviewWidth;
-		header.height = (unsigned int)mPreviewHeight;
-		header.internalFormat = internalFormat;
-		header.dataSize = compressed_size;
-		header.dataFormat = GL_UNSIGNED_BYTE;
-
-		unsigned char *ptr = mCompressedData.data();
-		glGetCompressedTexImage(GL_TEXTURE_2D, 0, ptr);
-
-		//printf("compressed size - %d\n", compressed_size);
-	}
-	else
-	{
-		GLint internalFormat;
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
-
-		GLint size = mPreviewWidth * mPreviewHeight * 3;
-		mCompressedData.resize(size + 1); // sizeof(CompressImageHeader));
-
-		header.aspect = 1.0f * (float)mWidth / (float)mHeight;
-		header.width = (unsigned int)mPreviewWidth;
-		header.height = (unsigned int)mPreviewHeight;
-		header.internalFormat = GL_RGB8;
-		header.dataSize = size;
-		header.dataFormat = GL_UNSIGNED_BYTE;
-
-		unsigned char *ptr = mCompressedData.data();
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, ptr);
-	}
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-bool PostEffectBuffers::PreviewCompressBegin()
-{
-	if (false == mPreviewSignal)
-		return false;
-
-	if (0 == mCompressedPreviewId)
-		return false;
-	if (nullptr == mBufferDownscale.get() || 0 == mBufferDownscale->GetColorObject())
-		return false;
-
-	if (0 == mBufferDownscale->GetColorObject())
-		return false;
-
-	if (mPreviewWidth <= 1 || mPreviewHeight <= 1)
-		return false;
-
-	mUnCompressData.resize(mPreviewWidth * mPreviewHeight * 4);
-	mCompressedData.resize(mPreviewWidth * mPreviewHeight / 2);
-
-	const GLuint srcId = mBufferDownscale->GetColorObject();
-	glBindTexture(GL_TEXTURE_2D, srcId);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, mUnCompressData.data());
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	int pitch = mPreviewWidth * 4; // * bpp
-	CompressImageBegin(mCompressedData.data(), mPreviewWidth, mPreviewHeight, mUnCompressData.data(), pitch, 0);
-
-	mPreviewRunning = false; // true;
-	mPreviewSignal = false;
-	return true;
-}
-
-bool PostEffectBuffers::PreviewCompressEnd()
-{
-	if (0 == mCompressedPreviewId)
-		return false;
-	if (nullptr == mBufferDownscale.get() || 0 == mBufferDownscale->GetColorObject())
-		return false;
-
-	if (false == mPreviewRunning)
-		return false;
-
-	CompressImageEnd();
-	
-	if (mCompressedData.size() > 0)
-	{
-
-		if (0 == mCompressedPreviewId)
-		{
-			glGenTextures(1, &mCompressedPreviewId);
-
-			glBindTexture(GL_TEXTURE_2D, mCompressedPreviewId);
-			glCompressedTexImage2D(GL_TEXTURE_2D, 0, mCompressionInternal, mPreviewWidth, mPreviewHeight, 0, mCompressedData.size(), mCompressedData.data());
-			//glTexImage2D(GL_TEXTURE_2D, 0, mCompressionFormat, w, h, 0, GL_RGB, mCompressionType, nullptr);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			CHECK_GL_ERROR();
-		}
-		
-		glBindTexture(GL_TEXTURE_2D, mCompressedPreviewId);
-		glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mPreviewWidth, mPreviewHeight, mCompressionInternal, mCompressedData.size(), mCompressedData.data());
-		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mPreviewWidth, mPreviewHeight, GL_RGB, mCompressionType, mCompressedData.data());
-		glBindTexture(GL_TEXTURE_2D, 0);
-		CHECK_GL_ERROR();
-	}
-
-	return true;
-}
-*/
 ////////////////////////////////////////////////////////////////////////////////////
 // post effect chain
 
@@ -1561,6 +803,8 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	}
 
 	bool isMaskTextureBinded = false;
+	bool isMaskBlurRequested = false;
+
 	if (HasMaskUsedByEffect() && HasAnyMaskedObject() && mLastCamera)
 	{
 		FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
@@ -1568,32 +812,87 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 		glViewport(0, 0, maskBuffer->GetWidth(), maskBuffer->GetHeight());
 
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		if (!mSettings->InvertMask)
+		{
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		}
+		else
+		{
+			glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glColor3d(1.0, 1.0, 1.0);
+		if (!mSettings->InvertMask)
+		{
+			glColor3d(1.0, 1.0, 1.0);
+		}
+		else
+		{
+			glColor3d(0.0, 0.0, 0.0);
+		}
+
 		RenderMaskedModels(mLastCamera);
 
 		maskBuffer->UnBind();
 
+		if (mSettings->BlurMask)
+		{
+			isMaskBlurRequested = true;
+			// Bilateral Blur Pass
+
+			GLuint texid = maskBuffer->GetColorObject();
+			glBindTexture(GL_TEXTURE_2D, texid);
+
+			buffers->GetBufferBlurPtr()->Bind();
+			mShaderBlur->Bind();
+
+			const int w = buffers->GetWidth();
+			const int h = buffers->GetHeight();
+
+			const float blurSharpness = 0.1f * (float)mSettings->SSAO_BlurSharpness;
+			const float invRes[2] = { 1.0f / float(w), 1.0f / float(h) };
+
+			if (mLocBlurSharpness >= 0)
+				glUniform1f(mLocBlurSharpness, blurSharpness);
+			if (mLocBlurRes >= 0)
+				glUniform2f(mLocBlurRes, invRes[0], invRes[1]);
+
+			const float color_shift = (mSettings->Bloom) ? static_cast<float>(0.01 * mSettings->BloomMinBright) : 0.0f;
+			mShaderBlur->setUniformFloat("g_ColorShift", color_shift);
+
+			drawOrthoQuad2d(w, h);
+
+			mShaderBlur->UnBind();
+			buffers->GetBufferBlurPtr()->UnBind();
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
 		// bind a mask texture, debug draw on a screen
 
-		if (mSettings->DebugDisplyMasking)
+		if (mSettings->DebugDisplyMasking && !mSettings->BlurMask)
 		{
-			BlitFBOToFBO(maskBuffer->GetFrameBuffer(), maskBuffer->GetWidth(), maskBuffer->GetHeight(),
-				buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
+			if (mSettings->BlurMask)
+			{
+				BlitFBOToFBO(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(),
+					buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
+			}
+			else
+			{
+				BlitFBOToFBO(maskBuffer->GetFrameBuffer(), maskBuffer->GetWidth(), maskBuffer->GetHeight(),
+					buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
+			}
+			
 			buffers->SwapBuffers();
 			return true;
 		}
 
-		const GLuint maskTextureId = maskBuffer->GetColorObject();
-		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
-		glBindTexture(GL_TEXTURE_2D, maskTextureId);
-		glActiveTexture(GL_TEXTURE0);
+		
 		isMaskTextureBinded = true;
 	}
 
-	if (mSettings->SSAO)
+	if (mSettings->SSAO || isMaskBlurRequested)
 	{
 		const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
 
@@ -1635,6 +934,61 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, linearDepthId);
+		glActiveTexture(GL_TEXTURE0);
+	}
+	
+	// blur mask
+
+	if (isMaskBlurRequested)
+	{
+		FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+
+		// Bilateral Blur Pass
+
+		GLuint texid = maskBuffer->GetColorObject();
+		glBindTexture(GL_TEXTURE_2D, texid);
+
+		buffers->GetBufferBlurPtr()->Bind();
+		mShaderImageBlur->Bind();
+
+		const int w = buffers->GetWidth();
+		const int h = buffers->GetHeight();
+
+		const FBVector2d blurMaskScale = mSettings->BlurMaskScale;
+
+		if (mLocImageBlurScale >= 0)
+			glUniform4f(mLocImageBlurScale, 
+				blurMaskScale.mValue[0] / static_cast<float>(w), 
+				blurMaskScale.mValue[1] / static_cast<float>(h), 
+				1.0f / static_cast<float>(w), 
+				1.0f / static_cast<float>(h));
+		
+		drawOrthoQuad2d(w, h);
+
+		mShaderImageBlur->UnBind();
+		buffers->GetBufferBlurPtr()->UnBind();
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		if (mSettings->DebugDisplyMasking)
+		{
+			BlitFBOToFBO(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(),
+				buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
+		
+			buffers->SwapBuffers();
+			return true;
+		}
+
+		BlitFBOToFBO(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(),
+			buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), false, false, false);
+	}
+
+
+	if (isMaskTextureBinded)
+	{
+		const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject();
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+		glBindTexture(GL_TEXTURE_2D, maskTextureId);
 		glActiveTexture(GL_TEXTURE0);
 	}
 	
@@ -1964,6 +1318,7 @@ bool PostEffectChain::CheckShadersPath(const char* path)
 
 		SHADER_BLUR_VERTEX,
 		SHADER_BLUR_FRAGMENT,
+		SHADER_IMAGE_BLUR_FRAGMENT,
 
 		SHADER_MIX_VERTEX,
 		SHADER_MIX_FRAGMENT,
@@ -2047,7 +1402,7 @@ bool PostEffectChain::LoadShaders()
 		mShaderDepthLinearize.reset(pNewShader);
 
 		//
-		// BLUR
+		// BLUR (for SSAO)
 
 		pNewShader = new GLSLShader();
 
@@ -2080,6 +1435,33 @@ bool PostEffectChain::LoadShaders()
 		pNewShader->UnBind();
 
 		mShaderBlur.reset(pNewShader);
+
+		//
+		// IMAGE BLUR
+
+		pNewShader = new GLSLShader();
+
+		vertex_path = FBString(shadersPath, SHADER_IMAGE_BLUR_VERTEX);
+		fragment_path = FBString(shadersPath, SHADER_IMAGE_BLUR_FRAGMENT);
+
+		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
+		{
+			throw std::exception("failed to load and prepare image blur shader");
+		}
+
+		// samplers and locations
+		pNewShader->Bind();
+
+		loc = pNewShader->findLocation("colorSampler");
+		if (loc >= 0)
+			glUniform1i(loc, 0);
+		
+		mLocImageBlurScale = pNewShader->findLocation("scale");
+
+		pNewShader->UnBind();
+
+		mShaderImageBlur.reset(pNewShader);
+
 
 		//
 		// MIX

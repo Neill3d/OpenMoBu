@@ -11,12 +11,7 @@ file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
 target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productversion} GLEW_STATIC NOMINMAX)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
-if(MSVC)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-endif(MSVC)
 
 #
 # GLEW

@@ -23,6 +23,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <memory>
 #include <bitset>
 
+// forward
+class PostEffectBuffers;
+
 //////////////////////////////
 
 enum
@@ -302,218 +305,6 @@ protected:
 	};
 };
 
-
-///////////////////////////////////////////////////////////////////////////////////////
-// PostEffectDOF
-
-struct PostEffectDOF : public PostEffectBase, public CommonEffectUniforms
-{
-public:
-
-	//! a constructor
-	PostEffectDOF();
-
-	//! a destructor
-	virtual ~PostEffectDOF();
-
-	int GetNumberOfShaders() const override { return 1; }
-
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname(const int shaderIndex) override;
-	virtual const char *GetFragmentFname(const int shaderIndex) override;
-
-	const char* GetEnableMaskPropertyName() const override { return "Depth Of Field Use Masking"; }
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
-
-protected:
-
-	// shader locations
-	enum { LOCATIONS_COUNT = 27 };
-	union
-	{
-		struct
-		{
-			// locations
-			GLint		focalDistance;
-			GLint		focalRange;
-
-			GLint		textureWidth;
-			GLint		textureHeight;
-
-			GLint		zNear;
-			GLint		zFar;
-
-			GLint		fstop;
-
-			GLint		samples;
-			GLint		rings;
-
-			GLint		blurForeground;
-
-			GLint		manualdof; // = false; //manual dof calculation
-			GLint		ndofstart; // = 1.0; //near dof blur start
-			GLint		ndofdist; // = 2.0; //near dof blur falloff distance
-			GLint		fdofstart; // = 1.0; //far dof blur start
-			GLint		fdofdist; // = 3.0; //far dof blur falloff distance
-
-			GLint		focusPoint;
-
-			GLint		CoC; // = 0.03;//circle of confusion size in mm (35mm film = 0.03mm)
-
-			GLint		autofocus; // = false; //use autofocus in shader? disable if you use external focalDepth value
-			GLint		focus; // = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-			
-
-			GLint		threshold; // = 0.5; //highlight threshold;
-			GLint		gain; // = 2.0; //highlight gain;
-
-			GLint		bias; // = 0.5; //bokeh edge bias
-			GLint		fringe; // = 0.7; //bokeh chromatic aberration/fringing
-
-			GLint		noise; // = true; //use noise instead of pattern for sample dithering
-			
-			/*
-			next part is experimental
-			not looking good with small sample and ring count
-			looks okay starting from samples = 4, rings = 4
-			*/
-
-			GLint		pentagon; // = false; //use pentagon as bokeh shape?
-			GLint		feather; // = 0.4; //pentagon shape feather
-
-			GLint		debugBlurValue;
-		};
-
-		GLint		mLocations[LOCATIONS_COUNT];
-	};
-
-};
-
-///////////////////////////
-// double buffer for effect chain
-
-class PostEffectBuffers
-{
-public:
-
-	//! a constructor
-	PostEffectBuffers();
-	//! a destructor
-	~PostEffectBuffers();
-
-	void ChangeContext();
-
-	bool ReSize(const int w, const int h, bool useScale, double scaleFactor, bool filterMips=false);
-
-	bool Ok();
-
-	const GLuint PrepAndGetBufferObject();
-
-	FrameBuffer *GetSrcBufferPtr();
-	FrameBuffer *GetDstBufferPtr();
-
-	FrameBuffer *GetBufferDepthPtr();
-	FrameBuffer *GetBufferBlurPtr();
-	FrameBuffer* GetBufferMaskPtr();
-
-	FrameBuffer *GetBufferDownscalePtr();
-
-	void SwapBuffers();
-
-	const int GetWidth() const {
-		return mWidth;
-	}
-	const int GetHeight() const {
-		return mHeight;
-	}
-	const unsigned int GetPreviewWidth() const {
-		return mPreviewWidth;
-	}
-	const unsigned int GetPreviewHeight() const {
-		return mPreviewHeight;
-	}
-	// get a result of effect computation
-	const GLuint GetFinalColor();
-	const GLuint GetFinalFBO();
-
-	const GLuint GetPreviewColor();
-	const GLuint GetPreviewFBO();
-
-	void		PreviewSignal() {
-		mPreviewSignal = true;
-	}
-
-	//bool		PreviewCompressBegin();
-	//bool		PreviewCompressEnd();
-	//void		PrepPreviewCompressed();
-
-	bool		PreviewOpenGLCompress(EImageCompression	compressionType, GLint &compressionCode);
-
-	const GLuint GetPreviewCompressedColor();
-
-	//void MapCompressedData(const float timestamp, Network::CPacketImageHeader &header);
-
-	const size_t GetCompressedSize() const {
-		return mCompressedSize;
-	}
-	const size_t GetUnCompressedSize() const {
-		return mUnCompressSize;
-	}
-protected:
-
-	// DONE: double local buffer
-	std::unique_ptr<FrameBuffer>			mBufferPost0;
-	std::unique_ptr<FrameBuffer>			mBufferPost1;
-
-	std::unique_ptr<FrameBuffer>			mBufferDepth;		//!< buffer to store a linearize depth
-	std::unique_ptr<FrameBuffer>			mBufferBlur;
-
-	std::unique_ptr<FrameBuffer>			mBufferDownscale;	//!< output for a preview
-
-	std::unique_ptr<FrameBuffer>			mBufferMasking;		//!< render models into mask texture
-
-	// last local buffers resize
-	int								mWidth;
-	int								mHeight;
-	GLuint							mOutputColorObject;
-
-	bool							mPreviewSignal;
-	bool							mPreviewRunning;
-
-	// downscaled size
-	unsigned int					mPreviewWidth;
-	unsigned int					mPreviewHeight;
-
-	int			mSrc;
-	int			mDst;
-
-	// compressed ETC1 output texture
-	GLenum								mCompressionInternal;
-	GLenum								mCompressionFormat;
-	GLenum								mCompressionType;
-	GLuint								mCompressedPreviewId;
-
-	GLuint								mCompressOnFlyId;
-
-	int									mCurPBO;
-	GLuint								mPBOs[2];
-
-	// temp
-	int									mCurUnPack;
-	GLuint								mUnPackPBOs[2];
-
-	size_t								mUnCompressSize;
-	size_t								mCompressedSize;
-
-	//CompressImageHeader				mCompressHeader;
-
-	void		FreeBuffers();
-	void AllocPreviewTexture(int w, int h);
-	void		FreeTextures();
-};
-
 ///////////////////////////////////////////////////////////////////////////////////////
 // PostEffectChain
 
@@ -530,8 +321,8 @@ public:
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
 	bool Prep(PostPersistentData *pData, int w, int h, FBCamera *pCamera);
 
-	bool BeginFrame(PostEffectBuffers *buffers);
-	bool Process(PostEffectBuffers *buffers, double time);
+	bool BeginFrame(PostEffectBuffers* buffers);
+	bool Process(PostEffectBuffers* buffers, double time);
 
 	bool IsCompressedDataReady()
 	{
@@ -558,6 +349,7 @@ protected:
 	
 	std::unique_ptr<GLSLShader>			mShaderDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
 	std::unique_ptr<GLSLShader>			mShaderBlur;	//!< needed for SSAO
+	std::unique_ptr<GLSLShader>			mShaderImageBlur; //!< for masking
 	std::unique_ptr<GLSLShader>			mShaderMix;		//!< needed for SSAO
 	std::unique_ptr<GLSLShader>			mShaderDownscale;
 
@@ -567,7 +359,7 @@ protected:
 	GLint							mLocDepthLinearizeClipInfo;
 	GLint							mLocBlurSharpness;
 	GLint							mLocBlurRes;
-
+	GLint							mLocImageBlurScale;
 
 	bool							mNeedReloadShaders;
 	bool							mIsCompressedDataReady;

@@ -24,7 +24,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
-
+#include "posteffectbuffers.h"
 #include "postprocessing_effectChain.h"
 
 // number of entering in render callback
@@ -64,10 +64,10 @@ public:
 	std::vector<PostPersistentData*>	mPaneSettings;	// choose a propriate settings according to a pane camera
 
 														// if each pane has different size (in practice should be not more then 2
-	PostEffectBuffers					mEffectBuffers0;
-	PostEffectBuffers					mEffectBuffers1;
-	PostEffectBuffers					mEffectBuffers2;
-	PostEffectBuffers					mEffectBuffers3;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers0;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers1;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers2;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers3;
 
 	void    Init();
 

@@ -9,9 +9,8 @@
 */
 
 //--- Class declaration
-#include <Windows.h>
 #include "postprocesscontextdata.h"
-
+#include "posteffectbuffers.h"
 #include "postprocessing_helper.h"
 
 #define IS_INSIDE_MAIN_CYCLE			(mEnterId==1)
@@ -36,6 +35,11 @@ void PostProcessContextData::Init()
         //mLocalViewport[i] = 0;
         mSchematicView[i] = false;
     }
+
+    mEffectBuffers0.reset(new PostEffectBuffers());
+    mEffectBuffers1.reset(new PostEffectBuffers());
+    mEffectBuffers2.reset(new PostEffectBuffers());
+    mEffectBuffers3.reset(new PostEffectBuffers());
 
     //
     mMainFrameBuffer.InitTextureInternalFormat();
@@ -83,16 +87,16 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
             switch (nPane)
             {
             case 0:
-                currBuffers = &mEffectBuffers0;
+                currBuffers = mEffectBuffers0.get();
                 break;
             case 1:
-                currBuffers = &mEffectBuffers1;
+                currBuffers = mEffectBuffers1.get();
                 break;
             case 2:
-                currBuffers = &mEffectBuffers2;
+                currBuffers = mEffectBuffers2.get();
                 break;
             case 3:
-                currBuffers = &mEffectBuffers3;
+                currBuffers = mEffectBuffers3.get();
                 break;
             }
 
@@ -205,16 +209,16 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
             switch (nPane)
             {
             case 0:
-                currBuffers = &mEffectBuffers0;
+                currBuffers = mEffectBuffers0.get();
                 break;
             case 1:
-                currBuffers = &mEffectBuffers1;
+                currBuffers = mEffectBuffers1.get();
                 break;
             case 2:
-                currBuffers = &mEffectBuffers2;
+                currBuffers = mEffectBuffers2.get();
                 break;
             case 3:
-                currBuffers = &mEffectBuffers3;
+                currBuffers = mEffectBuffers3.get();
                 break;
             }
 
@@ -492,16 +496,16 @@ void PostProcessContextData::PreRenderFirstEntry()
         switch (i)
         {
         case 0:
-            mEffectBuffers0.ReSize(w, h, usePreview, scaleF);
+            mEffectBuffers0->ReSize(w, h, usePreview, scaleF);
             break;
         case 1:
-            mEffectBuffers1.ReSize(w, h, usePreview, scaleF);
+            mEffectBuffers1->ReSize(w, h, usePreview, scaleF);
             break;
         case 2:
-            mEffectBuffers2.ReSize(w, h, usePreview, scaleF);
+            mEffectBuffers2->ReSize(w, h, usePreview, scaleF);
             break;
         case 3:
-            mEffectBuffers3.ReSize(w, h, usePreview, scaleF);
+            mEffectBuffers3->ReSize(w, h, usePreview, scaleF);
             break;
         }
     }
@@ -639,10 +643,10 @@ void PostProcessContextData::FreeBuffers()
 {
     mMainFrameBuffer.ChangeContext();
 
-    mEffectBuffers0.ChangeContext();
-    mEffectBuffers1.ChangeContext();
-    mEffectBuffers2.ChangeContext();
-    mEffectBuffers3.ChangeContext();
+    mEffectBuffers0->ChangeContext();
+    mEffectBuffers1->ChangeContext();
+    mEffectBuffers2->ChangeContext();
+    mEffectBuffers3->ChangeContext();
 }
 
 bool PostProcessContextData::PrepPaneSettings()

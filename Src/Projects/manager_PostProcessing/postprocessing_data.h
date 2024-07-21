@@ -83,6 +83,9 @@ public: // PROPERTIES
 	FBPropertyBool				DrawHUDLayer;
 
 	FBPropertyBool				UseCompositeMasking; //!< a global toggle for the masking effect, every effect has own local masking settings
+	FBPropertyBool				InvertMask;	//!< reverse colors in a rendered masks
+	FBPropertyBool				BlurMask; //!< apply a blur pass on a rendered mask
+	FBPropertyVector2d			BlurMaskScale;
 	FBPropertyBool				EnableMaskingForAllEffects; //!< with this option, we are going to activate masking for every effect
 	FBPropertyBaseEnum<EMaskingChannel>	GlobalMaskingChannel;
 	FBPropertyBool				DebugDisplyMasking; //!< output masking texture into the viewport for a test purpose

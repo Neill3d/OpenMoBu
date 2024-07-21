@@ -253,7 +253,10 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Top Clip Percent", "Common Setup");
 	AddPropertyView("Bottom Clip Percent", "Common Setup");
 
-	AddPropertyView("Use Composite Masking", "Common Setup");
+	AddPropertyView("Use Masking", "Common Setup");
+	AddPropertyView("Invert Mask", "Common Setup");
+	AddPropertyView("Blur Mask", "Common Setup");
+	AddPropertyView("Blur Mask Scale", "Common Setup");
 	AddPropertyView("Enable Masking For All Effects", "Common Setup");
 	AddPropertyView("Global Masking Channel", "Common Setup");
 	AddPropertyView("Debug Display Masking", "Common Setup");
@@ -478,7 +481,10 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, LowerClip, "Top Clip Percent", nullptr, nullptr);
 
 	// composite masking
-	FBPropertyPublish(this, UseCompositeMasking, "Use Composite Masking", nullptr, nullptr);
+	FBPropertyPublish(this, UseCompositeMasking, "Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, InvertMask, "Invert Mask", nullptr, nullptr);
+	FBPropertyPublish(this, BlurMask, "Blur Mask", nullptr, nullptr);
+	FBPropertyPublish(this, BlurMaskScale, "Blur Mask Scale", nullptr, nullptr);
 	FBPropertyPublish(this, EnableMaskingForAllEffects, "Enable Masking For All Effects", nullptr, nullptr);
 	FBPropertyPublish(this, GlobalMaskingChannel, "Global Masking Channel", nullptr, nullptr);
 	FBPropertyPublish(this, DebugDisplyMasking, "Debug Display Masking", nullptr, nullptr);
@@ -806,6 +812,9 @@ void PostPersistentData::DefaultValues()
 	UseCameraObject = true;
 
 	UseCompositeMasking = true;
+	InvertMask = false;
+	BlurMask = false;
+	BlurMaskScale = FBVector2d(1.0, 1.0);
 	EnableMaskingForAllEffects = false;
 	DebugDisplyMasking = false;
 
