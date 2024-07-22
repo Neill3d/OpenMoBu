@@ -34,17 +34,17 @@ PostEffectFishEye::~PostEffectFishEye()
 
 }
 
-const char* PostEffectFishEye::GetName()
+const char* PostEffectFishEye::GetName() const
 {
 	return SHADER_FISH_EYE_NAME;
 }
 
-const char* PostEffectFishEye::GetVertexFname(const int shaderIndex)
+const char* PostEffectFishEye::GetVertexFname(const int shaderIndex) const
 {
 	return SHADER_FISH_EYE_VERTEX;
 }
 
-const char* PostEffectFishEye::GetFragmentFname(const int shaderIndex)
+const char* PostEffectFishEye::GetFragmentFname(const int shaderIndex) const
 {
 	return SHADER_FISH_EYE_FRAGMENT;
 }

@@ -35,15 +35,15 @@ PostEffectDisplacement::~PostEffectDisplacement()
 	
 }
 
-const char *PostEffectDisplacement::GetName()
+const char *PostEffectDisplacement::GetName() const
 {
 	return SHADER_DISPLACEMENT_NAME;
 }
-const char *PostEffectDisplacement::GetVertexFname(const int shaderIndex)
+const char *PostEffectDisplacement::GetVertexFname(const int shaderIndex) const
 {
 	return SHADER_DISPLACEMENT_VERTEX;
 }
-const char *PostEffectDisplacement::GetFragmentFname(const int shaderIndex)
+const char *PostEffectDisplacement::GetFragmentFname(const int shaderIndex) const
 {
 	return SHADER_DISPLACEMENT_FRAGMENT;
 }

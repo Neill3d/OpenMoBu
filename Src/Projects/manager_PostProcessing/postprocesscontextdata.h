@@ -76,6 +76,8 @@ public:
 	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
 	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);
 
+	const PostEffectChain& GetEffectChain() const { return mEffectChain; }
+
 private:
     bool EmptyGLErrorStack();
 

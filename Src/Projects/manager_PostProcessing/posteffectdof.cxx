@@ -33,15 +33,15 @@ PostEffectDOF::~PostEffectDOF()
 
 }
 
-const char *PostEffectDOF::GetName()
+const char *PostEffectDOF::GetName() const
 {
 	return SHADER_DOF_NAME;
 }
-const char *PostEffectDOF::GetVertexFname(const int)
+const char *PostEffectDOF::GetVertexFname(const int) const
 {
 	return SHADER_DOF_VERTEX;
 }
-const char *PostEffectDOF::GetFragmentFname(const int)
+const char *PostEffectDOF::GetFragmentFname(const int) const
 {
 	return SHADER_DOF_FRAGMENT;
 }

@@ -41,6 +41,11 @@ bool GRenderAfterRender()
 	return false;
 }
 
+PostProcessingManager* GetPostProcessingManager()
+{
+	return gManager;
+}
+
 /*
 source: DEBUG_SOURCE_X where X may be API,
 SHADER_COMPILER, WINDOW_SYSTEM,

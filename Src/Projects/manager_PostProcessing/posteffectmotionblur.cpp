@@ -33,15 +33,15 @@ PostEffectMotionBlur::~PostEffectMotionBlur()
 {
 }
 
-const char *PostEffectMotionBlur::GetName()
+const char *PostEffectMotionBlur::GetName() const
 {
 	return SHADER_MOTIONBLUR_NAME;
 }
-const char *PostEffectMotionBlur::GetVertexFname(const int)
+const char *PostEffectMotionBlur::GetVertexFname(const int) const
 {
 	return SHADER_MOTIONBLUR_VERTEX;
 }
-const char *PostEffectMotionBlur::GetFragmentFname(const int)
+const char *PostEffectMotionBlur::GetFragmentFname(const int) const
 {
 	return SHADER_MOTIONBLUR_FRAGMENT;
 }

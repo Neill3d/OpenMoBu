@@ -50,6 +50,16 @@ public:
 		return mIsCompressedDataReady;
 	}
 
+	const PostEffectBase* GetFishEyeEffect() const { return mFishEye.get(); }
+	const PostEffectBase* GetColorEffect() const { return mColor.get(); }
+	const PostEffectBase* GetVignettingEffect() const { return mVignetting.get(); }
+	const PostEffectBase* GetFilmGrainEffect() const { return mFilmGrain.get(); }
+	const PostEffectBase* GetLensFlareEffect() const { return mLensFlare.get(); }
+	const PostEffectBase* GetSSAOEffect() const { return mSSAO.get(); }
+	const PostEffectBase* GetDOFEffect() const { return mDOF.get(); }
+	const PostEffectBase* GetDisplacementEffect() const { return mDisplacement.get(); }
+	const PostEffectBase* GetMotionBlurEffect() const { return mMotionBlur.get(); }
+
 protected:
 
 	FBSystem								mSystem;

@@ -31,9 +31,9 @@ public:
 
 	int GetNumberOfShaders() const override { return NUMBER_OF_SHADERS; }
 
-	const char *GetName() override;
-	const char *GetVertexFname(const int shaderIndex) override;
-	const char *GetFragmentFname(const int shaderIndex) override;
+	const char *GetName() const override;
+	const char *GetVertexFname(const int shaderIndex) const override;
+	const char *GetFragmentFname(const int shaderIndex) const override;
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;

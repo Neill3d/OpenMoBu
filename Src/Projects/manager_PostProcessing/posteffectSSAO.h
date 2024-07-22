@@ -30,9 +30,9 @@ public:
 
 	int GetNumberOfShaders() const override { return 1; }
 
-	virtual const char *GetName() override;
-	virtual const char *GetVertexFname(const int shaderIndex) override;
-	virtual const char *GetFragmentFname(const int shaderIndex) override;
+	virtual const char *GetName() const override;
+	virtual const char *GetVertexFname(const int shaderIndex) const override;
+	virtual const char *GetFragmentFname(const int shaderIndex) const override;
 
 	const char* GetEnableMaskPropertyName() const override { return "SSAO Use Masking"; }
 

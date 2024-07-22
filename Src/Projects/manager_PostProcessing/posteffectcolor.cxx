@@ -33,17 +33,17 @@ PostEffectColor::~PostEffectColor()
 
 }
 
-const char* PostEffectColor::GetName()
+const char* PostEffectColor::GetName() const
 {
 	return SHADER_COLOR_NAME;
 }
 
-const char* PostEffectColor::GetVertexFname(const int)
+const char* PostEffectColor::GetVertexFname(const int) const
 {
 	return SHADER_COLOR_VERTEX;
 }
 
-const char* PostEffectColor::GetFragmentFname(const int)
+const char* PostEffectColor::GetFragmentFname(const int) const
 {
 	return SHADER_COLOR_FRAGMENT;
 }

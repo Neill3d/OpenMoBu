@@ -97,9 +97,9 @@ public:
 
 	virtual int GetNumberOfShaders() const abstract; 
 
-	virtual const char *GetName() abstract;
-	virtual const char *GetVertexFname(const int shaderIndex) abstract;
-	virtual const char *GetFragmentFname(const int shaderIndex) abstract;
+	virtual const char *GetName() const abstract;
+	virtual const char *GetVertexFname(const int shaderIndex) const abstract;
+	virtual const char *GetFragmentFname(const int shaderIndex) const abstract;
 
 	/// load and initialize shader from a specified location
 	bool Load(const int shaderIndex, const char *vname, const char *fname);

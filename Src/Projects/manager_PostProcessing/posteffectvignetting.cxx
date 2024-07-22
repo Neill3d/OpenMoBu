@@ -33,15 +33,15 @@ PostEffectVignetting::~PostEffectVignetting()
 
 }
 
-const char* PostEffectVignetting::GetName()
+const char* PostEffectVignetting::GetName() const
 {
 	return SHADER_VIGNETTE_NAME;
 }
-const char* PostEffectVignetting::GetVertexFname(const int)
+const char* PostEffectVignetting::GetVertexFname(const int) const
 {
 	return SHADER_VIGNETTE_VERTEX;
 }
-const char* PostEffectVignetting::GetFragmentFname(const int)
+const char* PostEffectVignetting::GetFragmentFname(const int) const
 {
 	return SHADER_VIGNETTE_FRAGMENT;
 }

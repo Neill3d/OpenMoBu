@@ -74,6 +74,16 @@ public: // CALLBACKS
 	
 	void OnVideoFrameRendering(HISender pSender, HKEvent pEvent);
 
+	const PostEffectChain* GetCurrentEffectChain() const 
+	{ 
+		auto iter = gContextMap.find(gCurrentContext);
+		if (iter != end(gContextMap))
+		{
+			return &gContextMap[gCurrentContext]->GetEffectChain();
+		}
+		return nullptr;
+	}
+
 private:
 
 	bool				mFirstRun;

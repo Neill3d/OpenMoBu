@@ -30,9 +30,9 @@ public:
 
 	int GetNumberOfShaders() const override { return 1; }
 
-	const char *GetName() override;
-	const char *GetVertexFname(const int shaderIndex) override;
-	const char *GetFragmentFname(const int shaderIndex) override;
+	const char *GetName() const override;
+	const char *GetVertexFname(const int shaderIndex) const override;
+	const char *GetFragmentFname(const int shaderIndex) const override;
 
 	const char* GetEnableMaskPropertyName() const override { return "Disp Use Masking"; }
 

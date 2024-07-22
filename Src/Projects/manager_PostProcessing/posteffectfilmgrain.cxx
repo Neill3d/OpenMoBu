@@ -33,15 +33,15 @@ PostEffectFilmGrain::~PostEffectFilmGrain()
 
 }
 
-const char* PostEffectFilmGrain::GetName()
+const char* PostEffectFilmGrain::GetName() const
 {
 	return SHADER_FILMGRAIN_NAME;
 }
-const char* PostEffectFilmGrain::GetVertexFname(const int)
+const char* PostEffectFilmGrain::GetVertexFname(const int) const
 {
 	return SHADER_FILMGRAIN_VERTEX;
 }
-const char* PostEffectFilmGrain::GetFragmentFname(const int)
+const char* PostEffectFilmGrain::GetFragmentFname(const int) const
 {
 	return SHADER_FILMGRAIN_FRAGMENT;
 }

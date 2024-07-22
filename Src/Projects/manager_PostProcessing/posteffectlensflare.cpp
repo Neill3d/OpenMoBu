@@ -48,15 +48,15 @@ PostEffectLensFlare::~PostEffectLensFlare()
 
 }
 
-const char *PostEffectLensFlare::GetName()
+const char *PostEffectLensFlare::GetName() const
 {
 	return SHADER_LENSFLARE_NAME;
 }
-const char *PostEffectLensFlare::GetVertexFname(const int)
+const char *PostEffectLensFlare::GetVertexFname(const int) const
 {
 	return SHADER_LENSFLARE_VERTEX;
 }
-const char *PostEffectLensFlare::GetFragmentFname(const int shaderIndex)
+const char *PostEffectLensFlare::GetFragmentFname(const int shaderIndex) const
 {
 	switch (shaderIndex)
 	{

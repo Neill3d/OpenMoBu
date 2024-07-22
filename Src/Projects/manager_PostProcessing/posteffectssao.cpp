@@ -61,15 +61,15 @@ void PostEffectSSAO::DeleteTextures()
 	}
 }
 
-const char *PostEffectSSAO::GetName()
+const char *PostEffectSSAO::GetName() const
 {
 	return SHADER_SSAO_NAME;
 }
-const char *PostEffectSSAO::GetVertexFname(const int)
+const char *PostEffectSSAO::GetVertexFname(const int) const
 {
 	return SHADER_SSAO_VERTEX;
 }
-const char *PostEffectSSAO::GetFragmentFname(const int)
+const char *PostEffectSSAO::GetFragmentFname(const int) const
 {
 	return SHADER_SSAO_FRAGMENT;
 }

@@ -27,7 +27,7 @@ PostEffectBase::~PostEffectBase()
 	FreeShaders();
 }
 
-const char *PostEffectBase::GetName()
+const char *PostEffectBase::GetName() const
 {
 	return "empty";
 }
