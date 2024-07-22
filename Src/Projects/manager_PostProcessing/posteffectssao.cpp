@@ -1,13 +1,14 @@
 
-// postprocessing_effectSSAO.cpp
+// posteffectssao.cpp
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "postprocessing_effectSSAO.h"
+#include "posteffectssao.h"
+#include "postpersistentdata.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -29,9 +30,6 @@ float	hbaoRandom[HBAO_RANDOM_SIZE][HBAO_RANDOM_SIZE][4];
 
 static const int        grid = 32;
 static const float      globalscale = 16.0f;
-
-////////////////////////////////////////////////////////////////////////////////////
-// post SSAO
 
 //! a constructor
 PostEffectSSAO::PostEffectSSAO()

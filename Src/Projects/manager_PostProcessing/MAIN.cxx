@@ -16,7 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #endif
 
 #include "mobu_logging.h"
-#include "postprocessing_data.h"
+#include "postpersistentdata.h"
 
 // for back compatibility
 extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }

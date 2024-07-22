@@ -9,13 +9,9 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-//--- SDK include
-#include <fbsdk/fbsdk.h>
-
 #include "GL/glew.h"
 
 #include "graphics_framebuffer.h"
-#include "postprocessing_data.h"
 
 #include "glslShader.h"
 #include "Framebuffer.h"
@@ -25,6 +21,12 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward
 class PostEffectBuffers;
+class PostPersistentData;
+
+namespace FBSDKNamespace
+{
+	class FBCamera;
+}
 
 //////////////////////////////
 
@@ -103,7 +105,7 @@ public:
 	bool Load(const int shaderIndex, const char *vname, const char *fname);
 
 	virtual bool PrepUniforms(const int shaderIndex);
-	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera);		//!< grab main UI values for the effect
+	virtual bool CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera);		//!< grab main UI values for the effect
 
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const;

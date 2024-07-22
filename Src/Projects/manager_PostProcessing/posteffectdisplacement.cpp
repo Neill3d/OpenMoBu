@@ -1,13 +1,14 @@
 
-// postprocessing_effectDisplacement.cpp
+// posteffectdisplacement.cpp
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "postprocessing_effectDisplacement.h"
+#include "posteffectdisplacement.h"
+#include "postpersistentdata.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -18,8 +19,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define SHADER_DISPLACEMENT_VERTEX				"\\GLSL\\displacement.vsh"
 #define SHADER_DISPLACEMENT_FRAGMENT			"\\GLSL\\displacement.fsh"
 
-////////////////////////////////////////////////////////////////////////////////////
-// post SSAO
 
 //! a constructor
 PostEffectDisplacement::PostEffectDisplacement()

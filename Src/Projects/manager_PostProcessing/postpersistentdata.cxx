@@ -9,7 +9,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 // Class declaration
-#include "postprocessing_data.h"
+#include "postpersistentdata.h"
 #include "postprocessing_ini.h"
 #include <vector>
 #include <limits>

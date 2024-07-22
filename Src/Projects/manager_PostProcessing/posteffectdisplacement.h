@@ -1,20 +1,23 @@
 
 #pragma once
 
-// postprocessing_effectDisplacement.h
+// posteffectdisplacement.h
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "postprocessing_effectChain.h"
+#include "posteffectbase.h"
 #include <random>
 
-///////////////////////////////////////////////////////////////////////////////////////
-// PostEffectDisplacement
+// forward
+class PostPersistentData;
 
+/// <summary>
+/// displacement post processing effect
+/// </summary>
 struct PostEffectDisplacement : public PostEffectBase, public CommonEffectUniforms
 {
 public:

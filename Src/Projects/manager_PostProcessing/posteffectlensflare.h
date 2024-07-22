@@ -1,19 +1,23 @@
 
 #pragma once
 
-// postprocessing_effectLensFlare
+// posteffectlensflare
 /*
-Sergei <Neill3d> Solokhin 2018-2022
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "postprocessing_effectChain.h"
+#include "posteffectbase.h"
+#include "postprocessing_helper.h"
 
-///////////////////////////////////////////////////////////////////////////////////////
-// PostEffectLensFlare
+// forward
+class PostPersistentData;
 
+/// <summary>
+/// lens flare post processing effect
+/// </summary>
 struct PostEffectLensFlare : public PostEffectBase
 {
 public:

@@ -9,8 +9,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 //--- Class declaration
-#include "postprocessing_association.h"
-#include "postprocessing_data.h"
+#include "postprocessingassociation.h"
+#include "postpersistentdata.h"
 
 FBApplyManagerRuleImplementation(PostProcessingAssociation);
 FBRegisterApplyManagerRule(PostProcessingAssociation, "PostProcessingAssociation", "Apply Manager Rule for Post Processing plugin");

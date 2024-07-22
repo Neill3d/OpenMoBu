@@ -1,7 +1,7 @@
 
 #pragma once
 
-// postprocessing_effectSSAO
+// posteffectssao
 /*
 Sergei <Neill3d> Solokhin 2018
 
@@ -9,12 +9,15 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "postprocessing_effectChain.h"
+#include "posteffectbase.h"
 #include <random>
 
-///////////////////////////////////////////////////////////////////////////////////////
-// PostEffectSSAO
+// forward
+class PostPersistentData;
 
+/// <summary>
+/// screen space ambient occlusion post processing effect
+/// </summary>
 struct PostEffectSSAO : public PostEffectBase, public CommonEffectUniforms
 {
 public:
@@ -34,7 +37,7 @@ public:
 	const char* GetEnableMaskPropertyName() const override { return "SSAO Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
+	virtual bool CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera) override;
 
 	virtual void Bind() override;
 	virtual void UnBind() override;

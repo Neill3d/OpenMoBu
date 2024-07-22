@@ -17,7 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "GL/glew.h"
 
 #include "graphics_framebuffer.h"
-#include "postprocessing_data.h"
+#include "postpersistentdata.h"
 
 #include "glslShader.h"
 #include "Framebuffer.h"
@@ -25,7 +25,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
 #include "posteffectbuffers.h"
-#include "postprocessing_effectChain.h"
+#include "posteffectchain.h"
 
 // number of entering in render callback
 #define MAX_ATTACH_STACK		10

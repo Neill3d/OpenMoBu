@@ -1,13 +1,14 @@
 
-// postprocessing_effectMotionBlur.cpp
+// posteffectmotionblur.cpp
 /*
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "postprocessing_effectMotionBlur.h"
+#include "posteffectmotionblur.h"
+#include "postpersistentdata.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -18,8 +19,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define SHADER_MOTIONBLUR_VERTEX			"\\GLSL\\simple.vsh"
 #define SHADER_MOTIONBLUR_FRAGMENT			"\\GLSL\\motionblur.fsh"
 
-////////////////////////////////////////////////////////////////////////////////////
-// post SSAO
 
 //! a constructor
 PostEffectMotionBlur::PostEffectMotionBlur()

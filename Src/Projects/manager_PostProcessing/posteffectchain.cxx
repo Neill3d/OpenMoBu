@@ -9,31 +9,20 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 //--- Class declaration
-#include "postprocessing_effectChain.h"
-#include "postprocessing_effectSSAO.h"
-#include "postprocessing_effectDisplacement.h"
-#include "postprocessing_effectMotionBlur.h"
-#include "postprocessing_effectLensFlare.h"
+#include "posteffectchain.h"
+#include "posteffectssao.h"
+#include "posteffectdisplacement.h"
+#include "posteffectmotionblur.h"
+#include "posteffectlensflare.h"
+#include "posteffectcolor.h"
+#include "posteffectdof.h"
+#include "posteffectfilmgrain.h"
+#include "posteffectfisheye.h"
+#include "posteffectvignetting.h"
 #include "posteffectdof.h"
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
 #include "posteffectbuffers.h"
-
-#define SHADER_FISH_EYE_NAME			"Fish Eye"
-#define SHADER_FISH_EYE_VERTEX			"\\GLSL\\fishEye.vsh"
-#define SHADER_FISH_EYE_FRAGMENT		"\\GLSL\\fishEye.fsh"
-
-#define SHADER_COLOR_NAME				"Color Correction"
-#define SHADER_COLOR_VERTEX				"\\GLSL\\simple.vsh"
-#define SHADER_COLOR_FRAGMENT			"\\GLSL\\color.fsh"
-
-#define SHADER_VIGNETTE_NAME			"Vignetting"
-#define SHADER_VIGNETTE_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_VIGNETTE_FRAGMENT		"\\GLSL\\vignetting.fsh"
-
-#define SHADER_FILMGRAIN_NAME			"Film Grain"
-#define SHADER_FILMGRAIN_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_FILMGRAIN_FRAGMENT		"\\GLSL\\filmGrain.fsh"
 
 // shared shaders
 
@@ -56,369 +45,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //
 extern void LOGE(const char* pFormatString, ...);
-
-///////////////////////////////////////////////////////////////////////////
-// Effect FishEye
-
-//! a constructor
-PostEffectFishEye::PostEffectFishEye()
-: PostEffectBase()
-{
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
-}
-
-//! a destructor
-PostEffectFishEye::~PostEffectFishEye()
-{
-
-}
-
-const char *PostEffectFishEye::GetName()
-{
-	return SHADER_FISH_EYE_NAME;
-}
-
-const char *PostEffectFishEye::GetVertexFname(const int shaderIndex)
-{
-	return SHADER_FISH_EYE_VERTEX;
-}
-
-const char *PostEffectFishEye::GetFragmentFname(const int shaderIndex)
-{
-	return SHADER_FISH_EYE_FRAGMENT;
-}
-
-bool PostEffectFishEye::PrepUniforms(const int shaderIndex)
-{
-	GLSLShader* shader = mShaders[shaderIndex];
-	if (!shader)
-		return false;
-
-	shader->Bind();
-
-	GLint loc = shader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-	PrepareUniformLocations(shader);
-
-	mLocAmount = shader->findLocation("amount");
-	mLocLensRadius = shader->findLocation("lensradius");
-	mLocSignCurvature = shader->findLocation("signcurvature");
-
-	shader->UnBind();
-	return true;
-}
-
-bool PostEffectFishEye::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
-{
-	const double amount = pData->FishEyeAmount;
-	const double lensradius = pData->FishEyeLensRadius;
-	const double signcurvature = pData->FishEyeSignCurvature;
-
-	GLSLShader* shader = GetShaderPtr();
-	if (!shader)
-		return false;
-
-	shader->Bind();
-	UpdateUniforms(pData);
-
-	if (mLocAmount >= 0)
-		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));
-	if (mLocLensRadius >= 0)
-		glUniform1f(mLocLensRadius, static_cast<float>(lensradius));
-	if (mLocSignCurvature >= 0)
-		glUniform1f(mLocSignCurvature, static_cast<float>(signcurvature));
-
-	shader->UnBind();
-	return true;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Effect Color Correction
-
-//! a constructor
-PostEffectColor::PostEffectColor()
-: PostEffectBase()
-{
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
-}
-
-//! a destructor
-PostEffectColor::~PostEffectColor()
-{
-
-}
-
-const char *PostEffectColor::GetName() 
-{
-	return SHADER_COLOR_NAME;
-}
-
-const char *PostEffectColor::GetVertexFname(const int)
-{
-	return SHADER_COLOR_VERTEX;
-}
-
-const char *PostEffectColor::GetFragmentFname(const int)
-{
-	return SHADER_COLOR_FRAGMENT;
-}
-
-bool PostEffectColor::PrepUniforms(const int shaderIndex)
-{
-	GLSLShader* shader = mShaders[shaderIndex];
-	if (!shader)
-		return false;
-	
-	shader->Bind();
-
-	GLint loc = shader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-
-	mResolution = shader->findLocation("gResolution");
-	mChromaticAberration = shader->findLocation("gCA");
-
-	PrepareUniformLocations(shader);
-
-	mLocCSB = shader->findLocation("gCSB");
-	mLocHue = shader->findLocation("gHue");
-
-	shader->UnBind();
-	return true;
-		
-}
-
-bool PostEffectColor::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
-{
-	const float chromatic_aberration = (pData->ChromaticAberration) ? 1.0f : 0.0f;
-	const FBVector2d ca_dir = pData->ChromaticAberrationDirection;
-
-	double saturation = 1.0 + 0.01 * pData->Saturation;
-	double brightness = 1.0 + 0.01 * pData->Brightness;
-	double contrast = 1.0 + 0.01 * pData->Contrast;
-	double gamma = 0.01 * pData->Gamma;
-
-	const float inverse = (pData->Inverse) ? 1.0f : 0.0f;
-	double hue = 0.01 * pData->Hue;
-	double hueSat = 0.01 * pData->HueSaturation;
-	double lightness = 0.01 * pData->Lightness;
-
-	GLSLShader* mShader = GetShaderPtr();
-	if (!mShader)
-		return false;
-	
-	mShader->Bind();
-
-	if (mResolution >= 0)
-	{
-		glUniform2f(mResolution, static_cast<float>(w), static_cast<float>(h));
-	}
-
-	if (mChromaticAberration >= 0)
-	{
-		glUniform4f(mChromaticAberration, static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
-	}
-
-	UpdateUniforms(pData);
-
-	if (mLocCSB >= 0)
-		glUniform4f(mLocCSB, (float)contrast, (float)saturation, (float)brightness, (float)gamma);
-
-	if (mLocHue >= 0)
-		glUniform4f(mLocHue, (float)hue, (float)hueSat, (float)lightness, inverse);
-
-	mShader->UnBind();
-	return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-// post vignetting
-
-//! a constructor
-PostEffectVignetting::PostEffectVignetting()
-: PostEffectBase()
-{
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
-}
-
-//! a destructor
-PostEffectVignetting::~PostEffectVignetting()
-{
-
-}
-
-const char *PostEffectVignetting::GetName()
-{
-	return SHADER_VIGNETTE_NAME;
-}
-const char *PostEffectVignetting::GetVertexFname(const int)
-{
-	return SHADER_VIGNETTE_VERTEX;
-}
-const char *PostEffectVignetting::GetFragmentFname(const int)
-{
-	return SHADER_VIGNETTE_FRAGMENT;
-}
-
-bool PostEffectVignetting::PrepUniforms(const int shaderIndex)
-{
-	GLSLShader* mShader = mShaders[shaderIndex];
-	if (!mShader)
-		return false;
-	
-	mShader->Bind();
-
-	GLint loc = mShader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-
-	PrepareUniformLocations(mShader);
-
-	mLocAmount = mShader->findLocation("amount");
-	mLocVignOut = mShader->findLocation("vignout");
-	mLocVignIn = mShader->findLocation("vignin");
-	mLocVignFade = mShader->findLocation("vignfade");
-
-	mShader->UnBind();
-	return true;
-}
-
-bool PostEffectVignetting::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
-{
-	const double amount = pData->VignAmount;
-	const double vignout = pData->VignOut;
-	const double vignin = pData->VignIn;
-	const double vignfade = pData->VignFade;
-
-	GLSLShader* mShader = GetShaderPtr();
-
-	if (!mShader)
-		return false;
-	
-	mShader->Bind();
-	UpdateUniforms(pData);
-		
-	if (mLocAmount >= 0)
-		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));
-	if (mLocVignOut >= 0)
-		glUniform1f(mLocVignOut, 0.01f * static_cast<float>(vignout));
-	if (mLocVignIn >= 0)
-		glUniform1f(mLocVignIn, 0.01f * static_cast<float>(vignin));
-	if (mLocVignFade >= 0)
-		glUniform1f(mLocVignFade, static_cast<float>(vignfade));
-
-	mShader->UnBind();
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-// post film grain
-
-//! a constructor
-PostEffectFilmGrain::PostEffectFilmGrain()
-: PostEffectBase()
-{
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
-}
-
-//! a destructor
-PostEffectFilmGrain::~PostEffectFilmGrain()
-{
-
-}
-
-const char *PostEffectFilmGrain::GetName()
-{
-	return SHADER_FILMGRAIN_NAME;
-}
-const char *PostEffectFilmGrain::GetVertexFname(const int)
-{
-	return SHADER_FILMGRAIN_VERTEX;
-}
-const char *PostEffectFilmGrain::GetFragmentFname(const int)
-{
-	return SHADER_FILMGRAIN_FRAGMENT;
-}
-
-bool PostEffectFilmGrain::PrepUniforms(const int shaderIndex)
-{
-	GLSLShader* mShader = mShaders[shaderIndex];
-	if (!mShader)
-		return false;
-	
-	mShader->Bind();
-
-	GLint loc = mShader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-
-	PrepareUniformLocations(mShader);
-
-	textureWidth = mShader->findLocation("textureWidth");
-	textureHeight = mShader->findLocation("textureHeight");
-
-	timer = mShader->findLocation("timer");
-	grainamount = mShader->findLocation("grainamount");
-	colored = mShader->findLocation("colored");
-	coloramount = mShader->findLocation("coloramount");
-	grainsize = mShader->findLocation("grainsize");
-	lumamount = mShader->findLocation("lumamount");
-
-	mShader->UnBind();
-	return true;
-}
-
-bool PostEffectFilmGrain::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
-{
-	FBTime systemTime = (pData->FG_UsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
-
-	const double timerMult = pData->FG_TimeSpeed;
-	const double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
-	
-	const double _grainamount = pData->FG_GrainAmount;
-	const double _colored = (pData->FG_Colored) ? 1.0 : 0.0;
-	const double _coloramount = pData->FG_ColorAmount;
-	const double _grainsize = pData->FG_GrainSize;
-	const double _lumamount = pData->FG_LumAmount;
-
-	GLSLShader* mShader = GetShaderPtr();
-	if (!mShader)
-		return false;
-	
-	mShader->Bind();
-	UpdateUniforms(pData);
-
-	if (textureWidth >= 0)
-		glUniform1f(textureWidth, static_cast<float>(w));
-	if (textureHeight >= 0)
-		glUniform1f(textureHeight, static_cast<float>(h));
-
-	if (timer >= 0)
-		glUniform1f(timer, static_cast<float>(_timer));
-	if (grainamount >= 0)
-		glUniform1f(grainamount, 0.01f * static_cast<float>(_grainamount));
-	if (colored >= 0)
-		glUniform1f(colored, static_cast<float>(_colored));
-	if (coloramount >= 0)
-		glUniform1f(coloramount, 0.01f * static_cast<float>(_coloramount));
-	if (grainsize>= 0)
-		glUniform1f(grainsize, 0.01f * static_cast<float>(_grainsize));
-	if (lumamount>= 0)
-		glUniform1f(lumamount, 0.01f * static_cast<float>(_lumamount));
-
-	mShader->UnBind();
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-// post effect chain
 
 //! a constructor
 PostEffectChain::PostEffectChain()
@@ -450,12 +76,12 @@ bool PostEffectChain::Prep(PostPersistentData *pData, int w, int h, FBCamera *pC
 	mSettings = pData;
 	mLastCamera = pCamera;
 
-	if (false == mSettings.Ok())
+	if (!mSettings.Ok())
 		return false;
 
-	if (true == mSettings.Ok())
+	if (mSettings.Ok())
 	{
-		if (true == mSettings->IsNeedToReloadShaders())
+		if (mSettings->IsNeedToReloadShaders())
 		{
 			mNeedReloadShaders = true;
 			mSettings->SetReloadShadersState(false);
@@ -468,7 +94,7 @@ bool PostEffectChain::Prep(PostPersistentData *pData, int w, int h, FBCamera *pC
 
 	if (mNeedReloadShaders)
 	{
-		if (false == LoadShaders())
+		if (!LoadShaders())
 			lSuccess = false;
 
 		mNeedReloadShaders = false;
@@ -476,31 +102,31 @@ bool PostEffectChain::Prep(PostPersistentData *pData, int w, int h, FBCamera *pC
 
 	// update UI values
 
-	if (true == mSettings->FishEye && nullptr != mFishEye.get())
+	if (true == mSettings->FishEye && mFishEye.get())
 		mFishEye->CollectUIValues(mSettings, w,h, pCamera);
 	
-	if (true == mSettings->ColorCorrection && nullptr != mColor.get())
+	if (true == mSettings->ColorCorrection && mColor.get())
 		mColor->CollectUIValues(mSettings, w,h, pCamera);
 	
-	if (true == mSettings->Vignetting && nullptr != mVignetting.get())
+	if (true == mSettings->Vignetting && mVignetting.get())
 		mVignetting->CollectUIValues(mSettings, w,h, pCamera);
 	
-	if (true == mSettings->FilmGrain && nullptr != mFilmGrain.get())
+	if (true == mSettings->FilmGrain && mFilmGrain.get())
 		mFilmGrain->CollectUIValues(mSettings, w,h, pCamera);
 
-	if (true == mSettings->LensFlare && nullptr != mLensFlare.get())
+	if (true == mSettings->LensFlare && mLensFlare.get())
 		mLensFlare->CollectUIValues(mSettings, w,h, pCamera);
 
-	if (true == mSettings->SSAO && nullptr != mSSAO.get())
+	if (true == mSettings->SSAO && mSSAO.get())
 		mSSAO->CollectUIValues(mSettings, w,h, pCamera);
 
-	if (true == mSettings->DepthOfField && nullptr != mDOF.get())
+	if (true == mSettings->DepthOfField && mDOF.get())
 		mDOF->CollectUIValues(mSettings, w, h, pCamera);
 
-	if (true == mSettings->Displacement && nullptr != mDisplacement.get())
+	if (true == mSettings->Displacement && mDisplacement.get())
 		mDisplacement->CollectUIValues(mSettings, w, h, pCamera);
 
-	if (true == mSettings->MotionBlur && nullptr != mMotionBlur.get())
+	if (true == mSettings->MotionBlur && mMotionBlur.get())
 		mMotionBlur->CollectUIValues(mSettings, w, h, pCamera);
 
 	return lSuccess;

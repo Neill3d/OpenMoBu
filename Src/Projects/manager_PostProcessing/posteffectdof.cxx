@@ -1,7 +1,7 @@
 
-/**	\file	postprocessing_effect.cxx
+/**	\file	posteffectdof.cxx
 
-Sergei <Neill3d> Solokhin 2018-2019
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectdof.h"
+#include "postpersistentdata.h"
 
 #define SHADER_DOF_NAME					"Depth Of Field"
 #define SHADER_DOF_VERTEX				"\\GLSL\\simple.vsh"
@@ -17,10 +18,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //
 extern void LOGE(const char* pFormatString, ...);
-
-
-////////////////////////////////////////////////////////////////////////////////////
-// post DOF
 
 //! a constructor
 PostEffectDOF::PostEffectDOF()

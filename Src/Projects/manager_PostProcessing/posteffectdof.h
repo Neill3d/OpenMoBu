@@ -8,19 +8,18 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-//--- SDK include
-#include <fbsdk/fbsdk.h>
-
 #include "GL/glew.h"
+#include "posteffectbase.h"
 
-#include "postprocessing_effectChain.h"
+namespace FBSDKNamespace
+{
+	// forward
+	class FBCamera;
+}
 
-#include <memory>
-#include <bitset>
-
-///////////////////////////////////////////////////////////////////////////////////////
-// PostEffectDOF
-
+/// <summary>
+/// depth of field post processing effect
+/// </summary>
 struct PostEffectDOF : public PostEffectBase, public CommonEffectUniforms
 {
 public:
@@ -40,7 +39,7 @@ public:
 	const char* GetEnableMaskPropertyName() const override { return "Depth Of Field Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
+	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera* pCamera) override;
 
 protected:
 

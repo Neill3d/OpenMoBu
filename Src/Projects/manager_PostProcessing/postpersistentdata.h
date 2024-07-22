@@ -2,9 +2,9 @@
 #define __POST_PROCESSING_DATA_H__
 
 
-/** \file postpersistent_data.h
+/** \file postpersistentdata.h
 
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -21,9 +21,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward declaration
 class PostPersistentData;
-
-////////////////////////////////////////////////////////
-//PostPersistentData		*GetGlobalSettingsPtr(const char *name);
 
 enum EBlurQuality
 {
@@ -42,9 +39,9 @@ enum EPostAction
 	ePostActionCount
 };
 
-/////////////////////////////////////////////////////////////////////////////////////
-//! This class will make sure that the data related to the tool is persistent.
-
+/// <summary>
+/// This class will make sure that the data related to the tool is persistent.
+/// </summary>
 class PostPersistentData : public FBUserObject 
 {
     //--- FiLMBOX declaration.
