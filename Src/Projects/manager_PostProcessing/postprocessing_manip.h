@@ -41,8 +41,14 @@ public:
 	virtual void ViewExpose();
 
 protected:
+	
+	bool				m_firstRun{ true };
+	bool				m_showGraph{ false };
 	FBSystem			mSystem;
 	
+	void ShowGraph();
+	void HideGraph();
+
 };
 
 #endif /* __ORMANIP_TEMPLATE_MANIP_H__ */
