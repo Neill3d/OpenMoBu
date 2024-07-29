@@ -85,17 +85,19 @@ protected:
 	std::unique_ptr<GLSLShader>			mShaderMix;		//!< needed for SSAO
 	std::unique_ptr<GLSLShader>			mShaderDownscale;
 
+	std::unique_ptr<GLSLShader>			mShaderSceneMasked; //!< render models into mask with some additional filtering
+
 	// order execution chain
 	std::vector<PostEffectBase*>		mChain;
 
-	GLint							mLocDepthLinearizeClipInfo;
-	GLint							mLocBlurSharpness;
-	GLint							mLocBlurRes;
-	GLint							mLocImageBlurScale;
+	GLint							mLocDepthLinearizeClipInfo{ -1 };
+	GLint							mLocBlurSharpness{ -1 };
+	GLint							mLocBlurRes{ -1 };
+	GLint							mLocImageBlurScale{ -1 };
 
-	bool							mNeedReloadShaders;
-	bool							mIsCompressedDataReady;
-	double							mLastCompressTime;
+	bool							mNeedReloadShaders{ true };
+	bool							mIsCompressedDataReady{ false };
+	double							mLastCompressTime{ 0.0 };
 
 	PostEffectBase *ShaderFactory(const int type, const char *shadersLocation);
 
@@ -114,4 +116,6 @@ private:
 	/// return true if there is any model with FXMaskingShader, so that we could render it into a masking texture
 	/// </summary>
 	bool HasAnyMaskedObject() const;
+
+	void RenderSceneMaskToTexture(PostEffectBuffers* buffers);
 };

@@ -374,29 +374,60 @@ void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeigh
 
 }
 
+void BindUniformMatrix(const int location, const FBMatrix& matrix)
+{
+
+	float tm[16] = { static_cast<float>(matrix[0]), static_cast<float>(matrix[1]), static_cast<float>(matrix[2]), static_cast<float>(matrix[3]),
+					static_cast<float>(matrix[4]), static_cast<float>(matrix[5]), static_cast<float>(matrix[6]), static_cast<float>(matrix[7]),
+					static_cast<float>(matrix[8]), static_cast<float>(matrix[9]), static_cast<float>(matrix[10]), static_cast<float>(matrix[11]),
+					static_cast<float>(matrix[12]), static_cast<float>(matrix[13]), static_cast<float>(matrix[14]), static_cast<float>(matrix[15]) };
+	glUniformMatrix4fv(location, 1, GL_FALSE, tm);
+}
+
 void RenderModel(FBModel* model)
 {
 	FBMatrix modelMatrix;
 	model->GetMatrix(modelMatrix);
-
-	glPushMatrix();
-	glMultMatrixd(modelMatrix);
+	BindUniformMatrix(5, modelMatrix);
 
 	FBModelVertexData* vertexData = model->ModelVertexData;
-	const int patchCount = vertexData->GetSubPatchCount();
-
-	// needed for primitives indices
-	vertexData->VertexArrayMappingRelease();
-	vertexData->EnableOGLVertexData();
-
-	for (int i = 0; i < patchCount; ++i)
+	
+	//Get number of region mapped by different materials.
+	const int lSubRegionCount = vertexData->GetSubRegionCount();
+	if (lSubRegionCount)
 	{
-		vertexData->DrawSubPatch(i);
+		//Set up vertex buffer object (VBO) or vertex array
+		vertexData->EnableOGLVertexData();
+
+		const GLuint id = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Point);
+		const GLuint normalId = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Normal);
+		const GLvoid* positionOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Point);
+		const GLvoid* normalOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Normal);
+
+		glBindBuffer(GL_ARRAY_BUFFER, id);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (const GLvoid*)positionOffset);
+		glBindBuffer(GL_ARRAY_BUFFER, normalId);
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (const GLvoid*)normalOffset);
+
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(2);
+
+		for (int lSubRegionIndex = 0; lSubRegionIndex < lSubRegionCount; lSubRegionIndex++)
+		{
+			// Setup material, texture, shader, parameters here.
+			/*
+			FBMaterial* lMaterial = lModelVertexData->GetSubRegionMaterial(lSubRegionIndex);
+			*/
+			vertexData->DrawSubRegion(lSubRegionIndex);
+
+			//Cleanup material, texture, shader, parameters here
+		}
+
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(2);
+
+		vertexData->DisableOGLVertexData();
 	}
-
-	vertexData->DisableOGLVertexData();
-
-	glPopMatrix();
 }
 
 void RenderMaskedModels(FBCamera* camera)
@@ -407,18 +438,21 @@ void RenderMaskedModels(FBCamera* camera)
 	}
 
 	FBMatrix mv, mp;
+	FBVector3d eyePos3;
+	camera->GetVector(eyePos3);
 	camera->GetCameraMatrix(mv, kFBModelView);
 	camera->GetCameraMatrix(mp, kFBProjection);
 
-	//double nearPlane = camera->NearPlaneDistance;
-	//double farPlane = camera->FarPlaneDistance;
+	FBSVector scl;
+	FBMatrixToScaling(scl, mv);
+	FBVector4d eyePos(eyePos3[0], eyePos3[1], eyePos3[2], (scl[1] < 0.0) ? -1.0 : 1.0);
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadMatrixd(mp);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadMatrixd(mv);
+	BindUniformMatrix(3, mv);
+	BindUniformMatrix(4, mp);
+	
+	nv::vec4 eyePosf(static_cast<float>(eyePos[0]), static_cast<float>(eyePos[1]), static_cast<float>(eyePos[2]),
+		static_cast<float>(eyePos[3]));
+	glUniform4fv(7, 1, eyePosf.vec_array);
 
 	FBScene* scene = FBSystem::TheOne().Scene;
 
@@ -427,8 +461,6 @@ void RenderMaskedModels(FBCamera* camera)
 		FBShader* shader = scene->Shaders[i];
 		if (FBIS(shader, FXMaskingShader))
 		{
-			// TODO: set uniforms for a mask channels !
-
 			const int dstCount = shader->GetDstCount();
 
 			for (int j = 0; j < dstCount; ++j)
@@ -436,19 +468,23 @@ void RenderMaskedModels(FBCamera* camera)
 				if (FBIS(shader->GetDst(j), FBModel))
 				{
 					FBModel* maskObject = static_cast<FBModel*>(shader->GetDst(j));
-					FBModelVertexData* vertexData = maskObject->ModelVertexData;
+					FBModelVertexData* vertexData = nullptr;
+					if (maskObject) 
+						vertexData = maskObject->ModelVertexData;
 
 					if (vertexData != nullptr && vertexData->IsDrawable())
 					{
+						FBMatrix normalMatrix;
+						maskObject->GetMatrix(normalMatrix, kModelTransformation_Geometry);
+						FBMatrixMult(normalMatrix, mv, normalMatrix);
+						FBMatrixInverse(normalMatrix, normalMatrix);
+						FBMatrixTranspose(normalMatrix, normalMatrix);
+						BindUniformMatrix(6, normalMatrix);
+
 						RenderModel(maskObject);
 					}
 				}
 			}
 		}
 	}
-
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 }

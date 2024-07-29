@@ -43,6 +43,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define SHADER_DOWNSCALE_VERTEX				"\\GLSL\\downscale.vsh"
 #define SHADER_DOWNSCALE_FRAGMENT			"\\GLSL\\downscale.fsh"
 
+#define SHADER_SCENE_MASKED_VERTEX			"\\GLSL\\scene_masked.glslv"
+#define SHADER_SCENE_MASKED_FRAGMENT		"\\GLSL\\scene_masked.glslf"
+
 //
 extern void LOGE(const char* pFormatString, ...);
 
@@ -185,6 +188,57 @@ bool PostEffectChain::HasAnyMaskedObject() const
 	return false;
 }
 
+void PostEffectChain::RenderSceneMaskToTexture(PostEffectBuffers* buffers)
+{
+	if (mShaderSceneMasked.get() == nullptr)
+		return;
+
+	FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+	maskBuffer->Bind();
+
+	glViewport(0, 0, maskBuffer->GetWidth(), maskBuffer->GetHeight());
+
+	if (!mSettings->InvertMask)
+	{
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	nv::vec4 baseColor;
+	nv::vec4 rimColor;
+
+	if (!mSettings->InvertMask)
+	{
+		baseColor = nv::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		rimColor = nv::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		baseColor = nv::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		rimColor = nv::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+
+	mShaderSceneMasked->Bind();
+
+	const float rimFactor = static_cast<float>(mSettings->UseRimForMask * 0.01);
+	const float rimPower = static_cast<float>(mSettings->MaskRimPower * 0.01);
+
+	mShaderSceneMasked->setUniformVector("baseColor", baseColor.x, baseColor.y, baseColor.z, baseColor.w);
+	mShaderSceneMasked->setUniformVector("rimOptions", rimFactor, rimPower, 0.0f, 0.0f);
+	mShaderSceneMasked->setUniformVector("rimColor", rimColor.x, rimColor.y, rimColor.z, rimColor.w);
+
+	RenderMaskedModels(mLastCamera);
+
+	mShaderSceneMasked->UnBind();
+
+	maskBuffer->UnBind();
+}
+
 bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 {
 	mIsCompressedDataReady = false;
@@ -290,92 +344,18 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 	if (HasMaskUsedByEffect() && HasAnyMaskedObject() && mLastCamera)
 	{
-		FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
-		maskBuffer->Bind();
-
-		glViewport(0, 0, maskBuffer->GetWidth(), maskBuffer->GetHeight());
-
-		if (!mSettings->InvertMask)
-		{
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		}
-		else
-		{
-			glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		if (!mSettings->InvertMask)
-		{
-			glColor3d(1.0, 1.0, 1.0);
-		}
-		else
-		{
-			glColor3d(0.0, 0.0, 0.0);
-		}
-
-		RenderMaskedModels(mLastCamera);
-
-		maskBuffer->UnBind();
-
 		if (mSettings->BlurMask)
 		{
 			isMaskBlurRequested = true;
-			// Bilateral Blur Pass
-
-			GLuint texid = maskBuffer->GetColorObject();
-			glBindTexture(GL_TEXTURE_2D, texid);
-
-			buffers->GetBufferBlurPtr()->Bind();
-			mShaderBlur->Bind();
-
-			const int w = buffers->GetWidth();
-			const int h = buffers->GetHeight();
-
-			const float blurSharpness = 0.1f * (float)mSettings->SSAO_BlurSharpness;
-			const float invRes[2] = { 1.0f / float(w), 1.0f / float(h) };
-
-			if (mLocBlurSharpness >= 0)
-				glUniform1f(mLocBlurSharpness, blurSharpness);
-			if (mLocBlurRes >= 0)
-				glUniform2f(mLocBlurRes, invRes[0], invRes[1]);
-
-			const float color_shift = (mSettings->Bloom) ? static_cast<float>(0.01 * mSettings->BloomMinBright) : 0.0f;
-			mShaderBlur->setUniformFloat("g_ColorShift", color_shift);
-
-			drawOrthoQuad2d(w, h);
-
-			mShaderBlur->UnBind();
-			buffers->GetBufferBlurPtr()->UnBind();
-
-			glBindTexture(GL_TEXTURE_2D, 0);
 		}
-
-		// bind a mask texture, debug draw on a screen
-
-		if (mSettings->DebugDisplyMasking && !mSettings->BlurMask)
-		{
-			if (mSettings->BlurMask)
-			{
-				BlitFBOToFBO(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(),
-					buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
-			}
-			else
-			{
-				BlitFBOToFBO(maskBuffer->GetFrameBuffer(), maskBuffer->GetWidth(), maskBuffer->GetHeight(),
-					buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
-			}
-			
-			buffers->SwapBuffers();
-			return true;
-		}
-
+		RenderSceneMaskToTexture(buffers);
 		
 		isMaskTextureBinded = true;
 	}
 
-	if (mSettings->SSAO || isMaskBlurRequested)
+	// render linear depth, at the moment needed for SSAO
+
+	if (mSettings->SSAO)
 	{
 		const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
 
@@ -453,19 +433,18 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		if (mSettings->DebugDisplyMasking)
-		{
-			BlitFBOToFBO(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(),
-				buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
-		
-			buffers->SwapBuffers();
-			return true;
-		}
-
 		BlitFBOToFBO(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(),
 			buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), false, false, false);
 	}
 
+	if (mSettings->DebugDisplyMasking)
+	{
+		FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+		BlitFBOToFBO(maskBuffer->GetFrameBuffer(), maskBuffer->GetWidth(), maskBuffer->GetHeight(),
+			buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), false, false, false);
+		buffers->SwapBuffers();
+		return true;
+	}
 
 	if (isMaskTextureBinded)
 	{
@@ -807,7 +786,10 @@ bool PostEffectChain::CheckShadersPath(const char* path)
 		SHADER_MIX_FRAGMENT,
 
 		SHADER_DOWNSCALE_VERTEX,
-		SHADER_DOWNSCALE_FRAGMENT	
+		SHADER_DOWNSCALE_FRAGMENT,
+
+		SHADER_SCENE_MASKED_VERTEX,
+		SHADER_SCENE_MASKED_FRAGMENT
 	};
 
 	for (const char* shader_path : test_shaders)
@@ -850,24 +832,17 @@ bool PostEffectChain::LoadShaders()
 
 	bool lSuccess = true;
 
-	GLSLShader *pNewShader = nullptr;
-
 	try
 	{
 		//
 		// DEPTH LINEARIZE
 
-		pNewShader = new GLSLShader();
-
-		if (nullptr == pNewShader)
-		{
-			throw std::exception("failed to allocate memory for a depth linearize shader");
-		}
+		std::unique_ptr<GLSLShader> pNewShader(new GLSLShader);
 
 		FBString vertex_path(shadersPath, SHADER_DEPTH_LINEARIZE_VERTEX);
 		FBString fragment_path(shadersPath, SHADER_DEPTH_LINEARIZE_FRAGMENT);
 
-		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
+		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
 			throw std::exception("failed to load and prepare depth linearize shader");
 		}
@@ -882,22 +857,17 @@ bool PostEffectChain::LoadShaders()
 
 		pNewShader->UnBind();
 
-		mShaderDepthLinearize.reset(pNewShader);
+		mShaderDepthLinearize.reset(pNewShader.release());
 
 		//
 		// BLUR (for SSAO)
 
-		pNewShader = new GLSLShader();
-
-		if (nullptr == pNewShader)
-		{
-			throw std::exception("failed to allocate memory for a blur shader");
-		}
+		pNewShader.reset(new GLSLShader);
 
 		vertex_path = FBString(shadersPath, SHADER_BLUR_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_BLUR_FRAGMENT);
 
-		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
+		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
 			throw std::exception("failed to load and prepare blur shader");
 		}
@@ -917,17 +887,17 @@ bool PostEffectChain::LoadShaders()
 
 		pNewShader->UnBind();
 
-		mShaderBlur.reset(pNewShader);
+		mShaderBlur.reset(pNewShader.release());
 
 		//
 		// IMAGE BLUR
 
-		pNewShader = new GLSLShader();
+		pNewShader.reset(new GLSLShader);
 
 		vertex_path = FBString(shadersPath, SHADER_IMAGE_BLUR_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_IMAGE_BLUR_FRAGMENT);
 
-		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
+		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
 			throw std::exception("failed to load and prepare image blur shader");
 		}
@@ -943,23 +913,17 @@ bool PostEffectChain::LoadShaders()
 
 		pNewShader->UnBind();
 
-		mShaderImageBlur.reset(pNewShader);
-
+		mShaderImageBlur.reset(pNewShader.release());
 
 		//
 		// MIX
 
-		pNewShader = new GLSLShader();
-
-		if (nullptr == pNewShader)
-		{
-			throw std::exception("failed to allocate memory for a mix shader");
-		}
+		pNewShader.reset(new GLSLShader);
 
 		vertex_path = FBString(shadersPath, SHADER_MIX_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_MIX_FRAGMENT);
 
-		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
+		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
 			throw std::exception("failed to load and prepare mix shader");
 		}
@@ -976,22 +940,17 @@ bool PostEffectChain::LoadShaders()
 
 		pNewShader->UnBind();
 
-		mShaderMix.reset(pNewShader);
+		mShaderMix.reset(pNewShader.release());
 
 		//
 		// DOWNSCALE
 
-		pNewShader = new GLSLShader();
-
-		if (nullptr == pNewShader)
-		{
-			throw std::exception("failed to allocate memory for a downscale shader");
-		}
+		pNewShader.reset(new GLSLShader);
 
 		vertex_path = FBString(shadersPath, SHADER_DOWNSCALE_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_DOWNSCALE_FRAGMENT);
 
-		if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
+		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
 			throw std::exception("failed to load and prepare downscale shader");
 		}
@@ -1005,18 +964,27 @@ bool PostEffectChain::LoadShaders()
 		
 		pNewShader->UnBind();
 
-		mShaderDownscale.reset(pNewShader);
+		mShaderDownscale.reset(pNewShader.release());
+
+		//
+		// SCENE MASKED
+
+		pNewShader.reset(new GLSLShader);
+
+		vertex_path = FBString(shadersPath, SHADER_SCENE_MASKED_VERTEX);
+		fragment_path = FBString(shadersPath, SHADER_SCENE_MASKED_FRAGMENT);
+
+		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
+		{
+			throw std::exception("failed to load and prepare downscale shader");
+		}
+
+		mShaderSceneMasked.reset(pNewShader.release());
+
 	}
 	catch (const std::exception &e)
 	{
 		FBTrace("Post Effect Chain ERROR: %s\n", e.what());
-
-		if (nullptr != pNewShader)
-		{
-			delete pNewShader;
-			pNewShader = nullptr;
-		}
-
 		lSuccess = false;
 	}
 

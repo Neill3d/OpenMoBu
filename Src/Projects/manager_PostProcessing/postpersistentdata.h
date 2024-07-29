@@ -87,6 +87,10 @@ public: // PROPERTIES
 	FBPropertyBaseEnum<EMaskingChannel>	GlobalMaskingChannel;
 	FBPropertyBool				DebugDisplyMasking; //!< output masking texture into the viewport for a test purpose
 
+	// Mask Rim lighting
+	FBPropertyAnimatableDouble			UseRimForMask;
+	FBPropertyAnimatableDouble			MaskRimPower;
+	
 	// make effect local for a specified camera (override global effect)
 	FBPropertyBool				UseCameraObject;
 	FBPropertyListObject		Camera;

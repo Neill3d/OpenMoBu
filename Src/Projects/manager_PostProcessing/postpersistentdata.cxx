@@ -261,6 +261,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Global Masking Channel", "Common Setup");
 	AddPropertyView("Debug Display Masking", "Common Setup");
 
+	AddPropertyView("Use Rim For Masking", "Common Setup");
+	AddPropertyView("Mask Rim Power", "Common Setup");
+	
 	//
 	AddPropertyView("SSAO Setup", "", true);
 
@@ -489,6 +492,9 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, GlobalMaskingChannel, "Global Masking Channel", nullptr, nullptr);
 	FBPropertyPublish(this, DebugDisplyMasking, "Debug Display Masking", nullptr, nullptr);
 
+	FBPropertyPublish(this, UseRimForMask, "Use Rim For Masking", nullptr, nullptr);
+	FBPropertyPublish(this, MaskRimPower, "Mask Rim Power", nullptr, nullptr);
+	
 	// SSAO
 
 	FBPropertyPublish(this, SSAO, "SSAO", nullptr, nullptr);
@@ -791,6 +797,11 @@ bool PostPersistentData::FBCreate()
 	// MotionBlur
 	MotionBlurAmount.SetMinMax(0.0, 100.0);
 
+	UseRimForMask.SetMinMax(0.0, 100.0);
+	UseRimForMask = 0.0;
+	MaskRimPower.SetMinMax(0.0, 200.0);
+	MaskRimPower = 100.0;
+	
 	// DONE: READ default values from config file !
 	DefaultValues();
 
