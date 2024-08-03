@@ -18,6 +18,7 @@
 
 layout(local_size_x = 512, local_size_y = 1) in;
 
+uniform int     indexOffset;
 uniform int		numberOfTriangles;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +68,7 @@ void main()
     if (flattened_id >= numberOfTriangles)
         return;
 
-    uint index = flattened_id * 3;
+    uint index = indexOffset + flattened_id * 3;
     int id1 = indicesBuffer.indices[index];
     int id2 = indicesBuffer.indices[index + 1];
     int id3 = indicesBuffer.indices[index + 2];
@@ -77,7 +78,7 @@ void main()
     vec4 pos3 = positionBuffer.positions[id3];
 
     vec4 U = pos2 - pos1;
-    vec4 V = pos3 - pos1;
+    vec4 V = pos3 - pos2;
 
     vec3 n = cross(U.xyz, V.xyz);
 

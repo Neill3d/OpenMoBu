@@ -63,5 +63,5 @@ void main()
 	int id = duplicates.indices[flattened_id];
 	vec4 nor = outputNormals.normals[id];
 
-	outputNormals.normals[duplicateStart + flattened_id] = mix(nor, outputNormals.normals[duplicateStart + flattened_id], 0.5);
+	outputNormals.normals[duplicateStart + flattened_id] = nor; // mix(nor, outputNormals.normals[duplicateStart + flattened_id], 0.5);
 }

@@ -168,7 +168,8 @@ protected:
 	GLuint					mBufferUseCount{ 0 };
 
 	CComputeProgram			mProgramZero;
-	CComputeProgram			mProgramRecomputeNormals;
+	CComputeProgram			mProgramRecomputeNormalsTris;
+	CComputeProgram			mProgramRecomputeNormalsQuads;
 	CComputeProgram			mProgramNorm;
 	CComputeProgram			mProgramDup;
 
@@ -183,4 +184,10 @@ protected:
 	bool		PrepModelData(FBModel *pModel);		
 
 	bool		RunReComputeNormals(FBModel *pModel);
+
+	/// <summary>
+	/// verify that the model contains optimized triangulated geometry for rendering
+	///  and we could bind our run-time compute shader to it
+	/// </summary>
+	bool	VerifyModel(FBModel* model);
 };
