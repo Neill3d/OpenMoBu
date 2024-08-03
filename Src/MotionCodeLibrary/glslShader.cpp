@@ -13,59 +13,53 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "CheckGLError.h"
 #include "FileUtils.h"
 
+//
+extern void LOGE(const char* pFormatString, ...);
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                            GLSLShader
+
+bool GLSLShader::PRINT_WARNINGS = false;
 
 GLSLShader::GLSLShader() 
 {}
 
 
 bool GLSLShader::ReCompileShaders( const char* vertex_file, const char* fragment_file )
-{
-	FILE *fp = nullptr;
-	/*
-	fopen_s(&fp, vertex_file, "r");
-	if (fp)
+{	
+	FileReadScope readFragment(fragment_file);
+
+	if (FILE* fp = readFragment.Get())
 	{
-		if (vertex) 
-			if (!LoadShader( vertex, fp ) ) {
-				fclose(fp);
-				return false;
-			}
-		fclose(fp);
-	}
-	*/
-	fopen_s(&fp, fragment_file, "r");
-	if (fp)
-	{
-	
 		if (fragment)
+		{
+			glDetachObjectARB(programObj, fragment);
+			glDeleteObjectARB(fragment);
+		}
+		
+		fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
+		if (!LoadShader( fragment, fp ) ) {
+			return false;
+		}
 
-			glDetachObjectARB( programObj, fragment );
-			glDeleteObjectARB( fragment );
+		// attach shader to program object
+		glAttachObjectARB( programObj, fragment );
 
+		GLint linked{ 0 };
+		// link the program object and print out the info log
+		glLinkProgramARB( programObj );
 
-			fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
-			if (!LoadShader( fragment, fp ) ) {
-				fclose(fp);
-				return false;
-			}
-			fclose(fp);
-
-			// attach shader to program object
-			glAttachObjectARB( programObj, fragment );
-
-			GLint linked;
-			// link the program object and print out the info log
-			glLinkProgramARB( programObj );
-
-			glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
-			loadlog( programObj );
-
-			return (linked != 0);
+		glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
+			
+		if (linked == 0 || PRINT_WARNINGS)
+		{
+			loadlog(programObj);
+		}
+			
+		return (linked != 0);
 	}
 
-	return true;
+	return false;
 }
 
 bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file )
@@ -111,8 +105,12 @@ bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file
 	  //if ( checkopenglerror ) return false;
 
 	  glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
-	  loadlog( programObj );
 
+	  if (linked == 0 || PRINT_WARNINGS)
+	  {
+		  loadlog(programObj);
+	  }
+	  
 	  return (linked != 0);
 	}
 
@@ -153,8 +151,12 @@ bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 	  //if ( checkopenglerror ) return false;
 
 	  glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
-	  loadlog( programObj );
-
+	  
+	  if (linked == 0 || PRINT_WARNINGS)
+	  {
+		  loadlog(programObj);
+	  }
+	  
 	  return (linked != 0);
 	}
 
@@ -163,60 +165,63 @@ bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 
 bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
 {
-  size_t headerLen = strlen(mHeaderText); // number of bytes in header
+	const size_t headerLen = strlen(mHeaderText); // number of bytes in header
 
-  fseek(file, 0, SEEK_END);
-  size_t fileLen = ftell(file);
-  fseek(file, 0, SEEK_SET);
+	fseek(file, 0, SEEK_END);
+	const size_t fileLen = ftell(file);
+	fseek(file, 0, SEEK_SET);
 
-  char  *buffer = new char[ headerLen + fileLen + 1 ];
-  if (!buffer)
-	  return false;
+	std::vector<char> buffer(headerLen + fileLen + 1);
+	const GLcharARB*  bufferARB = buffer.data();
 
-  const GLcharARB*  bufferARB = buffer;
+	GLint   len = static_cast<GLint>(fileLen);
+	GLint   compileStatus;
 
-  GLint   len = static_cast<GLint>(fileLen);
-  GLint   compileStatus;
-
-  // read shader from file
-  memset( &buffer[0], 0, sizeof(char)*(headerLen + len + 1) );
-  if (headerLen)
-    memcpy( &buffer[0], &mHeaderText[0], sizeof(char) * headerLen );
-  void *buf = (void*)&buffer[headerLen];
+	// read shader from file
   
-  size_t readlen = fread(buf, sizeof(char), fileLen, file);
+	memset( buffer.data(), 0, sizeof(char) * (headerLen + len + 1));
+	if (headerLen)
+	{
+		memcpy(buffer.data(), &mHeaderText[0], sizeof(char) * headerLen);
+	}
+	void *buf = (void*)&buffer[headerLen];
   
-  // trick to zero all outside memory
-  memset( &buffer[readlen+headerLen], 0, sizeof(char)*(len + 1 - readlen) );
+	const size_t readlen = fread(buf, sizeof(char), fileLen, file);
+  
+	// trick to zero all outside memory
+	memset( &buffer[readlen+headerLen], 0, sizeof(char)*(len + 1 - readlen) );
 
-  if (readlen == 0) //(readlen != len)
-  {
-    //ERR("glsl shader file size" );
-    return false;
-  }
+	if (readlen == 0) //(readlen != len)
+	{
+		LOGE("glsl shader file size" );
+		return false;
+	}
 
-  len = len + (GLint) headerLen;
-  glShaderSourceARB( shader, 1, &bufferARB, &len );
-  // compile shader
-  glCompileShaderARB( shader );
+	len = len + static_cast<GLint>(headerLen);
+	glShaderSourceARB( shader, 1, &bufferARB, &len );
+	// compile shader
+	glCompileShaderARB( shader );
 
-  //if ( checkopenglerror ) return false;
+	//if ( checkopenglerror ) return false;
 
-  glGetObjectParameterivARB ( shader, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus );
+	glGetObjectParameterivARB ( shader, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus );
 
-  loadlog ( shader );
-
-  delete[] buffer;
-
-  return (compileStatus != 0);
+	if (compileStatus == 0 || PRINT_WARNINGS)
+	{
+		loadlog(shader);
+	}
+	
+	return (compileStatus != 0);
 }
 
 void GLSLShader::loadlog( GLhandleARB object )
 {
+	constexpr int STACK_BUFFER_SIZE{ 2048 };
+
     GLint       logLength     = 0;
     GLsizei     charsWritten  = 0;
-    GLcharARB   buffer [2048];
-    GLcharARB * infoLog;
+	GLcharARB   buffer[STACK_BUFFER_SIZE]{ 0 };
+    GLcharARB*  infoLog;
 
     glGetObjectParameterivARB ( object, GL_OBJECT_INFO_LOG_LENGTH_ARB, &logLength );
 /*
@@ -225,30 +230,27 @@ void GLSLShader::loadlog( GLhandleARB object )
 */
     if ( logLength < 1 )
         return;
-                                    // try to avoid allocating buffer
-    if ( logLength > (int) sizeof ( buffer ) )
+    
+	// try to avoid allocating buffer
+	bool isAllocOnHeap = false;
+    if (logLength >= STACK_BUFFER_SIZE)
     {
-        infoLog = (GLcharARB*) malloc ( logLength );
-
-        if ( infoLog == nullptr )
-        {
-            //ERR( "ERROR: Could not allocate log buffer" );
-            return;
-        }
+        infoLog = new GLcharARB[logLength + 1];
+		memset(infoLog, 0, sizeof(GLcharARB) * (logLength + 1));
+		isAllocOnHeap = true;
     }
     else
         infoLog = buffer;
 
     glGetInfoLogARB ( object, logLength, &charsWritten, infoLog );
 
-#ifdef _DEBUG
 	if ( strlen(infoLog) > 0 )
 	{
-		LOGI( infoLog );
+		LOGE( infoLog );
 	}
-#endif
-    if ( infoLog != buffer )
-        free ( infoLog );
+
+    if ( isAllocOnHeap )
+        delete [] infoLog;
 }
 
 void GLSLShader::Bind() const
@@ -319,6 +321,17 @@ bool GLSLShader::setUniformVector( const char *name, const float x, const float 
 
   glUniform4fARB( loc, x, y, z ,w );
   return true;
+}
+
+bool GLSLShader::setUniformVector3f(const char* name, const float x, const float y, const float z)
+{
+	if (!programObj) return false;
+	int loc = glGetUniformLocationARB(programObj, name);
+	if (loc < 0)
+		return false;
+
+	glUniform3fARB(loc, x, y, z);
+	return true;
 }
 
 bool GLSLShader::setUniformVector2f( const char *name, const float x, const float y )

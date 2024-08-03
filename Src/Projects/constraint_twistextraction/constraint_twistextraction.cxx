@@ -53,6 +53,7 @@ FBRotationOrder MapRotationOrder(const FBModelRotationOrder& modelRotationOrder)
 
 void CConstraintTwistextraction::SetAxis(HIObject pObject, axis pValue)
 {
+	using namespace nv;
 	CConstraintTwistextraction* pConstraint = FBCast<CConstraintTwistextraction>(pObject);
 	if (pConstraint) 
 	{
@@ -108,6 +109,7 @@ void CConstraintTwistextraction::SetupAllAnimationNodes()
 
 void CConstraintTwistextraction::SnapSuggested()
 {
+	using namespace nv;
 	FBModel* source = ReferenceGet(mGroupSource, 0);
 	FBModel* constrained = ReferenceGet(mGroupConstrain, 0);
 
@@ -139,6 +141,7 @@ void CConstraintTwistextraction::FreezeSuggested()
 
 bool CConstraintTwistextraction::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo, FBConstraintInfo* pConstraintInfo)
 {
+	using namespace nv;
 	// zero the rotation offset
 	if (pConstraintInfo->GetZeroRequested())
 		SetZero();
@@ -232,8 +235,9 @@ void CConstraintTwistextraction::SetZero()
 	mOffsetRotation.w = 1;
 }
 
-void CConstraintTwistextraction::ShortestArcQuat(const vec3& rotatedVector, const vec3& forwardVector, quat& outQuaternion)
+void CConstraintTwistextraction::ShortestArcQuat(const nv::vec3& rotatedVector, const nv::vec3& forwardVector, nv::quat& outQuaternion)
 {
+	using namespace nv;
 	// magnitude = sqrt(magnitude(vectorA) **2 * magnitude(vectorB) **2)
 	// w = dot(vectorA, vectorB) + magnitude
 	// xyz = cross(vectorA, vectorB)
@@ -258,8 +262,9 @@ void CConstraintTwistextraction::ShortestArcQuat(const vec3& rotatedVector, cons
 	}
 }
 
-void CConstraintTwistextraction::Orthogonal(const vec3& inVec, vec3& outVec)
+void CConstraintTwistextraction::Orthogonal(const nv::vec3& inVec, nv::vec3& outVec)
 {
+	using namespace nv;
 	vec3 v;
 	if (inVec.x < inVec.y) 
 	{

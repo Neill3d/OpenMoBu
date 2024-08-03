@@ -116,5 +116,4 @@ const float	M_RAD2DEG		= 180.0f / PI;
 #define DEG2RAD(a)				( (a) * M_DEG2RAD )
 #define RAD2DEG(a)				( (a) * M_RAD2DEG )
 
-
 #endif // _TYPES_H_

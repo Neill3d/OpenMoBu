@@ -14,7 +14,9 @@
 // http://mines.lumpylumpy.com/Electronics/Computers/Software/Cpp/Graphics/Bitmap/Textures/Noise/Simplex.php#.U7FwI41dVhs
 
 uniform sampler2D colorSampler;
+uniform sampler2D maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -143,9 +145,6 @@ float snoise(vec3 v){
 
 void main (void)
 {
-	//vec2 tx = gl_TexCoord [0].st;
-	//vec4 color = texture2D( sampler0, tx ); 
-	
 	// do the scaling.
     // After this, you should consider fragCoord = 0..1, usually,
     // aside from overflow for wide-screen.
@@ -187,5 +186,17 @@ void main (void)
     
     
 	vec4 fragColor = texture2D(colorSampler, fragCoord);
+
+	//
+	// masking 
+
+	if (useMasking > 0.0)
+	{
+		vec4 mask = texture2D( maskSampler, gl_TexCoord [0].st );
+		vec4 inputColor = texture2D(colorSampler, gl_TexCoord [0].st);
+
+		fragColor.rgb = mix(fragColor.rgb, inputColor.rgb, mask.r * useMasking);
+	}
+	
 	gl_FragColor =  fragColor;
 }

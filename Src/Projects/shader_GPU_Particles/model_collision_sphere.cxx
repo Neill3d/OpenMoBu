@@ -166,8 +166,8 @@ void CollisionSphere::FillCollisionData( TCollision	&data )
 	if (Scl[2] > maxscale) maxscale = Scl[2];
 	double friction = 0.01 * Friction;
 
-	CollisionExchange::SetPosition( data, iEnabled, vec3( (float)T[0], (float)T[1], (float)T[2] ) );
-	CollisionExchange::SetVelocity(data, vec4( (float)vel[0], (float)vel[1], (float)vel[2], maxscale ) );
+	CollisionExchange::SetPosition( data, iEnabled, nv::vec3( (float)T[0], (float)T[1], (float)T[2] ) );
+	CollisionExchange::SetVelocity(data, nv::vec4( (float)vel[0], (float)vel[1], (float)vel[2], maxscale ) );
 	CollisionExchange::SetRadius(data, Size );
 	CollisionExchange::SetFriction(data, friction);
 

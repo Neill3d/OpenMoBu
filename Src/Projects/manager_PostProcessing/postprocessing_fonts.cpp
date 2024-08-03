@@ -2,8 +2,9 @@
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 
+#include "FileUtils.h"
 #include "postprocessing_fonts.h"
-#include "mat4.h"
+
 #if defined(HUD_FONT)
 #include "ft2build.h"
 #endif
@@ -35,12 +36,13 @@ typedef struct {
 	float r, g, b, a;
 } vertex_t;
 
-mat4 model, view, projection;
-GLuint text_shader(0);
+
+GLSLShader* CFont::g_glslShader = nullptr;
+int CFont::g_shaderCounter = 0;
 
 ////////////////////////////////////////////////////////////////////////////
 //
-/*
+
 // Get system font file path
 std::string GetSystemFontFile(const std::string &faceName) {
 
@@ -111,7 +113,7 @@ std::string GetSystemFontFile(const std::string &faceName) {
 
 	return std::string(sFontFile.begin(), sFontFile.end());
 }
-*/
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 
@@ -120,6 +122,8 @@ CFont::CFont()
 {
 	font_manager = nullptr;
 	buffer = nullptr;
+
+	g_shaderCounter += 1;
 }
 
 CFont::~CFont()
@@ -152,9 +156,9 @@ void CFont::Init()
 	normal.strikethrough = 0;
 	normal.strikethrough_color = white;
 	
-	mat4_set_identity(&projection);
-	mat4_set_identity(&model);
-	mat4_set_identity(&view);
+	projection = nv::mat4_id;
+	model = nv::mat4_id;
+	view = nv::mat4_id;
 }
 
 void CFont::Free()
@@ -171,10 +175,14 @@ void CFont::Free()
 		text_buffer_delete(buffer);
 		buffer = nullptr;
 	}
-	if (text_shader > 0)
+
+	g_shaderCounter -= 1;
+
+	if (g_shaderCounter <= 0 && g_glslShader)
 	{
-		glDeleteProgram(text_shader);
-		text_shader = 0;
+		g_shaderCounter = 0;
+		delete g_glslShader;
+		g_glslShader = nullptr;
 	}
 }
 
@@ -234,14 +242,14 @@ void CFont::TextAdd(float x, float y, float _size, float rectw, float recth, con
 	//vec2 pen = { { x, y } };
 	//text_buffer_add_text(buffer, &pen, &normal, text, length);
 
-	mat4_set_identity(&model);
-
+	model = nv::mat4_id;
+	
 	float stretch = 1.01f; // mBounds[2] / (0.8f * rectw);
 	float xoffset = 0.25f * mBounds[2] / length;
 	float yoffset = recth - 0.5f * (recth - mBounds[3]);
 
-	mat4_set_scaling(&model, stretch, 1.0f, 1.0f);
-	mat4_translate(&model, x + xoffset, y + yoffset, 0.0f);
+	model.set_scale(nv::vec3(stretch, 1.0f, 1.0f));
+	model.set_translation(nv::vec3(x + xoffset, y + yoffset, 0.0f));
 	
 }
 
@@ -251,33 +259,32 @@ bool CFont::Display()
 		return false;
 
 	// TODO: check if we need to load a glsl shader
-	if (0 == text_shader)
+	if (!g_glslShader)
 	{
-		FBString appPath;
+		char path[MAX_PATH];
+		if (FindEffectLocation(SHADER_VERTEX, path, MAX_PATH))
+		{
+			FBString vert(path, SHADER_VERTEX);
+			FBString frag(path, SHADER_FRAGMENT);
 
-		appPath = FBSystem::TheOne().ApplicationPath;
-		appPath = appPath + "\\plugins";
-
-		FBString vert(appPath, SHADER_VERTEX);
-		FBString frag(appPath, SHADER_FRAGMENT);
-
-		text_shader = shader_load(vert, frag);
+			g_glslShader = new GLSLShader;
+			g_glslShader->LoadShaders(vert, frag);
+		}
 	}
 
-	if (0 == text_shader)
+	if (!g_glslShader)
 		return false;
 
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	glUseProgram(text_shader);
+	g_glslShader->Bind();
 	{
-		glUniformMatrix4fv(glGetUniformLocation(text_shader, "model"),
-			1, 0, model.data);
-		glUniformMatrix4fv(glGetUniformLocation(text_shader, "view"),
-			1, 0, view.data);
-		glUniformMatrix4fv(glGetUniformLocation(text_shader, "projection"),
-			1, 0, projection.data);
-		glUniform1i(glGetUniformLocation(text_shader, "tex"), 0);
-		glUniform3f(glGetUniformLocation(text_shader, "pixel"),
+
+		g_glslShader->setUniformMatrix("model", model.mat_array);
+		g_glslShader->setUniformMatrix("view", view.mat_array);
+		g_glslShader->setUniformMatrix("projection", projection.mat_array);
+
+		g_glslShader->setUniformUINT("tex", 0);
+		g_glslShader->setUniformVector3f("pixel",
 			1.0f / font_manager->atlas->width,
 			1.0f / font_manager->atlas->height,
 			(float)font_manager->atlas->depth);
@@ -297,13 +304,14 @@ bool CFont::Display()
 
 		glDisable(GL_BLEND);
 	}
+	g_glslShader->UnBind();
 
 	return true;
 }
 
 void CFont::Resize(int width, int height)
 {
-	mat4_set_orthographic(&projection, 0, width, 0, height, -1, 1);
+	nv::ortho(projection, 0, width, 0, height, -1, 1);
 }
 
 #endif

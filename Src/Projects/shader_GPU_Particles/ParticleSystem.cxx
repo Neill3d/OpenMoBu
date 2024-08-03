@@ -253,9 +253,9 @@ void ParticleSystem::NeedReset()
 	mNeedReset = true;
 }
 
-bool ParticleSystem::InitParticleSystem(const vec3 &Pos)
+bool ParticleSystem::InitParticleSystem(const nv::vec3 &Pos)
 {
-	
+	using namespace nv;
 	if (mShader->IsInitialized() == false)
 		if (false == mShader->Initialize() )
 			return false;
@@ -317,8 +317,9 @@ float myclampf(const float value, const float minValue, const float maxValue)
 	return value;
 }
 
-vec4 ParticleSystem::GenerateParticleColor(const vec4 &color, const float variation)
+nv::vec4 ParticleSystem::GenerateParticleColor(const nv::vec4 &color, const float variation)
 {
+	using namespace nv;
 	if (variation <= 0.0)
 		return color;
 
@@ -401,9 +402,9 @@ void ParticleSystem::SetParticleSize(const double size, const double size_variat
 		mPointSize = abs(mPointSize) + 0.001f;
 }
 
-void ParticleSystem::SetParticleColor(const bool inheritSurfaceColor, const vec4 color, const double color_variation,
-	const bool useColor2, const vec4 color2,
-		const bool useColor3, const vec4 color3)
+void ParticleSystem::SetParticleColor(const bool inheritSurfaceColor, const nv::vec4 color, const double color_variation,
+	const bool useColor2, const nv::vec4 color2,
+		const bool useColor3, const nv::vec4 color3)
 {
 	mInheritSurfaceColor = inheritSurfaceColor;
 	mPointColor = color;
@@ -418,7 +419,7 @@ void ParticleSystem::SetParticleColor(const bool inheritSurfaceColor, const vec4
 void ParticleSystem::PrepareParticles(unsigned int maxparticles, const int randomSeed, unsigned int particleCount, bool useRate, unsigned int rate, const double extrudeDist)
 {
 	if (mParticleBuffer[0] == 0 || mTransformFeedback[0] == 0)
-		InitParticleSystem( vec3(0.0f, 0.0f, 0.0f) );
+		InitParticleSystem(nv::vec3(0.0f, 0.0f, 0.0f) );
 
 	const unsigned int localRate = (useRate) ? rate : 0;
 
@@ -819,6 +820,7 @@ const unsigned int ParticleSystem::SimulateParticles(const bool emitEachStep, co
 bool ParticleSystem::EmitterSurfaceUpdateOnCPU(const int vertexCount, float *positionsArray, 
 	float *normalArray, float *uvArray, const int indexCount, const int *indexArray, const GLuint textureId )
 {
+	using namespace nv;
 	if (indexCount < 3 || vertexCount < 1)
 		return false;
 
@@ -940,9 +942,9 @@ bool ParticleSystem::EmitterSurfaceUpdateOnGPU(void *pModelVertexData, const GLu
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, surfaceId );
 	*/
 	
-	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, posId, (GLintptr) positionOffset, numberOfVertices * sizeof(vec4));
-	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 1, norId, (GLintptr) normalOffset, numberOfVertices * sizeof(vec4));
-	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 2, uvId, (GLintptr) uvOffset, numberOfVertices * sizeof(vec2));
+	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, posId, (GLintptr) positionOffset, numberOfVertices * sizeof(nv::vec4));
+	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 1, norId, (GLintptr) normalOffset, numberOfVertices * sizeof(nv::vec4));
+	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 2, uvId, (GLintptr) uvOffset, numberOfVertices * sizeof(nv::vec2));
 	
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, indId );
 	// and output into a triangles buffer

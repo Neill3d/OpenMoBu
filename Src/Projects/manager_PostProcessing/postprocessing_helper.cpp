@@ -17,6 +17,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <thread>
 
+#include <GL/glew.h>
+#include "fxmaskingshader.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -204,8 +206,10 @@ size_t RgEtc1_CompressSingleImage(unsigned char *stream, int imagewidth, int ima
 //
 
 void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight,
-	FBModel *pCamera, double farPlane, double nearPlane, vec3 *points)
+	FBModel *pCamera, double farPlane, double nearPlane, nv::vec3 *points)
 {
+	using namespace nv;
+
 	FBMatrix modelview, invmodelview;
 	FBVector3d camerapos;
 
@@ -283,8 +287,10 @@ void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight,
 // DONE: FIX culling winding
 
 void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeight,
-	FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, vec3 *points)
+	FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, nv::vec3 *points)
 {
+	using namespace nv;
+
 	if (!pCamera)
 		return;
 
@@ -366,4 +372,119 @@ void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeigh
 	points[6] = fc + far_height*up + far_width*right; // up right
 	points[7] = fc - far_height*up + far_width*right; // bottom right
 
+}
+
+void BindUniformMatrix(const int location, const FBMatrix& matrix)
+{
+
+	float tm[16] = { static_cast<float>(matrix[0]), static_cast<float>(matrix[1]), static_cast<float>(matrix[2]), static_cast<float>(matrix[3]),
+					static_cast<float>(matrix[4]), static_cast<float>(matrix[5]), static_cast<float>(matrix[6]), static_cast<float>(matrix[7]),
+					static_cast<float>(matrix[8]), static_cast<float>(matrix[9]), static_cast<float>(matrix[10]), static_cast<float>(matrix[11]),
+					static_cast<float>(matrix[12]), static_cast<float>(matrix[13]), static_cast<float>(matrix[14]), static_cast<float>(matrix[15]) };
+	glUniformMatrix4fv(location, 1, GL_FALSE, tm);
+}
+
+void RenderModel(FBModel* model)
+{
+	FBMatrix modelMatrix;
+	model->GetMatrix(modelMatrix);
+	BindUniformMatrix(5, modelMatrix);
+
+	FBModelVertexData* vertexData = model->ModelVertexData;
+	
+	//Get number of region mapped by different materials.
+	const int lSubRegionCount = vertexData->GetSubRegionCount();
+	if (lSubRegionCount)
+	{
+		//Set up vertex buffer object (VBO) or vertex array
+		vertexData->EnableOGLVertexData();
+
+		const GLuint id = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Point);
+		const GLuint normalId = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Normal);
+		const GLvoid* positionOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Point);
+		const GLvoid* normalOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Normal);
+
+		glBindBuffer(GL_ARRAY_BUFFER, id);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (const GLvoid*)positionOffset);
+		glBindBuffer(GL_ARRAY_BUFFER, normalId);
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (const GLvoid*)normalOffset);
+
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(2);
+
+		for (int lSubRegionIndex = 0; lSubRegionIndex < lSubRegionCount; lSubRegionIndex++)
+		{
+			// Setup material, texture, shader, parameters here.
+			/*
+			FBMaterial* lMaterial = lModelVertexData->GetSubRegionMaterial(lSubRegionIndex);
+			*/
+			vertexData->DrawSubRegion(lSubRegionIndex);
+
+			//Cleanup material, texture, shader, parameters here
+		}
+
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(2);
+
+		vertexData->DisableOGLVertexData();
+	}
+}
+
+void RenderMaskedModels(FBCamera* camera)
+{
+	if (FBIS(camera, FBCameraSwitcher))
+	{
+		camera = ((FBCameraSwitcher*)camera)->CurrentCamera;
+	}
+
+	FBMatrix mv, mp;
+	FBVector3d eyePos3;
+	camera->GetVector(eyePos3);
+	camera->GetCameraMatrix(mv, kFBModelView);
+	camera->GetCameraMatrix(mp, kFBProjection);
+
+	FBSVector scl;
+	FBMatrixToScaling(scl, mv);
+	FBVector4d eyePos(eyePos3[0], eyePos3[1], eyePos3[2], (scl[1] < 0.0) ? -1.0 : 1.0);
+
+	BindUniformMatrix(3, mv);
+	BindUniformMatrix(4, mp);
+	
+	nv::vec4 eyePosf(static_cast<float>(eyePos[0]), static_cast<float>(eyePos[1]), static_cast<float>(eyePos[2]),
+		static_cast<float>(eyePos[3]));
+	glUniform4fv(7, 1, eyePosf.vec_array);
+
+	FBScene* scene = FBSystem::TheOne().Scene;
+
+	for (int i = 0, count = scene->Shaders.GetCount(); i < count; ++i)
+	{
+		FBShader* shader = scene->Shaders[i];
+		if (FBIS(shader, FXMaskingShader))
+		{
+			const int dstCount = shader->GetDstCount();
+
+			for (int j = 0; j < dstCount; ++j)
+			{
+				if (FBIS(shader->GetDst(j), FBModel))
+				{
+					FBModel* maskObject = static_cast<FBModel*>(shader->GetDst(j));
+					FBModelVertexData* vertexData = nullptr;
+					if (maskObject) 
+						vertexData = maskObject->ModelVertexData;
+
+					if (vertexData != nullptr && vertexData->IsDrawable())
+					{
+						FBMatrix normalMatrix;
+						maskObject->GetMatrix(normalMatrix, kModelTransformation_Geometry);
+						FBMatrixMult(normalMatrix, mv, normalMatrix);
+						FBMatrixInverse(normalMatrix, normalMatrix);
+						FBMatrixTranspose(normalMatrix, normalMatrix);
+						BindUniformMatrix(6, normalMatrix);
+
+						RenderModel(maskObject);
+					}
+				}
+			}
+		}
+	}
 }

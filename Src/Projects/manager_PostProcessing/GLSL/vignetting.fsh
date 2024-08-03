@@ -12,7 +12,9 @@
 //
 
 uniform sampler2D sampler0;
+uniform sampler2D maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -44,7 +46,17 @@ void main (void)
 	vec4 color = texture2D( sampler0, tx ); 
 	
 	vec4 vigncolor = color * vignette();
-	color = mix(color, vigncolor, amount);
+
+	//
+	// masking 
+	float f = amount;
+
+	if (useMasking > 0.0)
+	{
+		vec4 mask = texture2D( maskSampler, tx );
+		f *= 1.0 - mask.r * useMasking;
+	}
 	
+	color = mix(color, vigncolor, f);
 	gl_FragData [0] =  color;
 }

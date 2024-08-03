@@ -13,7 +13,9 @@
 //
 
 uniform	sampler2D	sampler0;
+uniform sampler2D	maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -141,7 +143,16 @@ void main()
 	
 	
 	noise = mix(noise,vec3(0.0),pow(lum,4.0));
-	col = col+noise*grainamount;
-   
+	
+	//
+	// masking 
+
+	vec4 mask = vec4(0.0, 0.0, 0.0, 0.0);
+	if (useMasking > 0.0)
+	{
+		mask = texture2D( maskSampler, texCoord );
+	}
+
+	col = mix(noise * grainamount + col, col, mask.r * useMasking);
 	gl_FragColor =  vec4(col,1.0);
 }

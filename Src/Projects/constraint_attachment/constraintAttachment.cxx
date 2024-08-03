@@ -159,7 +159,7 @@ void PlaneMake(FBVector4d &plane, const FBVertex &p1, const FBVertex &p2, FBVert
 
 bool PrepareTriangleList(std::vector<DistancePointTriangleExact::Triangle> &triangles, const float *modelScaling, FBMatrix &modelMatrix, FBModelVertexData *geometry)
 {
-
+	using namespace nv;
 	if (geometry == nullptr)
 		return false;
 
@@ -244,8 +244,9 @@ bool PrepareTriangleList(std::vector<DistancePointTriangleExact::Triangle> &tria
 	return true;
 }
 
-bool PrepareVerticesList( std::vector<vec3> &vertices, const float *modelScaling, FBMatrix &modelMatrix, FBModelVertexData *geometry )
+bool PrepareVerticesList( std::vector<nv::vec3> &vertices, const float *modelScaling, FBMatrix &modelMatrix, FBModelVertexData *geometry )
 {
+	using namespace nv;
 	if (nullptr == geometry || 0 == geometry->GetVertexCount())
 	{
 		vertices.push_back(vec3((float)modelMatrix[12], (float)modelMatrix[13], (float)modelMatrix[14]));
@@ -502,7 +503,7 @@ bool CConstraintAttachment::DeformerNotify(FBModel* pModel, const FBVertex*  pSr
 
 void CConstraintAttachment::ComputeAttachmentMatrix(const FBMatrix &modelMatrix, const FBVertex *pSrcVertex, const int vertA, const int vertB, const int vertC, const FBVector3d &pos)
 {
-	
+	using namespace nv;
 	// triangle TBN
 
 	FBVertex p1, p2, p3;
@@ -593,7 +594,7 @@ bool CConstraintAttachment::AnimationNodeNotify(FBAnimationNode* pConnector, FBE
 
 bool CConstraintAttachment::CalculateClosestPoints3(FBModel *srcModel, FBModel *dstModel, FBVector3d &srcContactPoint, FBVector3d &dstContactPoint, int &outVertA, int &outVertB, int &outVertC, FBVector3d &outBaryCoords)
 {
-
+	using namespace nv;
 	if (srcModel == nullptr || dstModel == nullptr)
 		return false;
 

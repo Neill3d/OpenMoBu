@@ -13,22 +13,22 @@ public:
 	struct Triangle
 	{
 		int		index[3];
-		vec3	v[3];
+        nv::vec3	v[3];
 	};
 
     struct Result
     {
         Rational	sqrDistance;
         Rational	parameter[3];  // barycentric coordinates for triangle.v[3]
-        vec3		closest;
+        nv::vec3		closest;
     };
 
-    Result operator()(vec3 const& point,
+    Result operator()(nv::vec3 const& point,
         Triangle const& triangle);
 
 protected:
 
-	Rational Dot(vec3 const& v1, vec3 const& v2)
+	Rational Dot(nv::vec3 const& v1, nv::vec3 const& v2)
 	{
 		Rational result = dot(v1, v2);
 		return result;
@@ -37,8 +37,9 @@ protected:
 
 
 DistancePointTriangleExact::Result DistancePointTriangleExact::operator()(
-    vec3 const& point, DistancePointTriangleExact::Triangle const& triangle)
+    nv::vec3 const& point, DistancePointTriangleExact::Triangle const& triangle)
 {
+    using namespace nv;
     vec3 diff = point - triangle.v[0];
     vec3 edge0 = triangle.v[1] - triangle.v[0];
     vec3 edge1 = triangle.v[2] - triangle.v[0];

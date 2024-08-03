@@ -17,15 +17,15 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "GL/glew.h"
 
 #include "graphics_framebuffer.h"
-#include "postprocessing_data.h"
+#include "postpersistentdata.h"
 
 #include "glslShader.h"
 #include "Framebuffer.h"
 
 //#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
-
-#include "postprocessing_effectChain.h"
+#include "posteffectbuffers.h"
+#include "posteffectchain.h"
 
 // number of entering in render callback
 #define MAX_ATTACH_STACK		10
@@ -64,10 +64,10 @@ public:
 	std::vector<PostPersistentData*>	mPaneSettings;	// choose a propriate settings according to a pane camera
 
 														// if each pane has different size (in practice should be not more then 2
-	PostEffectBuffers					mEffectBuffers0;
-	PostEffectBuffers					mEffectBuffers1;
-	PostEffectBuffers					mEffectBuffers2;
-	PostEffectBuffers					mEffectBuffers3;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers0;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers1;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers2;
+	std::unique_ptr<PostEffectBuffers> mEffectBuffers3;
 
 	void    Init();
 
@@ -75,6 +75,8 @@ public:
 
 	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
 	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);
+
+	const PostEffectChain& GetEffectChain() const { return mEffectChain; }
 
 private:
     bool EmptyGLErrorStack();

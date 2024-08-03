@@ -43,8 +43,9 @@ namespace Graphics
 		dst[3] = (float)v[3];
 	}
 
-	void SuperShader::ConstructDefaultLight0(bool inEyeSpace, const mat4 &lViewMatrix, const mat4 &lViewRotationMatrix, TLight &light)
+	void SuperShader::ConstructDefaultLight0(bool inEyeSpace, const nv::mat4 &lViewMatrix, const nv::mat4 &lViewRotationMatrix, TLight &light)
 	{
+		using namespace nv;
 		memset(&light, 0, sizeof(TLight));
 
 		// If there is no light in the scene, we must put the two default lights
@@ -69,8 +70,9 @@ namespace Graphics
 			light.dir = kDirection0;
 	}
 
-	void SuperShader::ConstructDefaultLight1(bool inEyeSpace, const mat4 &lViewMatrix, const mat4 &lViewRotationMatrix, TLight &light)
+	void SuperShader::ConstructDefaultLight1(bool inEyeSpace, const nv::mat4 &lViewMatrix, const nv::mat4 &lViewRotationMatrix, TLight &light)
 	{
+		using namespace nv;
 		memset(&light, 0, sizeof(TLight));
 
 		// If there is no light in the scene, we must put the two default lights
@@ -95,8 +97,9 @@ namespace Graphics
 			light.dir = kDirection1;
 	}
 
-	void SuperShader::ConstructFromFBLight(const bool ToEyeSpace, const mat4 &lViewMatrix, const mat4 &lViewRotationMatrix, FBLight *pLight, TLight &light)
+	void SuperShader::ConstructFromFBLight(const bool ToEyeSpace, const nv::mat4 &lViewMatrix, const nv::mat4 &lViewRotationMatrix, FBLight *pLight, TLight &light)
 	{
+		using namespace nv;
 		memset(&light, 0, sizeof(TLight));
 
 		// Get the light's position, direction, colour, and cone angle (stored in direction's 4th component)
@@ -244,6 +247,7 @@ namespace Graphics
 
 	void SuperShader::PrepFBSceneLights()
 	{
+		using namespace nv;
 		/*
 		glm::vec3 scale, translation, skew;
 		glm::quat orientation;
@@ -385,6 +389,7 @@ namespace Graphics
 
 	void SuperShader::PrepLightsInViewSpace(CGPUShaderLights *pLights)
 	{
+		using namespace nv;
 		FBMatrix pCamMatrix(mCameraCache.mv); // (cameraCache.mv);
 		FBMatrix lViewMatrix(pCamMatrix);
 
@@ -415,6 +420,7 @@ namespace Graphics
 	void SuperShader::PrepLightsFromFBList(CGPUShaderLights *pShaderLights,
 		const CCameraInfoCache &cameraCache, std::vector<FBLight*> &mobuLights)
 	{
+		using namespace nv;
 		/*
 		FBMatrix pCamMatrix;
 		pCamera->GetCameraMatrix( pCamMatrix, kFBModelView );

@@ -18,7 +18,9 @@
 uniform	sampler2D	colorSampler;
 uniform sampler2D	depthSampler;
 uniform sampler2D	blurSampler;
+uniform sampler2D	maskSampler;
 
+uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
@@ -350,7 +352,8 @@ void main()
 	
 	// calculation of final color
 	
-	vec3 col = texture2D(colorSampler, gl_TexCoord[0].xy).rgb;
+	vec3 inputColor = texture2D(colorSampler, texCoord).rgb;
+	vec3 col = inputColor;
 	
 	if(blur > 0.05) //some optimization thingy
 	{
@@ -383,7 +386,13 @@ void main()
 		col = debugFocus(col, blur, depth);
 	}
 	
-	gl_FragColor.rgb = col;
+	vec4 mask = vec4(0.0);
+	if (useMasking > 0.0)
+	{
+		mask = texture2D(maskSampler, texCoord);
+	}
+
+	gl_FragColor.rgb = mix(col, inputColor, mask.r * useMasking);
 	gl_FragColor.a = 1.0;
 }
 // end of a shader

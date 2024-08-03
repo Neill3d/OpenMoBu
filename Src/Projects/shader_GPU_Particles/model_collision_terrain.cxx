@@ -85,6 +85,7 @@ extern void DebugOGL_Callback(GLenum source, GLenum type, GLuint id, GLenum seve
 //
 bool CollisionTerrain::FBCreate()
 {
+	using namespace nv;
 	mLastContext = 0;
 
 	/*
@@ -370,7 +371,6 @@ void setothographicmat(float l, float r, float t, float b, float n, float f, FBM
 
 bool CollisionTerrain::RenderToHeightMap()
 {
-
 	if (mShader == nullptr || mShader->IsInitialized() == false)
 	{
 		if (mShader)
@@ -439,7 +439,7 @@ bool CollisionTerrain::RenderToHeightMap()
 	FBMatrix m(projectionMatrix);
 	
 	FBMatrix localM;
-	mat4	fLocalM;
+	nv::mat4	fLocalM;
 
 	localM.Identity();
 	localM[12] = -T[0] + Size;
@@ -602,8 +602,8 @@ void CollisionTerrain::CustomModelDisplay( FBCamera* pCamera, FBModelShadingMode
 
 				for (int i=0; i<16; ++i)
 					mShaderData.gTerrainVP.mat_array[i] = (float) m[i];
-				mShaderData.gTerrainOffset = vec4(-lSize, 0.0, -lSize, 1.0f);
-				mShaderData.gTerrainScale = vec4(lSize*2, 0.0, lSize*2, 1.0f);
+				mShaderData.gTerrainOffset = nv::vec4(-lSize, 0.0, -lSize, 1.0f);
+				mShaderData.gTerrainScale = nv::vec4(lSize*2, 0.0, lSize*2, 1.0f);
 			
 				mShader->UploadTerrainDataBlock(mShaderData);
 
@@ -734,6 +734,7 @@ void CollisionTerrain::DoUpdate()
 
 void CollisionTerrain::FillCollisionData( TCollision &data )
 {
+	using namespace nv;
 	float size = (float) Size;
 	double z = MaxZ;
 	int res = 1;

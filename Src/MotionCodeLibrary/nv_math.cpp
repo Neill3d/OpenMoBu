@@ -21,6 +21,9 @@ Comments:
 #define _finite finite
 #endif
 
+namespace nv
+{
+
 mat3::mat3()
 {
 }
@@ -106,9 +109,9 @@ nv_scalar dot(const vec4& v, const vec3& w)
 vec3 & reflect(vec3& r, const vec3& n, const vec3& l)
 {
     nv_scalar n_dot_l;
-    n_dot_l = nv_two * dot(n_dot_l,n,l);
-    mult(r,l,-nv_one);
-    madd(r,n,n_dot_l);
+    n_dot_l = nv_two * nv::dot(n_dot_l,n,l);
+    nv::mult(r,l,-nv_one);
+    nv::madd(r,n,n_dot_l);
     return r;
 }
 
@@ -814,7 +817,7 @@ vec2 & normalize(vec2& u)
         norm = nv_one / norm;
     else
         norm = nv_zero;
-    return scale(u,norm); 
+    return nv::scale(u,norm);
 }
 
 vec3 & normalize(vec3& u)
@@ -824,7 +827,7 @@ vec3 & normalize(vec3& u)
         norm = nv_one / norm;
     else
         norm = nv_zero;
-    return scale(u,norm); 
+    return nv::scale(u,norm);
 }
 
 vec4 & normalize(vec4& u)
@@ -834,7 +837,7 @@ vec4 & normalize(vec4& u)
         norm = nv_one / norm;
     else
         norm = nv_zero;
-    return scale(u,norm); 
+    return nv::scale(u,norm);
 }
 
 quat & normalize(quat & p)
@@ -861,7 +864,7 @@ mat4 & look_at(mat4& M, const vec3& eye, const vec3& center, const vec3& up)
     z.x = eye.x - center.x;
     z.y = eye.y - center.y;
     z.z = eye.z - center.z;
-    normalize(z);
+    nv::normalize(z);
 
     // Y vector
     y.x = up.x;
@@ -869,15 +872,15 @@ mat4 & look_at(mat4& M, const vec3& eye, const vec3& center, const vec3& up)
     y.z = up.z;
 
     // X vector = Y cross Z
-    cross(x,y,z);
+    nv::cross(x,y,z);
 
     // Recompute Y = Z cross X
-    cross(y,z,x);
+    nv::cross(y,z,x);
 
     // cross product gives area of parallelogram, which is < 1.0 for
     // non-perpendicular unit-length vectors; so normalize x, y here
-    normalize(x);
-    normalize(y);
+    nv::normalize(x);
+    nv::normalize(y);
 
     M.a00 = x.x; M.a01 = x.y; M.a02 = x.z; M.a03 = -x.x * eye.x - x.y * eye.y - x.z*eye.z;
     M.a10 = y.x; M.a11 = y.y; M.a12 = y.z; M.a13 = -y.x * eye.x - y.y * eye.y - y.z*eye.z;
@@ -921,7 +924,7 @@ mat4 & perspective(mat4& M, const nv_scalar fovy, const nv_scalar aspect, const 
     xmin = ymin * aspect;
     xmax = ymax * aspect;
 
-    return frustum(M, xmin, xmax, ymin, ymax, n, f);
+    return nv::frustum(M, xmin, xmax, ymin, ymax, n, f);
 }
 
 extern mat4 & ortho(mat4 & M, const nv_scalar left, 
@@ -1125,7 +1128,7 @@ quat & axis_to_quat(quat& q, const vec3& a, const nv_scalar phi)
 {
     vec3 tmp(a.x, a.y, a.z);
 
-    normalize(tmp);
+    nv::normalize(tmp);
 	nv_scalar s = sinf(phi/nv_two);
     q.x = s * tmp.x;
     q.y = s * tmp.y;
@@ -1190,7 +1193,7 @@ nv_scalar dot(const quat& q1, const quat& q2)
 
 quat & slerp_quats(quat & p, nv_scalar s, const quat & q1, const quat & q2)
 {
-    nv_scalar cosine = dot(q1, q2);
+    nv_scalar cosine = nv::dot(q1, q2);
 	if (cosine < -1)
 		cosine = -1;
 	else if (cosine > 1)
@@ -1483,7 +1486,7 @@ mat3& tangent_basis(mat3& basis, const vec3& v0, const vec3& v1, const vec3& v2,
     vec3 e0(v1.x - v0.x, t1.s - t0.s, t1.t - t0.t);
     vec3 e1(v2.x - v0.x, t2.s - t0.s, t2.t - t0.t);
 
-    cross(cp,e0,e1);
+    nv::cross(cp,e0,e1);
     if ( fabs(cp.x) > nv_eps)
     {
         basis.a00 = -cp.y / cp.x;        
@@ -1493,7 +1496,7 @@ mat3& tangent_basis(mat3& basis, const vec3& v0, const vec3& v1, const vec3& v2,
     e0.x = v1.y - v0.y;
     e1.x = v2.y - v0.y;
 
-    cross(cp,e0,e1);
+    nv::cross(cp,e0,e1);
     if ( fabs(cp.x) > nv_eps)
     {
         basis.a01 = -cp.y / cp.x;        
@@ -1503,7 +1506,7 @@ mat3& tangent_basis(mat3& basis, const vec3& v0, const vec3& v1, const vec3& v2,
     e0.x = v1.z - v0.z;
     e1.x = v2.z - v0.z;
 
-    cross(cp,e0,e1);
+    nv::cross(cp,e0,e1);
     if ( fabs(cp.x) > nv_eps)
     {
         basis.a02 = -cp.y / cp.x;        
@@ -1599,7 +1602,7 @@ quat & trackball(quat& q, vec2& pt1, vec2& pt2, nv_scalar trackballsize)
     vec3 p2(pt2.x,pt2.y,tb_project_to_sphere(trackballsize,pt2.x,pt2.y));
 
     //  Now, we want the cross product of P1 and P2
-    cross(a,p1,p2);
+    nv::cross(a,p1,p2);
 
     //  Figure out how much to rotate around that axis.
     d.x = p1.x - p2.x;
@@ -1614,7 +1617,7 @@ quat & trackball(quat& q, vec2& pt1, vec2& pt2, nv_scalar trackballsize)
     if (t < -nv_one) 
         t = -nv_one;
     phi = nv_two * nv_scalar(asin(t));
-    axis_to_quat(q,a,phi);
+    nv::axis_to_quat(q,a,phi);
     return q;
 }
 
@@ -1659,7 +1662,7 @@ vec3& cube_map_normal(int i, int x, int y, int cubesize, vec3& v)
             v.z = -nv_one;
             break;
     }
-    normalize(v);
+    nv::normalize(v);
     return v;
 }
 
@@ -1668,9 +1671,9 @@ nv_scalar nv_area(const vec3& v1, const vec3& v2, const vec3& v3)
 {
     vec3 cp_sum;
     vec3 cp;
-    cross(cp_sum, v1, v2);
-    cp_sum += cross(cp, v2, v3);
-    cp_sum += cross(cp, v3, v1);
+    nv::cross(cp_sum, v1, v2);
+    cp_sum += nv::cross(cp, v2, v3);
+    cp_sum += nv::cross(cp, v3, v1);
     return nv_norm(cp_sum) * nv_zero_5; 
 }
 
@@ -1679,11 +1682,11 @@ nv_scalar nv_perimeter(const vec3& v1, const vec3& v2, const vec3& v3)
 {
     nv_scalar perim;
     vec3 diff;
-    sub(diff, v1, v2);
+    nv::sub(diff, v1, v2);
     perim = nv_norm(diff);
-    sub(diff, v2, v3);
+    nv::sub(diff, v2, v3);
     perim += nv_norm(diff);
-    sub(diff, v3, v1);
+    nv::sub(diff, v3, v1);
     perim += nv_norm(diff);
     return perim;
 }
@@ -1691,7 +1694,7 @@ nv_scalar nv_perimeter(const vec3& v1, const vec3& v2, const vec3& v3)
 // compute the center and radius of the inscribed circle defined by the three vertices
 nv_scalar nv_find_in_circle(vec3& center, const vec3& v1, const vec3& v2, const vec3& v3)
 {
-    nv_scalar area = nv_area(v1, v2, v3);
+    nv_scalar area = nv::nv_area(v1, v2, v3);
     // if the area is null
     if (area < nv_eps)
     {
@@ -1699,18 +1702,18 @@ nv_scalar nv_find_in_circle(vec3& center, const vec3& v1, const vec3& v2, const 
         return nv_zero;
     }
 
-    nv_scalar oo_perim = nv_one / nv_perimeter(v1, v2, v3);
+    nv_scalar oo_perim = nv_one / nv::nv_perimeter(v1, v2, v3);
 
     vec3 diff;
 
-    sub(diff, v2, v3);
-    mult(center, v1, nv_norm(diff));
+    nv::sub(diff, v2, v3);
+    nv::mult(center, v1, nv_norm(diff));
 
-    sub(diff, v3, v1);
-    madd(center, v2, nv_norm(diff));
+    nv::sub(diff, v3, v1);
+    nv::madd(center, v2, nv_norm(diff));
     
-    sub(diff, v1, v2);
-    madd(center, v3, nv_norm(diff));
+    nv::sub(diff, v1, v2);
+    nv::madd(center, v3, nv_norm(diff));
 
     center *= oo_perim;
 
@@ -1726,26 +1729,26 @@ nv_scalar nv_find_circ_circle( vec3& center, const vec3& v1, const vec3& v2, con
     nv_scalar d1, d2, d3;
     nv_scalar c1, c2, c3, oo_c;
 
-    sub(e0, v3, v1);
-    sub(e1, v2, v1);
-    dot(d1, e0, e1);
+    nv::sub(e0, v3, v1);
+    nv::sub(e1, v2, v1);
+    nv::dot(d1, e0, e1);
 
-    sub(e0, v3, v2);
-    sub(e1, v1, v2);
-    dot(d2, e0, e1);
+    nv::sub(e0, v3, v2);
+    nv::sub(e1, v1, v2);
+    nv::dot(d2, e0, e1);
 
-    sub(e0, v1, v3);
-    sub(e1, v2, v3);
-    dot(d3, e0, e1);
+    nv::sub(e0, v1, v3);
+    nv::sub(e1, v2, v3);
+    nv::dot(d3, e0, e1);
 
     c1 = d2 * d3;
     c2 = d3 * d1;
     c3 = d1 * d2;
     oo_c = nv_one / (c1 + c2 + c3);
 
-    mult(center,v1,c2 + c3);
-    madd(center,v2,c3 + c1);
-    madd(center,v3,c1 + c2);
+    nv::mult(center,v1,c2 + c3);
+    nv::madd(center,v2,c3 + c1);
+    nv::madd(center,v3,c1 + c2);
     center *= oo_c * nv_zero_5;
  
     return nv_zero_5 * sqrtf((d1 + d2) * (d2 + d3) * (d3 + d1) * oo_c);
@@ -1811,7 +1814,7 @@ void nv_is_valid(nv_scalar lambda)
 //TL
 nv_scalar getAngle(const vec3 & v1, const vec3 & v2)
 {
-    float dp = dot(v1, v2);
+    float dp = nv::dot(v1, v2);
     if(dp > 1.0f) dp = 1.0f;
     else if(dp < -1.0f) dp = -1.0f;
     return acosf(dp);
@@ -1820,8 +1823,8 @@ nv_scalar getAngle(const vec3 & v1, const vec3 & v2)
 vec3 & rotateBy(vec3 & dst, const vec3 & src, const quat& q)
 {
     mat3 M;
-    quat_2_mat(M, q );
-    mult(dst, M, src);
+    nv::quat_2_mat(M, q );
+    nv::mult(dst, M, src);
     return dst;
 }
 
@@ -1854,3 +1857,4 @@ void quat::FromEulerXYZ(vec3 r)
     z = cosf(r.x) * cosf(r.y)*sinf(r.z) - sinf(r.x) * sinf(r.y)*cosf(r.z);
 }
 
+} // NVMath namespace

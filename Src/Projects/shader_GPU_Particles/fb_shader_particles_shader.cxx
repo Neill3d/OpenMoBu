@@ -972,6 +972,7 @@ void GPUshader_Particles::ShadeModel( FBRenderOptions* pRenderOptions, FBShaderM
 
 void GPUshader_Particles::LocalShaderBeginRender( FBRenderOptions* pRenderOptions, FBModel *pModel )
 {
+	using namespace nv;
 #ifdef _DEBUG
 	FBTrace("[LocalShaderBeginRender] Begin %s\n", pModel->Name.AsString() );
 #endif
@@ -986,7 +987,7 @@ void GPUshader_Particles::LocalShaderBeginRender( FBRenderOptions* pRenderOption
 		// allocate new structure for a new model assigned
 		ParticleSystem	*newParticleSystem = new ParticleSystem();
 		newParticleSystem->SetConnections(&mParticleConnections);
-		bool res = newParticleSystem->InitParticleSystem( vec3(0.0f, 0.0f, 0.0f) );
+		bool res = newParticleSystem->InitParticleSystem(nv::vec3(0.0f, 0.0f, 0.0f) );
 		
 		if (res == false)
 		{
@@ -1363,7 +1364,7 @@ void GPUshader_Particles::LocalShadeModel( FBRenderOptions* pRenderOptions, FBMo
 
 
 	FBColorAndAlpha color = Color;
-	renderData.gColor = vec4( (float)color[0], (float)color[1], (float)color[2], (float)color[3] );
+	renderData.gColor = nv::vec4( (float)color[0], (float)color[1], (float)color[2], (float)color[3] );
 	renderData.gUseColorCurve = (UseColorCurve) ? 1.0f : 0.0f;
 	renderData.gTransparencyFactor = (float) (0.01 * TransparencyFactor);
 
@@ -1916,6 +1917,7 @@ void GPUshader_Particles::UpdateConnectedTerrain()
 
 void GPUshader_Particles::UpdateEvaluationData(FBModel *pModel, ParticleSystem *pParticles, const bool enableEmit)
 {
+	using namespace nv;
 	FBMatrix m, rotationTM, normalTM;
 	FBVector3d min, max, pos;
 
@@ -1984,12 +1986,12 @@ void GPUshader_Particles::UpdateEvaluationData(FBModel *pModel, ParticleSystem *
 	EvaluationExchange::SetVelocity( data, vec3((float)velocity[0], (float)velocity[1], (float)velocity[2]), 
 		vec3((float)velRandom[0]*0.01f, (float)velRandom[1]*0.01f, (float)velRandom[2]*0.01f), vec4((float)emitterVel[0], (float)emitterVel[1], (float)emitterVel[2], (InheritEmitterVelocity) ? 1.0f : 0.0f) );
 	*/
-	vec4 femitterVel((float)emitterVel[0], (float)emitterVel[1], (float)emitterVel[2], (InheritEmitterSpeed) ? 1.0f : 0.0f);
-	EvaluationExchange::SetDirection( data, vec3((float)direction[0], (float)direction[1], (float)direction[2]), 
+	nv::vec4 femitterVel((float)emitterVel[0], (float)emitterVel[1], (float)emitterVel[2], (InheritEmitterSpeed) ? 1.0f : 0.0f);
+	EvaluationExchange::SetDirection( data, nv::vec3((float)direction[0], (float)direction[1], (float)direction[2]),
 		(float) dirSpreadHor * 0.01f, (float) dirSpreadVer * 0.01f, UseEmitterNormals );
 	EvaluationExchange::SetSpeed( data, (float) speed, (float) speedSpread * 0.01f, 
 		femitterVel,
-		vec4(), vec4(), emitterDelta );
+		nv::vec4(), vec4(), emitterDelta );
 	
 	EvaluationExchange::SetOrientation( data, vec3( (float)rotation[0], (float)rotation[1], (float)rotation[2] ),
 		vec3( (float)rotSpread[0], (float)rotSpread[1], (float)rotSpread[2] ),
@@ -2021,7 +2023,7 @@ void GPUshader_Particles::UpdateEvaluationData(FBModel *pModel, ParticleSystem *
 	data.gInheritEmitterColor = (InheritEmitterColors) ? 1 : 0;
 	
 	FBColorAndAlpha	dColor = Color;
-	vec4 color((float)dColor[0], (float)dColor[1], (float)dColor[2], (float)dColor[3]);
+	nv::vec4 color((float)dColor[0], (float)dColor[1], (float)dColor[2], (float)dColor[3]);
 	
 	data.gEmitColor = color;
 	dColor = Color2;

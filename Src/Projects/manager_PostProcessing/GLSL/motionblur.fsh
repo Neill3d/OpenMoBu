@@ -16,7 +16,9 @@
 
 uniform	sampler2D	colorSampler;
 uniform sampler2D	depthSampler;
+uniform sampler2D	maskSampler;
 
+uniform float		useMasking;
 uniform float 		zNear;
 uniform float 		zFar;
 
@@ -83,8 +85,9 @@ void main()
 	
 	//
 	
-	vec4 outcolor = texture2D( colorSampler, uv );
-	
+	vec4 inputColor = texture2D( colorSampler, uv );
+	vec4 outcolor = inputColor;
+
 	const int nSamples = 8;
 	for (int i=0; i<nSamples; ++i)
 	{
@@ -96,5 +99,15 @@ void main()
 	}
 	outcolor /= float(nSamples);
 	
+	//
+	// masking 
+
+	vec4 mask = vec4(0.0, 0.0, 0.0, 0.0);
+	if (useMasking > 0.0)
+	{
+		mask = texture2D( maskSampler, uv );
+	}
+	outcolor.rgb = mix(outcolor.rgb, inputColor.rgb, mask.r * useMasking);
+
 	gl_FragColor = outcolor;	
 }

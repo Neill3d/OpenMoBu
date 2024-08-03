@@ -116,12 +116,12 @@ namespace Graphics
 		double				nearPlane;
 		double				realFarPlane;
 
-		vec4				pos;	// camera eye pos
+		nv::vec4		pos;	// camera eye pos
 
-		mat4				mv4;
-		mat4				mvInv4; // mv inverse
-		mat4				p4;	// projection matrix
-		mat4				proj2d;
+		nv::mat4		mv4;
+		nv::mat4		mvInv4; // mv inverse
+		nv::mat4		p4;	// projection matrix
+		nv::mat4		proj2d;
 
 		double				mv[16];
 
@@ -184,7 +184,7 @@ namespace Graphics
 		}
 
 		// prepare lights in a view space
-		void UpdateTransformedLights(const mat4 &modelview, const mat4 &rotation, const mat4 &scaling);
+		void UpdateTransformedLights(const nv::mat4 &modelview, const nv::mat4 &rotation, const nv::mat4 &scaling);
 
 	protected:
 		//
@@ -357,10 +357,10 @@ namespace Graphics
 
 		void SetMatCap(GLuint texId);
 
-		static void ConstructDefaultLight0(bool inEyeSpace, const mat4 &lViewMatrix, const mat4 &lViewRotationMatrix, TLight &light);
-		static void ConstructDefaultLight1(bool inEyeSpace, const mat4 &lViewMatrix, const mat4 &lViewRotationMatrix, TLight &light);
-		static void ConstructFromFBLight(const bool ToEyeSpace, const mat4 &lViewMatrix,
-			const mat4 &lViewRotationMatrix, FBLight *pLight, TLight &light);
+		static void ConstructDefaultLight0(bool inEyeSpace, const nv::mat4 &lViewMatrix, const nv::mat4 &lViewRotationMatrix, TLight &light);
+		static void ConstructDefaultLight1(bool inEyeSpace, const nv::mat4 &lViewMatrix, const nv::mat4 &lViewRotationMatrix, TLight &light);
+		static void ConstructFromFBLight(const bool ToEyeSpace, const nv::mat4 &lViewMatrix,
+			const nv::mat4 &lViewRotationMatrix, FBLight *pLight, TLight &light);
 
 		// this is a GPU buffer preparation, not an actual binding
 		void			PrepFBSceneLights();

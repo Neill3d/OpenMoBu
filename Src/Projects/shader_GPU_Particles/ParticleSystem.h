@@ -120,7 +120,7 @@ public:
     ~ParticleSystem();
     
 	void	ClearParticleSystem();
-    bool	InitParticleSystem(const vec3 &Pos);
+    bool	InitParticleSystem(const nv::vec3 &Pos);
     
 	bool	ReloadShaders();
 
@@ -138,7 +138,7 @@ public:
 	void	GenerateParticle(const int emitType, const bool local, const double extrudeDist, Particle &particle);
 	bool	ResetParticles(unsigned int maxparticles, const int randomSeed, const int rate, const int preCount, const double extrudeDist);
 
-	vec4	GenerateParticleColor(const vec4 &color, const float variation);
+	nv::vec4	GenerateParticleColor(const nv::vec4 &color, const float variation);
 	float	GenerateParticleSize(const float size, const float variation);
 
     //void Render(unsigned int DeltaTimeMillis, const mat4 VP, const vec3 CameraPos);
@@ -152,13 +152,13 @@ public:
 		mLifeTime = value;
 	}
 
-	void SetLastEmitterPos( const vec3 &lastpos )
+	void SetLastEmitterPos( const nv::vec3 &lastpos )
 	{
 		mLastEmitterPos = lastpos;
 	}
 	void SetLastEmitterPos( const double *lastpos )
 	{
-		mLastEmitterPos = vec3( (float)lastpos[0], (float)lastpos[1], (float)lastpos[2] );
+		mLastEmitterPos = nv::vec3( (float)lastpos[0], (float)lastpos[1], (float)lastpos[2] );
 	}
 	void GetLastEmitterPos( double *lastpos )
 	{
@@ -167,7 +167,7 @@ public:
 		lastpos[2] = (double) mLastEmitterPos.z;
 	}
 
-	void SetLastEmitterTM( const mat4 &tm )
+	void SetLastEmitterTM( const nv::mat4 &tm )
 	{
 		mLastEmitterTransform = tm;
 	}
@@ -205,9 +205,9 @@ public:
 
 	void SetParticleSize(const double size, const double size_variation);
 	void SetParticleColor(const bool inheritSurfaceColor, 
-		const vec4 color, const double color_variation,
-		const bool useColor2, const vec4 color2,
-		const bool useColor3, const vec4 color3);
+		const nv::vec4 color, const double color_variation,
+		const bool useColor2, const nv::vec4 color2,
+		const bool useColor3, const nv::vec4 color3);
 
 	void PrepareParticles(unsigned int maxparticles, const int randomSeed, unsigned int particleCount, bool useRate, unsigned int rate, const double extrudeDist);
 
@@ -269,15 +269,15 @@ protected:
 	float						mPointSize;
 	float						mPointSizeVariation;
 	bool						mInheritSurfaceColor;
-	vec4						mPointColor;
+	nv::vec4						mPointColor;
 	float						mPointColorVariation;
 	bool						mUseColor2;
-	vec4						mPointColor2;
+	nv::vec4						mPointColor2;
 	bool						mUseColor3;
-	vec4						mPointColor3;
+	nv::vec4						mPointColor3;
 
-	vec3						mLastEmitterPos;
-	mat4						mLastEmitterTransform;
+	nv::vec3						mLastEmitterPos;
+	nv::mat4						mLastEmitterTransform;
 
 	// forces and collisions
 	ParticleSystemConnections	*mConnections;
@@ -316,22 +316,22 @@ protected:
 
 	bool	ReadSurfaceTextureData();
 
-	void GetRandomVolumePos(const bool local, vec4 &pos);
-	void GetRandomVolumeDir(vec4 &pos);
-	void GetRandomVolumeColor(const vec4 &pos, vec4 &color);
+	void GetRandomVolumePos(const bool local, nv::vec4 &pos);
+	void GetRandomVolumeDir(nv::vec4 &pos);
+	void GetRandomVolumeColor(const nv::vec4 &pos, nv::vec4 &color);
 
-	void GetRandomVerticesPos(const bool local, vec4 &pos, int &vertIndex);
-	void GetRandomVerticesDir(const int vertIndex, vec4 &vel);
-	void GetRandomVerticesColor(const int vertIndex, vec4 &color);
+	void GetRandomVerticesPos(const bool local, nv::vec4 &pos, int &vertIndex);
+	void GetRandomVerticesDir(const int vertIndex, nv::vec4 &vel);
+	void GetRandomVerticesColor(const int vertIndex, nv::vec4 &color);
 
 	// r1, r2, r3 - return barycentric coords
-	void GetRandomSurfacePos(const bool local, const double extrudeDist, vec4 &pos, int &vertIndex, float &r1, float &r2, float &r3);
-	void GetRandomSurfaceDir(const int vertIndex, vec4 &vel);
-	void GetRandomSurfaceColor(const int vertIndex, float r1, float r2, float r3, vec4 &color);
+	void GetRandomSurfacePos(const bool local, const double extrudeDist, nv::vec4 &pos, int &vertIndex, float &r1, float &r2, float &r3);
+	void GetRandomSurfaceDir(const int vertIndex, nv::vec4 &vel);
+	void GetRandomSurfaceColor(const int vertIndex, float r1, float r2, float r3, nv::vec4 &color);
 
-	static void ConvertUnitVectorToSpherical(const vec4 &v, float &r, float &theta, float &phi);
-	static void ConvertSphericalToUnitVector(const float r, const float theta, const float phi, vec4 &v);
-	static void GetRandomDir(const vec4 &dir, const float randomH, const float randomV, vec4 &outdir);
+	static void ConvertUnitVectorToSpherical(const nv::vec4 &v, float &r, float &theta, float &phi);
+	static void ConvertSphericalToUnitVector(const float r, const float theta, const float phi, nv::vec4 &v);
+	static void GetRandomDir(const nv::vec4 &dir, const float randomH, const float randomV, nv::vec4 &outdir);
 
 	float GetRandomSpeed();
 

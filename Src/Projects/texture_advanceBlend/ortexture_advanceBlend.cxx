@@ -15,6 +15,9 @@
 #endif
 
 #include "ortexture_advanceBlend_texture.h"
+#include "mobu_logging.h"
+
+DEFINE_LOGE;
 
 //--- Library declaration.
 FBLibraryDeclare( ortexture_advanceblend )

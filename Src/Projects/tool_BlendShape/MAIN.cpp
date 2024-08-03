@@ -19,7 +19,14 @@
 	#include <windows.h>
 #endif
 
+#include "mobu_logging.h"
 #include "ResourceUtils.h"
+
+/// <summary>
+/// a method to transfer shared library logs into motionbuilder logs output
+/// </summary>
+DEFINE_LOGI
+DEFINE_LOGE
 
 //--- Library declaration.
 FBLibraryDeclare( ortool_blendshape )

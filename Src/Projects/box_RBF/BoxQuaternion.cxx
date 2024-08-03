@@ -633,6 +633,7 @@ void BoxVectorRotateBy::FBDestroy()
  ************************************************/
 bool BoxVectorRotateBy::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo)
 {
+    using namespace nv;
     FBQuaternion q;
     FBVector3d v;
 

@@ -211,8 +211,8 @@ void ForceMotor::FillForceData( TForce &data )
 	
 	//float fTurbulence = (Turbulence) ? 1.0f : 0.0f;
 
-	ForceExchange::SetPosition( data, iEnabled, vec3( (float)P[0], (float)P[1], (float)P[2]) );
-	ForceExchange::SetDirection( data, vec3( (float)T[0], (float)T[1], (float)T[2]), RotationSpeed );
+	ForceExchange::SetPosition( data, iEnabled, nv::vec3( (float)P[0], (float)P[1], (float)P[2]) );
+	ForceExchange::SetDirection( data, nv::vec3( (float)T[0], (float)T[1], (float)T[2]), RotationSpeed );
 	ForceExchange::SetMagnitude( data, Magnitude );
 	ForceExchange::SetRadius( data, (LocalInfluence) ? InfluenceRadius : 0.0 );
 	ForceExchange::SetTurbulence( data, Turbulence, Amplitude, Frequency );

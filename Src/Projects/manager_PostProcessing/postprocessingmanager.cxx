@@ -41,6 +41,11 @@ bool GRenderAfterRender()
 	return false;
 }
 
+PostProcessingManager* GetPostProcessingManager()
+{
+	return gManager;
+}
+
 /*
 source: DEBUG_SOURCE_X where X may be API,
 SHADER_COMPILER, WINDOW_SYSTEM,
@@ -557,14 +562,13 @@ void PostProcessingManager::PrepVideoClipsTimeWrap()
 
 	for (int i = 0, count = pScene->VideoClips.GetCount(); i < count; ++i)
 	{
-
 		FBVideoClip *pVideoClip = pScene->VideoClips[i];
 
-		if (FBIS(pVideoClip, FBVideoMemory))
+		if (!pVideoClip || FBIS(pVideoClip, FBVideoMemory))
 			continue;
 
-		int firstFrame = pVideoClip->StartFrame;
-		int stopFrame = pVideoClip->StopFrame;
+		const int firstFrame = pVideoClip->StartFrame;
+		const int stopFrame = pVideoClip->StopFrame;
 
 		if (firstFrame != stopFrame && stopFrame > 0)
 		{

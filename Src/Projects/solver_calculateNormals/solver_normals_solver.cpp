@@ -243,7 +243,10 @@ void SolverCalculateNormals::OnPerFrameRenderingPipelineCallback    (HISender pS
 				if (!PrepModelData(pModel))
 					continue;
 
-				RunReComputeNormals(pModel);
+				if (VerifyModel(pModel))
+				{
+					RunReComputeNormals(pModel);
+				}
 			}
 		}
 		break;
@@ -320,7 +323,7 @@ bool SolverCalculateNormals::PrepModelData(FBModel *pModel)
 			glGenBuffers(1, &data.mBufferId);
 
 		data.duplicateCount = 0;
-		const int *duplicates = pData->GetVertexArrayDuplicationMap(data.duplicateCount);
+		const int* duplicates = pData->GetVertexArrayDuplicationMap(data.duplicateCount);
 		if (duplicates && data.duplicateCount < static_cast<unsigned int>(vertexCount))
 		{
 			const size_t size = sizeof(int) * data.duplicateCount;
@@ -336,14 +339,14 @@ bool SolverCalculateNormals::PrepModelData(FBModel *pModel)
 		{
 			data.duplicateCount = 0;
 		}
-		
+
 		data.geomUpdateId = geomUpdateId;
 		data.vertexCount = vertexCount;
-		
-		if (iter != end(mModelData) )
+
+		if (iter != end(mModelData))
 			iter->second = data;
 		else
-			mModelData.insert( std::make_pair(pModel, data) );
+			mModelData.insert(std::make_pair(pModel, data));
 	}
 	return true;
 }
@@ -356,7 +359,8 @@ bool SolverCalculateNormals::LoadShaders()
 	{
 		mProgramZero.Clear();
 		mProgramNorm.Clear();
-		mProgramRecomputeNormals.Clear();
+		mProgramRecomputeNormalsTris.Clear();
+		mProgramRecomputeNormalsQuads.Clear();
 		mProgramDup.Clear();
 	}
 
@@ -372,16 +376,20 @@ bool SolverCalculateNormals::LoadShaders()
 	lPath += "/x64/plugins";
 
 	constexpr const char* shader_normals_zero = "/GLSL_CS/recomputeNormalsZero.glsl";
-	constexpr const char* shader_recompute_normals = "/GLSL_CS/recomputeNormals.glsl";
+	constexpr const char* shader_recompute_normals_tris = "/GLSL_CS/recomputeNormalsTris.glsl";
+	constexpr const char* shader_recompute_normals_quads = "/GLSL_CS/recomputeNormalsQuads.glsl";
 	constexpr const char* shader_normals_norm = "/GLSL_CS/recomputeNormalsNorm.glsl";
 	constexpr const char* shader_normals_dup = "/GLSL_CS/recomputeNormalsDup.glsl";
 
 	if (!mProgramZero.PrepProgram(shader_normals_zero) )
 		return false;
 
-	if (!mProgramRecomputeNormals.PrepProgram(shader_recompute_normals) )
+	if (!mProgramRecomputeNormalsTris.PrepProgram(shader_recompute_normals_tris) )
 		return false;
 	
+	if (!mProgramRecomputeNormalsQuads.PrepProgram(shader_recompute_normals_quads))
+		return false;
+
 	if (!mProgramNorm.PrepProgram(shader_normals_norm) )
 		return false;
 		
@@ -463,6 +471,7 @@ bool SolverCalculateNormals::LoadShaders()
 			return false;
 		}
 	}
+	/*
 	if (0 == mProgramRecomputeNormals.GetProgramId() )
 	{
 		bool res = false;
@@ -500,7 +509,7 @@ bool SolverCalculateNormals::LoadShaders()
 			return false;
 		}
 	}
-
+	*/
 	mNeedProgramReload = false;
 	return true;
 }
@@ -524,19 +533,6 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 	if (0 == numberOfVertices)
 		return false;
 	
-	int numberOfIndicesFromSubPatches = 0;
-	for (int i=0, count=pData->GetSubPatchCount(); i<count; ++i)
-	{
-		int offset = pData->GetSubPatchIndexOffset(i);
-		int size = pData->GetSubPatchIndexSize(i);
-
-		int localCount = offset+size;
-		if ( localCount > numberOfIndicesFromSubPatches)
-			numberOfIndicesFromSubPatches = localCount;
-	}
-	
-	int numberOfTriangles = numberOfIndicesFromSubPatches / 3;
-
 	//
 	// run a compute program
 
@@ -589,25 +585,83 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT ); //GL_ALL_BARRIER_BITS
 	
 	//
-	// ACCUM NORMALS
+	// ACCUM NORMALS TRIS
 	{
-	const GLuint programId = mProgramRecomputeNormals.GetProgramId();
-	if (programId == 0)
-		return false;
+		const GLuint programId = mProgramRecomputeNormalsTris.GetProgramId();
+		if (programId == 0)
+			return false;
 
-	mProgramRecomputeNormals.Bind();
+		const GLint startIndexLoc = glGetUniformLocation(programId, "indexOffset");
+		const GLint triCountLoc = glGetUniformLocation(programId, "numberOfTriangles");
 
-	GLint loc = glGetUniformLocation( programId, "numberOfTriangles" );
-	if (loc >= 0)
-		glProgramUniform1i( programId, loc, numberOfTriangles );
-	
-	const int computeLocalX = 512;
-	const int x = numberOfTriangles / computeLocalX + 1;
+		if (startIndexLoc < 0 || triCountLoc < 0)
+			return false;
 
-	mProgramRecomputeNormals.DispatchPipeline( x, 1, 1 );
-	mProgramRecomputeNormals.UnBind();
+		mProgramRecomputeNormalsTris.Bind();
 
-//	CHECK_GL_ERROR_MOBU();
+		for (int i = 0, count = pData->GetSubPatchCount(); i < count; ++i)
+		{
+			const int offset = pData->GetSubPatchIndexOffset(i);
+			const int size = pData->GetSubPatchIndexSize(i);
+
+			const FBGeometryPrimitiveType primType = pData->GetSubPatchPrimitiveType(i, nullptr);
+
+			if (primType == FBGeometryPrimitiveType::kFBGeometry_TRIANGLES)
+			{
+				const int numberOfTriangles = size / 3;
+
+				glProgramUniform1i(programId, startIndexLoc, offset);
+				glProgramUniform1i(programId, triCountLoc, numberOfTriangles);
+
+				const int computeLocalX = 512;
+				const int x = numberOfTriangles / computeLocalX + 1;
+
+				mProgramRecomputeNormalsTris.DispatchPipeline(x, 1, 1);
+			}
+		}
+
+		mProgramRecomputeNormalsTris.UnBind();
+	}
+
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	//
+	// ACCUM NORMALS QUADS
+	{
+		const GLuint programId = mProgramRecomputeNormalsQuads.GetProgramId();
+		if (programId == 0)
+			return false;
+
+		const GLint startIndexLoc = glGetUniformLocation(programId, "indexOffset");
+		const GLint quadCountLoc = glGetUniformLocation(programId, "numberOfQuads");
+
+		if (startIndexLoc < 0 || quadCountLoc < 0)
+			return false;
+
+		mProgramRecomputeNormalsQuads.Bind();
+
+		for (int i = 0, count = pData->GetSubPatchCount(); i < count; ++i)
+		{
+			const int offset = pData->GetSubPatchIndexOffset(i);
+			const int size = pData->GetSubPatchIndexSize(i);
+
+			const FBGeometryPrimitiveType primType = pData->GetSubPatchPrimitiveType(i, nullptr);
+
+			if (primType == FBGeometryPrimitiveType::kFBGeometry_QUADS)
+			{
+				const int numberOfQuads = size / 4;
+
+				glProgramUniform1i(programId, startIndexLoc, offset);
+				glProgramUniform1i(programId, quadCountLoc, numberOfQuads);
+
+				const int computeLocalX = 512;
+				const int x = numberOfQuads / computeLocalX + 1;
+
+				mProgramRecomputeNormalsQuads.DispatchPipeline(x, 1, 1);
+			}
+		}
+
+		mProgramRecomputeNormalsQuads.UnBind();
 	}
 
 	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
@@ -661,5 +715,34 @@ bool SolverCalculateNormals::RunReComputeNormals(FBModel *pModel)
 		mProgramDup.UnBind();
 	}
 	
+	return true;
+}
+
+bool SolverCalculateNormals::VerifyModel(FBModel* model)
+{
+	FBGeometry* geometry = model->Geometry;
+	FBModelVertexData* data = model->ModelVertexData;
+
+	if (nullptr == geometry || nullptr == data || false == data->IsDrawable())
+		return false;
+
+	int numberOfVertices = data->GetVertexCount();
+
+	if (0 == numberOfVertices)
+		return false;
+
+	for (int i = 0, count = data->GetSubPatchCount(); i < count; ++i)
+	{
+		//bool isOptimized = false;
+		const FBGeometryPrimitiveType primType = data->GetSubPatchPrimitiveType(i, nullptr);
+
+		if (primType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLES
+			&& primType != FBGeometryPrimitiveType::kFBGeometry_QUADS)
+		{
+			return false;
+		}
+
+	}
+
 	return true;
 }
