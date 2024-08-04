@@ -60,7 +60,7 @@ int CDevice_FaceCap_Hardware::StartServer(const int server_port)
 	{
 		if (m_Verbose)
 		{
-			printf("failed to set non-blocking socket\n");
+			FBTrace("failed to set non-blocking socket\n");
 		}
 		closesocket(lSocket);
 		return 0;
@@ -79,7 +79,7 @@ int CDevice_FaceCap_Hardware::StartServer(const int server_port)
 		{
 			if (m_Verbose)
 			{
-				printf("failed to bind a socket\n");
+				FBTrace("failed to bind a socket\n");
 			}
 			closesocket(lSocket);
 			return 0;
@@ -94,13 +94,6 @@ int CDevice_FaceCap_Hardware::StartServer(const int server_port)
  ************************************************/
 CDevice_FaceCap_Hardware::CDevice_FaceCap_Hardware()
 {
-	mParent				= NULL;
-
-	m_Verbose = false;
-	
-	mNetworkPort		= 9000;
-	mStreaming			= true;
-	
 	mPosition[0]		= 0;
 	mPosition[1]		= 0;
 	mPosition[2]		= 0;
@@ -166,7 +159,7 @@ bool CDevice_FaceCap_Hardware::ProcessMessage(tosc_message *osc)
 
 	if (m_Verbose)
 	{
-		printf("[%i bytes] %s %s\n",
+		FBTrace("[%u bytes] %s %s\n",
 			osc->len, // the number of bytes in the OSC message
 			tosc_getAddress(osc), // the OSC address string, e.g. "/button1"
 			tosc_getFormat(osc)); // the OSC format string, e.g. "f"

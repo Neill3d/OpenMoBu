@@ -1690,18 +1690,19 @@ bool GPUshader_Particles::UpdateInstanceData()
 
 	FBModel *instanceModel = nullptr;
 	if (InstanceObject.GetCount() )  
-		instanceModel = (FBModel*) InstanceObject.GetAt(0);
+		instanceModel = static_cast<FBModel*>(InstanceObject.GetAt(0));
 
-	if (instanceModel == nullptr)
+	if (!instanceModel)
 		return false;
 
 	// instance data is a connection, once per fbshaderinstance, not per assigned model !
 
-	FBModelVertexData *pVertexData = instanceModel->ModelVertexData;
-	if (pVertexData == nullptr)
+	FBModelVertexData* pVertexData = instanceModel->ModelVertexData;
+	if (!pVertexData)
 		return false;
 
-	TInstanceVertexStream stream = { static_cast<unsigned int>(pVertexData->GetVertexCount()), 
+	TInstanceVertexStream stream;
+	TInstanceVertexStream::Set(stream, static_cast<unsigned int>(pVertexData->GetVertexCount()),
 		pVertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Point), 
 		pVertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Normal), 
 		pVertexData->GetUVSetVBOId(),
@@ -1710,7 +1711,7 @@ bool GPUshader_Particles::UpdateInstanceData()
 		pVertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Normal),
 		pVertexData->GetUVSetVBOOffset(),
 		0
-	};
+	);
 
 	const int patchCount = pVertexData->GetSubPatchCount();
 	mParticleConnections.SetInstanceVertexStream(stream, patchCount );
@@ -1718,11 +1719,9 @@ bool GPUshader_Particles::UpdateInstanceData()
 	for (int i=0; i<patchCount; ++i)
 	{
 		GLuint texId = 0;
-		FBMaterial *pMaterial = pVertexData->GetSubPatchMaterial(i);
-		if (nullptr != pMaterial)
+		if (FBMaterial* pMaterial = pVertexData->GetSubPatchMaterial(i))
 		{
-			FBTexture *pTexture = pMaterial->GetTexture();
-			if (nullptr != pTexture)
+			if (FBTexture* pTexture = pMaterial->GetTexture())
 			{
 				texId = pTexture->TextureOGLId;
 				if ( 0 == texId )

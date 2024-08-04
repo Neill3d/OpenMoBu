@@ -17,26 +17,27 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define GL_COMPRESSED_ETC1_RGB8_OES                      0x8D64 // ETC1 - GL_OES_compressed_ETC1_RGB8_texture
 
 PostEffectBuffers::PostEffectBuffers()
+	: mWidth(1)
+	, mHeight(1)
+	, mOutputColorObject(0)
+	, mPreviewSignal(false)
+	, mPreviewRunning(false)
+	, mPreviewWidth(1)
+	, mPreviewHeight(1)
+	, mSrc(0)
+	, mDst(1)
+	, mCompressionInternal(GL_COMPRESSED_ETC1_RGB8_OES)
+	, mCompressionFormat(GL_RGB)
+	, mCompressionType(GL_UNSIGNED_SHORT_5_6_5)
+	, mCompressedPreviewId(0)
+	, mCompressOnFlyId(0)
+	, mCurPBO(0)
+	, mCurUnPack(0)
+	, mUnCompressSize(0)
+	, mCompressedSize(0)
 {
-	mSrc = 0;
-	mDst = 1;
-
-	mWidth = 1;
-	mHeight = 1;
-
-	mPreviewSignal = false;
-	mPreviewRunning = false;
-	mPreviewWidth = 1;
-	mPreviewHeight = 1;
-
-	mCompressedPreviewId = 0;
-	mCompressionFormat = GL_RGB;
-	mCompressionInternal = GL_COMPRESSED_ETC1_RGB8_OES;
-	mCompressionType = GL_UNSIGNED_SHORT_5_6_5;
-	mCompressOnFlyId = 0;
-
-	mCurPBO = 0;
 	mPBOs[0] = mPBOs[1] = 0;
+	mUnPackPBOs[0] = mUnPackPBOs[1] = 0;
 }
 
 PostEffectBuffers::~PostEffectBuffers()
@@ -264,7 +265,7 @@ const GLuint PostEffectBuffers::GetPreviewCompressedColor()
 {
 	//return mBufferDownscale->GetColorObject();
 	return mCompressOnFlyId;
-	return mCompressedPreviewId;
+	//return mCompressedPreviewId;
 }
 
 void PostEffectBuffers::AllocPreviewTexture(int w, int h)

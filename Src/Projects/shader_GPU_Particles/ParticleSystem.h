@@ -54,10 +54,10 @@ public:
 	void	SetInstancePatchData( const int index, unsigned int offset, unsigned int size, unsigned int texId );
 
 	const int GetNumberOfCollisions() {
-		return (int) mCollisionData.size();
+		return static_cast<int>(mCollisionData.size());
 	}
 	const int GetNumberOfForces() {
-		return (int) mForcesData.size();
+		return static_cast<int>(mForcesData.size());
 	}
 
 	void BindCollisions(const GLuint slot)
@@ -102,7 +102,7 @@ protected:
 
 protected:
 
-	GLuint						mTextureTerrain;
+	GLuint						mTextureTerrain{ 0 };
 
 	CGPUBufferSSBO				mBufferCollisions;
 	CGPUBufferSSBO				mBufferForces;
@@ -257,11 +257,11 @@ protected:
 	evaluateBlock				mEvaluateData;			//!< common exchange parameters between UI and evaluate shader
 	renderBlock					mRenderData;
 
-	bool						mNeedReset;
+	bool						mNeedReset{ true };
 	unsigned int				mMaxParticles;			//!< initial amount of particles
-	unsigned int				mParticleCount;
-	bool						mUseRate;
-	unsigned int				mParticleRate;
+	unsigned int				mParticleCount{ 0 };
+	bool						mUseRate{ false };
+	unsigned int				mParticleRate{ 0 };
 	unsigned int				mLifeTime;		
 
 	double						mTime{ 0.0 };					//!< lets use high definition timer
@@ -280,7 +280,7 @@ protected:
 	nv::mat4						mLastEmitterTransform;
 
 	// forces and collisions
-	ParticleSystemConnections	*mConnections;
+	ParticleSystemConnections* mConnections{ nullptr };
 
 	// read for particle color inheritance
 	struct TextureInfo
@@ -304,10 +304,10 @@ protected:
 	TextureInfo					mSurfaceTextureInfo;
 	std::vector<unsigned char>	mSurfaceTextureData;
 
-	GLuint						mSurfaceTextureId;
+	GLuint						mSurfaceTextureId{ 0 };
 	std::vector<TTriangle>		mSurfaceData;
 
-	GLuint						mSurfaceMaskId;
+	GLuint						mSurfaceMaskId{ 0 };
 
 	
 
@@ -337,7 +337,7 @@ protected:
 
 protected:
 
-	unsigned int				mTotalCycles;
+	unsigned int				mTotalCycles{ 0 };
 
 	unsigned int				mCurrVB{ 0 };
 	unsigned int				mCurrTFB{ 1 };
@@ -345,11 +345,11 @@ protected:
     GLuint						mTransformFeedback[2];
 
 	//	query transform feedback count
-	GLuint						mInstanceCount;	
-	GLuint						mQuery;
+	GLuint						mInstanceCount{ 0 };
+	GLuint						mQuery{ 0 };
 
 	// ! Use particles system shader (terrain technique)
-	ParticleShaderFX			*mShader;
+	ParticleShaderFX* mShader{ nullptr };
 
 	// emitter positions and normals
 	// TODO: replace buffer texture with a NV pointer uniform buffer
@@ -360,7 +360,7 @@ protected:
 	unsigned int				mSurfaceFront{ 1 };
 	CGPUBufferNV				mBufferSurface[2];
 
-	GLuint						mTexture;
+	GLuint						mTexture{ 0 };
 
 	GLuint						mSizeTextureId{ 0 };
 	GLuint						mColorTextureId{ 0 };

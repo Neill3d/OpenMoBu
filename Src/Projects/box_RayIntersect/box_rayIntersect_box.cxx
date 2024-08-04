@@ -588,12 +588,15 @@ bool Box_RayIntersect::AnimationNodeNotify( FBAnimationNode *pAnimationNode, FBE
 	for (int i=0; i<count; ++i)
 	{
 		FBPlug *pPlug = mNodeMesh->GetSrc(i);
-		pPlug = pPlug->GetOwner();
+		pPlug = (pPlug) ? pPlug->GetOwner() : nullptr;
 			
-		if (pPlug->Is( FBModelPlaceHolder::TypeInfo ) )
+		if (pPlug && pPlug->Is( FBModelPlaceHolder::TypeInfo ) )
 		{
-			FBModelPlaceHolder *pPlaceHolder = (FBModelPlaceHolder*) pPlug;
+			FBModelPlaceHolder *pPlaceHolder = static_cast<FBModelPlaceHolder*>(pPlug);
 			FBModel *pModel = pPlaceHolder->Model;
+
+			if (!pModel)
+				continue;
 
 			// let's use a native mobu method for a ray casting
 			FBTVector pos4(lPos[0], lPos[1], lPos[2]);

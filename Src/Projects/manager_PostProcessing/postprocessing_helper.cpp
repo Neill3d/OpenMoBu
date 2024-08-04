@@ -405,9 +405,9 @@ void RenderModel(FBModel* model)
 		const GLvoid* normalOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Normal);
 
 		glBindBuffer(GL_ARRAY_BUFFER, id);
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (const GLvoid*)positionOffset);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, positionOffset);
 		glBindBuffer(GL_ARRAY_BUFFER, normalId);
-		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (const GLvoid*)normalOffset);
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, normalOffset);
 
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(2);
@@ -434,7 +434,7 @@ void RenderMaskedModels(FBCamera* camera)
 {
 	if (FBIS(camera, FBCameraSwitcher))
 	{
-		camera = ((FBCameraSwitcher*)camera)->CurrentCamera;
+		camera = (FBCast<FBCameraSwitcher>(camera))->CurrentCamera;
 	}
 
 	FBMatrix mv, mp;

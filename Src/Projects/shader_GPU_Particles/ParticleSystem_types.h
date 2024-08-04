@@ -198,6 +198,27 @@ struct TInstanceVertexStream
 	void			*normalOffset;
 	void			*uvOffset;
 	void			*indexOffset;
+
+	static void Set(TInstanceVertexStream& stream, unsigned int _vertexCount, GLuint _positionId, GLuint _normalId, GLuint _uvId,
+		GLuint _indexId, void* _positionOffset, void* _normalOffset, void* _uvOffset, void* _indexOffset)
+	{
+		stream.vertexCount = _vertexCount;
+		stream.positionId = _positionId;
+		stream.normalId = _normalId;
+		stream.uvId = _uvId;
+		stream.indexId = _indexId;
+		stream.positionOffset = _positionOffset;
+		stream.normalOffset = _normalOffset;
+		stream.uvOffset = _uvOffset;
+		stream.indexOffset = _indexOffset;
+	}
+
+	static TInstanceVertexStream Zero()
+	{
+		static TInstanceVertexStream zeroStream;
+		Set(zeroStream, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		return zeroStream;
+	}
 };
 
 struct TMeshPatch

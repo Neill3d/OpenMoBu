@@ -198,8 +198,6 @@ bool CComputeProgram::loadComputeShaderFromBuffer(const char* buffer, const char
 
 bool CComputeProgram::loadComputeShader(const char* computeShaderName, const GLuint shaderid, const GLuint programid)
 {
-	bool lSuccess = false;
-
 	FileReadScope FileRead(computeShaderName);
 
 	if (!FileRead.Get())

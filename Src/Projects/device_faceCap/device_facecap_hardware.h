@@ -176,11 +176,11 @@ public:
 private:
 	//--- Utility members
 	FBSystem		mSystem;								//!< System interface.
-	FBDevice*		mParent;
+	FBDevice* mParent{ nullptr };
 
-	int			mSocket;									//!< Socket for communication
+	int			mSocket{ 0 };									//!< Socket for communication
 
-	bool		m_Verbose;
+	bool		m_Verbose{ false };
 
 	//--- Data extraction members
 								
@@ -188,10 +188,10 @@ private:
 	
 	//--- Communications members
 	
-	int				mNetworkSocket;							//!< Network socket.
-	int				mNetworkPort;							//!< Network port number.
+	int				mNetworkSocket{ 0 };							//!< Network socket.
+	int				mNetworkPort{ 9000 };							//!< Network port number.
 	
-	bool			mStreaming;								//!< Is device in streaming mode?
+	bool			mStreaming{ true };								//!< Is device in streaming mode?
 
 	//--- Device channel status
 	double			mPosition[3] = { 0.0 };							//!< Position of input from hardware.

@@ -50,8 +50,8 @@ WGLFont* a_pDefaultFont{ nullptr };
 //////////////////////////////////////////////////////////////////////
 
 WGLFont::WGLFont()
+	: g_FontListID(0)
 {
-	g_FontListID = 0;
 }
 
 WGLFont::WGLFont( HDC hDC, LPSTR strFontName, int height ) 

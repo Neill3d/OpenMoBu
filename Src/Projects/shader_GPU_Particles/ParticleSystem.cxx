@@ -91,6 +91,7 @@ void DebugOGL_Callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 
 ParticleSystemConnections::ParticleSystemConnections()
 {
+	mInstanceVertex = TInstanceVertexStream::Zero();
 }
 
 ParticleSystemConnections::~ParticleSystemConnections()
@@ -149,22 +150,6 @@ ParticleSystem::ParticleSystem(unsigned int maxparticles)
 	, mConnections(nullptr)
 	, mMaxParticles(maxparticles)
 {
-	mTime = 0;
-
-	mNeedReset = true;
-
-	mParticleCount = 0;
-	mUseRate = false;
-	mParticleRate = 0;
-
-	mSurfaceTextureId = 0;
-	mSurfaceMaskId = 0;
-	mTexture = 0;
-
-	mQuery = 0;
-
-	mTotalCycles = 0;
-
 	mTransformFeedback[0] = mTransformFeedback[1] = 0;
 	mParticleBuffer[0] = mParticleBuffer[1] = 0;
 	
@@ -256,8 +241,8 @@ void ParticleSystem::NeedReset()
 bool ParticleSystem::InitParticleSystem(const nv::vec3 &Pos)
 {
 	using namespace nv;
-	if (mShader->IsInitialized() == false)
-		if (false == mShader->Initialize() )
+	if (!mShader->IsInitialized())
+		if (!mShader->Initialize())
 			return false;
 
 	if (mQuery == 0)

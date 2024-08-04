@@ -192,11 +192,11 @@ protected:
 	GLuint				cubeId = 0;
 
 	// information about load status
-	unsigned int		memorySize;
-	unsigned int		dimention;
-	bool				isCompressed;
-	unsigned int		numberOfMipLevels;
-	unsigned int		format;
+	unsigned int		memorySize{ 0 };
+	unsigned int		dimention{ 0 };
+	bool				isCompressed{ false };
+	unsigned int		numberOfMipLevels{ 0 };
+	unsigned int		format{ 0 };
 };
 
 #endif
