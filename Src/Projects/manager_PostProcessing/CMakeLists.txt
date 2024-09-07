@@ -13,26 +13,63 @@ set_target_properties(freetype-gl PROPERTIES
 
 project(manager_PostProcessing LANGUAGES CXX)
 
-#add_subdirectory(GLSL)
-#add_subdirectory(ImGui)
-
-set (IMGUI_CORE ${CMAKE_SOURCE_DIR}/third_party/imgui/*.*)
-set (IMGUI_NODES ${CMAKE_SOURCE_DIR}/third_party/imnodes/*.*)
+set (IMGUI_CORE 
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imconfig.h
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui.cpp
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui.h
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_draw.cpp
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_internal.h
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_tables.cpp
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_widgets.cpp
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_impl_opengl3.cpp
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_impl_opengl3.h
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_impl_win32.cpp
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/imgui_impl_win32.h
+    ${CMAKE_SOURCE_DIR}/third_party/imgui/LICENSE.txt
+)
+set (IMGUI_NODES 
+    ${CMAKE_SOURCE_DIR}/third_party/imnodes/imnodes.cpp
+    ${CMAKE_SOURCE_DIR}/third_party/imnodes/imnodes.h
+    ${CMAKE_SOURCE_DIR}/third_party/imnodes/imnodes_internal.h
+    ${CMAKE_SOURCE_DIR}/third_party/imnodes/LICENSE.md
+    ${CMAKE_SOURCE_DIR}/third_party/imnodes/README.md
+)
 
 source_group("ImGui" FILES ${IMGUI_CORE})
-source_group("ImGui" FILES ${IMGUI_NODES})
+source_group("ImGuiNodes" FILES ${IMGUI_NODES})
 
 file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h)
-file(GLOB_RECURSE SRCS_SHADERS *.fsh *.vsh *.glslv *.glslf)
 
-file(GLOB_RECURSE IMGUI_SRCS ${CMAKE_SOURCE_DIR}/third_party/imgui/*.*)
-file(GLOB_RECURSE IMGUI_NODES_SRCS ${CMAKE_SOURCE_DIR}/third_party/imnodes/*.*)
+set (SHADERS
+    GLSL/color.fsh
+    GLSL/depthLinearize.fsh
+    GLSL/displacement.fsh
+    GLSL/displacement.vsh
+    GLSL/dof.fsh
+    GLSL/downscale.fsh
+    GLSL/downscale.vsh
+    GLSL/filmGrain.fsh
+    GLSL/fishEye.fsh
+    GLSL/fishEye.vsh
+    GLSL/imageBlur.fsh
+    GLSL/lensFlare.fsh
+    GLSL/lensFlareAnamorphic.fsh
+    GLSL/lensFlareBubble.fsh
+    GLSL/mix.fsh
+    GLSL/motionblur.fsh
+    GLSL/scene_masked.glslf
+    GLSL/scene_masked.glslv
+    GLSL/simple.fsh
+    GLSL/simple.vsh
+    GLSL/ssao.fsh
+    GLSL/ssao_linearize.fsh
+    GLSL/text.frag
+    GLSL/text.vert
+    GLSL/vignetting.fsh
+)
+source_group("Shaders" FILES ${SHADERS})
 
-#source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/GLSL FILES "${SRCS_SHADERS}")
-source_group(${CMAKE_CURRENT_SOURCE_DIR}/GLSL FILES "${SRCS_SHADERS}")
-#set (SRCS ${SRCS} ${SRCS_SHADERS} ${IMGUI_SRCS} ${IMGUI_NODES_SRCS})
-
-add_library(${PROJECT_NAME} SHARED ${SRCS} ${SRCS_SHADERS} ${IMGUI_SRCS} ${IMGUI_NODES_SRCS})
+add_library(${PROJECT_NAME} SHARED ${SRCS} ${SHADERS} ${IMGUI_CORE} ${IMGUI_NODES})
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)

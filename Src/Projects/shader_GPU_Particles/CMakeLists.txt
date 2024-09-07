@@ -26,7 +26,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include $
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
-target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productversion} GLEW_STATIC)
+target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productversion} GLEW_STATIC NOMINMAX)
 
 #
 # GLEW
