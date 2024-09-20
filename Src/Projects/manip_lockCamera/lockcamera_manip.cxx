@@ -352,32 +352,29 @@ void Manip_LockCamera::OnPerFrameRenderingPipelineCallback(HISender pSender, HKE
 	case kFBGlobalEvalCallbackBeforeRender:
 	{
 
-											  mRenderPaneIndex = 0;
+		mRenderPaneIndex = 0;
 
-											  HGLRC currRc = wglGetCurrentContext();
-											  if (0 == gLastContext || currRc != gLastContext)
-											  {
-												  FreeTextures();
-												  gLastContext = currRc;
-											  }
+		HGLRC currRc = wglGetCurrentContext();
+		if (0 == gLastContext || currRc != gLastContext)
+		{
+			FreeTextures();
+			gLastContext = currRc;
+		}
 
-											  static bool firstLoad = true;
-											  if (true == firstLoad || 0 == mLockId)
-											  {
-												  LoadTextures();
-												  firstLoad = false;
-											  }
-											  
-
+		static bool firstLoad = true;
+		if (true == firstLoad || 0 == mLockId)
+		{
+			LoadTextures();
+			firstLoad = false;
+		}
+				
 	} break;
 	case kFBGlobalEvalCallbackAfterRender:
 	{
-											 //
-											 // This callback occurs just before swapping GL back/front buffers. 
-											 // User could do some special effect, HUD or buffer download (via PBO) here. 
-											 //
-
-
+		//
+		// This callback occurs just before swapping GL back/front buffers. 
+		// User could do some special effect, HUD or buffer download (via PBO) here. 
+		//
 
 	} break;
 
