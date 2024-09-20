@@ -117,5 +117,5 @@ private:
 	/// </summary>
 	bool HasAnyMaskedObject() const;
 
-	void RenderSceneMaskToTexture(PostEffectBuffers* buffers);
+	void RenderSceneMaskToTexture(PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers);
 };

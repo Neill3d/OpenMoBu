@@ -79,18 +79,28 @@ public: // PROPERTIES
 
 	FBPropertyBool				DrawHUDLayer;
 
+	// Global masking properties
 	FBPropertyBool				UseCompositeMasking; //!< a global toggle for the masking effect, every effect has own local masking settings
-	FBPropertyBool				InvertMask;	//!< reverse colors in a rendered masks
-	FBPropertyBool				BlurMask; //!< apply a blur pass on a rendered mask
-	FBPropertyVector2d			BlurMaskScale;
 	FBPropertyBool				EnableMaskingForAllEffects; //!< with this option, we are going to activate masking for every effect
 	FBPropertyBaseEnum<EMaskingChannel>	GlobalMaskingChannel;
 	FBPropertyBool				DebugDisplyMasking; //!< output masking texture into the viewport for a test purpose
 
-	// Mask Rim lighting
-	FBPropertyAnimatableDouble			UseRimForMask;
-	FBPropertyAnimatableDouble			MaskRimPower;
-	
+	struct SMaskProperties
+	{
+		FBPropertyBool				InvertMask;	//!< reverse colors in a rendered masks
+		FBPropertyBool				BlurMask; //!< apply a blur pass on a rendered mask
+		FBPropertyVector2d			BlurMaskScale; //!< control a blur scaling of mask a
+		FBPropertyAnimatableDouble	UseRimForMask;
+		FBPropertyAnimatableDouble	MaskRimPower;
+
+		void SetDefaultValues();
+	};
+
+	SMaskProperties				MaskA;
+	SMaskProperties				MaskB;
+	SMaskProperties				MaskC;
+	SMaskProperties				MaskD;
+
 	// make effect local for a specified camera (override global effect)
 	FBPropertyBool				UseCameraObject;
 	FBPropertyListObject		Camera;

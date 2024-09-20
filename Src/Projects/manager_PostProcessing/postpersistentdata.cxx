@@ -254,15 +254,36 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Bottom Clip Percent", "Common Setup");
 
 	AddPropertyView("Use Masking", "Common Setup");
-	AddPropertyView("Invert Mask", "Common Setup");
-	AddPropertyView("Blur Mask", "Common Setup");
-	AddPropertyView("Blur Mask Scale", "Common Setup");
+	
+	AddPropertyView("Invert Mask A", "Common Setup.Mask A");
+	AddPropertyView("Blur Mask A", "Common Setup.Mask A");
+	AddPropertyView("Blur Mask A Scale", "Common Setup.Mask A");
+	AddPropertyView("Use Rim For Mask A", "Common Setup.Mask A");
+	AddPropertyView("Mask A Rim Power", "Common Setup.Mask A");
+
+	AddPropertyView("Invert Mask B", "Common Setup.Mask B");
+	AddPropertyView("Blur Mask B", "Common Setup.Mask B");
+	AddPropertyView("Blur Mask B Scale", "Common Setup.Mask B");
+	AddPropertyView("Use Rim For Mask B", "Common Setup.Mask B");
+	AddPropertyView("Mask B Rim Power", "Common Setup.Mask B");
+
+	AddPropertyView("Invert Mask C", "Common Setup.Mask C");
+	AddPropertyView("Blur Mask C", "Common Setup.Mask C");
+	AddPropertyView("Blur Mask C Scale", "Common Setup.Mask C");
+	AddPropertyView("Use Rim For Mask C", "Common Setup.Mask C");
+	AddPropertyView("Mask C Rim Power", "Common Setup.Mask C");
+
+	AddPropertyView("Invert Mask D", "Common Setup.Mask D");
+	AddPropertyView("Blur Mask D", "Common Setup.Mask D");
+	AddPropertyView("Blur Mask D Scale", "Common Setup.Mask D");
+	AddPropertyView("Use Rim For Mask D", "Common Setup.Mask D");
+	AddPropertyView("Mask D Rim Power", "Common Setup.Mask D");
+
 	AddPropertyView("Enable Masking For All Effects", "Common Setup");
 	AddPropertyView("Global Masking Channel", "Common Setup");
 	AddPropertyView("Debug Display Masking", "Common Setup");
 
-	AddPropertyView("Use Rim For Masking", "Common Setup");
-	AddPropertyView("Mask Rim Power", "Common Setup");
+	
 	
 	//
 	AddPropertyView("SSAO Setup", "", true);
@@ -486,18 +507,40 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, UpperClip, "Bottom Clip Percent", nullptr, nullptr);
 	FBPropertyPublish(this, LowerClip, "Top Clip Percent", nullptr, nullptr);
 
-	// composite masking
+	// global masking properties
 	FBPropertyPublish(this, UseCompositeMasking, "Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, InvertMask, "Invert Mask", nullptr, nullptr);
-	FBPropertyPublish(this, BlurMask, "Blur Mask", nullptr, nullptr);
-	FBPropertyPublish(this, BlurMaskScale, "Blur Mask Scale", nullptr, nullptr);
 	FBPropertyPublish(this, EnableMaskingForAllEffects, "Enable Masking For All Effects", nullptr, nullptr);
 	FBPropertyPublish(this, GlobalMaskingChannel, "Global Masking Channel", nullptr, nullptr);
 	FBPropertyPublish(this, DebugDisplyMasking, "Debug Display Masking", nullptr, nullptr);
 
-	FBPropertyPublish(this, UseRimForMask, "Use Rim For Masking", nullptr, nullptr);
-	FBPropertyPublish(this, MaskRimPower, "Mask Rim Power", nullptr, nullptr);
+	// mask A
+	FBPropertyPublish(this, MaskA.InvertMask, "Invert Mask A", nullptr, nullptr);
+	FBPropertyPublish(this, MaskA.BlurMask, "Blur Mask A", nullptr, nullptr);
+	FBPropertyPublish(this, MaskA.BlurMaskScale, "Blur Mask A Scale", nullptr, nullptr);
+	FBPropertyPublish(this, MaskA.UseRimForMask, "Use Rim For Mask A", nullptr, nullptr);
+	FBPropertyPublish(this, MaskA.MaskRimPower, "Mask A Rim Power", nullptr, nullptr);
 	
+	// mask B
+	FBPropertyPublish(this, MaskB.InvertMask, "Invert Mask B", nullptr, nullptr);
+	FBPropertyPublish(this, MaskB.BlurMask, "Blur Mask B", nullptr, nullptr);
+	FBPropertyPublish(this, MaskB.BlurMaskScale, "Blur Mask B Scale", nullptr, nullptr);
+	FBPropertyPublish(this, MaskB.UseRimForMask, "Use Rim For Mask B", nullptr, nullptr);
+	FBPropertyPublish(this, MaskB.MaskRimPower, "Mask B Rim Power", nullptr, nullptr);
+
+	// mask C
+	FBPropertyPublish(this, MaskC.InvertMask, "Invert Mask C", nullptr, nullptr);
+	FBPropertyPublish(this, MaskC.BlurMask, "Blur Mask C", nullptr, nullptr);
+	FBPropertyPublish(this, MaskC.BlurMaskScale, "Blur Mask C Scale", nullptr, nullptr);
+	FBPropertyPublish(this, MaskC.UseRimForMask, "Use Rim For Mask C", nullptr, nullptr);
+	FBPropertyPublish(this, MaskC.MaskRimPower, "Mask C Rim Power", nullptr, nullptr);
+
+	// mask D
+	FBPropertyPublish(this, MaskD.InvertMask, "Invert Mask D", nullptr, nullptr);
+	FBPropertyPublish(this, MaskD.BlurMask, "Blur Mask D", nullptr, nullptr);
+	FBPropertyPublish(this, MaskD.BlurMaskScale, "Blur Mask D Scale", nullptr, nullptr);
+	FBPropertyPublish(this, MaskD.UseRimForMask, "Use Rim For Mask D", nullptr, nullptr);
+	FBPropertyPublish(this, MaskD.MaskRimPower, "Mask D Rim Power", nullptr, nullptr);
+
 	// SSAO
 
 	FBPropertyPublish(this, SSAO, "SSAO", nullptr, nullptr);
@@ -803,10 +846,18 @@ bool PostPersistentData::FBCreate()
 	// MotionBlur
 	MotionBlurAmount.SetMinMax(0.0, 100.0);
 
-	UseRimForMask.SetMinMax(0.0, 100.0);
-	UseRimForMask = 0.0;
-	MaskRimPower.SetMinMax(0.0, 200.0);
-	MaskRimPower = 100.0;
+	// Masks
+	MaskA.UseRimForMask.SetMinMax(0.0, 100.0);
+	MaskA.MaskRimPower.SetMinMax(0.0, 200.0);
+	
+	MaskB.UseRimForMask.SetMinMax(0.0, 100.0);
+	MaskB.MaskRimPower.SetMinMax(0.0, 200.0);
+
+	MaskC.UseRimForMask.SetMinMax(0.0, 100.0);
+	MaskC.MaskRimPower.SetMinMax(0.0, 200.0);
+
+	MaskD.UseRimForMask.SetMinMax(0.0, 100.0);
+	MaskD.MaskRimPower.SetMinMax(0.0, 200.0);
 	
 	// DONE: READ default values from config file !
 	DefaultValues();
@@ -821,6 +872,15 @@ void PostPersistentData::FBDestroy()
 {
 }
 
+void PostPersistentData::SMaskProperties::SetDefaultValues()
+{
+	InvertMask = false;
+	BlurMask = false;
+	BlurMaskScale = FBVector2d(1.0, 1.0);
+	UseRimForMask = 0.0;
+	MaskRimPower = 100.0;
+}
+
 void PostPersistentData::DefaultValues()
 {
 	Active = false;
@@ -828,12 +888,16 @@ void PostPersistentData::DefaultValues()
 	GenerateMipMaps = false;
 	UseCameraObject = true;
 
+	// global masking properties
 	UseCompositeMasking = true;
-	InvertMask = false;
-	BlurMask = false;
-	BlurMaskScale = FBVector2d(1.0, 1.0);
 	EnableMaskingForAllEffects = false;
 	DebugDisplyMasking = false;
+
+	// masks
+	MaskA.SetDefaultValues();
+	MaskB.SetDefaultValues();
+	MaskC.SetDefaultValues();
+	MaskD.SetDefaultValues();
 
 	AutoClipFromHUD = true;
 	UpperClip = 0.0;

@@ -188,7 +188,7 @@ bool PostEffectChain::HasAnyMaskedObject() const
 	return false;
 }
 
-void PostEffectChain::RenderSceneMaskToTexture(PostEffectBuffers* buffers)
+void PostEffectChain::RenderSceneMaskToTexture(PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers)
 {
 	if (mShaderSceneMasked.get() == nullptr)
 		return;
@@ -198,7 +198,7 @@ void PostEffectChain::RenderSceneMaskToTexture(PostEffectBuffers* buffers)
 
 	glViewport(0, 0, maskBuffer->GetWidth(), maskBuffer->GetHeight());
 
-	if (!mSettings->InvertMask)
+	if (!maskProps.InvertMask)
 	{
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	}
@@ -212,7 +212,7 @@ void PostEffectChain::RenderSceneMaskToTexture(PostEffectBuffers* buffers)
 	nv::vec4 baseColor;
 	nv::vec4 rimColor;
 
-	if (!mSettings->InvertMask)
+	if (!maskProps.InvertMask)
 	{
 		baseColor = nv::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		rimColor = nv::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -225,8 +225,8 @@ void PostEffectChain::RenderSceneMaskToTexture(PostEffectBuffers* buffers)
 
 	mShaderSceneMasked->Bind();
 
-	const float rimFactor = static_cast<float>(mSettings->UseRimForMask * 0.01);
-	const float rimPower = static_cast<float>(mSettings->MaskRimPower * 0.01);
+	const float rimFactor = static_cast<float>(maskProps.UseRimForMask * 0.01);
+	const float rimPower = static_cast<float>(maskProps.MaskRimPower * 0.01);
 
 	mShaderSceneMasked->setUniformVector("baseColor", baseColor.x, baseColor.y, baseColor.z, baseColor.w);
 	mShaderSceneMasked->setUniformVector("rimOptions", rimFactor, rimPower, 0.0f, 0.0f);
@@ -344,11 +344,11 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 	if (HasMaskUsedByEffect() && HasAnyMaskedObject() && mLastCamera)
 	{
-		if (mSettings->BlurMask)
+		if (mSettings->MaskA.BlurMask)
 		{
 			isMaskBlurRequested = true;
 		}
-		RenderSceneMaskToTexture(buffers);
+		RenderSceneMaskToTexture(mSettings->MaskA, buffers);
 		
 		isMaskTextureBinded = true;
 	}
@@ -417,7 +417,7 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		const int w = buffers->GetWidth();
 		const int h = buffers->GetHeight();
 
-		const FBVector2d blurMaskScale = mSettings->BlurMaskScale;
+		const FBVector2d blurMaskScale = mSettings->MaskA.BlurMaskScale;
 
 		if (mLocImageBlurScale >= 0)
 			glUniform4f(mLocImageBlurScale, 
