@@ -363,6 +363,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	AddPropertyView("Flare Use Masking", "Lens Flare Setup");
 	AddPropertyView("Flare Masking Channel", "Lens Flare Setup");
+	AddPropertyView("Flare Use Occlusion", "Lens Flare Setup");
+	AddPropertyView("Flare Occlusion Objects", "Lens Flare Setup");
+	AddPropertyView("Flare Occlusion Speed", "Lens Flare Setup");
 
 	//Louis 
 	AddPropertyView("Flare Type", "Lens Flare Setup");
@@ -603,6 +606,9 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, LensFlare, "Lens Flare", nullptr, nullptr);
 	FBPropertyPublish(this, LensFlare_UseMasking, "Flare Use Masking", nullptr, nullptr);
 	FBPropertyPublish(this, LensFlare_MaskingChannel, "Flare Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_UseOcclusion, "Flare Use Occlusion", nullptr, nullptr);
+	FBPropertyPublish(this, FlareOcclusionSpeed, "Flare Occlusion Speed", nullptr, nullptr);
+	FBPropertyPublish(this, FlareOcclusionObjects, "Flare Occlusion Objects", nullptr, nullptr);
 
 	//Louis 
 	FBPropertyPublish(this, FlareType, "Flare Type", nullptr, nullptr);
@@ -880,6 +886,10 @@ void PostPersistentData::DefaultValues()
 	//
 	LensFlare = false;
 	LensFlare_UseMasking = false;
+	LensFlare_UseOcclusion = false;
+	FlareOcclusionSpeed = 10.0;
+	FlareOcclusionObjects.SetFilter(FBModel::GetInternalClassId());
+	FlareOcclusionObjects.SetSingleConnect(false);
 
 	//Louis
 	EFlareType defaultFlareType = flare1;

@@ -170,6 +170,10 @@ public: // PROPERTIES
 	FBPropertyBool				LensFlare_UseMasking;
 	FBPropertyBaseEnum<EMaskingChannel>	LensFlare_MaskingChannel;
 
+	FBPropertyBool				LensFlare_UseOcclusion; //!< fade out lens flare in case there is some geometry in front
+	FBPropertyAnimatableDouble		FlareOcclusionSpeed; //!< a multiplier to a time we spend to fade in or out the flare effect from geometry occlusion
+	FBPropertyListObject			FlareOcclusionObjects; //!< models that are taken part in occlusion culling process
+
 	//Louis
 	FBPropertyBaseEnum<EFlareType>	FlareType;
 	FBPropertyAnimatableDouble	FlareSeed;

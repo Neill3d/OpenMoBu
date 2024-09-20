@@ -12,6 +12,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "math3d.h"
 
 #include "postprocessing_helper.h"
 
@@ -141,7 +142,10 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 	
 
 	FBTime systemTime = (pData->FlareUsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
-
+	if (m_LastTime < 0.0)
+		m_LastTime = systemTime.GetSecondDouble();
+	const double dt = (systemTime.GetSecondDouble() - m_LastTime);
+	
 	double _amount = pData->FlareAmount;
 
 	FBColor _tint = pData->FlareTint;
@@ -165,33 +169,81 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 		m_NumberOfPasses = pData->FlareLight.GetCount();
 		m_LightPositions.resize(m_NumberOfPasses);
 		m_LightColors.resize(m_NumberOfPasses);
+		m_LightAlpha.resize(m_NumberOfPasses, 0.0f);
 
 		for (int i = 0; i < m_NumberOfPasses; ++i)
 		{
 			FBLight *pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(i));
 
-			FBVector3d v;
-			pLight->GetVector(v);
+			FBVector3d lightPos;
+			pLight->GetVector(lightPos);
 
 			FBMatrix mvp;
 			pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
 
 			FBVector4d v4;
-			FBVectorMatrixMult(v4, mvp, FBVector4d(v[0], v[1], v[2], 1.0));
+			FBVectorMatrixMult(v4, mvp, FBVector4d(lightPos[0], lightPos[1], lightPos[2], 1.0));
 
 			v4[0] = w * 0.5 * (v4[0] + 1.0);
 			v4[1] = h * 0.5 * (v4[1] + 1.0);
-
 
 			_pos[0] = v4[0] / w;
 			_pos[1] = v4[1] / h;
 			_pos[2] = v4[2];
 
 			m_LightPositions[i].Set(_pos);
-			const FBColor color(pLight->DiffuseColor);
-			m_LightColors[i].Set(color);
-		}
+			FBColor color(pLight->DiffuseColor);
+			
+			bool isFading = false;
 
+			if (pData->LensFlare_UseOcclusion && pData->FlareOcclusionObjects.GetCount() > 0)
+			{
+				const int offsetX = pCamera->CameraViewportX;
+				const int offsetY = pCamera->CameraViewportY;
+
+				const int x = offsetX + static_cast<int>(v4[0]);
+				const int y = offsetY + (h - static_cast<int>(v4[1]));
+				
+				FBVector3d camPosition;
+				pCamera->GetVector(camPosition);
+				double distToLight = VectorLength( VectorSubtract(lightPos, camPosition) );
+
+				for (int i = 0, count = pData->FlareOcclusionObjects.GetCount(); i < count; ++i)
+				{
+					if (FBModel* model = FBCast<FBModel>(pData->FlareOcclusionObjects.GetAt(i)))
+					{
+						FBVector3d hitPosition, hitNormal;
+						if (model->RayCast(pCamera, x, y, hitPosition, hitNormal))
+						{
+							const double distToHit = VectorLength(VectorSubtract(hitPosition, camPosition));
+
+							if (distToHit < distToLight)
+							{
+								isFading = true;
+								break;
+							}
+						}
+					}
+
+				}
+			}
+			
+			float alpha = m_LightAlpha[i];
+			double occSpeed = 100.0;
+			pData->FlareOcclusionSpeed.GetData(&occSpeed, sizeof(double));
+			alpha += static_cast<float>(occSpeed) * ((isFading) ? -dt : dt);
+			alpha = clamp01(alpha);
+
+			const double f = smoothstep(0.0, 1.0, static_cast<double>(alpha));
+
+			color[0] *= f;
+			color[1] *= f;
+			color[2] *= f;
+
+			m_LightColors[i].Set(color);
+			m_LightAlpha[i] = alpha;
+		}
+		
 		// relative coords to a screen size
 		pData->FlarePosX = 100.0 * _pos[0]; // / w;
 		pData->FlarePosY = 100.0 * _pos[1]; // _pos[1] / h;
@@ -200,6 +252,7 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 	{
 		m_LightPositions.clear();
 		m_LightColors.clear();
+		m_LightAlpha.clear();
 	}
 
 	if (nullptr != mShader)
@@ -252,6 +305,8 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 
 		lSuccess = true;
 	}
+
+	m_LastTime = systemTime.GetSecondDouble();
 
 	return lSuccess;
 }

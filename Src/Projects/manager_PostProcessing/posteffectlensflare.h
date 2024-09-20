@@ -91,8 +91,11 @@ protected:
 		int				m_NumberOfPasses{ 1 };
 		float			m_DepthAttenuation{ 1.0f };
 
+		double			m_LastTime{ -1.0 };
+		
 		std::vector<FBVector3d>	m_LightPositions; // window xy and depth (for attenuation)
 		std::vector<FBColor>	m_LightColors;
+		std::vector<float>		m_LightAlpha;
 
 		const char* GetEnableMaskPropertyName() const override { return "Flare Use Masking"; }
 
