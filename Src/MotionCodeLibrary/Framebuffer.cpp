@@ -440,7 +440,7 @@ void FrameBuffer::CleanUpAttachment( AttachmentObject &object )
 }
 
 
-bool FrameBuffer::Bind () const
+bool FrameBuffer::Bind (const int customColorAttachmentIndex) const
 {
 	if ( mFrameBuffer == 0 )
 	{
@@ -462,15 +462,19 @@ bool FrameBuffer::Bind () const
 	}
 	if (mNumberOfColorAttachments == 1)
 	{
-		glDrawBuffer         ( GL_COLOR_ATTACHMENT0 );
+		glDrawBuffer( GL_COLOR_ATTACHMENT0 );
 	}
 	else if (mNumberOfColorAttachments == 2)
 	{
 		GLenum buffers [] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		glDrawBuffers( 2, buffers );
 	}
-	//glViewport           ( 0, 0, getWidth (), getHeight () );
-
+	else
+	{
+		const int indexOffset = (customColorAttachmentIndex >= 0) ? customColorAttachmentIndex : 0;
+		glDrawBuffer(GL_COLOR_ATTACHMENT0 + indexOffset);
+	}
+	
 	return true;
 }
 

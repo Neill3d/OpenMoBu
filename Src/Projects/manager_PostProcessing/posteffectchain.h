@@ -43,9 +43,13 @@ public:
 	bool Prep(PostPersistentData *pData, int w, int h, FBCamera *pCamera);
 
 	bool BeginFrame(PostEffectBuffers* buffers);
+
+	/// <summary>
+	/// render each effect with a defined order
+	/// </summary>
 	bool Process(PostEffectBuffers* buffers, double time);
 
-	bool IsCompressedDataReady()
+	bool IsCompressedDataReady() const
 	{
 		return mIsCompressedDataReady;
 	}
@@ -108,14 +112,57 @@ private:
 	static bool CheckShadersPath(const char* path);
 
 	/// <summary>
+	/// prepare /ref mChain order of effects for rendering
+	/// blurAndMix - index of effect where bilateral blur is requested (SSAO)
+	/// blurAndMix2 - index of effect where bilateral blur and mix is requested (Bloom for ColorCorrection)
+	/// </summary>
+	/// <returns>true if chain of effects is not empty</returns>
+	bool PrepareChainOrder(int& blurAndMix, int& blurAndMix2);
+
+	/// <summary>
+	/// render a linear depth (for SSAO)
+	/// </summary>
+	void RenderLinearDepth(PostEffectBuffers* buffers);
+
+	/// <summary>
+	/// this is a pass of bluring the image for SSAO
+	/// </summary>
+	void BilateralBlurPass(PostEffectBuffers* buffers);
+
+	/// <summary>
+	/// this is a pass of bluring for Bloom (Color Correction)
+	/// </summary>
+	void BilateralBlurAndMixPass(PostEffectBuffers* buffers);
+
+	/// <summary>
+	/// when a blur is used in any of masks
+	/// </summary>
+	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers);
+
+	/// <summary>
+	/// send a packet with final post processed image
+	/// </summary>
+	void SendPreview(PostEffectBuffers* buffers, double systime);
+
+	/// <summary>
 	/// return true if a global masking active and any of effects uses a masking
 	/// </summary>
-	bool HasMaskUsedByEffect() const;
+	bool HasAnyMaskUsedByEffect() const;
+
+	/// <summary>
+	/// return true if global masking channel or any effect channel is equal to a given one
+	/// </summary>
+	bool IsMaskUsedByEffect(const EMaskingChannel maskId) const;
 
 	/// <summary>
 	/// return true if there is any model with FXMaskingShader, so that we could render it into a masking texture
 	/// </summary>
-	bool HasAnyMaskedObject() const;
+	bool HasAnyObjectMasked() const;
 
-	void RenderSceneMaskToTexture(PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers);
+	/// <summary>
+	/// return true if there is a model with FBMaskingShader, so that a defined mask channel there equal to a given one
+	/// </summary>
+	bool IsAnyObjectMaskedByMaskId(const EMaskingChannel maskId) const;
+
+	void RenderSceneMaskToTexture(const int maskIndex, PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers);
 };

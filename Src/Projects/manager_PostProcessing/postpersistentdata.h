@@ -96,10 +96,8 @@ public: // PROPERTIES
 		void SetDefaultValues();
 	};
 
-	SMaskProperties				MaskA;
-	SMaskProperties				MaskB;
-	SMaskProperties				MaskC;
-	SMaskProperties				MaskD;
+	static const int NUMBER_OF_MASKS{ 4 };
+	SMaskProperties		Masks[NUMBER_OF_MASKS];
 
 	// make effect local for a specified camera (override global effect)
 	FBPropertyBool				UseCameraObject;
@@ -375,7 +373,17 @@ public:
 
 	bool IsLazyLoadReady() { mLazyLoadCounter = (mLazyLoadCounter >= 0) ? mLazyLoadCounter-1 : -1; return mLazyLoadCounter < 0; }
 
+	/// <summary>
+	/// return true if masking is activated globally or in any effect in particular
+	/// </summary>
 	bool HasAnyActiveMasking() const;
+
+	bool IsMaskActive(const EMaskingChannel maskId) const;
+
+	/// <summary>
+	/// return an index of mask we define globally in settings
+	/// </summary>
+	int GetGlobalMaskIndex() const;
 
 protected:
 

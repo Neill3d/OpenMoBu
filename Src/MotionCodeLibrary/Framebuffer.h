@@ -104,7 +104,10 @@ public:
 	// manage framebuffer work
 	bool	ReSize(const int w, const int h);
 
-	bool	Bind     () const;
+	/// <summary>
+	/// define custom color attachment index to control which color attachment we draw (GL_COLOR_ATTACHMENT0 by default)
+	/// </summary>
+	bool	Bind     (const int customColorAttachmentIndex = -1) const;
 	bool	UnBind   ( bool genMipmaps = false,  GLenum target = GL_TEXTURE_2D ) const;
 
 	// helper functions for making textures

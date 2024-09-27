@@ -128,8 +128,11 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 	}
 
 	if (!mBufferMasking.get())
-		mBufferMasking.reset(new FrameBuffer(1, 1));
-
+	{
+		// prepare framebuffer with 4 color attachments as we have support for 4 masks
+		mBufferMasking.reset(new FrameBuffer(1, 1, FrameBuffer::eCreateColorTexture | FrameBuffer::eDeleteFramebufferOnCleanup, 4));
+	}
+	
 	if (!mBufferPost0->ReSize(w, h))
 		lSuccess = false;
 	if (!mBufferPost1->ReSize(w, h))

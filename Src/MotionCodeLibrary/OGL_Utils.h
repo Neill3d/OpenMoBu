@@ -52,6 +52,13 @@ void CleanupFBO(GLuint &color_buffer_id, GLuint &depth_id, GLuint &fbo_id);
 
 bool BlitFBOToFBO(const GLint FBO, const int width, const int height, const GLint defaultFBO, 
 	const int defWidth, const int defHeight, const bool copyColor1, const bool copyColor2, const bool copyColor3);
+
+/// <summary>
+/// read from inFBO color attachment 0 and blit into outFBO color attachment with given index
+/// </summary>
+bool BlitFBOToFBOCustomAttachment(const GLint inFBO, const int inWidth, const int inHeight, const unsigned int inAttachmentIndex,
+	const GLint outFBO, const int outWidth, const int outHeight, const unsigned int outAttachmentIndex);
+
 bool BlitFBOToFBOOffset(const GLint FBO, int x, int y, const int width, const int height, const GLint defaultFBO,
 	int defX, int defY, const int defWidth, const int defHeight, bool copyDepth, const bool copyColor1, const bool copyColor2, const bool copyColor3);
 bool BlitFBOToScreen(const GLint defaultFBO, const int defWidth, const int defHeight, const int screenWidth, const int screenHeight);

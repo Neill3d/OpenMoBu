@@ -116,17 +116,15 @@ public:
 
 	GLSLShader *GetShaderPtr();
 
+	void SetMaskIndex(const int maskIndex) { mMaskIndex = maskIndex; }
+	int GetMaskIndex() const { return mMaskIndex; }
+
 protected:
 
 	int mCurrentShader{ 0 };
 	std::vector<GLSLShader*>	mShaders;
 
-	std::bitset<4>	mCompositionMask;
-
-	struct BaseLocations
-	{
-		GLint	mUseCompositionMask;
-	};
+	int mMaskIndex{ -1 }; //!< which mask channel the effect is use (-1 for a default, globally defined mask channel)
 
  	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();

@@ -513,33 +513,26 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, GlobalMaskingChannel, "Global Masking Channel", nullptr, nullptr);
 	FBPropertyPublish(this, DebugDisplyMasking, "Debug Display Masking", nullptr, nullptr);
 
-	// mask A
-	FBPropertyPublish(this, MaskA.InvertMask, "Invert Mask A", nullptr, nullptr);
-	FBPropertyPublish(this, MaskA.BlurMask, "Blur Mask A", nullptr, nullptr);
-	FBPropertyPublish(this, MaskA.BlurMaskScale, "Blur Mask A Scale", nullptr, nullptr);
-	FBPropertyPublish(this, MaskA.UseRimForMask, "Use Rim For Mask A", nullptr, nullptr);
-	FBPropertyPublish(this, MaskA.MaskRimPower, "Mask A Rim Power", nullptr, nullptr);
-	
-	// mask B
-	FBPropertyPublish(this, MaskB.InvertMask, "Invert Mask B", nullptr, nullptr);
-	FBPropertyPublish(this, MaskB.BlurMask, "Blur Mask B", nullptr, nullptr);
-	FBPropertyPublish(this, MaskB.BlurMaskScale, "Blur Mask B Scale", nullptr, nullptr);
-	FBPropertyPublish(this, MaskB.UseRimForMask, "Use Rim For Mask B", nullptr, nullptr);
-	FBPropertyPublish(this, MaskB.MaskRimPower, "Mask B Rim Power", nullptr, nullptr);
+	const char MASK_INDEX_NAMES[NUMBER_OF_MASKS] = { 'A', 'B', 'C', 'D' };
+	char buffer[64]{ 0 };
 
-	// mask C
-	FBPropertyPublish(this, MaskC.InvertMask, "Invert Mask C", nullptr, nullptr);
-	FBPropertyPublish(this, MaskC.BlurMask, "Blur Mask C", nullptr, nullptr);
-	FBPropertyPublish(this, MaskC.BlurMaskScale, "Blur Mask C Scale", nullptr, nullptr);
-	FBPropertyPublish(this, MaskC.UseRimForMask, "Use Rim For Mask C", nullptr, nullptr);
-	FBPropertyPublish(this, MaskC.MaskRimPower, "Mask C Rim Power", nullptr, nullptr);
+	for (int i = 0; i < NUMBER_OF_MASKS; ++i)
+	{
+		sprintf_s(buffer, sizeof(char) * 64, "Invert Mask %c", MASK_INDEX_NAMES[i]);
+		FBPropertyPublish(this, Masks[i].InvertMask, buffer, nullptr, nullptr);
 
-	// mask D
-	FBPropertyPublish(this, MaskD.InvertMask, "Invert Mask D", nullptr, nullptr);
-	FBPropertyPublish(this, MaskD.BlurMask, "Blur Mask D", nullptr, nullptr);
-	FBPropertyPublish(this, MaskD.BlurMaskScale, "Blur Mask D Scale", nullptr, nullptr);
-	FBPropertyPublish(this, MaskD.UseRimForMask, "Use Rim For Mask D", nullptr, nullptr);
-	FBPropertyPublish(this, MaskD.MaskRimPower, "Mask D Rim Power", nullptr, nullptr);
+		sprintf_s(buffer, sizeof(char) * 64, "Blur Mask %c", MASK_INDEX_NAMES[i]);
+		FBPropertyPublish(this, Masks[i].BlurMask, buffer, nullptr, nullptr);
+
+		sprintf_s(buffer, sizeof(char) * 64, "Blur Mask %c Scale", MASK_INDEX_NAMES[i]);
+		FBPropertyPublish(this, Masks[i].BlurMaskScale, buffer, nullptr, nullptr);
+
+		sprintf_s(buffer, sizeof(char) * 64, "Use Rim For Mask %c", MASK_INDEX_NAMES[i]);
+		FBPropertyPublish(this, Masks[i].UseRimForMask, buffer, nullptr, nullptr);
+
+		sprintf_s(buffer, sizeof(char) * 64, "Mask %c Rim Power", MASK_INDEX_NAMES[i]);
+		FBPropertyPublish(this, Masks[i].MaskRimPower, buffer, nullptr, nullptr);
+	}
 
 	// SSAO
 
@@ -847,18 +840,12 @@ bool PostPersistentData::FBCreate()
 	MotionBlurAmount.SetMinMax(0.0, 100.0);
 
 	// Masks
-	MaskA.UseRimForMask.SetMinMax(0.0, 100.0);
-	MaskA.MaskRimPower.SetMinMax(0.0, 200.0);
-	
-	MaskB.UseRimForMask.SetMinMax(0.0, 100.0);
-	MaskB.MaskRimPower.SetMinMax(0.0, 200.0);
+	for (int i = 0; i < NUMBER_OF_MASKS; ++i)
+	{
+		Masks[i].UseRimForMask.SetMinMax(0.0, 100.0);
+		Masks[i].MaskRimPower.SetMinMax(0.0, 200.0);
+	}
 
-	MaskC.UseRimForMask.SetMinMax(0.0, 100.0);
-	MaskC.MaskRimPower.SetMinMax(0.0, 200.0);
-
-	MaskD.UseRimForMask.SetMinMax(0.0, 100.0);
-	MaskD.MaskRimPower.SetMinMax(0.0, 200.0);
-	
 	// DONE: READ default values from config file !
 	DefaultValues();
 
@@ -894,11 +881,11 @@ void PostPersistentData::DefaultValues()
 	DebugDisplyMasking = false;
 
 	// masks
-	MaskA.SetDefaultValues();
-	MaskB.SetDefaultValues();
-	MaskC.SetDefaultValues();
-	MaskD.SetDefaultValues();
-
+	for (int i = 0; i < NUMBER_OF_MASKS; ++i)
+	{
+		Masks[i].SetDefaultValues();
+	}
+	
 	AutoClipFromHUD = true;
 	UpperClip = 0.0;
 	LowerClip = 0.0;
@@ -1674,4 +1661,34 @@ bool PostPersistentData::HasAnyActiveMasking() const
 	return (EnableMaskingForAllEffects || FishEye_UseMasking || ColorCorrection_UseMasking
 		|| Vign_UseMasking || FilmGrain_UseMasking || LensFlare_UseMasking
 		|| SSAO_UseMasking || DOF_UseMasking || Disp_UseMasking);
+}
+
+bool PostPersistentData::IsMaskActive(const EMaskingChannel maskId) const
+{
+	if (!UseCompositeMasking)
+		return false;
+
+	const bool effectMaskFlags[] = {
+		EnableMaskingForAllEffects && GlobalMaskingChannel == maskId,
+		FishEye_UseMasking && FishEye_MaskingChannel == maskId,
+		ColorCorrection_UseMasking && ColorCorrection_MaskingChannel == maskId,
+		Vign_UseMasking && Vign_MaskingChannel == maskId,
+		FilmGrain_UseMasking && FilmGrain_MaskingChannel == maskId,
+		LensFlare_UseMasking && LensFlare_MaskingChannel == maskId,
+		SSAO_UseMasking && SSAO_MaskingChannel == maskId,
+		DOF_UseMasking && DOF_MaskingChannel == maskId,
+		Disp_UseMasking && Disp_MaskingChannel == maskId
+	};
+
+	for (const bool flag : effectMaskFlags)
+	{
+		if (flag) return true;
+	}
+	return false;
+}
+
+int PostPersistentData::GetGlobalMaskIndex() const
+{
+	const EMaskingChannel maskingChannel = GlobalMaskingChannel;
+	return static_cast<int>(maskingChannel);
 }
