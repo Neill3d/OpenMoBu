@@ -68,7 +68,7 @@ protected:
 
 	FBSystem								mSystem;
 	HdlFBPlugTemplate<PostPersistentData>	mSettings;
-	FBCamera								*mLastCamera;
+	FBCamera* mLastCamera{ nullptr };
 
 	// instances of each effect
 	std::unique_ptr<PostEffectBase>		mFishEye;

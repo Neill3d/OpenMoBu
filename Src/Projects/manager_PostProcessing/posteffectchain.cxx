@@ -49,9 +49,17 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //
 extern void LOGE(const char* pFormatString, ...);
 
+// define new task cycle index
+FBProfiler_CreateTaskCycle(PostEffectChain, 0.5f, 0.1f, 0.1f);
+
 //! a constructor
 PostEffectChain::PostEffectChain()
 {
+	//
+	// Register task cycle index in profiler.
+	//
+	FBProfiling_SetupTaskCycle(PostEffectChain);
+
 	mIsCompressedDataReady = false;
 	mNeedReloadShaders = true;
 	mLocDepthLinearizeClipInfo = -1;
@@ -648,7 +656,10 @@ void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, Po
 
 bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 {
-	// TODO: add profile entries here!
+	//
+	// Start PostEffectChain task cycle profiling, 
+	//
+	FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostEffectChain), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
 
 	mIsCompressedDataReady = false;
 

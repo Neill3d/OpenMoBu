@@ -23,7 +23,6 @@
 #define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
 
 
-
 void PostProcessContextData::Init()
 {
     mVideoRendering = false;
@@ -50,23 +49,8 @@ void PostProcessContextData::Init()
 // RenderBeforeRender
 void PostProcessContextData::RenderBeforeRender(const bool processCompositions, const bool renderToBuffer)
 {
-    //FBScene *pScene = mSystem.Scene;
-
-    //glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
-    /*
-    if (mEnterId < 1)
-    {
-        if (mAttachedFBO[mEnterId] > 0)
-            mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
-        else
-            mMainFrameBuffer.DetachFBO();
-    }
-    */
-    //if (0 == mPaneId)
-    //{
     mEnterId++;
-    //}
-
+    
     // attachment point
     if (processCompositions)
     {
@@ -104,8 +88,7 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
         }
 
         // it will use attached dimentions, if any external buffer is exist
-        //mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
-
+        
         mViewerViewport[2] = mMainFrameBuffer.GetBufferWidth();
         mViewerViewport[3] = mMainFrameBuffer.GetBufferHeight();
 
@@ -114,19 +97,8 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
         glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
 
         glEnable(GL_DEPTH_TEST);
-        //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        
     }
-    /*
-    else if (mMainFrameBuffer.GetAttachedFBO() > 0)
-    {
-        mMainFrameBuffer.BeginRender();
-
-        glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
-        glEnable(GL_DEPTH_TEST);
-    }*/
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -140,31 +112,11 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
     if (mEnterId <= 0)
         return lStatus;
 
-    //	FBScene *pScene = mSystem.Scene;
-    /*
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-
-    int lviewport[4];
-    glGetIntegerv( GL_VIEWPORT, lviewport );
-    */
-
-    //mMainFrameBuffer.EndRender();
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
     /////////////
     // !!!
     if (processCompositions && 1 == mEnterId)
     {
-        /*
-        if ()
-        {
-            FBTrace("entering wrong pane index\n");
-        }
-        */
-
+        
         glDisable(GL_MULTISAMPLE);
         glDisable(GL_DEPTH_TEST);
 
@@ -177,9 +129,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 #ifndef OGL_DEBUG
         EmptyGLErrorStack();
 #endif
-        //if (mLastPostPane == mPaneId)
-        //{
-
+        
         FBTime sysTime = mSystem.SystemTime;
         const double sysTimeSecs = sysTime.GetSecondDouble();
 
@@ -197,14 +147,12 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
             {
                 localViewport[2] = 0;
             }
-            else
-                if (false == mVideoRendering || nPane > 0)
-                {
-                    if (true == mSchematicView[nPane])
-                        localViewport[2] = 0;
-                }
-            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+            else if (false == mVideoRendering || nPane > 0)
+            {
+                if (true == mSchematicView[nPane])
+                    localViewport[2] = 0;
+            }
+            
             PostEffectBuffers *currBuffers = nullptr;
             switch (nPane)
             {
@@ -304,7 +252,6 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
         if (mAttachedFBO[mEnterId - 1] > 0)
         {
             glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId - 1]);
-            //glReadBuffer(GL_COLOR_ATTACHMENT0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
         }
         else
@@ -332,25 +279,16 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
         CHECK_GL_ERROR();
     }
-    /*
-    mPaneId = mPaneId + 1;
-    if (mPaneId >= mLastPaneCount)
-        mPaneId = 0;
-*/
-//if (0 == mPaneId)
-//{
+    
     mEnterId--;
-    //}
-
+    
     if (mEnterId < 0)
     {
         FBTrace("ERROR: wrong entering id!", "Ok");
         mEnterId = 0;
-        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     else
     {
-
         // offline render
         if (mAttachedFBO[mEnterId] > 0)
         {

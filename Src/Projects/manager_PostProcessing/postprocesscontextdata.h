@@ -40,8 +40,7 @@ public:
 
 	//
 	int				mLastPaneCount;
-	//int				mPaneId;
-
+	
 	bool			mSchematicView[4];
 	bool			mVideoRendering;
 
@@ -57,13 +56,13 @@ public:
 	//
 	MainFrameBuffer						mMainFrameBuffer;
 
-	std::unique_ptr<GLSLShader>			mShaderSimple;	// for simple blit quads on a screen
+	std::unique_ptr<GLSLShader>			mShaderSimple;	//!< for simple blit quads on a screen
 
 	PostEffectChain						mEffectChain;
 
-	std::vector<PostPersistentData*>	mPaneSettings;	// choose a propriate settings according to a pane camera
+	std::vector<PostPersistentData*>	mPaneSettings;	//!< choose a propriate settings according to a pane camera
 
-														// if each pane has different size (in practice should be not more then 2
+	// if each pane has different size (in practice should be not more then 2
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers0;
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers1;
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers2;

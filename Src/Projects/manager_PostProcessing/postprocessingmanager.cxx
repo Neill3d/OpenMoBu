@@ -31,6 +31,10 @@ std::map<HGLRC, PostProcessContextData*>	PostProcessingManager::gContextMap;
 
 PostProcessingManager *gManager = nullptr;
 
+// define new task cycle index
+FBProfiler_CreateTaskCycle(PostProcessRenderer, 0.5f, 0.9f, 0.9f);
+
+
 bool GRenderAfterRender()
 {
 	if (nullptr != gManager && !gManager->skipRender)
@@ -71,12 +75,14 @@ void DebugOGL_Callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
  ************************************************/
 bool PostProcessingManager::FBCreate()
 {
-	//mPaneId = 0;
+	//
+	// Register task cycle index in profiler.
+	//
+	FBProfiling_SetupTaskCycle(PostProcessRenderer);
+
 	mEnterId = 0;
 	mFrameId = 0;
 	
-	//mPropPaneCount = nullptr;
-
 	gManager = this;
 
 	mLastSendTimeSecs = 0.0;
@@ -93,8 +99,7 @@ bool PostProcessingManager::FBCreate()
 	mSocketPort = 8885;
 	mSendAddress.Set(192, 168, 0, 133, 8887);
 #endif
-	//mSettingsMerge = false;
-
+	
 	mSocketSender = nullptr;
 	mSocketRecv = nullptr;
 
@@ -120,14 +125,11 @@ bool PostProcessingManager::Init()
 {
 	glewInit();
 
-	
 	//
 #ifdef OGL_DEBUG
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(DebugOGL_Callback, nullptr);
 #endif
-
-	
 
     return true;
 }
@@ -144,8 +146,6 @@ bool PostProcessingManager::Open()
 
 	mSystem.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
-	//FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Add(this, (FBCallback)&Manager_PostProcessing::OnPerFrameEvaluationPipelineCallback);
-	//FBEvaluateManager::TheOne().OnSynchronizationEvent.Add(this, (FBCallback)&Manager_PostProcessing::OnPerFrameSynchronizationCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
     return true;
@@ -303,8 +303,6 @@ bool PostProcessingManager::Close()
 {
 	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
-	//FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Remove(this, (FBCallback)&Manager_PostProcessing::OnPerFrameEvaluationPipelineCallback);
-	//FBEvaluateManager::TheOne().OnSynchronizationEvent.Remove(this, (FBCallback)&Manager_PostProcessing::OnPerFrameSynchronizationCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
 	mApplication.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
@@ -414,12 +412,6 @@ void PostProcessingManager::CheckForAContextChange()
 	if (hContext != gCurrentContext)
 	{
 		gCurrentContext = hContext;
-
-		//mEffectChain.ChangeContext();
-		//FreeShaders();
-		//FreeBuffers();
-		//FreeFonts();
-
 		FBTrace("> !! CHANGE CONTEXT !!\n");
 	}
 }
@@ -456,11 +448,9 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 
 	if (iter == end(gContextMap))
 	{
-		//iter->second->PreRenderFirstEntry();
 		return;
 	}
 
-	// nullptr != mPaneSettings[mPaneId] && false == mSchematicView[mPaneId]
 	bool usePostProcessing = false;
 
 	for (int i = 0; i<iter->second->mLastPaneCount; ++i)
@@ -498,16 +488,19 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 			// This callback occurs just before swapping GL back/front buffers. 
 			// User could do some special effect, HUD or buffer download (via PBO) here. 
 			//
-			//if (mVideoRendering)
-		iter->second->RenderAfterRender(usePostProcessing, false);
+			
+			//
+			// Start PostProcessRenderer task cycle profiling, 
+			//
+			FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
+
+			iter->second->RenderAfterRender(usePostProcessing, false);
 
 		} break;
 
 	default:
 		break;
 	}
-
-	//FBTrace("enter id - %d, pane id - %d, frame id - %d\n", mEnterId, mPaneId, mFrameId);
 
 	CHECK_GL_ERROR();
 }
@@ -538,9 +531,7 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 
 		// turn off preview mode and switch quality settings if needed
 		iter->second->mVideoRendering = true;
-		//FreeBuffers();
-
-		// TODO: tweak post processing upper / lower clip
+		
 		PushUpperLowerClipForEffects();
 	}
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
@@ -600,10 +591,7 @@ void PostProcessingManager::PrepVideoClipsTimeWrap()
 				animprop->GetAnimationNode()->Evaluate(&dvalue, currTime);
 
 				FBTime offsetTime(0, 0, 0, (int)dvalue);
-				//pVideoClip->TimeOffset = offsetTime;
-				//pVideoClip->CurrentFrame = (int)dvalue;
-				//pVideoClip->ImageIncUpdateID();
-
+				
 				if (lastUpdate == -1 || abs((int)dvalue - lastUpdate) >= step)
 				{
 					int width = pVideoClip->Width;
