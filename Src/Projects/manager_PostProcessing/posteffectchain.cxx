@@ -630,7 +630,7 @@ void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, Po
 	const int w = buffers->GetWidth();
 	const int h = buffers->GetHeight();
 
-	mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 0.0f, 0.0f);
+	mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 1.0f, 0.0f);
 
 	drawOrthoQuad2d(w, h);
 

@@ -14,7 +14,7 @@
 uniform sampler2D sampler0;
 uniform sampler2D sampler1;
 
-uniform vec4 gBloom; // x-tone, y-stretch, w-use bloom
+uniform vec4 gBloom; // x-tone, y-stretch, z-invert term, w-use bloom
 
 void main (void)
 {
@@ -26,8 +26,12 @@ void main (void)
 	{
 		gl_FragData [0] =  colorA * gBloom.x + colorB * gBloom.y;
 	}
+	else if (gBloom.z > 0.0)
+	{
+		gl_FragData [0] = gBloom.z - ((gBloom.z - colorA) * colorB);
+	}
 	else
 	{
-		gl_FragData [0] =  colorA * colorB;
+		gl_FragData [0] = colorA * colorB;
 	}
 }
