@@ -260,24 +260,32 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Blur Mask A Scale", "Common Setup.Mask A");
 	AddPropertyView("Use Rim For Mask A", "Common Setup.Mask A");
 	AddPropertyView("Mask A Rim Power", "Common Setup.Mask A");
+	AddPropertyView("Use Mask A To Mix", "Common Setup.Mask A");
+	AddPropertyView("Mask A Mix With", "Common Setup.Mask A");
 
 	AddPropertyView("Invert Mask B", "Common Setup.Mask B");
 	AddPropertyView("Blur Mask B", "Common Setup.Mask B");
 	AddPropertyView("Blur Mask B Scale", "Common Setup.Mask B");
 	AddPropertyView("Use Rim For Mask B", "Common Setup.Mask B");
 	AddPropertyView("Mask B Rim Power", "Common Setup.Mask B");
+	AddPropertyView("Use Mask B To Mix", "Common Setup.Mask B");
+	AddPropertyView("Mask B Mix With", "Common Setup.Mask B");
 
 	AddPropertyView("Invert Mask C", "Common Setup.Mask C");
 	AddPropertyView("Blur Mask C", "Common Setup.Mask C");
 	AddPropertyView("Blur Mask C Scale", "Common Setup.Mask C");
 	AddPropertyView("Use Rim For Mask C", "Common Setup.Mask C");
 	AddPropertyView("Mask C Rim Power", "Common Setup.Mask C");
+	AddPropertyView("Use Mask C To Mix", "Common Setup.Mask C");
+	AddPropertyView("Mask C Mix With", "Common Setup.Mask C");
 
 	AddPropertyView("Invert Mask D", "Common Setup.Mask D");
 	AddPropertyView("Blur Mask D", "Common Setup.Mask D");
 	AddPropertyView("Blur Mask D Scale", "Common Setup.Mask D");
 	AddPropertyView("Use Rim For Mask D", "Common Setup.Mask D");
 	AddPropertyView("Mask D Rim Power", "Common Setup.Mask D");
+	AddPropertyView("Use Mask D To Mix", "Common Setup.Mask D");
+	AddPropertyView("Mask D Mix With", "Common Setup.Mask D");
 
 	AddPropertyView("Enable Masking For All Effects", "Common Setup");
 	AddPropertyView("Global Masking Channel", "Common Setup");
@@ -532,6 +540,12 @@ bool PostPersistentData::FBCreate()
 
 		sprintf_s(buffer, sizeof(char) * 64, "Mask %c Rim Power", MASK_INDEX_NAMES[i]);
 		FBPropertyPublish(this, Masks[i].MaskRimPower, buffer, nullptr, nullptr);
+
+		sprintf_s(buffer, sizeof(char) * 64, "Use Mask %c To Mix", MASK_INDEX_NAMES[i]);
+		FBPropertyPublish(this, Masks[i].UseMixWithMask, buffer, nullptr, nullptr);
+
+		sprintf_s(buffer, sizeof(char) * 64, "Mask %c Mix With", MASK_INDEX_NAMES[i]);
+		FBPropertyPublish(this, Masks[i].MixWithMask, buffer, nullptr, nullptr);
 	}
 
 	// SSAO
@@ -866,6 +880,8 @@ void PostPersistentData::SMaskProperties::SetDefaultValues()
 	BlurMaskScale = FBVector2d(1.0, 1.0);
 	UseRimForMask = 0.0;
 	MaskRimPower = 100.0;
+	UseMixWithMask = false;
+	MixWithMask = EMaskingChannel::eMaskA;
 }
 
 void PostPersistentData::DefaultValues()

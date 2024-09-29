@@ -105,19 +105,4 @@ void main()
    vec4 color = vec4(vcolor.rgb, (r+g+b)/3.0);
    color = t*color + (1.0-t)*vec4(r,g,b, min(min(r,g),b));
    gl_FragColor = vec4( color.rgb, vcolor.a*color.a);
-
-
-//    gl_FragColor = vec4(pow(vec3(r,g,b),vec3(1.0/vgamma)),a);
-
-    /*
-    vec3 color = energy_distribution(previous, vec4(r,g,b,1), next);
-    color = pow( color, vec3(1.0/vgamma));
-
-    vec3 color = vec3(r,g,b); //pow( vec3(r,g,b), vec3(1.0/vgamma));
-    gl_FragColor.rgb = color;
-    gl_FragColor.a = (color.r+color.g+color.b)/3.0 * vcolor.a;
-    */
-
-//    gl_FragColor = vec4(pow(vec3(r,g,b),vec3(1.0/vgamma)),a);
-    //gl_FragColor = vec4(r,g,b,a);
 }

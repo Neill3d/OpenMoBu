@@ -265,7 +265,7 @@ void PostEffectChain::RenderSceneMaskToTexture(const int maskIndex, PostPersiste
 	mShaderSceneMasked->setUniformVector("rimOptions", rimFactor, rimPower, 0.0f, 0.0f);
 	mShaderSceneMasked->setUniformVector("rimColor", rimColor.x, rimColor.y, rimColor.z, rimColor.w);
 
-	RenderMaskedModels(mLastCamera);
+	RenderMaskedModels(maskIndex, mLastCamera);
 
 	mShaderSceneMasked->UnBind();
 
@@ -610,8 +610,46 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 		buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), maskIndex);
 }
 
+void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers)
+{
+	FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+
+	// Mix masks = Mask A * Mask B
+
+	const GLuint texid = maskBuffer->GetColorObject(maskIndex);
+	const GLuint texid2 = maskBuffer->GetColorObject(maskIndex2);
+	
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, texid2);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texid);
+
+	buffers->GetBufferBlurPtr()->Bind();
+	mShaderMix->Bind();
+
+	const int w = buffers->GetWidth();
+	const int h = buffers->GetHeight();
+
+	mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 0.0f, 0.0f);
+
+	drawOrthoQuad2d(w, h);
+
+	mShaderMix->UnBind();
+	buffers->GetBufferBlurPtr()->UnBind();
+
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	BlitFBOToFBOCustomAttachment(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(), 0,
+		buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), maskIndex);
+}
+
 bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 {
+	// TODO: add profile entries here!
+
 	mIsCompressedDataReady = false;
 
 	if (!buffers->Ok() || !mSettings.Ok())
@@ -625,9 +663,12 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		return false;
 
 	// 2. prepare and render into masks
-
+	
 	bool isMaskTextureBinded = false;
 	bool isMaskBlurRequested = false;
+	bool isMaskMixRequested = false;
+
+	bool maskRenderFlags[PostPersistentData::NUMBER_OF_MASKS] = { false, false, false, false };
 
 	if (HasAnyMaskUsedByEffect() && HasAnyObjectMasked() && mLastCamera)
 	{
@@ -641,8 +682,23 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 					isMaskBlurRequested = true;
 				}
 
-				RenderSceneMaskToTexture(i, mSettings->Masks[i], buffers);
+				if (mSettings->Masks[i].UseMixWithMask && mSettings->Masks[i].MixWithMask != maskId)
+				{
+					isMaskMixRequested = true;
+					const int maskIndex2 = static_cast<int>(mSettings->Masks[i].MixWithMask);
+					maskRenderFlags[maskIndex2] = true;
+				}
+
+				maskRenderFlags[i] = true;
 				isMaskTextureBinded = true;
+			}
+		}
+
+		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		{
+			if (maskRenderFlags[i])
+			{
+				RenderSceneMaskToTexture(i, mSettings->Masks[i], buffers);
 			}
 		}
 	}
@@ -654,19 +710,31 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		RenderLinearDepth(buffers);
 	}
 	
-	// 4. blur masks (if applied)
+	// 4a. blur masks (if applied)
 
 	if (isMaskBlurRequested)
 	{
 		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
 		{
-			const EMaskingChannel maskId = static_cast<EMaskingChannel>(i);
-			if (IsMaskUsedByEffect(maskId) && IsAnyObjectMaskedByMaskId(maskId))
+			if (maskRenderFlags[i] && mSettings->Masks[i].BlurMask)
 			{
-				if (mSettings->Masks[i].BlurMask)
-				{
-					BlurMasksPass(i, buffers);
-				}
+				BlurMasksPass(i, buffers);
+			}
+		}
+	}
+
+	// 4b. mix masks (if applied)
+	if (isMaskMixRequested)
+	{
+		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		{
+			const int mask2 = static_cast<int>(mSettings->Masks[i].MixWithMask);
+
+			if (maskRenderFlags[i] && mSettings->Masks[i].UseMixWithMask 
+				&& i != mask2
+				&& maskRenderFlags[mask2])
+			{
+				MixMasksPass(i, mask2, buffers);
 			}
 		}
 	}

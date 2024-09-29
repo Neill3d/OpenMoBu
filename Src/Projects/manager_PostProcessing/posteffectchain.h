@@ -84,9 +84,9 @@ protected:
 	// shared shaders
 	
 	std::unique_ptr<GLSLShader>			mShaderDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
-	std::unique_ptr<GLSLShader>			mShaderBlur;	//!< needed for SSAO
-	std::unique_ptr<GLSLShader>			mShaderImageBlur; //!< for masking
-	std::unique_ptr<GLSLShader>			mShaderMix;		//!< needed for SSAO
+	std::unique_ptr<GLSLShader>			mShaderBlur;		//!< bilateral blur effect, for SSAO
+	std::unique_ptr<GLSLShader>			mShaderImageBlur;	//!< for masking
+	std::unique_ptr<GLSLShader>			mShaderMix;			//!< multiplication result of two inputs, (for SSAO)
 	std::unique_ptr<GLSLShader>			mShaderDownscale;
 
 	std::unique_ptr<GLSLShader>			mShaderSceneMasked; //!< render models into mask with some additional filtering
@@ -138,6 +138,12 @@ private:
 	/// when a blur is used in any of masks
 	/// </summary>
 	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers);
+
+	/// <summary>
+	/// mix masks = mask A * mask B
+	///  result is written back to mask A color attachment
+	/// </summary>
+	void MixMasksPass(const int maskindex, const int maskIndex2, PostEffectBuffers* buffers);
 
 	/// <summary>
 	/// send a packet with final post processed image

@@ -87,11 +87,13 @@ public: // PROPERTIES
 
 	struct SMaskProperties
 	{
-		FBPropertyBool				InvertMask;	//!< reverse colors in a rendered masks
-		FBPropertyBool				BlurMask; //!< apply a blur pass on a rendered mask
-		FBPropertyVector2d			BlurMaskScale; //!< control a blur scaling of mask a
-		FBPropertyAnimatableDouble	UseRimForMask;
-		FBPropertyAnimatableDouble	MaskRimPower;
+		FBPropertyBool				InvertMask;		//!< reverse colors in a rendered masks
+		FBPropertyBool				BlurMask;		//!< apply a blur pass on a rendered mask
+		FBPropertyVector2d			BlurMaskScale;	//!< control a blur scaling of mask a
+		FBPropertyAnimatableDouble	UseRimForMask;	//!< objects in mask will be rendered with rim effect, like a back-lit. that could emulate a mask falloff
+		FBPropertyAnimatableDouble	MaskRimPower;	//!< rim effect power, amplify the emulated mask falloff effect
+		FBPropertyBool				UseMixWithMask;
+		FBPropertyBaseEnum<EMaskingChannel>	MixWithMask;	//!< multiply a given mask with another mask (could be used for a mask subtraction)
 
 		void SetDefaultValues();
 	};

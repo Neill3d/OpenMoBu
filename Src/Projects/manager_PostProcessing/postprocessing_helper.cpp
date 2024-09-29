@@ -430,7 +430,7 @@ void RenderModel(FBModel* model)
 	}
 }
 
-void RenderMaskedModels(FBCamera* camera)
+void RenderMaskedModels(const int maskIndex, FBCamera* camera)
 {
 	if (FBIS(camera, FBCameraSwitcher))
 	{
@@ -458,9 +458,13 @@ void RenderMaskedModels(FBCamera* camera)
 
 	for (int i = 0, count = scene->Shaders.GetCount(); i < count; ++i)
 	{
-		FBShader* shader = scene->Shaders[i];
-		if (FBIS(shader, FXMaskingShader))
+		if (FXMaskingShader* shader = FBCast<FXMaskingShader>(scene->Shaders[i]))
 		{
+			const int maskFlags[4]{ shader->CompositeMaskA.AsInt(), shader->CompositeMaskB.AsInt(), shader->CompositeMaskC.AsInt(), shader->CompositeMaskD.AsInt() };
+
+			if (maskFlags[maskIndex] == 0)
+				continue;
+
 			const int dstCount = shader->GetDstCount();
 
 			for (int j = 0; j < dstCount; ++j)
