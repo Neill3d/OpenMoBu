@@ -98,13 +98,13 @@ Box Properties:
 * Sigma&#x20;
   * The **sigma** parameter controls the **spread** or **width** of the RBF. It determines how quickly the influence of the RBF decays as you move away from the center.
   * A smaller sigma value makes the RBF more concentrated around its center, meaning the influence drops off sharply as you move away. A larger sigma value creates a more gradual influence over a wider area.
-* Rotation Multiply
+* Rotation Multiply - apply the multiplier to scale down targets
 
 [Sample scene - relationBox\_RBF.fbx](../../../MB\_Scenes/relationBox\_RBF.fbx)
 
 ## Sphere Coords Box
 
-Convert Euler Rotation into Sphere Coords. In that case we could avoid gimbal lock effect on rotation and do a relation based on a polar coords on a sphere surface. Could be a nice suit for rigging correction joints.
+Convert Euler rotation into spherical coordinates. This way, we can avoid the gimbal lock effect in rotations and establish relationships based on polar coordinates on the surface of a sphere. This approach could be a great fit for rigging correction joints.
 
 ![SphereCoordsBox](../../Plugins/relationBox\_sphereCoords.jpg)
 
