@@ -33,7 +33,7 @@ Those plugins are extended functionality of relation constraint which is a form 
 
 ## Constraint Plugins
 
-A set of plugins that constains source object / objects with a destination object / objects with a defined logic For example, parent/child, aim, surface attachment, etc. Constraint computed result has a priority over the animation keyframe data.
+A set of plugins that constains source object(s) with a destination object(s) with a defined logic. For example, parent/child, aim, surface attachment, etc. Constraints are evaluated on top of keyframe animation data and has a higher priority.
 
 * [Attachment Constraint](attachmentconstraint.md)
 * [Driven Property Constraint](drivenpropertyconstraint.md)
@@ -83,13 +83,13 @@ A texture object to mix two images with a wide range of composite modes and opti
 
 * Texture Parametric Blend
 
-A texture object to support atlas packed image or in other words a texture object for sprite texture animation. The atlas image is a collection of images that are packed inside one bigger images side by side. It's quite often used in game industry for fx, as it gives some performance gain to change a next frame by offsetting uv coordinates instead of reading a separate image.
+A texture object that supports an atlas-packed image, or in other words, a texture object for sprite texture animation. The atlas image is a collection of smaller images packed side by side within a larger image. This technique is commonly used in the game industry for effects, as it provides a performance boost by changing to the next frame by offsetting UV coordinates instead of loading a separate image.
 
 [Read More...](textures.md)
 
 ### Calculate Normals Solver
 
-A solver to recalculate mesh normals on fly during rendering. That helps to better visualize deformations from blendshape activation or by skinned skeleton transform.
+A solver that recalculates mesh normals on the fly during rendering. This helps to better visualize deformations caused by blendshape activation or transformations from a skinned skeleton.
 
 [Read More...](solvercalculatenormals.md)
 
