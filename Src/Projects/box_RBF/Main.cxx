@@ -20,6 +20,8 @@ FBLibraryDeclare( boxrbf )
 
     // work with quaternion
 
+    FBLibraryRegister(BoxNumberToQuaternion);
+    FBLibraryRegister(BoxQuaternionToNumber);
     FBLibraryRegister(BoxEulerToQuaternion);
     FBLibraryRegister(BoxQuaternionToEuler);
     FBLibraryRegister(BoxQuaternionMult);

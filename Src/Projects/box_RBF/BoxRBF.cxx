@@ -163,155 +163,133 @@ bool BoxRBF3::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInf
 
 	lStatus = m_Pose->ReadData( pose, pEvaluateInfo );
 
-	// compute connected targets
-	unsigned int count = 0;
+	// pre-normalize pose input vector
+	for (int i = 0; i < dim; ++i)
+	{
+		pose[i] *= rotMult;
+	}
 
 	// If the read was not from a dead node.
-    if( lStatus ) // && lStatusTargets[0] && lStatusTargets[1] && lStatusTargets[2])
+	if (!lStatus) // && lStatusTargets[0] && lStatusTargets[1] && lStatusTargets[2])
 	{
-		Eigen::VectorXd poseVec(3);
-
-		for (int i = 0; i < 4; ++i)
-		{
-			pose[i] *= rotMult;
-		}
-		
-		if (dim == 3)
-		{
-			poseVec << pose[0], pose[1], pose[2];
-		}
-		else
-		{
-			poseVec << pose[0], pose[1], pose[2], pose[3];
-		}
-		
-		
-		for (int i = 0; i < MAX_NUMBER_OF_TARGETS; ++i)
-		{
-			if (m_Targets[i])
-			{
-				lStatus = m_Targets[i]->ReadData(targets[count], pEvaluateInfo);
-
-				if (lStatus)
-				{
-					count += 1;
-				}
-			}
-		}
-		
-		if (count == 0)
-		{
-			return false;
-		}
-
-		// Build eigenlib matrix
-		Eigen::MatrixXd mtx(count, count);
-
-		// Initialize weights and solutions eigenlib vectors
-		norms_.resize(count);
-		vecs_.resize(count);
-		Eigen::VectorXd wvec(count);
-		Eigen::VectorXd rvec(count);
-		rvec << height, height, height;
-		
-		for (unsigned int i = 0; i < count; ++i)
-		{
-			// Apply rotMult to "normalize" rotation to translation
-			for (int k = 0; k < 4; ++k)
-			{
-				targets[i][k] *= rotMult;
-			}
-			
-			// Initialize eigenlib vector to scale target spheres
-			Eigen::VectorXd vec(dim);
-			if (dim == 3)
-			{
-				vec << targets[i][0], targets[i][1], targets[i][2];
-			}
-			else
-			{
-				vec << targets[i][0], targets[i][1], targets[i][2], targets[i][3];
-			}
-			
-			double norm = vec.norm();
-			norms_[i] = norm;
-			vecs_[i] = vec;
-			Eigen::VectorXd distVec = poseVec - vec;
-			double dist = fabs(distVec.norm());
-			double rbf_scale = RBF(dist, height, sigma, ftype);
-
-			// Populate eigenlib matrix
-			for (unsigned int j = 0; j < count; ++j)
-			{
-				// Get norm of every target and find rbf of inorm - jnorm
-				
-				// Apply rotMult to "normalize" rotation to translation
-				for (int k = 0; k < 4; ++k)
-				{
-					targets[j][k] *= rotMult;
-				}
-				
-				Eigen::VectorXd jvec(dim);
-				if (dim == 3)
-				{
-					jvec << targets[j][0], targets[j][1], targets[j][2];
-				}
-				else
-				{
-					jvec << targets[j][0], targets[j][1], targets[j][2], targets[j][3];
-				}
-				Eigen::VectorXd diffVec = vec - jvec;
-
-				double diffNorm = fabs(diffVec.norm());
-				double val = RBF(diffNorm, height, sigma, ftype);
-				mtx(i, j) = val;
-			}
-
-			m_OutScale[i]->WriteData(&rbf_scale, pEvaluateInfo);
-		}
-
-		// Solve linear system with colPivHouseholderQr()
-		wvec = mtx.colPivHouseholderQr().solve(rvec);
-
-		// Sum weighted RBFs
-		double sum = 0.0;
-		for (unsigned int i = 0; i < count; ++i)
-		{
-			Eigen::VectorXd diffVec = poseVec - vecs_[i];
-			double rbf = RBF(fabs(diffVec.norm()), height, sigma, ftype);
-			rbf *= wvec[i];
-			sum += rbf;
-		}
-
-		m_OutInterpolate->WriteData(&sum, pEvaluateInfo);
-		AnimationNodesOutDisableIfNotWritten(pEvaluateInfo);
-	    return true;
+		return false;
 	}
-    return false;
-}
 
-double BoxRBF3::RBF(const double &r, const double &height, const double &sigma, const short &ftype)
-{
-	double out;
-	if (ftype == 0)
+	Eigen::VectorXd poseVec(dim);
+
+	if (dim == 3)
 	{
-		// Gaussian
-		out = height * exp(-(r*r / 2 * sigma*sigma));
-	}
-	else if (ftype == 1)
-	{
-		// Multiquadratic
-		out = height * pow((r*r + sigma*sigma), 0.5);
-	}
-	else if (ftype == 2)
-	{
-		// Inverse multiquadratic
-		out = height * pow((r*r + sigma*sigma), -0.5);
+		poseVec << pose[0], pose[1], pose[2];
 	}
 	else
 	{
-		return 0.0;
+		poseVec << pose[0], pose[1], pose[2], pose[3];
 	}
 
-	return out;
+	// compute connected targets
+	unsigned int count = 0;
+
+	for (int i = 0; i < MAX_NUMBER_OF_TARGETS; ++i)
+	{
+		if (m_Targets[i] != nullptr)
+		{
+			lStatus = m_Targets[i]->ReadData(targets[count], pEvaluateInfo);
+
+			if (lStatus)
+			{
+				count += 1;
+			}
+		}
+	}
+		
+	if (count == 0)
+	{
+		return false;
+	}
+
+	// Pre-normalize targets outside the loop
+	for (unsigned int i = 0; i < count; ++i)
+	{
+		for (int k = 0; k < dim; ++k)
+		{
+			targets[i][k] *= rotMult;
+		}
+	}
+
+	// Build eigenlib matrix
+	Eigen::MatrixXd mtx(count, count);
+
+	// Initialize weights and solutions eigenlib vectors
+	vecs_.resize(count);
+	Eigen::VectorXd wvec(count);
+	Eigen::VectorXd rvec = Eigen::VectorXd::Constant(count, height);
+		
+	for (unsigned int i = 0; i < count; ++i)
+	{
+		Eigen::VectorXd vec(dim);
+
+		for (int k = 0; k < dim; ++k)
+		{
+			vec[k] = targets[i][k];
+		}
+
+		vecs_[i] = vec;
+			
+		const double dist = (poseVec - vec).norm(); 
+		double rbf_scale = RBF(dist, height, sigma, ftype);
+
+		// Populate eigenlib matrix
+		for (unsigned int j = 0; j < count; ++j)
+		{
+			// Get norm of every target and find rbf of inorm - jnorm
+				
+			Eigen::VectorXd jvec(dim);
+
+			for (int k = 0; k < dim; ++k)
+			{
+				jvec[k] = targets[j][k];
+			}
+
+			double val = RBF((vec-jvec).norm(), height, sigma, ftype);
+			mtx(i, j) = val;
+		}
+
+		m_OutScale[i]->WriteData(&rbf_scale, pEvaluateInfo);
+	}
+
+	// Solve linear system with colPivHouseholderQr()
+	wvec = mtx.colPivHouseholderQr().solve(rvec);
+
+	// Sum weighted RBFs
+	double sum = 0.0;
+	for (unsigned int i = 0; i < count; ++i)
+	{
+		Eigen::VectorXd diffVec = poseVec - vecs_[i];
+		double rbf = RBF(fabs(diffVec.norm()), height, sigma, ftype);
+		rbf *= wvec[i];
+		sum += rbf;
+	}
+
+	m_OutInterpolate->WriteData(&sum, pEvaluateInfo);
+	AnimationNodesOutDisableIfNotWritten(pEvaluateInfo);
+	return true;
+	
+}
+
+double BoxRBF3::RBF(const double r, const double height, const double sigma, const short ftype)
+{
+	switch (ftype)
+	{
+	case EFunctionType::eGaussian:
+		// Gaussian
+		return height * exp(-(r * r / 2 * sigma * sigma));
+	case EFunctionType::eMultiquadratic:
+		// Multiquadratic
+		return height * pow((r * r + sigma * sigma), 0.5);
+	case EFunctionType::eInverseMultiquadratic:
+		// Inverse multiquadratic
+		return height * pow((r * r + sigma * sigma), -0.5);
+	default:
+		return 0;
+	}
 }

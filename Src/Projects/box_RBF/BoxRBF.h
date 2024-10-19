@@ -67,13 +67,12 @@ private:
 	FBAnimationNode*	m_OutScale[MAX_NUMBER_OF_TARGETS];
 	FBAnimationNode*	m_OutInterpolate;
 
-	double RBF(const double &r, const double &height, const double &sigma, const short &ftype);
+	double RBF(const double r, const double height, const double sigma, const short ftype);
 
 protected:
 
 	int								m_NumberOfTargets;
 
-	std::vector<double>				norms_;
 	std::vector<Eigen::VectorXd>	vecs_;
 
 	virtual const int GetPlugDim() const { return 3; }

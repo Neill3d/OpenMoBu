@@ -21,6 +21,12 @@
 
 //--- Registration defines
 
+#define	BOXNUMTOQUAT__CLASSNAME		BoxNumberToQuaternion
+#define BOXNUMTOQUAT__CLASSSTR		"BoxNumberToQuaternion"
+
+#define	BOXQUATTONUM__CLASSNAME		BoxQuaternionToNumber
+#define BOXQUATTONUM__CLASSSTR		"BoxQuaternionToNumber"
+
 #define	BOXEULTOQUAT__CLASSNAME		BoxEulerToQuaternion
 #define BOXEULTOQUAT__CLASSSTR		"BoxEulerToQuaternion"
 
@@ -57,6 +63,54 @@ enum ERotationOrder {
     eZYX,     //!< ZYX
 };
 
+/**	Make a quaternion from 4 component numbers X Y Z W
+*	Box for a relation constraint
+*/
+class BoxNumberToQuaternion : public FBBox
+{
+    //--- box declaration.
+    FBBoxDeclare(BoxNumberToQuaternion, FBBox);
+
+public:
+    virtual bool FBCreate();		//!< creation function.
+    virtual void FBDestroy();		//!< destruction function.
+
+    //! Overloaded FBBox real-time evaluation function.
+    virtual bool AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo);
+
+private:
+
+    FBAnimationNode* m_InX;
+    FBAnimationNode* m_InY;
+    FBAnimationNode* m_InZ;
+    FBAnimationNode* m_InW;
+    FBAnimationNode* m_OutQuaternion;
+};
+
+/**	Break a quaternion into 4 component numbers X Y Z W
+*	Box for a relation constraint
+*/
+class BoxQuaternionToNumber : public FBBox
+{
+    //--- box declaration.
+    FBBoxDeclare(BoxQuaternionToNumber, FBBox);
+
+public:
+    virtual bool FBCreate();		//!< creation function.
+    virtual void FBDestroy();		//!< destruction function.
+
+    //! Overloaded FBBox real-time evaluation function.
+    virtual bool AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo);
+
+private:
+
+    FBAnimationNode* m_OutX;
+    FBAnimationNode* m_OutY;
+    FBAnimationNode* m_OutZ;
+    FBAnimationNode* m_OutW;
+    FBAnimationNode* m_InQuaternion;
+};
+
 /**	Convert rotation vector3 euler into vector4 quaternion
 *	Box for a relation constraint
 */
@@ -80,7 +134,6 @@ private:
 
     FBAnimationNode*	m_EulerRotation;
     FBAnimationNode*	m_OutQuaternion;
-
 };
 
 

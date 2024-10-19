@@ -12,6 +12,18 @@
 
 //--- Registration defines
 
+#define BOXNUMTOQUAT__CLASS		BOXNUMTOQUAT__CLASSNAME
+#define BOXNUMTOQUAT__NAME		BOXNUMTOQUAT__CLASSSTR
+#define	BOXNUMTOQUAT__LOCATION	"Converters"
+#define BOXNUMTOQUAT__LABEL		"Number To Quaternion"
+#define	BOXNUMTOQUAT__DESC		"Number To Quaternion"
+
+#define BOXQUATTONUM__CLASS		BOXQUATTONUM__CLASSNAME
+#define BOXQUATTONUM__NAME		BOXQUATTONUM__CLASSSTR
+#define	BOXQUATTONUM__LOCATION	"Converters"
+#define BOXQUATTONUM__LABEL		"Quaternion To Number"
+#define	BOXQUATTONUM__DESC		"Quaternion To Number"
+
 #define BOXEULTOQUAT__CLASS		BOXEULTOQUAT__CLASSNAME
 #define BOXEULTOQUAT__NAME		BOXEULTOQUAT__CLASSSTR
 #define	BOXEULTOQUAT__LOCATION	"Quaternion"
@@ -67,6 +79,22 @@
 #define	BOXVECTORROTATEBY__DESC		"Vector Rotate By"
 
 //--- implementation and registration
+FBBoxImplementation(BOXNUMTOQUAT__CLASS);	// Box class name
+FBRegisterBox(BOXNUMTOQUAT__NAME,			// Unique name to register box.
+    BOXNUMTOQUAT__CLASS,				    // Box class name
+    BOXNUMTOQUAT__LOCATION,			        // Box location ('Converters')
+    BOXNUMTOQUAT__LABEL,				    // Box label (name of box to display)
+    BOXNUMTOQUAT__DESC,			            // Box long description.
+    FB_DEFAULT_SDK_ICON);	                // Icon filename (default=Open Reality icon)
+
+FBBoxImplementation(BOXQUATTONUM__CLASS);	// Box class name
+FBRegisterBox(BOXQUATTONUM__NAME,			// Unique name to register box.
+    BOXQUATTONUM__CLASS,				    // Box class name
+    BOXQUATTONUM__LOCATION,			        // Box location ('Converters')
+    BOXQUATTONUM__LABEL,				    // Box label (name of box to display)
+    BOXQUATTONUM__DESC,			            // Box long description.
+    FB_DEFAULT_SDK_ICON);	                // Icon filename (default=Open Reality icon)
+
 FBBoxImplementation(BOXEULTOQUAT__CLASS);		// Box class name
 FBRegisterBox(BOXEULTOQUAT__NAME,				// Unique name to register box.
     BOXEULTOQUAT__CLASS,				// Box class name
@@ -152,8 +180,104 @@ const char * FBPropertyBaseEnum<ERotationOrder>::mStrings[] = {
     0 };
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Euler To Quaternion
+// Number To Quaternion
 
+/************************************************
+ *	Creation
+ ************************************************/
+bool BoxNumberToQuaternion::FBCreate()
+{
+    // Input Node
+
+    m_InX = AnimationNodeInCreate(0, "X", ANIMATIONNODE_TYPE_NUMBER);
+    m_InY = AnimationNodeInCreate(1, "Y", ANIMATIONNODE_TYPE_NUMBER);
+    m_InZ = AnimationNodeInCreate(2, "Z", ANIMATIONNODE_TYPE_NUMBER);
+    m_InW = AnimationNodeInCreate(3, "W", ANIMATIONNODE_TYPE_NUMBER);
+
+    // Output nodes
+
+    m_OutQuaternion = AnimationNodeOutCreate(4, "Quat", ANIMATIONNODE_TYPE_VECTOR_4);
+
+    return true;
+}
+
+
+/************************************************
+ *	Destruction.
+ ************************************************/
+void BoxNumberToQuaternion::FBDestroy()
+{
+}
+
+
+/************************************************
+ *	Real-time engine evaluation
+ ************************************************/
+bool BoxNumberToQuaternion::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo)
+{
+    FBQuaternion q;
+    if (!m_InX->ReadData(&q[0], pEvaluateInfo))
+        return false;
+    if (!m_InY->ReadData(&q[1], pEvaluateInfo))
+        return false;
+    if (!m_InZ->ReadData(&q[2], pEvaluateInfo))
+        return false;
+    if (!m_InW->ReadData(&q[3], pEvaluateInfo))
+        return false;
+    
+    m_OutQuaternion->WriteData(q, pEvaluateInfo);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+// Quaternion To Number
+
+/************************************************
+ *	Creation
+ ************************************************/
+bool BoxQuaternionToNumber::FBCreate()
+{
+    // Input node
+
+    m_InQuaternion = AnimationNodeInCreate(0, "Quat", ANIMATIONNODE_TYPE_VECTOR_4);
+
+    // Output Noded
+
+    m_OutX = AnimationNodeOutCreate(1, "X", ANIMATIONNODE_TYPE_NUMBER);
+    m_OutY = AnimationNodeOutCreate(2, "Y", ANIMATIONNODE_TYPE_NUMBER);
+    m_OutZ = AnimationNodeOutCreate(3, "Z", ANIMATIONNODE_TYPE_NUMBER);
+    m_OutW = AnimationNodeOutCreate(4, "W", ANIMATIONNODE_TYPE_NUMBER);
+
+    return true;
+}
+
+
+/************************************************
+ *	Destruction.
+ ************************************************/
+void BoxQuaternionToNumber::FBDestroy()
+{
+}
+
+
+/************************************************
+ *	Real-time engine evaluation
+ ************************************************/
+bool BoxQuaternionToNumber::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo)
+{
+    FBQuaternion q;
+    if (!m_InQuaternion->ReadData(q, pEvaluateInfo))
+        return false;
+
+    m_OutX->WriteData(&q[0], pEvaluateInfo);
+    m_OutY->WriteData(&q[1], pEvaluateInfo);
+    m_OutZ->WriteData(&q[2], pEvaluateInfo);
+    m_OutW->WriteData(&q[3], pEvaluateInfo);
+    return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+// Euler To Quaternion
 
 /************************************************
  *	Creation
@@ -584,7 +708,7 @@ void BoxQuaternionLerp::FBDestroy()
  ************************************************/
 bool BoxQuaternionLerp::AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo)
 {
-    FBVector3d q, p;
+    FBQuaternion q, p;
     double factor;
 
     if (!m_InQ->ReadData(q, pEvaluateInfo)
