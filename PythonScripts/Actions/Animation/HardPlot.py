@@ -1,9 +1,11 @@
 
-
 ###############################
 #
-# Hard Plotting (especcialy for Constraint Attachment)
-#  Script helps to plot animation on deformable meshes
+# Hard Plotting.py
+#  Script helps to plot animation with a relation to deformable meshes
+# For instance, in attachment constraint, when every frame scene evaluation is required
+#  normal plot operation would skip such evaluations, 
+#  while going frame by frame helps to preserve the deformed data and keep attachments on place
 #
 # Sergei Solokhin (Neill3d) 2018
 #  e-mail to: s@neill3d.com
