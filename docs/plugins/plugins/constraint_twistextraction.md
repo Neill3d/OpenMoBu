@@ -1,8 +1,8 @@
 # Twist Extraction Constraint
 
-A constraint to extract a rotation along a given local axis from a full 3 dimentional rotation.
+A constraint that extracts rotation along a given local axis from a full 3-dimensional rotation.&#x20;
 
-A similar technique is used for roll joints on a humanIK, where on arms, hands, legs rotations along the joint local axis are destributed into roll joints rotations and improve the quality of skinned meshes
+This technique is commonly used for roll joints in HumanIK setups, where the rotations along the local axis of arms, hands, and legs are distributed across roll joints to improve the quality of skinned meshes.
 
 ![TwistExtractionConstraint](../../Plugins/constraint\_twistExtraction.jpg)
 

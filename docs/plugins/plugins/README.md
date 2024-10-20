@@ -49,7 +49,7 @@ A device plugin for live streaming via OSC from FaceCap iPhone App For more info
 
 ## View Manipulators
 
-A plugin which hook the user input operations with the viewport in order to perform some action in the scene like transforming objects by dragging manipulator handle with the mouse input
+A plugin that hooks into user input operations within the viewport to perform actions in the scene, such as transforming objects by dragging the manipulator handles using mouse input.
 
 [Lock Camera Manipulator](manipulator\_lockcamera.md)
 
@@ -59,7 +59,7 @@ Shading, fx, geometry preparation for rendering
 
 ### Post Processing Filters
 
-A special user object, that helps to add post process filters on top of your camera view.
+A special user object, that helps to add post process effects on top of your camera view.
 
 [![MoPlugs](https://github.com/Neill3d/MoBu/blob/master/Documentation/Images/Bryan\_usecase.jpg)](../../)
 
@@ -67,7 +67,7 @@ A special user object, that helps to add post process filters on top of your cam
 
 ### Super Dynamic Lighting Shader
 
-This is an advance version of Dynamic Lighting Shader with features like vertex displacement, specular map, Matcap shading, etc.
+This is an advance version of Dynamic Lighting Shader with features like vertex displacement, specular map, MatCap shading, etc.
 
 [Read More...](shader\_superdynamiclighting.md)
 

@@ -1,20 +1,19 @@
 # Super Dynamic Lighting Shader
 
-This is an advance version of Dynamic Lighting Shader with features like vertex displacement, specular map, Matcap shading, etc.
+This is an advanced version of the Dynamic Lighting Shader, featuring vertex displacement, specular mapping, MatCap shading, and more. The shader supports an unlimited number of lights in the scene.
 
- Shader that supports unlimited set of lights in the scene.
+Additional features:
 
- Additional features
- - texture channels: diffuse, transparency, specular, reflect, displacement, normal map
- - rim lighting
- - vertex displacement
- - reflection spherical texturing
- - second UV set support and assigned LightMap texture per model
- - matcap diffuse shading
+* Texture channels: diffuse, transparency, specular, reflection, displacement, and normal map
+* Rim lighting
+* Vertex displacement
+* Reflection spherical texturing
+* Support for a second UV set with assigned LightMap textures per model
+* MatCap diffuse shading
 
 ## How to use second UV set and baked shadows
 
-[Video on Youtube](https://youtu.be/ILbo5VWHVTE?si=0_cpQJcIU0AALap6)
+[Video on Youtube](https://youtu.be/ILbo5VWHVTE?si=0\_cpQJcIU0AALap6)
 
 ## Where to get matcap images ?
 
