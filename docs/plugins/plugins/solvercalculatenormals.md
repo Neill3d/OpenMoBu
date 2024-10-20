@@ -4,15 +4,15 @@ description: A solver to recalculate mesh normals on deformed meshes on fly
 
 # Solver Auto Calculate Normals
 
-MotionBuilder loads model with vertex normal information used for lighting. The quality issue comes when you deform such mesh with a blendshape or skin binding. The MotionBuilder deforms only vertex position, but not normals. Because of that a deformation that comes from blendshapes or skinning, will not be reflected well on a shape lighting. The solver helps to recalculate normals on fly and improve the lighting experience on a deformed meshes.
+MotionBuilder loads models with vertex normal information used for lighting. The quality issue arises when you deform such a mesh with a blendshape or skin binding. MotionBuilder only deforms the vertex positions, but not the normals. As a result, the deformations from blendshapes or skinning are not accurately reflected in the shape's lighting. The solver helps to recalculate normals on the fly, improving the lighting experience on deformed meshes.
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (3).png" alt=""><figcaption></figcaption></figure>
 
 <details>
 
 <summary>More examples</summary>
 
-![](<../../.gitbook/assets/image (1).png>)
+![](<../../.gitbook/assets/image (1) (1).png>)
 
 ![](<../../.gitbook/assets/normals\_solver\_01 (1).jpg>)
 
@@ -22,15 +22,15 @@ MotionBuilder loads model with vertex normal information used for lighting. The 
 
 </details>
 
-The solver does an auto normals recalculation for connected models. It takes a model tesselated mesh which is stored on gpu vertex buffers, then run compute shaders to recalculate and replace normals data.
+The solver automatically recalculates normals for models connected within the solver. It takes a tessellated mesh stored in GPU vertex buffers, then runs compute shaders to recalculate and replace the normals data.
 
-Calculations are fully on gpu, not complex for modern cards, so the solver should not impact your scene performance in general.
+All calculations are performed on the GPU and are not complex for modern graphics cards, so the solver should not impact your scene's performance significantly.
 
 {% hint style="info" %}
 Video card must have OpenGL 4.3 support in order to run the solver compute shaders
 {% endhint %}
 
-It doesn't take in a count any smoothing group or hard edges threshold information and that's why it could be not a good fit for some models. If your model has a nice uniform mesh with soft normals, that should work fine.
+It does not take into account any smoothing group or hard edge threshold information, which is why it may not be suitable for some models. However, if your model has a uniform mesh with soft normals, it should work fine.
 
 ### How To Use
 

@@ -33,7 +33,7 @@ Those plugins are extended functionality of relation constraint which is a form 
 
 ## Constraint Plugins
 
-A set of plugins that constains source object / objects with a destination object / objects with a defined logic For example, parent/child, aim, surface attachment, etc. Constraint computed result has a priority over the animation keyframe data.
+A set of plugins that constains source object(s) with a destination object(s) with a defined logic. For example, parent/child, aim, surface attachment, etc. Constraints are evaluated on top of keyframe animation data and has a higher priority.
 
 * [Attachment Constraint](attachmentconstraint.md)
 * [Driven Property Constraint](drivenpropertyconstraint.md)
@@ -49,7 +49,7 @@ A device plugin for live streaming via OSC from FaceCap iPhone App For more info
 
 ## View Manipulators
 
-A plugin which hook the user input operations with the viewport in order to perform some action in the scene like transforming objects by dragging manipulator handle with the mouse input
+A plugin that hooks into user input operations within the viewport to perform actions in the scene, such as transforming objects by dragging the manipulator handles using mouse input.
 
 [Lock Camera Manipulator](manipulator\_lockcamera.md)
 
@@ -59,7 +59,7 @@ Shading, fx, geometry preparation for rendering
 
 ### Post Processing Filters
 
-A special user object, that helps to add post process filters on top of your camera view.
+A special user object, that helps to add post process effects on top of your camera view.
 
 [![MoPlugs](https://github.com/Neill3d/MoBu/blob/master/Documentation/Images/Bryan\_usecase.jpg)](../../)
 
@@ -67,7 +67,7 @@ A special user object, that helps to add post process filters on top of your cam
 
 ### Super Dynamic Lighting Shader
 
-This is an advance version of Dynamic Lighting Shader with features like vertex displacement, specular map, Matcap shading, etc.
+This is an advance version of Dynamic Lighting Shader with features like vertex displacement, specular map, MatCap shading, etc.
 
 [Read More...](shader\_superdynamiclighting.md)
 
@@ -83,13 +83,13 @@ A texture object to mix two images with a wide range of composite modes and opti
 
 * Texture Parametric Blend
 
-A texture object to support atlas packed image or in other words a texture object for sprite texture animation. The atlas image is a collection of images that are packed inside one bigger images side by side. It's quite often used in game industry for fx, as it gives some performance gain to change a next frame by offsetting uv coordinates instead of reading a separate image.
+A texture object that supports an atlas-packed image, or in other words, a texture object for sprite texture animation. The atlas image is a collection of smaller images packed side by side within a larger image. This technique is commonly used in the game industry for effects, as it provides a performance boost by changing to the next frame by offsetting UV coordinates instead of loading a separate image.
 
 [Read More...](textures.md)
 
 ### Calculate Normals Solver
 
-A solver to recalculate mesh normals on fly during rendering. That helps to better visualize deformations from blendshape activation or by skinned skeleton transform.
+A solver that recalculates mesh normals on the fly during rendering. This helps to better visualize deformations caused by blendshape activation or transformations from a skinned skeleton.
 
 [Read More...](solvercalculatenormals.md)
 
@@ -124,12 +124,12 @@ Tools, custom objects in the scene
 
 ### Manager To Link Group Visibility with a Camera
 
-A special manager that could help to control a group visibility with a camera activation. When you switch between cameras in the viewport, the attached groups will change their visibility.
+A special manager that helps control group visibility based on camera activation. When you switch between cameras in the viewport, the visibility of the attached groups will automatically change.
 
 [Read More...](cameralinksgroupvisibility.md)
 
 ### Optical Volume Calculator
 
-The custom model that helps to calculate a unit score of a volume coverage for the optical system. In order to run the solver, you have to immitate the capturing space by placing cameras the same way how you are going to place them in the real room with a correct defined FOV and aspect ratio.
+A custom model that calculates the unit score of volume coverage for an optical system. To run the solver, you need to simulate the capture space by positioning the cameras as you would in the real room, with the correct field of view (FOV) and aspect ratio.
 
 [Read More...](opticalvolumecalculator.md)

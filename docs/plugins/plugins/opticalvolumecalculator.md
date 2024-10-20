@@ -2,15 +2,13 @@
 
 Plugin for setup active zone for optical cameras
 
-A user object to calculate an optical capture volume score by providing a capture space, cameras with defined field of view and far distance. A score is calculated where at least two cameras see a point inside the capture space
+A user object that calculates the optical capture volume score by providing a capture space and cameras with defined fields of view and far distances. The score is calculated based on the points within the capture space that are visible to at least two cameras.
 
 ![opticalVolumeCalculator](../../Plugins/VolumeCalculator\_volume.jpg)
 
 ## Work with the plugin
 
-Set the cameras with the real optical parameters (FOV) in the scene. Set the object VolumeCalculator and adjust its parameters – size of the room for capturing and cameras for calculating.
-
-You can dispose the cameras as you want and whereever you want inside of a virtual room and calculate active zone with the help of a button Solve in VolumeCalculator properties. The task is to get the best filling of the active zone and to get the highest mark in the parameter “Mark”.
+Place the cameras with real optical parameters (FOV) in the scene. Add the VolumeCalculator object and adjust its parameters, such as the size of the capture room and the cameras to be used for calculation. You can position the cameras freely within the virtual room and calculate the active zone using the 'Solve' button in the VolumeCalculator properties. The goal is to maximize the active zone coverage and achieve the highest score in the 'Mark' parameter.
 
 ## Model Properties
 
@@ -44,11 +42,11 @@ Resolution 640×480
 
 ## Usage guide
 
-* Parameters Length, Width, Height should be set according to real numbers of the room. Cameras have difference in their horizontal orientation and vertical orientation, so do not forget to turn and twist them.
-* Display of the active zone on the floor of the room and its parameters are conventional and do not do with the active zone calculation by the plug-in. This display should be used as a supplement to understand the result of the calculation and marking of the active zone further.
-* Do not do the calculation step too short. A big number of points requires a lot of resource and may lead to crash of the programme.
-* The marker can de used for the rating of the active zone, to move it and to watch the projection rays from the cameras.
-* To feel comfortable you can set double window in MotionBuilder viewer. In one part you can switch on the display with the camera, in the other one – a perspective view on the room. The display of the active zone should be switched on only for a current camera, which you’re working with. There is additional button “Switch to Camera” to make this scenario easier. The button switches over the first view on the selected camera and switches on the display of the active zone for only this camera. ![volumeCalculateInWork](../../Plugins/VolumeCalculator\_inwork.jpg)
+* The parameters for Length, Width, and Height should be set to match the real dimensions of the room. Cameras differ in their horizontal and vertical orientations, so be sure to rotate and adjust them as needed.
+* The display of the active zone on the room's floor and its parameters are for reference only and are not part of the actual active zone calculation by the plug-in. This display should be used as an aid to understand the calculation results and active zone marking.
+* Avoid making the calculation step too small. A large number of points can consume a lot of resources and may cause the program to crash.
+* The marker can be used to rate the active zone, move it, and observe the projection rays from the cameras.
+* For ease of use, you can set up a double window in the MotionBuilder viewer. In one view, you can display the camera feed, and in the other, a perspective view of the room. The active zone display should be enabled only for the current camera you're working with. To simplify this process, there is an additional 'Switch to Camera' button. This button switches the first view to the selected camera and activates the display of the active zone for that camera only. ![volumeCalculateInWork](../../Plugins/VolumeCalculator\_inwork.jpg)
 
 Examples of capture volume setups could be found in the MB\_Scenes/OpticalVolumeCalculator folder
 
