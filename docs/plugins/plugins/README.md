@@ -124,12 +124,12 @@ Tools, custom objects in the scene
 
 ### Manager To Link Group Visibility with a Camera
 
-A special manager that could help to control a group visibility with a camera activation. When you switch between cameras in the viewport, the attached groups will change their visibility.
+A special manager that helps control group visibility based on camera activation. When you switch between cameras in the viewport, the visibility of the attached groups will automatically change.
 
 [Read More...](cameralinksgroupvisibility.md)
 
 ### Optical Volume Calculator
 
-The custom model that helps to calculate a unit score of a volume coverage for the optical system. In order to run the solver, you have to immitate the capturing space by placing cameras the same way how you are going to place them in the real room with a correct defined FOV and aspect ratio.
+A custom model that calculates the unit score of volume coverage for an optical system. To run the solver, you need to simulate the capture space by positioning the cameras as you would in the real room, with the correct field of view (FOV) and aspect ratio.
 
 [Read More...](opticalvolumecalculator.md)
