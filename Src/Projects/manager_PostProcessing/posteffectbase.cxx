@@ -124,7 +124,7 @@ bool PostEffectBase::PrepUniforms(const int)
 	return false;
 }
 
-bool PostEffectBase::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectBase::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
 	return false;
 }

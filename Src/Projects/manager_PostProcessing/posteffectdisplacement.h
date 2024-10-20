@@ -37,14 +37,12 @@ public:
 	const char* GetEnableMaskPropertyName() const override { return "Disp Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera) override;
+	virtual bool CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContextk) override;
 
 	virtual void Bind() override;
 	virtual void UnBind() override;
 
 protected:
-
-	FBSystem		mSystem;
 
 	// shader locations
 	enum { LOCATIONS_COUNT = 7 };

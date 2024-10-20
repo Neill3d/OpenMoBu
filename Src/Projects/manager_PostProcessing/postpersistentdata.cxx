@@ -526,25 +526,25 @@ bool PostPersistentData::FBCreate()
 
 	for (int i = 0; i < NUMBER_OF_MASKS; ++i)
 	{
-		sprintf_s(buffer, sizeof(char) * 64, "Invert Mask %c", MASK_INDEX_NAMES[i]);
+		snprintf(buffer, sizeof(char) * 64, "Invert Mask %c", MASK_INDEX_NAMES[i]);
 		FBPropertyPublish(this, Masks[i].InvertMask, buffer, nullptr, nullptr);
 
-		sprintf_s(buffer, sizeof(char) * 64, "Blur Mask %c", MASK_INDEX_NAMES[i]);
+		snprintf(buffer, sizeof(char) * 64, "Blur Mask %c", MASK_INDEX_NAMES[i]);
 		FBPropertyPublish(this, Masks[i].BlurMask, buffer, nullptr, nullptr);
 
-		sprintf_s(buffer, sizeof(char) * 64, "Blur Mask %c Scale", MASK_INDEX_NAMES[i]);
-		FBPropertyPublish(this, Masks[i].BlurMaskScale, buffer, nullptr, nullptr);
+		snprintf(buffer, sizeof(char) * 64, "Blur Mask %c Scale", MASK_INDEX_NAMES[i]);
+		Masks[i].BlurMaskScale = PropertyCreate(buffer, FBPropertyType::kFBPT_Vector2D, "Vector2", true, false, nullptr);
 
-		sprintf_s(buffer, sizeof(char) * 64, "Use Rim For Mask %c", MASK_INDEX_NAMES[i]);
+		snprintf(buffer, sizeof(char) * 64, "Use Rim For Mask %c", MASK_INDEX_NAMES[i]);
 		FBPropertyPublish(this, Masks[i].UseRimForMask, buffer, nullptr, nullptr);
 
-		sprintf_s(buffer, sizeof(char) * 64, "Mask %c Rim Power", MASK_INDEX_NAMES[i]);
+		snprintf(buffer, sizeof(char) * 64, "Mask %c Rim Power", MASK_INDEX_NAMES[i]);
 		FBPropertyPublish(this, Masks[i].MaskRimPower, buffer, nullptr, nullptr);
 
-		sprintf_s(buffer, sizeof(char) * 64, "Use Mask %c To Mix", MASK_INDEX_NAMES[i]);
+		snprintf(buffer, sizeof(char) * 64, "Use Mask %c To Mix", MASK_INDEX_NAMES[i]);
 		FBPropertyPublish(this, Masks[i].UseMixWithMask, buffer, nullptr, nullptr);
 
-		sprintf_s(buffer, sizeof(char) * 64, "Mask %c Mix With", MASK_INDEX_NAMES[i]);
+		snprintf(buffer, sizeof(char) * 64, "Mask %c Mix With", MASK_INDEX_NAMES[i]);
 		FBPropertyPublish(this, Masks[i].MixWithMask, buffer, nullptr, nullptr);
 	}
 
@@ -877,7 +877,8 @@ void PostPersistentData::SMaskProperties::SetDefaultValues()
 {
 	InvertMask = false;
 	BlurMask = false;
-	BlurMaskScale = FBVector2d(1.0, 1.0);
+	FBVector2d v(1.0, 1.0);
+	BlurMaskScale->SetData(&v);
 	UseRimForMask = 0.0;
 	MaskRimPower = 100.0;
 	UseMixWithMask = false;

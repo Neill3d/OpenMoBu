@@ -74,12 +74,12 @@ bool PostEffectFilmGrain::PrepUniforms(const int shaderIndex)
 	return true;
 }
 
-bool PostEffectFilmGrain::CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera)
+bool PostEffectFilmGrain::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
 {
-	FBTime systemTime = (pData->FG_UsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
+	const double time = (pData->FG_UsePlayTime) ? effectContext.localTime : effectContext.sysTime;
 
 	const double timerMult = pData->FG_TimeSpeed;
-	const double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
+	const double _timer = 0.01 * timerMult * time;
 
 	const double _grainamount = pData->FG_GrainAmount;
 	const double _colored = (pData->FG_Colored) ? 1.0 : 0.0;
@@ -95,9 +95,9 @@ bool PostEffectFilmGrain::CollectUIValues(PostPersistentData* pData, int w, int 
 	UpdateUniforms(pData);
 
 	if (textureWidth >= 0)
-		glUniform1f(textureWidth, static_cast<float>(w));
+		glUniform1f(textureWidth, static_cast<float>(effectContext.w));
 	if (textureHeight >= 0)
-		glUniform1f(textureHeight, static_cast<float>(h));
+		glUniform1f(textureHeight, static_cast<float>(effectContext.h));
 
 	if (timer >= 0)
 		glUniform1f(timer, static_cast<float>(_timer));

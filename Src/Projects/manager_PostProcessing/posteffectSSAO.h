@@ -37,7 +37,7 @@ public:
 	const char* GetEnableMaskPropertyName() const override { return "SSAO Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera) override;
+	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
 
 	virtual void Bind() override;
 	virtual void UnBind() override;

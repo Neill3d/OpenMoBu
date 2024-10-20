@@ -40,7 +40,7 @@ public:
 
 	void ChangeContext();
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
-	bool Prep(PostPersistentData *pData, int w, int h, FBCamera *pCamera);
+	bool Prep(PostPersistentData *pData, PostEffectContext& effectContext);
 
 	bool BeginFrame(PostEffectBuffers* buffers);
 

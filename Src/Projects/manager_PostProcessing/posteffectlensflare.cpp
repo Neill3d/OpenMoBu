@@ -114,7 +114,7 @@ bool PostEffectLensFlare::SubShader::PrepUniforms(GLSLShader* mShader)
 	return lSuccess;
 }
 
-bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
 	mCurrentShader = pData->FlareType.AsInt();
 
@@ -125,10 +125,10 @@ bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, int w, int 
 		pData->FlareType.SetData((void*) &newFlareType);
 	}
 	
-	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, GetShaderPtr(), pData, w, h, pCamera);
+	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, GetShaderPtr(), pData, effectContext);
 }
 
-bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSLShader* mShader, PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSLShader* mShader, PostPersistentData *pData, PostEffectContext& effectContext)
 {
 	m_NumberOfPasses = 1;
 	bool lSuccess = false;
@@ -139,114 +139,27 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 		pData->FlareSeed.GetData(&seedValue, sizeof(double));
 	}
 	
+	FBTime systemTime = (pData->FlareUsePlayTime) ? effectContext.localTime : effectContext.sysTime;
 	
-
-	FBTime systemTime = (pData->FlareUsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
-	if (m_LastTime < 0.0)
-		m_LastTime = systemTime.GetSecondDouble();
-	const double dt = (systemTime.GetSecondDouble() - m_LastTime);
-	
-	double _amount = pData->FlareAmount;
-
-	FBColor _tint = pData->FlareTint;
-	double _inner = pData->FlareInner;
-	double _outer = pData->FlareOuter;
+	double flareAmount = pData->FlareAmount;
+	FBColor flareTint = pData->FlareTint;
+	double flareInner = pData->FlareInner;
+	double flareOuter = pData->FlareOuter;
 
 	double timerMult = pData->FlareTimeSpeed;
-	double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
+	double flareTimer = 0.01 * timerMult * systemTime.GetSecondDouble();
 
-	double _pos[3] = { 0.01 * pData->FlarePosX, 0.01 * pData->FlarePosY, 1.0 };
+	double flarePos[3] = { 0.01 * pData->FlarePosX, 0.01 * pData->FlarePosY, 1.0 };
 
-	const float _fadeToBorders = (pData->FlareFadeToBorders) ? 1.0f : 0.0f;
-	double _borderWidth = pData->FlareBorderWidth;
-	double _feather = pData->FlareBorderFeather;
+	const float flareFadeToBorders = (pData->FlareFadeToBorders) ? 1.0f : 0.0f;
+	double flareBorderWidth = pData->FlareBorderWidth;
+	double flareFeather = pData->FlareBorderFeather;
 
 	m_DepthAttenuation = (pData->FlareDepthAttenuation) ? 1.0f : 0.0f;
 
-	// TODO: track light position in screen space
 	if (pData->UseFlareLightObject && pData->FlareLight.GetCount() > 0)
 	{
-		m_NumberOfPasses = pData->FlareLight.GetCount();
-		m_LightPositions.resize(m_NumberOfPasses);
-		m_LightColors.resize(m_NumberOfPasses);
-		m_LightAlpha.resize(m_NumberOfPasses, 0.0f);
-
-		for (int i = 0; i < m_NumberOfPasses; ++i)
-		{
-			FBLight *pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(i));
-
-			FBVector3d lightPos;
-			pLight->GetVector(lightPos);
-
-			FBMatrix mvp;
-			pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
-
-			FBVector4d v4;
-			FBVectorMatrixMult(v4, mvp, FBVector4d(lightPos[0], lightPos[1], lightPos[2], 1.0));
-
-			v4[0] = w * 0.5 * (v4[0] + 1.0);
-			v4[1] = h * 0.5 * (v4[1] + 1.0);
-
-			_pos[0] = v4[0] / w;
-			_pos[1] = v4[1] / h;
-			_pos[2] = v4[2];
-
-			m_LightPositions[i].Set(_pos);
-			FBColor color(pLight->DiffuseColor);
-			
-			bool isFading = false;
-
-			if (pData->LensFlare_UseOcclusion && pData->FlareOcclusionObjects.GetCount() > 0)
-			{
-				const int offsetX = pCamera->CameraViewportX;
-				const int offsetY = pCamera->CameraViewportY;
-
-				const int x = offsetX + static_cast<int>(v4[0]);
-				const int y = offsetY + (h - static_cast<int>(v4[1]));
-				
-				FBVector3d camPosition;
-				pCamera->GetVector(camPosition);
-				double distToLight = VectorLength( VectorSubtract(lightPos, camPosition) );
-
-				for (int i = 0, count = pData->FlareOcclusionObjects.GetCount(); i < count; ++i)
-				{
-					if (FBModel* model = FBCast<FBModel>(pData->FlareOcclusionObjects.GetAt(i)))
-					{
-						FBVector3d hitPosition, hitNormal;
-						if (model->RayCast(pCamera, x, y, hitPosition, hitNormal))
-						{
-							const double distToHit = VectorLength(VectorSubtract(hitPosition, camPosition));
-
-							if (distToHit < distToLight)
-							{
-								isFading = true;
-								break;
-							}
-						}
-					}
-
-				}
-			}
-			
-			float alpha = m_LightAlpha[i];
-			double occSpeed = 100.0;
-			pData->FlareOcclusionSpeed.GetData(&occSpeed, sizeof(double));
-			alpha += static_cast<float>(occSpeed) * ((isFading) ? -dt : dt);
-			alpha = clamp01(alpha);
-
-			const double f = smoothstep(0.0, 1.0, static_cast<double>(alpha));
-
-			color[0] *= f;
-			color[1] *= f;
-			color[2] *= f;
-
-			m_LightColors[i].Set(color);
-			m_LightAlpha[i] = alpha;
-		}
-		
-		// relative coords to a screen size
-		pData->FlarePosX = 100.0 * _pos[0]; // / w;
-		pData->FlarePosY = 100.0 * _pos[1]; // _pos[1] / h;
+		ProcessLightObjects(pData, effectContext.camera, effectContext.w, effectContext.h, effectContext.sysTimeDT, systemTime, flarePos);
 	}
 	else
 	{
@@ -255,60 +168,129 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 		m_LightAlpha.clear();
 	}
 
-	if (nullptr != mShader)
+	if (mShader)
 	{
 		mShader->Bind();
 
 		UpdateUniforms(pData);
-
-		if (seed >= 0)
-		{
-			glUniform1f(seed, static_cast<float>(seedValue));
-		}
-		
-		if (amount >= 0)
-			glUniform1f(amount, 0.01f * (float)_amount);
-
-		if (textureWidth >= 0)
-			glUniform1f(textureWidth, (float)w);
-
-		if (textureHeight >= 0)
-			glUniform1f(textureHeight, (float)h);
-
-		if (timer >= 0)
-			glUniform1f(timer, (float)_timer);
-
-		if (light_pos >= 0)
-		{
-			glUniform4f(light_pos, static_cast<float>(_pos[0]), static_cast<float>(_pos[1]), static_cast<float>(_pos[2]), 0.0f);
-		}
-
-		if (tint >= 0)
-			glUniform4f(tint, (float)_tint[0], (float)_tint[1], (float)_tint[2], 1.0f);
-
-		if (inner >= 0)
-			glUniform1f(inner, 0.01f * (float)_inner);
-
-		if (outer >= 0)
-			glUniform1f(outer, 0.01f * (float)_outer);
-
-		if (fadeToBorders >= 0)
-			glUniform1f(fadeToBorders, _fadeToBorders);
-
-		if (borderWidth >= 0)
-			glUniform1f(borderWidth, (float)_borderWidth);
-
-		if (feather >= 0)
-			glUniform1f(feather, 0.01f * (float)_feather);
+		UpdateShaderUniforms(mShader, pData, effectContext.w, effectContext.h, seedValue, flareAmount, flareTimer, flarePos, flareTint, flareInner, flareOuter, flareFadeToBorders,
+			flareBorderWidth, flareFeather);
 
 		mShader->UnBind();
-
 		lSuccess = true;
 	}
 
-	m_LastTime = systemTime.GetSecondDouble();
-
 	return lSuccess;
+}
+
+void PostEffectLensFlare::SubShader::ProcessLightObjects(PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
+{
+	m_NumberOfPasses = pData->FlareLight.GetCount();
+	m_LightPositions.resize(m_NumberOfPasses);
+	m_LightColors.resize(m_NumberOfPasses);
+	m_LightAlpha.resize(m_NumberOfPasses, 0.0f);
+
+	FBMatrix mvp;
+	pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
+
+	for (int i = 0; i < m_NumberOfPasses; ++i)
+	{
+		ProcessSingleLight(pData, pCamera, mvp, i, w, h, dt, flarePos);
+	}
+
+	// relative coords to a screen size
+	pData->FlarePosX = 100.0 * flarePos[0];
+	pData->FlarePosY = 100.0 * flarePos[1];
+}
+
+void PostEffectLensFlare::SubShader::ProcessSingleLight(PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
+{
+	FBLight* pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(index));
+
+	FBVector3d lightPos;
+	pLight->GetVector(lightPos);
+
+	FBVector4d v4;
+	FBVectorMatrixMult(v4, mvp, FBVector4d(lightPos[0], lightPos[1], lightPos[2], 1.0));
+
+	v4[0] = w * 0.5 * (v4[0] + 1.0);
+	v4[1] = h * 0.5 * (v4[1] + 1.0);
+
+	flarePos[0] = v4[0] / w;
+	flarePos[1] = v4[1] / h;
+	flarePos[2] = v4[2];
+
+	m_LightPositions[index].Set(flarePos);
+	FBColor color(pLight->DiffuseColor);
+
+	bool isFading = false;
+
+	if (pData->LensFlare_UseOcclusion && pData->FlareOcclusionObjects.GetCount() > 0)
+	{
+		const int offsetX = pCamera->CameraViewportX;
+		const int offsetY = pCamera->CameraViewportY;
+
+		const int x = offsetX + static_cast<int>(v4[0]);
+		const int y = offsetY + (h - static_cast<int>(v4[1]));
+
+		FBVector3d camPosition;
+		pCamera->GetVector(camPosition);
+		double distToLight = VectorLength(VectorSubtract(lightPos, camPosition));
+
+		for (int i = 0, count = pData->FlareOcclusionObjects.GetCount(); i < count; ++i)
+		{
+			if (FBModel* model = FBCast<FBModel>(pData->FlareOcclusionObjects.GetAt(i)))
+			{
+				FBVector3d hitPosition, hitNormal;
+				if (model->RayCast(pCamera, x, y, hitPosition, hitNormal))
+				{
+					const double distToHit = VectorLength(VectorSubtract(hitPosition, camPosition));
+
+					if (distToHit < distToLight)
+					{
+						isFading = true;
+						break;
+					}
+				}
+			}
+
+		}
+	}
+
+	float alpha = m_LightAlpha[index];
+	double occSpeed = 100.0;
+	pData->FlareOcclusionSpeed.GetData(&occSpeed, sizeof(double));
+	alpha += static_cast<float>(occSpeed) * ((isFading) ? -dt : dt);
+	alpha = clamp01(alpha);
+
+	const double f = smoothstep(0.0, 1.0, static_cast<double>(alpha));
+
+	color[0] *= f;
+	color[1] *= f;
+	color[2] *= f;
+
+	m_LightColors[index].Set(color);
+	m_LightAlpha[index] = alpha;
+}
+
+void PostEffectLensFlare::SubShader::UpdateShaderUniforms(GLSLShader* mShader, PostPersistentData* pData, int w, int h,
+	double seedValue, double flareAmount, double flareTimer, double* flarePos,
+	FBColor& flareTint, double flareInner, double flareOuter, float fadeToBordersValue, double borderWidthValue, double featherValue)
+{
+	// Update all shader uniforms here
+	if (seed >= 0) glUniform1f(seed, static_cast<float>(seedValue));
+	if (amount >= 0) glUniform1f(amount, 0.01f * static_cast<float>(flareAmount));
+	if (textureWidth >= 0) glUniform1f(textureWidth, static_cast<float>(w));
+	if (textureHeight >= 0) glUniform1f(textureHeight, static_cast<float>(h));
+	if (timer >= 0) glUniform1f(timer, static_cast<float>(flareTimer));
+	if (light_pos >= 0) glUniform4f(light_pos, static_cast<float>(flarePos[0]), static_cast<float>(flarePos[1]), static_cast<float>(flarePos[2]), 0.0f);
+	if (tint >= 0) glUniform4f(tint, static_cast<float>(flareTint[0]), static_cast<float>(flareTint[1]), static_cast<float>(flareTint[2]), 1.0f);
+	if (inner >= 0) glUniform1f(inner, 0.01f * static_cast<float>(flareInner));
+	if (outer >= 0) glUniform1f(outer, 0.01f * static_cast<float>(flareOuter));
+	if (fadeToBorders >= 0) glUniform1f(fadeToBorders, fadeToBordersValue);
+	if (borderWidth >= 0) glUniform1f(borderWidth, static_cast<float>(borderWidthValue));
+	if (feather >= 0) glUniform1f(feather, 0.01f * static_cast<float>(featherValue));
+
 }
 
 const int PostEffectLensFlare::GetNumberOfPasses() const

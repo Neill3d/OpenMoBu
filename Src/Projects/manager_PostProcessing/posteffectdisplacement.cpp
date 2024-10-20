@@ -87,14 +87,14 @@ bool PostEffectDisplacement::PrepUniforms(const int shaderIndex)
 	return lSuccess;
 }
 
-bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
 	bool lSuccess = false;
 
-	FBTime systemTime = (pData->Disp_UsePlayTime) ? mSystem.LocalTime : mSystem.SystemTime;
+	double time = (pData->Disp_UsePlayTime) ? effectContext.localTime : effectContext.sysTime;
 
 	const double timerMult = pData->Disp_Speed;
-	const double _timer = 0.01 * timerMult * systemTime.GetSecondDouble();
+	const double _timer = 0.01 * timerMult * time;
 
 	const double xdist = pData->Disp_MagnitudeX;
 	const double ydist = pData->Disp_MagnitudeY;

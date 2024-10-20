@@ -143,6 +143,7 @@ public:
 
 	unsigned	GetColorObject ( const int index = 0 ) const
 	{
+		assert(index < MAX_FRAMEBUFFER_ATTACHMENTS);
 		return mColorAttachments[index].id;
 	}
 	unsigned	GetDepthObject() const

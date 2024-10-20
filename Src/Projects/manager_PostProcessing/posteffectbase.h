@@ -83,6 +83,20 @@ protected:
 	GLint useMaskLoc{ -1 };
 };
 
+struct PostEffectContext
+{
+	FBCamera* camera{ nullptr };
+	int w{ 1 };
+	int h{ 1 };
+	int localFrame{ 0 };
+	
+	double sysTime{ 0.0 };
+	double sysTimeDT{ 0.0 };
+
+	double localTime{ 0.0 };
+	double localTimeDT{ 0.0 };
+};
+
 /// <summary>
 /// base class for every effect in a post processing chain
 /// </summary>
@@ -105,7 +119,7 @@ public:
 	bool Load(const int shaderIndex, const char *vname, const char *fname);
 
 	virtual bool PrepUniforms(const int shaderIndex);
-	virtual bool CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera);		//!< grab main UI values for the effect
+	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);		//!< grab main UI values for the effect
 
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const;

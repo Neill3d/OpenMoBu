@@ -119,22 +119,22 @@ bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 	return true;
 }
 
-bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
-	const float znear = (float) pCamera->NearPlaneDistance;
-	const float zfar = (float) pCamera->FarPlaneDistance;
+	const float znear = (float) effectContext.camera->NearPlaneDistance;
+	const float zfar = (float) effectContext.camera->FarPlaneDistance;
 	FBCameraType cameraType;
-	pCamera->Type.GetData(&cameraType, sizeof(FBCameraType));
+	effectContext.camera->Type.GetData(&cameraType, sizeof(FBCameraType));
 	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
 	
 	// calculate a diagonal fov
 
 	// convert to mm
-	const double filmWidth = 25.4 * pCamera->FilmSizeWidth;
-	const double filmHeight = 25.4 * pCamera->FilmSizeHeight;
+	const double filmWidth = 25.4 * effectContext.camera->FilmSizeWidth;
+	const double filmHeight = 25.4 * effectContext.camera->FilmSizeHeight;
 
 	const double diag = sqrt(filmWidth*filmWidth + filmHeight*filmHeight);
-	const double focallen = pCamera->FocalLength;
+	const double focallen = effectContext.camera->FocalLength;
 
 	const float fov = 2.0 * atan(diag / (focallen * 2.0));
 
@@ -152,8 +152,8 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 		onlyAO = 1.0f;
 
 	FBMatrix dproj, dinvProj;
-	pCamera->GetCameraMatrix(dproj, kFBProjection);
-	pCamera->GetCameraMatrix(dinvProj, kFBProjInverse);
+	effectContext.camera->GetCameraMatrix(dproj, kFBProjection);
+	effectContext.camera->GetCameraMatrix(dinvProj, kFBProjInverse);
 
 	float P[16];
 	for (int i = 0; i < 16; ++i)
@@ -181,10 +181,10 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 
 	float projScale;
 	if (useOrtho){
-		projScale = float(h) / (projInfoOrtho[1]);
+		projScale = float(effectContext.h) / (projInfoOrtho[1]);
 	}
 	else {
-		projScale = float(h) / (tanf(fov * 0.5f) * 2.0f);
+		projScale = float(effectContext.h) / (tanf(fov * 0.5f) * 2.0f);
 	}
 
 	// radius
@@ -209,8 +209,8 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 	float aoMult = 1.0f / (1.0f - bias);
 
 	// resolution
-	int quarterWidth = ((w + 3) / 4);
-	int quarterHeight = ((h + 3) / 4);
+	int quarterWidth = ((effectContext.w + 3) / 4);
+	int quarterHeight = ((effectContext.h + 3) / 4);
 
 	GLSLShader* mShader = GetShaderPtr();
 	if (!mShader)
@@ -252,7 +252,7 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, int w, int h, FB
 	if (mLoc.InvQuarterResolution >= 0)
 		glUniform2f(mLoc.InvQuarterResolution, 1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
 	if (mLoc.InvFullResolution >= 0)
-		glUniform2f(mLoc.InvFullResolution, 1.0f / float(w), 1.0f / float(h));
+		glUniform2f(mLoc.InvFullResolution, 1.0f / float(effectContext.w), 1.0f / float(effectContext.h));
 
 	if (mLoc.hbaoRandom >= 0)
 		glUniform4fv(mLoc.hbaoRandom, 1, mRandom);

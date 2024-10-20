@@ -25,13 +25,15 @@
 
 void PostProcessContextData::Init()
 {
+    mStartSystemTime = mSystem.SystemTime;
+    mLastSystemTime = std::numeric_limits<double>::max();
+    mLastLocalTime = std::numeric_limits<double>::max();
     mVideoRendering = false;
     mLastPaneCount = 0;
 
     for (int i = 0; i < 4; ++i)
     {
         mViewerViewport[i] = 0;
-        //mLocalViewport[i] = 0;
         mSchematicView[i] = false;
     }
 
@@ -131,18 +133,33 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 #endif
         
         FBTime sysTime = mSystem.SystemTime;
+        sysTime = sysTime - mStartSystemTime;
+        FBTime localTime = mSystem.LocalTime;
         const double sysTimeSecs = sysTime.GetSecondDouble();
+        const double localTimeSecs = localTime.GetSecondDouble();
+
+        if (mLastSystemTime == std::numeric_limits<double>::max())
+            mLastSystemTime = sysTimeSecs;
+        if (mLastLocalTime == std::numeric_limits<double>::max())
+            mLastLocalTime = localTimeSecs;
+
+        const double systemTimeDT = sysTimeSecs - mLastSystemTime;
+        const double localTimeDT = localTimeSecs - mLastLocalTime;
+
+        mLastSystemTime = sysTimeSecs;
+        mLastLocalTime = localTimeSecs;
 
         for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
         {
-            int localViewport[4];
             FBCamera *pCamera = mSystem.Renderer->GetCameraInPane(nPane);
 
-            localViewport[0] = pCamera->CameraViewportX;
-            localViewport[1] = pCamera->CameraViewportY;
-            localViewport[2] = pCamera->CameraViewportWidth;
-            localViewport[3] = pCamera->CameraViewportHeight;
-
+            int localViewport[4] = {
+                pCamera->CameraViewportX,
+                pCamera->CameraViewportY,
+                pCamera->CameraViewportWidth,
+                pCamera->CameraViewportHeight
+            };
+            
             if (true == pCamera->SystemCamera)
             {
                 localViewport[2] = 0;
@@ -192,7 +209,17 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
                 // 2. process it
 
-                mEffectChain.Prep(mPaneSettings[nPane], localViewport[2], localViewport[3], pCamera);
+                PostEffectContext effectContext;
+                effectContext.camera = pCamera;
+                effectContext.w = localViewport[2];
+                effectContext.h = localViewport[3];
+                effectContext.sysTime = sysTimeSecs;
+                effectContext.localTime = localTimeSecs;
+                effectContext.sysTimeDT = systemTimeDT;
+                effectContext.localTimeDT = localTimeDT;
+                effectContext.localFrame = localTime.GetFrame();
+
+                mEffectChain.Prep(mPaneSettings[nPane], effectContext);
 
                 if (mEffectChain.Process(currBuffers, sysTimeSecs)
                     && nullptr != mShaderSimple.get())

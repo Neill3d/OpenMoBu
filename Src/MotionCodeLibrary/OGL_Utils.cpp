@@ -498,7 +498,7 @@ bool BlitFBOToFBOCustomAttachment(const GLint inFBO, const int inWidth, const in
 
 	glReadBuffer(GL_COLOR_ATTACHMENT0 + inAttachmentIndex);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0 + outAttachmentIndex);
-	GLenum buffers0[1] = { GL_COLOR_ATTACHMENT0 + outAttachmentIndex };
+	GLenum buffers0[2] = { GL_COLOR_ATTACHMENT0 + outAttachmentIndex, 0 };
 	glDrawBuffers(1, &buffers0[0]);
 
 	glBlitFramebuffer(0, 0, inWidth, inHeight, 0, 0, outWidth, outHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);

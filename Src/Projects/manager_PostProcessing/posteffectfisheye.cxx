@@ -70,7 +70,7 @@ bool PostEffectFishEye::PrepUniforms(const int shaderIndex)
 	return true;
 }
 
-bool PostEffectFishEye::CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera)
+bool PostEffectFishEye::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
 {
 	const double amount = pData->FishEyeAmount;
 	const double lensradius = pData->FishEyeLensRadius;

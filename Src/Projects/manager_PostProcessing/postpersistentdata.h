@@ -89,7 +89,7 @@ public: // PROPERTIES
 	{
 		FBPropertyBool				InvertMask;		//!< reverse colors in a rendered masks
 		FBPropertyBool				BlurMask;		//!< apply a blur pass on a rendered mask
-		FBPropertyVector2d			BlurMaskScale;	//!< control a blur scaling of mask a
+		FBProperty* BlurMaskScale{ nullptr }; //!< control a blur scaling of mask a
 		FBPropertyAnimatableDouble	UseRimForMask;	//!< objects in mask will be rendered with rim effect, like a back-lit. that could emulate a mask falloff
 		FBPropertyAnimatableDouble	MaskRimPower;	//!< rim effect power, amplify the emulated mask falloff effect
 		FBPropertyBool				UseMixWithMask;
@@ -100,6 +100,16 @@ public: // PROPERTIES
 
 	static const int NUMBER_OF_MASKS{ 4 };
 	SMaskProperties		Masks[NUMBER_OF_MASKS];
+
+	FBVector2d GetMaskScale(const int maskIndex) const
+	{
+		assert(maskIndex < NUMBER_OF_MASKS);
+
+		FBVector3d v;
+		Masks[maskIndex].BlurMaskScale->GetData(v, sizeof(FBVector3d));
+
+		return FBVector2d(v[0], v[1]);
+	}
 
 	// make effect local for a specified camera (override global effect)
 	FBPropertyBool				UseCameraObject;

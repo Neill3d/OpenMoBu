@@ -109,10 +109,12 @@ bool PostEffectDOF::PrepUniforms(const int shaderIndex)
 	return true;
 }
 
-bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
-	double _znear = pCamera->NearPlaneDistance;
-	double _zfar = pCamera->FarPlaneDistance;
+	FBCamera* camera = effectContext.camera;
+
+	double _znear = camera->NearPlaneDistance;
+	double _zfar = camera->FarPlaneDistance;
 
 	double _focalDistance = pData->FocalDistance;
 	double _focalRange = pData->FocalRange;
@@ -137,22 +139,22 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBC
 
 	if (pData->UseCameraDOFProperties)
 	{
-		_focalDistance = pCamera->FocusSpecificDistance;
-		_focalRange = pCamera->FocusAngle;
+		_focalDistance = camera->FocusSpecificDistance;
+		_focalRange = camera->FocusAngle;
 
 		FBModel *pInterest = nullptr;
 		FBCameraFocusDistanceSource cameraFocusDistanceSource;
-		pCamera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource));
+		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource));
 		if (kFBFocusDistanceCameraInterest == cameraFocusDistanceSource)
-			pInterest = pCamera->Interest;
+			pInterest = camera->Interest;
 		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)
-			pInterest = pCamera->FocusModel;
+			pInterest = camera->FocusModel;
 
 		if (nullptr != pInterest)
 		{
 			FBMatrix modelView, modelViewI;
 
-			((FBModel*)pCamera)->GetMatrix(modelView);
+			((FBModel*)camera)->GetMatrix(modelView);
 			FBMatrixInverse(modelViewI, modelView);
 
 			FBVector3d lPos;
@@ -172,7 +174,7 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBC
 	{
 		FBMatrix modelView, modelViewI;
 
-		((FBModel*)pCamera)->GetMatrix(modelView);
+		((FBModel*)camera)->GetMatrix(modelView);
 		FBMatrixInverse(modelViewI, modelView);
 
 		FBVector3d lPos;
@@ -197,9 +199,9 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, int w, int h, FBC
 	UpdateUniforms(pData);
 
 	if (textureWidth >= 0)
-		glUniform1f(textureWidth, (float)w);
+		glUniform1f(textureWidth, (float)effectContext.w);
 	if (textureHeight >= 0)
-		glUniform1f(textureHeight, (float)h);
+		glUniform1f(textureHeight, (float)effectContext.h);
 
 	if (focalDistance >= 0)
 		glUniform1f(focalDistance, (float)_focalDistance);

@@ -39,7 +39,7 @@ public:
 	const char* GetEnableMaskPropertyName() const override { return "Fish Eye Use Masking"; }
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera) override;
+	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
 
 protected:
 

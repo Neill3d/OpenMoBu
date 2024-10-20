@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include <map>
+#include <limits>
 
 #include "GL/glew.h"
 
@@ -38,17 +39,21 @@ struct PostProcessContextData
 public:
 	FBSystem			mSystem;
 
+	FBTime				mStartSystemTime;
+	double				mLastSystemTime{ std::numeric_limits<double>::max() };
+	double				mLastLocalTime{ std::numeric_limits<double>::max() };
+
 	//
-	int				mLastPaneCount;
+	int				mLastPaneCount{ 0 };
 	
 	bool			mSchematicView[4];
-	bool			mVideoRendering;
+	bool			mVideoRendering = false;
 
 	int				mViewport[4];		// x, y, width, height
 	int				mViewerViewport[4];
 
-	int				mEnterId;
-	size_t			mFrameId;
+	int				mEnterId = 0;
+	size_t			mFrameId = 0;
 
 	GLint			mAttachedFBO[MAX_ATTACH_STACK];
 

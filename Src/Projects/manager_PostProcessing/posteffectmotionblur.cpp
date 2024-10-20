@@ -88,30 +88,26 @@ bool PostEffectMotionBlur::PrepUniforms(const int shaderIndex)
 	return lSuccess;
 }
 
-bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
 	bool lSuccess = false;
 
-	FBTime localTime = FBSystem::TheOne().LocalTime;
-	//FBTime systemTime = FBSystem::TheOne().SystemTime;
-
 	const double _amount = pData->MotionBlurAmount;
 
-	float znear = (float) pCamera->NearPlaneDistance;
-	float zfar = (float) pCamera->FarPlaneDistance;
+	float znear = (float) effectContext.camera->NearPlaneDistance;
+	float zfar = (float) effectContext.camera->FarPlaneDistance;
 	FBCameraType cameraType;
-	pCamera->Type.GetData(&cameraType, sizeof(FBCameraType));
+	effectContext.camera->Type.GetData(&cameraType, sizeof(FBCameraType));
 	bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
-	//float fov = (float) pCamera->FieldOfView;
-
+	
 	// calculate a diagonal fov
 
 	// convert to mm
-	double filmWidth = 25.4 * pCamera->FilmSizeWidth;
-	double filmHeight = 25.4 * pCamera->FilmSizeHeight;
+	double filmWidth = 25.4 * effectContext.camera->FilmSizeWidth;
+	double filmHeight = 25.4 * effectContext.camera->FilmSizeHeight;
 
 	double diag = sqrt(filmWidth*filmWidth + filmHeight*filmHeight);
-	double focallen = pCamera->FocalLength;
+	double focallen = effectContext.camera->FocalLength;
 
 	float fov = 2.0 * atan(diag / (focallen * 2.0));
 
@@ -124,10 +120,10 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 
 
 	FBMatrix dproj, dinvProj, dinvModelview;
-	pCamera->GetCameraMatrix(dproj, kFBProjection);
-	pCamera->GetCameraMatrix(dinvProj, kFBProjInverse);
+	effectContext.camera->GetCameraMatrix(dproj, kFBProjection);
+	effectContext.camera->GetCameraMatrix(dinvProj, kFBProjInverse);
 
-	pCamera->GetCameraMatrix(dinvModelview, kFBModelViewProj);
+	effectContext.camera->GetCameraMatrix(dinvModelview, kFBModelViewProj);
 	FBMatrixInverse(dinvModelview, dinvModelview);
 
 	//
@@ -168,10 +164,10 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 
 	float projScale;
 	if (useOrtho){
-		projScale = float(h) / (projInfoOrtho[1]);
+		projScale = float(effectContext.h) / (projInfoOrtho[1]);
 	}
 	else {
-		projScale = float(h) / (tanf(fov * 0.5f) * 2.0f);
+		projScale = float(effectContext.h) / (tanf(fov * 0.5f) * 2.0f);
 	}
 
 	// radius
@@ -183,8 +179,8 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 //	float RadiusToScreen = R * 0.5f * projScale;
 
 	// resolution
-	int quarterWidth = ((w + 3) / 4);
-	int quarterHeight = ((h + 3) / 4);
+	int quarterWidth = ((effectContext.w + 3) / 4);
+	int quarterHeight = ((effectContext.h + 3) / 4);
 
 	GLSLShader* mShader = GetShaderPtr();
 	if (nullptr != mShader)
@@ -217,29 +213,26 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, int w, int
 		if (mLoc.InvQuarterResolution >= 0)
 			glUniform2f(mLoc.InvQuarterResolution, 1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
 		if (mLoc.InvFullResolution >= 0)
-			glUniform2f(mLoc.InvFullResolution, 1.0f / float(w), 1.0f / float(h));
+			glUniform2f(mLoc.InvFullResolution, 1.0f / float(effectContext.w), 1.0f / float(effectContext.h));
 
-		int localFrame = localTime.GetFrame();
-		int lastFrame = mLastTime.GetFrame();
-
-		if (0 == localFrame || (localFrame != lastFrame))
+		int localFrame = effectContext.localFrame; 
+		
+		if (0 == localFrame || (localFrame != mLastLocalFrame))
 		{
 			// store modelview proj for the next frame
-			pCamera->GetCameraMatrix(mLastModelViewProj, kFBModelViewProj);
+			effectContext.camera->GetCameraMatrix(mLastModelViewProj, kFBModelViewProj);
 
 			if (mLoc.dt >= 0)
 			{
-				float dt = (float)(localTime.GetSecondDouble() - mLastTime.GetSecondDouble());
+				float dt = static_cast<float>(effectContext.localTimeDT);
 				dt *= 0.01f * (float)_amount;
 				glUniform1f(mLoc.dt, dt);
 			}
 
-			mLastTime = localTime;
+			mLastLocalFrame = effectContext.localFrame;
 		}
 
 		mShader->UnBind();
-
-		
 		lSuccess = true;
 	}
 

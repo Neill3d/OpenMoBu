@@ -73,7 +73,7 @@ bool PostEffectColor::PrepUniforms(const int shaderIndex)
 
 }
 
-bool PostEffectColor::CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera)
+bool PostEffectColor::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
 {
 	const float chromatic_aberration = (pData->ChromaticAberration) ? 1.0f : 0.0f;
 	const FBVector2d ca_dir = pData->ChromaticAberrationDirection;
@@ -96,7 +96,7 @@ bool PostEffectColor::CollectUIValues(PostPersistentData* pData, int w, int h, F
 
 	if (mResolution >= 0)
 	{
-		glUniform2f(mResolution, static_cast<float>(w), static_cast<float>(h));
+		glUniform2f(mResolution, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
 	}
 
 	if (mChromaticAberration >= 0)

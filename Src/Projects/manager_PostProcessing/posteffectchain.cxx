@@ -80,12 +80,12 @@ void PostEffectChain::ChangeContext()
 	mLastCompressTime = 0.0;
 }
 
-bool PostEffectChain::Prep(PostPersistentData *pData, int w, int h, FBCamera *pCamera)
+bool PostEffectChain::Prep(PostPersistentData *pData, PostEffectContext& effectContext)
 {
 	bool lSuccess = true;
 
 	mSettings = pData;
-	mLastCamera = pCamera;
+	mLastCamera = effectContext.camera;
 
 	if (!mSettings.Ok())
 		return false;
@@ -114,31 +114,31 @@ bool PostEffectChain::Prep(PostPersistentData *pData, int w, int h, FBCamera *pC
 	// update UI values
 
 	if (true == mSettings->FishEye && mFishEye.get())
-		mFishEye->CollectUIValues(mSettings, w,h, pCamera);
+		mFishEye->CollectUIValues(mSettings, effectContext);
 	
 	if (true == mSettings->ColorCorrection && mColor.get())
-		mColor->CollectUIValues(mSettings, w,h, pCamera);
+		mColor->CollectUIValues(mSettings, effectContext);
 	
 	if (true == mSettings->Vignetting && mVignetting.get())
-		mVignetting->CollectUIValues(mSettings, w,h, pCamera);
+		mVignetting->CollectUIValues(mSettings, effectContext);
 	
 	if (true == mSettings->FilmGrain && mFilmGrain.get())
-		mFilmGrain->CollectUIValues(mSettings, w,h, pCamera);
+		mFilmGrain->CollectUIValues(mSettings, effectContext);
 
 	if (true == mSettings->LensFlare && mLensFlare.get())
-		mLensFlare->CollectUIValues(mSettings, w,h, pCamera);
+		mLensFlare->CollectUIValues(mSettings, effectContext);
 
 	if (true == mSettings->SSAO && mSSAO.get())
-		mSSAO->CollectUIValues(mSettings, w,h, pCamera);
+		mSSAO->CollectUIValues(mSettings, effectContext);
 
 	if (true == mSettings->DepthOfField && mDOF.get())
-		mDOF->CollectUIValues(mSettings, w, h, pCamera);
+		mDOF->CollectUIValues(mSettings, effectContext);
 
 	if (true == mSettings->Displacement && mDisplacement.get())
-		mDisplacement->CollectUIValues(mSettings, w, h, pCamera);
+		mDisplacement->CollectUIValues(mSettings, effectContext);
 
 	if (true == mSettings->MotionBlur && mMotionBlur.get())
-		mMotionBlur->CollectUIValues(mSettings, w, h, pCamera);
+		mMotionBlur->CollectUIValues(mSettings, effectContext);
 
 	return lSuccess;
 }
@@ -585,35 +585,37 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
 
 void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers)
 {
+	assert(maskIndex < PostPersistentData::NUMBER_OF_MASKS);
+
 	FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
 
 	// Bilateral Blur Pass
 
 	const GLuint texid = maskBuffer->GetColorObject(maskIndex);
 	glBindTexture(GL_TEXTURE_2D, texid);
-
+	
 	buffers->GetBufferBlurPtr()->Bind();
 	mShaderImageBlur->Bind();
 
 	const int w = buffers->GetWidth();
 	const int h = buffers->GetHeight();
-
-	const FBVector2d blurMaskScale = mSettings->Masks[maskIndex].BlurMaskScale;
-
+	
+	const FBVector2d blurMaskScale = mSettings->GetMaskScale(maskIndex);
+	
 	if (mLocImageBlurScale >= 0)
 		glUniform4f(mLocImageBlurScale,
 			blurMaskScale.mValue[0] / static_cast<float>(w),
 			blurMaskScale.mValue[1] / static_cast<float>(h),
 			1.0f / static_cast<float>(w),
 			1.0f / static_cast<float>(h));
-
+	
 	drawOrthoQuad2d(w, h);
-
+	
 	mShaderImageBlur->UnBind();
 	buffers->GetBufferBlurPtr()->UnBind();
-
+	
 	glBindTexture(GL_TEXTURE_2D, 0);
-
+	
 	BlitFBOToFBOCustomAttachment(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(), 0,
 		buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), maskIndex);
 }

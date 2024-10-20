@@ -69,7 +69,7 @@ bool PostEffectVignetting::PrepUniforms(const int shaderIndex)
 	return true;
 }
 
-bool PostEffectVignetting::CollectUIValues(PostPersistentData* pData, int w, int h, FBCamera* pCamera)
+bool PostEffectVignetting::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
 {
 	const double amount = pData->VignAmount;
 	const double vignout = pData->VignOut;
