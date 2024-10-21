@@ -7,24 +7,30 @@ Supported versions
 - 2017, 2018, 2019-2020, 2022, 2023, 2024, 2025
 
 Plugins
-* relation box - poseReader
-* relation box - ray Intersect
+* relation box - Comet's poseReader
+* relation box - ray Intersect, sphere coords
 * relation box - spring
 * relation box - RBF Interpolation
-* relation box - pose Transform (starting from 2022)
-* relation box - quaternion operations
+* relation box - pose transform
+* relation box - pose transform (starting from 2022)
+* relation box - quaternion math
 * device - project Tango
 * device - Connection with a FaceCap iPhone App
 * constraint - attachment
 * constraint - driven
 * constraint - twist rotation extraction
 * manipulator - view camera locker (starting from 2017)
+* manager - link camera and group visibility
 * manager - auto interpolation patch (starting from 2017)
 * manager - post processing (starting from 2017)
 * manager - references (starting from 2017)
+* renderer - render colors
 * shader - super dynamic lighting
+* shader - GPU particles
+* texture - texture advanced blends
 * fbx extension references (starting from 2017)
 * solver - auto compute normals
+* tools - blendshape toolkit
 * misc - optical MoCap volume calculator
 
 Scripts\Neill3d

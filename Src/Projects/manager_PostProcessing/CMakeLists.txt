@@ -73,7 +73,7 @@ add_library(${PROJECT_NAME} SHARED ${SRCS} ${SHADERS} ${IMGUI_CORE} ${IMGUI_NODE
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
-target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productversion} GLEW_STATIC HUD_FONT)
+target_compile_definitions(${PROJECT_NAME} PRIVATE PRODUCT_VERSION=${productversion} GLEW_STATIC HUD_FONT NOMINMAX)
 
 #
 # GLEW
