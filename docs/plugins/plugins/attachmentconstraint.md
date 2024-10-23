@@ -1,6 +1,6 @@
 # Surface Attachment Constraint
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (2).png" alt=""><figcaption></figcaption></figure>
 
 A constraint to attach the transform of a given model to the deformable surface of another model.
 
