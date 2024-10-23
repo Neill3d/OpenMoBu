@@ -12,7 +12,7 @@ MotionBuilder loads models with vertex normal information used for lighting. The
 
 <summary>More examples</summary>
 
-![](<../../.gitbook/assets/image (1) (1).png>)
+![](<../../.gitbook/assets/image (1) (1) (1).png>)
 
 ![](<../../.gitbook/assets/normals\_solver\_01 (1).jpg>)
 

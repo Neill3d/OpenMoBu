@@ -13,9 +13,9 @@ The main use of this constraint is to transfer the value of a non-animatable pro
 * Select the property for both the source and the destination. An example is shown in the picture.
 * Activate the constraint, and the value from the source object's property will be transferred to the destination object's property.
 
-<figure><img src="../../.gitbook/assets/image (2).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (2) (1).png" alt=""><figcaption></figcaption></figure>
 
-<figure><img src="../../.gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (1) (1).png" alt=""><figcaption></figcaption></figure>
 
 ### Test Scenes
 

@@ -43,9 +43,11 @@ A set of plugins that constains source object(s) with a destination object(s) wi
 
 A plugin which handle some external Input/Output with real-time data flow and nodes constraints
 
-### FaceCap Device
+### OSC Facial Device (FaceCap)
 
-A device plugin for live streaming via OSC from FaceCap iPhone App For more information, please visit [FaceCap official website](https://bannaflak.com/face-cap/index.html)
+<img src="../../.gitbook/assets/image (1).png" alt="" data-size="line"> A device plugin for live streaming via OSC from FaceCap iPhone App For more information, please visit [FaceCap official website](https://bannaflak.com/face-cap/index.html)
+
+<img src="../../.gitbook/assets/image.png" alt="" data-size="line"> In additional, there is a way to redirect packets from LiveLink Face App int o OSC packets by runing a python based service - [https://github.com/Neill3d/PyLiveLinkFace](https://github.com/Neill3d/PyLiveLinkFace)
 
 ## View Manipulators
 
