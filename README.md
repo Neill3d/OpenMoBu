@@ -9,12 +9,12 @@ https://discord.gg/EU5E2p9VCf
 
 Please post issues and feature requests to this [github repository issues section](https://github.com/Neill3d/OpenMoBu/issues)
 
-[![MoPlugs](https://github.com/Neill3d/MoBu/blob/master/Documentation/Images/Bryan_usecase.jpg)]()
+[![MoPlugs](https://github.com/Neill3d/OpenMoBu_Documentation/blob/main/Documentation/Images/Bryan_usecase.jpg)]()
 
 ---
  Note! Please have a look at the repository Wiki pages for more information about setup and scripts/plugins
 
-[Documentation pages](http://neill3d.github.io/OpenMoBu/)
+[Documentation pages](https://docs.openmobu.org/)
 
 ## Introduction webinars
 * Part 1 - https://youtu.be/sgzunIbNcp4
