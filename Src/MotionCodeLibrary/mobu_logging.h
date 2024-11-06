@@ -25,3 +25,7 @@
 	FBTrace(buffer); \
 	va_end(args); \
 }
+
+// declaration of log functions
+extern void LOGI(const char* pFormatString, ...);
+extern void LOGE(const char* pFormatString, ...);

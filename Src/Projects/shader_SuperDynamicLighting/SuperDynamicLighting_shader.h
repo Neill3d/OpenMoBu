@@ -157,7 +157,7 @@ public:
 
 public:
 
-	const Graphics::CGPUShaderLights *GetShaderLightsPtr() const {
+	const Graphics::ShaderLightManager *GetShaderLightsPtr() const {
 		return mShaderLights.get();
 	}
 
@@ -179,7 +179,7 @@ protected:
 	bool								mNeedUpdateTextures;	// we should update textures after change a context
 
 	std::vector<FBLight*>							mLightsPtr;
-	std::unique_ptr<Graphics::CGPUShaderLights>		mShaderLights;
+	std::unique_ptr<Graphics::ShaderLightManager>		mShaderLights;
 	
 	OGLCullFaceInfo			mCullFaceInfo;
 	FBModelCullingMode		mLastCullingMode;

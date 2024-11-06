@@ -1,8 +1,17 @@
 
 project(shader_SuperDynamicLighting LANGUAGES CXX)
 
-file(GLOB_RECURSE SRCS *.cxx *.cpp *.h *.vsh *.fsh)
-add_library(${PROJECT_NAME} SHARED ${SRCS})
+set (SHADERS
+    GLSL/scene_bufferid.fsh
+    GLSL/scene_bufferid.vsh
+    GLSL/scene_shading.fsh
+    GLSL/scene_shading.vsh
+)
+source_group("Shaders" FILES ${SHADERS})
+
+
+file(GLOB_RECURSE SRCS *.cxx *.cpp *.h)
+add_library(${PROJECT_NAME} SHARED ${SRCS} ${SHADERS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include ${CMAKE_SOURCE_DIR}/MotionCodeLibrary)
 

@@ -291,19 +291,19 @@ namespace Graphics
 		FBScene *pScene = FBSystem::TheOne().Scene;
 		int numLights = pScene->Lights.GetCount();
 
-		auto &lights = mGPUSceneLights->GetLightsVector();
-		auto &dirLights = mGPUSceneLights->GetDirLightsVector();
+		//auto &lights = mGPUSceneLights->GetLightsVector();
+		//auto &dirLights = mGPUSceneLights->GetDirLightsVector();
 
 		if (0 == numLights)
 		{
 			// only 2 directional lights and not cluster work
-			dirLights.resize(2);
-			lights.clear();
+			mGPUSceneLights->Resize(2, 0);
+			
 			//pLightsManager->mLightCasters.clear();
 			//pLightsManager->mLightCastersDataPtr.clear();
 
-			ConstructDefaultLight0(false, camModelView, camRotationMatrix, dirLights[0]);
-			ConstructDefaultLight1(false, camModelView, camRotationMatrix, dirLights[1]);
+			ConstructDefaultLight0(false, camModelView, camRotationMatrix, mGPUSceneLights->GetDirLightRef(0));
+			ConstructDefaultLight1(false, camModelView, camRotationMatrix, mGPUSceneLights->GetDirLightRef(1));
 		}
 		else
 		{
@@ -338,8 +338,8 @@ namespace Graphics
 			mUsedInfiniteLights.resize(numDirLights);
 			mUsedPointLights.resize(numPointLights);
 
-			dirLights.resize(numDirLights);
-			lights.resize(numPointLights);
+			mGPUSceneLights->Resize(numDirLights, numPointLights);
+
 			//pLightsManager->mLightCasters.resize(numLightCasters);
 			//pLightsManager->mLightCastersDataPtr.resize(numLightCasters);
 
@@ -356,15 +356,15 @@ namespace Graphics
 				{
 					if (pLight->LightType.AsInt() != kFBLightTypeInfinite)
 					{
-						ConstructFromFBLight(false, camModelView, camRotationMatrix, pLight, lights[numPointLights]);
-						pLightData = &lights[numPointLights];
+						ConstructFromFBLight(false, camModelView, camRotationMatrix, pLight, mGPUSceneLights->GetLightRef(numPointLights));
+						pLightData = &mGPUSceneLights->GetLightRef(numPointLights);
 						mUsedPointLights[numPointLights] = pLight;
 						numPointLights++;
 					}
 					else
 					{
-						ConstructFromFBLight(false, camModelView, camRotationMatrix, pLight, dirLights[numDirLights]);
-						pLightData = &dirLights[numDirLights];
+						ConstructFromFBLight(false, camModelView, camRotationMatrix, pLight, mGPUSceneLights->GetDirLightRef(numDirLights));
+						pLightData = &mGPUSceneLights->GetDirLightRef(numDirLights);
 						mUsedInfiniteLights[numDirLights] = pLight;
 						numDirLights++;
 					}
@@ -387,7 +387,7 @@ namespace Graphics
 		}
 	}
 
-	void SuperShader::PrepLightsInViewSpace(CGPUShaderLights *pLights)
+	void SuperShader::PrepLightsInViewSpace(ShaderLightManager *pLights)
 	{
 		using namespace nv;
 		FBMatrix pCamMatrix(mCameraCache.mv); // (cameraCache.mv);
@@ -417,7 +417,7 @@ namespace Graphics
 			pLights->UpdateTransformedLights(mCameraCache.mv4, modelrotation, modelscaling);
 	}
 
-	void SuperShader::PrepLightsFromFBList(CGPUShaderLights *pShaderLights,
+	void SuperShader::PrepLightsFromFBList(ShaderLightManager *pShaderLights,
 		const CCameraInfoCache &cameraCache, std::vector<FBLight*> &mobuLights)
 	{
 		using namespace nv;
@@ -443,19 +443,19 @@ namespace Graphics
 		//
 		const int numLights = (int)mobuLights.size();
 
-		auto &dstLights = pShaderLights->GetLightsVector();
-		auto &dstDirLights = pShaderLights->GetDirLightsVector();
+		//auto &dstLights = pShaderLights->GetLightsVector();
+		//auto &dstDirLights = pShaderLights->GetDirLightsVector();
 
 		if (numLights == 0)
 		{
 			// only 2 directional lights and not cluster work
-			dstDirLights.resize(2);
-			dstLights.clear();
+			pShaderLights->Resize(2, 0);
+
 			//pLightsManager->mLightCasters.clear();
 			//pLightsManager->mLightCastersDataPtr.clear();
 
-			ConstructDefaultLight0(false, camModelView, camRotationMatrix, dstDirLights[0]);
-			ConstructDefaultLight1(false, camModelView, camRotationMatrix, dstDirLights[1]);
+			ConstructDefaultLight0(false, camModelView, camRotationMatrix, pShaderLights->GetDirLightRef(0));
+			ConstructDefaultLight1(false, camModelView, camRotationMatrix, pShaderLights->GetDirLightRef(1));
 
 
 		}
@@ -486,9 +486,8 @@ namespace Graphics
 				}
 			}
 
+			pShaderLights->Resize(numDirLights, numPointLights);
 
-			dstDirLights.resize(numDirLights);
-			dstLights.resize(numPointLights);
 			//pLightsManager->mLightCasters.resize(numLightCasters);
 			//pLightsManager->mLightCastersDataPtr.resize(numLightCasters);
 
@@ -496,8 +495,8 @@ namespace Graphics
 			numPointLights = 0;
 			numLightCasters = 0;
 
-			auto &srcLights = mGPUSceneLights->GetLightsVector();
-			auto &srcDirLights = mGPUSceneLights->GetDirLightsVector();
+			//auto &srcLights = mGPUSceneLights->GetLightsVector();
+			//auto &srcDirLights = mGPUSceneLights->GetDirLightsVector();
 
 			for (auto iter = begin(mobuLights); iter != end(mobuLights); ++iter)
 			{
@@ -512,8 +511,8 @@ namespace Graphics
 						{
 							if (pLight == mUsedPointLights[i])
 							{
-								dstLights[numPointLights] = srcLights[i];
-								pLightData = &dstLights[numPointLights];
+								pShaderLights->GetLightRef(numPointLights) = mGPUSceneLights->GetLightRef(i);
+								pLightData = &pShaderLights->GetLightRef(numPointLights);
 								numPointLights++;
 								break;
 							}
@@ -525,8 +524,8 @@ namespace Graphics
 						{
 							if (pLight == mUsedInfiniteLights[i])
 							{
-								dstDirLights[numDirLights] = srcDirLights[i];
-								pLightData = &dstDirLights[numDirLights];
+								pShaderLights->GetDirLightRef(numDirLights) = mGPUSceneLights->GetDirLightRef(i);
+								pLightData = &pShaderLights->GetDirLightRef(numDirLights);
 								numDirLights++;
 								break;
 							}
@@ -564,7 +563,7 @@ namespace Graphics
 
 
 	bool SuperShader::PrepShaderLights(const bool useSceneLights, FBPropertyListObject *AffectingLights,
-		std::vector<FBLight*> &shaderLightsPtr, CGPUShaderLights *shaderLights)
+		std::vector<FBLight*> &shaderLightsPtr, ShaderLightManager *shaderLights)
 	{
 		if (nullptr == shaderLights)
 			return false;
@@ -590,10 +589,10 @@ namespace Graphics
 		return true;
 	}
 
-	bool SuperShader::BindLights(const bool resetLastBind, const CGPUShaderLights *pUserLights)
+	bool SuperShader::BindLights(const bool resetLastBind, const ShaderLightManager *pUserLights)
 	{
 		
-		const CGPUShaderLights *pShaderLights = mGPUSceneLights.get();
+		const ShaderLightManager *pShaderLights = mGPUSceneLights.get();
 
 		if (nullptr != pUserLights)
 		{
@@ -628,7 +627,7 @@ namespace Graphics
 			pShaderLights->Bind(mShaderShading->GetFragmentShader(), dirLights, lights);
 			UploadLightingInformation(pShaderLights->GetNumberOfDirLights(), pShaderLights->GetNumberOfLights());
 
-			mLastLightsBinded = (CGPUShaderLights*)pShaderLights;
+			mLastLightsBinded = (ShaderLightManager*)pShaderLights;
 		}
 		else
 		{

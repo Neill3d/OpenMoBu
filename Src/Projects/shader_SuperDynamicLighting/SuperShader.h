@@ -11,6 +11,8 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 
 #include "glslShader.h"
 #include "SuperShader_glsl.h"
+#include "GPUBuffer.h"
+#include "ShaderLightManager.h"
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include <vector>
@@ -21,192 +23,9 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 
 namespace Graphics
 {
-	typedef std::vector<TLight>			lights_vector;
-
 	//
 	// There are two variant to share buffer in shader - SSBO or nVidia pointer
 	//
-
-	class CGPUBuffer
-	{
-	public:
-
-		//! a constructor
-		CGPUBuffer();
-
-		// a destructor
-		virtual ~CGPUBuffer();
-
-		virtual void Free();
-
-		// size in bytes, data is a pointer to the data struct
-		virtual void UpdateData(const size_t elemSize, const size_t count, const void *buffer)
-		{}
-
-		virtual void UpdateData(const size_t elemSize, const size_t count1, const void *buffer1,
-			const size_t count2, const void *buffer2)
-		{
-		}
-
-		virtual void Bind(const GLuint unitId) const
-		{}
-		virtual void UnBind() const
-		{}
-
-		const size_t	GetSize() const
-		{
-			return mBufferSize;
-		}
-		const size_t	GetCount() const
-		{
-			return mBufferCount;
-		}
-
-		const GLuint GetBufferId() const {
-			return mBuffer;
-		}
-
-	protected:
-		// SSBO for texture addresses
-		GLuint							mBuffer; // TODO: SSBO or texture buffer pointer
-
-		size_t			mBufferSize;	// one element size
-		size_t			mBufferCount;	// number of elements in the buffer
-	};
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	// ssbo array
-	class CGPUBufferSSBO : public CGPUBuffer
-	{
-	public:
-
-		//! a constructor
-		CGPUBufferSSBO();
-
-		// a destructor
-		virtual ~CGPUBufferSSBO();
-
-		// size in bytes, data is a pointer to the data struct
-		virtual void UpdateData(const size_t elemSize, const size_t count, const void *buffer) override;
-
-		virtual void Bind(const GLuint unitId) const override;
-		virtual void UnBind() const override
-		{}
-
-	};
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
-	//
-
-	struct CCameraInfoCache
-	{
-		//FBCamera *pCamera;
-		void				*pUserData;
-
-		//
-		int					offsetX;
-		int					offsetY;
-		int					width;
-		int					height;
-
-		//
-		double				fov;
-
-		double				farPlane;
-		double				nearPlane;
-		double				realFarPlane;
-
-		nv::vec4		pos;	// camera eye pos
-
-		nv::mat4		mv4;
-		nv::mat4		mvInv4; // mv inverse
-		nv::mat4		p4;	// projection matrix
-		nv::mat4		proj2d;
-
-		double				mv[16];
-
-		/*
-		// pre-loaded data from camera
-		FBMatrix			mv;
-		FBMatrix			mvInv;
-		FBMatrix			p;
-
-		static void Prep(FBCamera *pCamera, CCameraInfoCache &cache);
-		*/
-	};
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// this is a light version of lights manager !
-	
-
-	class CGPUShaderLights
-	{
-
-	public:
-		//! a constructor
-		CGPUShaderLights();
-		//! a destructor
-		~CGPUShaderLights();
-
-		//void Build (CCameraInfoCache &cameraCache, std::vector<LightDATA> &lights);
-
-		void MapOnGPU();
-		void PrepGPUPtr();
-
-		void Bind(const GLuint programId, const GLuint dirLightsLoc, const GLuint lightsLoc) const;
-		void UnBind() const;
-
-		const int GetNumberOfDirLights() const
-		{
-			return (int)mDirLights.size();
-		}
-		const int GetNumberOfLights() const
-		{
-			return (int)mLights.size();
-		}
-
-		lights_vector		&GetLightsVector()
-		{
-			return mLights;
-		}
-		lights_vector		&GetDirLightsVector()
-		{
-			return mDirLights;
-		}
-
-		lights_vector		&GetTransformedLightsVector()
-		{
-			return mTransformedLights;
-		}
-		lights_vector		&GetTransformedDirLightsVector()
-		{
-			return mTransformedDirLights;
-		}
-
-		// prepare lights in a view space
-		void UpdateTransformedLights(const nv::mat4 &modelview, const nv::mat4 &rotation, const nv::mat4 &scaling);
-
-	protected:
-		//
-		// lights scene data
-
-		lights_vector					mDirLights;	// dir lights stored in viewSpace !!
-		lights_vector					mLights;	// point/spot lights stored in viewSpace !!
-
-		lights_vector					mTransformedDirLights;
-		lights_vector					mTransformedLights;
-
-		/// vars for parallel evaluation
-		//int								mNumberOfDirLights;
-		//int								mNumberOfLights;
-
-		//
-		// uniform buffer object (UBO) for lights data
-
-		CGPUBufferSSBO			mBufferLights;
-		CGPUBufferSSBO			mBufferDirLights;
-
-	};
 
 	// simple shader for render color id
 	// phong shading for render shaded and textured models
@@ -240,58 +59,29 @@ namespace Graphics
 		struct BufferIdLocations
 		{
 
-			GLint		colorId;
-			GLint		useDiffuseSampler;
-
-			//
-			BufferIdLocations()
-			{
-				colorId = -1;
-				useDiffuseSampler = -1;
-			}
+			GLint		colorId{ -1 };
+			GLint		useDiffuseSampler{ -1 };
 
 		} mBufferIdLoc;
 
 		struct ShadingLocations
 		{
-			GLint		displacementOption;
-			GLint		displacementMatrix;
+			GLint		displacementOption{ -1 };
+			GLint		displacementMatrix{ -1 };
 
-			GLint		numberOfDirLights;
-			GLint		numberOfPointLights;
+			GLint		numberOfDirLights{ -1 };
+			GLint		numberOfPointLights{ -1 };
 
-			GLint		globalAmbientLight;
+			GLint		globalAmbientLight{ -1 };
 
-			GLint		fogColor;
-			GLint		fogOptions;
+			GLint		fogColor{ -1 };
+			GLint		fogOptions{ -1 };
 
-			GLint		switchAlbedoTosRGB;
-			GLint		useMatCap;
-			GLint		useLightmap;
-			GLint		rimOptions;
-			GLint		rimColor;
-
-			//
-			ShadingLocations()
-			{
-				displacementOption = -1;
-				displacementMatrix = -1;
-
-				numberOfDirLights = -1;
-				numberOfPointLights = -1;
-
-				globalAmbientLight = -1;
-
-				fogColor = -1;
-				fogOptions = -1;
-
-				rimOptions = -1;
-				rimColor = -1;
-
-				switchAlbedoTosRGB = -1;
-				useMatCap = -1;
-				useLightmap = -1;
-			}
+			GLint		switchAlbedoTosRGB{ -1 };
+			GLint		useMatCap{ -1 };
+			GLint		useLightmap{ -1 };
+			GLint		rimOptions{ -1 };
+			GLint		rimColor{ -1 };
 
 		} mShadingLoc;
 
@@ -305,11 +95,11 @@ namespace Graphics
 		TTransform					mLastTransform;
 
 		// DONE:: SSBO for transform and global settings, material, lights
-		CGPUBufferSSBO				mBufferTransform;
-		CGPUBufferSSBO				mBufferMaterial;
+		GPUBufferSSBO				mBufferTransform;
+		GPUBufferSSBO				mBufferMaterial;
 
-		CGPUBufferSSBO				mBufferDirLights;
-		CGPUBufferSSBO				mBufferLights;
+		GPUBufferSSBO				mBufferDirLights;
+		GPUBufferSSBO				mBufferLights;
 
 		std::unique_ptr<GLSLShader>	mShaderBufferId;
 		std::unique_ptr<GLSLShader>	mShaderShading;
@@ -324,10 +114,10 @@ namespace Graphics
 		std::vector<FBLight*>					mUsedInfiniteLights;
 		std::vector<FBLight*>					mUsedPointLights;
 
-		std::unique_ptr<CGPUShaderLights>			mGPUSceneLights;
+		std::unique_ptr<ShaderLightManager>			mGPUSceneLights;
 
 		// last lights for a frame - default if no lights, scene lights if no composition override
-		CGPUShaderLights					*mLastLightsBinded;
+		ShaderLightManager					*mLastLightsBinded;
 
 		//
 		bool			mLastUseDisplacement;
@@ -364,14 +154,14 @@ namespace Graphics
 
 		// this is a GPU buffer preparation, not an actual binding
 		void			PrepFBSceneLights();
-		void			PrepLightsInViewSpace(CGPUShaderLights *pLights);
+		void			PrepLightsInViewSpace(ShaderLightManager*pLights);
 
-		void			PrepLightsFromFBList(CGPUShaderLights *pLightsManager, const CCameraInfoCache &cameraCache, std::vector<FBLight*> &lights);
+		void			PrepLightsFromFBList(ShaderLightManager*pLightsManager, const CCameraInfoCache &cameraCache, std::vector<FBLight*> &lights);
 
 		void		MapLightsOnGPU();
 
 		// when shaderLights nullptr, we will bind all the fbscene lights
-		bool		BindLights(const bool resetLastBind, const CGPUShaderLights *pShaderLights = nullptr);
+		bool		BindLights(const bool resetLastBind, const ShaderLightManager *pShaderLights = nullptr);
 
 		const int GetNumberOfUsedLights() const {
 			return (int)mUsedSceneLights.size();
@@ -382,11 +172,11 @@ namespace Graphics
 
 		// just prepare gpu buffer (no binding)
 		bool PrepShaderLights(const bool useSceneLights, FBPropertyListObject *AffectingLights,
-			std::vector<FBLight*> &shaderLightsPtr, CGPUShaderLights *shaderLights);
+			std::vector<FBLight*> &shaderLightsPtr, ShaderLightManager *shaderLights);
 
 		// TODO: bind a light buffer to the uber shader and update light count
 
-		CGPUShaderLights			*GetGPUSceneLightsPtr() {
+		ShaderLightManager *GetGPUSceneLightsPtr() {
 			return mGPUSceneLights.get();
 		}
 	};

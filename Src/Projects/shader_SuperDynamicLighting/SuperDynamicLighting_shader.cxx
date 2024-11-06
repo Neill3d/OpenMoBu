@@ -550,7 +550,7 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 	if (mNeedUpdateLightsList && false == UseSceneLights)
 	{
 		if (nullptr == mShaderLights.get())
-			mShaderLights.reset(new Graphics::CGPUShaderLights());
+			mShaderLights.reset(new Graphics::ShaderLightManager());
 
 		if (nullptr != mpLightShader)
 		{
