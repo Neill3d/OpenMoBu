@@ -104,28 +104,69 @@ namespace Graphics
     };
 
 
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	// ssbo array
+    /**
+     * @class GPUBufferSSBO
+     * @brief A class representing a Shader Storage Buffer Object (SSBO) for GPU data storage and management.
+     *
+     * This class provides an interface for managing GPU-side buffer objects used in
+     * shader programs for handling large amounts of structured data. The class encapsulates
+     * OpenGL buffer operations such as allocation, data updates, and binding.
+     *
+     * Key functionalities include:
+     * - Creating and freeing GPU buffers.
+     * - Updating buffer data with new content.
+     * - Binding and unbinding the buffer to specific OpenGL binding points.
+     *
+     * Example usage:
+     * @code
+     * GPUBufferSSBO buffer;
+     * buffer.UpdateData(sizeof(Vertex), vertexCount, vertexData);
+     * buffer.Bind(bindingPoint);
+     * @endcode
+     *
+     * @note This class assumes that an OpenGL context is properly initialized before use.
+     *
+     * @see https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object for more details on SSBOs.
+     */
 	class GPUBufferSSBO : public GpuBuffer
 	{
 	public:
 
-		//! a constructor
+        /**
+         * @brief Constructs a new GPUBufferSSBO instance.
+         */
 		GPUBufferSSBO();
 
-		// a destructor
+        /**
+         * @brief Destroys the GpuBuffer, freeing GPU resources.
+         */
 		virtual ~GPUBufferSSBO();
 
-		// size in bytes, data is a pointer to the data struct
+        /**
+         * @brief Updates the buffer with new data.
+         *
+         * @param elemSize Size of each element in bytes.
+         * @param count Number of elements to update.
+         * @param buffer Pointer to the data to upload to the GPU buffer.
+         */
 		virtual void UpdateData(std::size_t elemSize, std::size_t count, const void* buffer) override;
 
+        /**
+         * @brief Binds the buffer to a GPU unit.
+         *
+         * @param unitId GPU unit identifier.
+         */
 		virtual void Bind(const GLuint unitId) const override;
+
+        /**
+         * @brief Unbinds the buffer from the GPU unit.
+         */
 		virtual void UnBind() const override
 		{}
 
     private:
 
-        GLsizeiptr lastBufferSize{ 0 };
+        GLsizeiptr lastBufferSize{ 0 }; //!< compare with previous data size in order to do a partial update
 
 	};
 };
