@@ -26,15 +26,15 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 //
 struct TLight
 {
-	nv::vec4 		attenuations;
+	nv::vec4 	attenuations;
 
-	nv::vec3 		position;
+	nv::vec3 	position;
 	float		type;
 
-	nv::vec3 		dir;
+	nv::vec3 	dir;
 	float		spotAngle;
 
-	nv::vec3 		color;
+	nv::vec3	color;
 	float		radius;
 
 	float		shadowMapLayer;

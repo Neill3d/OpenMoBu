@@ -10,6 +10,8 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "SuperShader.h"
 #include "SuperShader_glsl.h"
 #include "CheckGLError.h"
+#include "mobu_logging.h"
+#include <map>
 
 #define SHADER_BUFFERID_VERTEX		"scene_bufferid.vsh"
 #define SHADER_BUFFERID_FRAGMENT	"scene_bufferid.fsh"
@@ -33,7 +35,7 @@ namespace Graphics {
 	
 	// return false if transformation matrix is reflected (rendering reflection pass)
 
-	void SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
+	void SuperShader::SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
 	{
 		using namespace nv;
 		FBCamera *pCamera = pRenderOptions->GetRenderingCamera();
@@ -66,7 +68,7 @@ namespace Graphics {
 		}
 	}
 
-	void SetTransform(TTransform &transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo)
+	void SuperShader::SetTransform(TTransform &transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo)
 	{
 		using namespace nv;
 		FBMatrix lModelMatrix;
@@ -83,7 +85,7 @@ namespace Graphics {
 		transpose(transform.normalMatrix);
 	}
 
-	void SetMaterial(TMaterial &mat, FBMaterial *pMaterial)
+	void SuperShader::SetMaterial(TMaterial &mat, FBMaterial *pMaterial)
 	{
 		if (nullptr == pMaterial)
 			return;
@@ -202,126 +204,116 @@ namespace Graphics {
 	{
 		bool lSuccess = true;
 
-		GLSLShader *pNewShader = nullptr;
+		//
+		// release if something already assigned
 
-		try
+		if (mShaderBufferId.get())
+			mShaderBufferId.reset(nullptr);
+
+		if (mShaderShading.get())
+			mShaderShading.reset(nullptr);
+
 		{
-			//
-			// release if something already assigned
-
-			if (nullptr != mShaderBufferId.get())
-				mShaderBufferId.reset(nullptr);
-
-			if (nullptr != mShaderShading.get())
-				mShaderShading.reset(nullptr);
-
-
 			//
 			// BufferId Shader
 
-			pNewShader = new GLSLShader();
+			std::unique_ptr<GLSLShader> shader = std::make_unique<GLSLShader>();
 
-			if (nullptr == pNewShader)
-				throw std::exception("failed to allocate memory for a shader");
+			const FBString vertex_path(path, SHADER_BUFFERID_VERTEX);
+			const FBString fragment_path(path, SHADER_BUFFERID_FRAGMENT);
 
-			FBString vertex_path(path, SHADER_BUFFERID_VERTEX);
-			FBString fragment_path(path, SHADER_BUFFERID_FRAGMENT);
-
-			if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
-				throw std::exception("failed to load and prepare a shader");
-			
+			if (!shader->LoadShaders(vertex_path, fragment_path))
+			{
+				LOGE("[SuperShader] failed to load and prepare a bufferid shader");
+				return false;
+			}
+		
 			// samplers and locations
-			pNewShader->Bind();
+			shader->Bind();
 
-			GLint loc = pNewShader->findLocation("sampler0");
-			if (loc >= 0)
+			if (GLint loc = shader->findLocation("sampler0") >= 0)
 				glUniform1i(loc, 0);
 
-			mBufferIdLoc.colorId = pNewShader->findLocation("ColorId");
-			mBufferIdLoc.useDiffuseSampler = pNewShader->findLocation("UseDiffuseSampler");
+			BufferIdShaderUniformLocations.colorId = shader->findLocation("ColorId");
+			BufferIdShaderUniformLocations.useDiffuseSampler = shader->findLocation("UseDiffuseSampler");
 
-			pNewShader->UnBind();
+			shader->UnBind();
 
-			mShaderBufferId.reset(pNewShader);
-
+			mShaderBufferId = std::move(shader);
+		}
+		
+		{
 			//
 			// Phong Shading Shader
 
-			pNewShader = new GLSLShader();
+			std::unique_ptr<GLSLShader> shader = std::make_unique<GLSLShader>();
 
-			if (nullptr == pNewShader)
-				throw std::exception("failed to allocate memory for a shader");
+			const FBString vertex_path = FBString(path, SHADER_SHADING_VERTEX);
+			const FBString fragment_path = FBString(path, SHADER_SHADING_FRAGMENT);
 
-			vertex_path = FBString(path, SHADER_SHADING_VERTEX);
-			fragment_path = FBString(path, SHADER_SHADING_FRAGMENT);
-
-			if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
-				throw std::exception("failed to load and prepare a shader");
+			if (!shader->LoadShaders(vertex_path, fragment_path))
+			{
+				LOGE("[SuperShader] failed to load and prepare a phone shader");
+				return false;
+			}
+				
 			
 			// samplers and locations
-			pNewShader->Bind();
+			shader->Bind();
 
-			loc = pNewShader->findLocation("samplerDiffuse");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_DIFFUSE);
-			loc = pNewShader->findLocation("samplerDisplacement");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_DISPLACE);
-			loc = pNewShader->findLocation("samplerReflect");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_REFLECT);
-			loc = pNewShader->findLocation("samplerTransparency");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_TRANSPARENCY);
-			loc = pNewShader->findLocation("samplerSpecular");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_SPECULAR);
-			loc = pNewShader->findLocation("samplerNormal");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_NORMAL);
-			loc = pNewShader->findLocation("samplerMatCap");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_MATCAP);
-			loc = pNewShader->findLocation("samplerDetail");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_DETAIL);
+			std::vector<std::pair<const char*, int>> uniforms = {
+				{"samplerDiffuse", SAMPLER_SLOT_DIFFUSE},
+				{"samplerDisplacement", SAMPLER_SLOT_DISPLACE},
+				{"samplerReflect", SAMPLER_SLOT_REFLECT},
+				{"samplerTransparency", SAMPLER_SLOT_TRANSPARENCY},
+				{"samplerSpecular", SAMPLER_SLOT_SPECULAR},
+				{"samplerNormal", SAMPLER_SLOT_NORMAL},
+				{"samplerMatCap", SAMPLER_SLOT_MATCAP},
+				{"samplerDetail", SAMPLER_SLOT_DETAIL}
+			};
 
-			mShadingLoc.displacementOption = pNewShader->findLocation("displacementOption");
-			mShadingLoc.displacementMatrix = pNewShader->findLocation("displacementMatrix");
-
-			mShadingLoc.numberOfDirLights = pNewShader->findLocation("numberOfDirLights");
-			mShadingLoc.numberOfPointLights = pNewShader->findLocation("numberOfPointLights");
-
-			mShadingLoc.globalAmbientLight = pNewShader->findLocation("globalAmbientLight");
-
-			mShadingLoc.fogColor = pNewShader->findLocation("fogColor");
-			mShadingLoc.fogOptions = pNewShader->findLocation("fogOptions");
-
-			mShadingLoc.rimOptions = pNewShader->findLocation("rimOptions");
-			mShadingLoc.rimColor = pNewShader->findLocation("rimColor");
-
-			mShadingLoc.switchAlbedoTosRGB = pNewShader->findLocation("switchAlbedoTosRGB");
-			mShadingLoc.useMatCap = pNewShader->findLocation("useMatCap");
-			mShadingLoc.useLightmap = pNewShader->findLocation("useLightmap");
-
-			pNewShader->UnBind();
-
-			mShaderShading.reset(pNewShader);
-
-		}
-		catch (const std::exception &e)
-		{
-			FBTrace("Failed to initialize a shader %s\n", e.what());
-
-			if (nullptr != pNewShader)
-			{
-				delete pNewShader;
-				pNewShader = nullptr;
-
-				lSuccess = false;
+			for (const auto& [name, slot] : uniforms) {
+				if (GLint loc = shader->findLocation(name); loc >= 0) {
+					glUniform1i(loc, slot);
+				}
+				else
+				{
+					LOGE("[SuperShader] phone shader failed to set uniform for slot %s", name);
+				}
 			}
-		}
 
+			std::map<const char*, GLint*> uniformMap = {
+				{"displacementOption", &PhongShaderUniformLocations.displacementOption},
+				{"displacementMatrix", &PhongShaderUniformLocations.displacementMatrix},
+				
+				{"numberOfDirLights", &PhongShaderUniformLocations.numberOfDirLights},
+				{"numberOfPointLights", &PhongShaderUniformLocations.numberOfPointLights},
+
+				{"globalAmbientLight", &PhongShaderUniformLocations.globalAmbientLight},
+
+				{"fogColor", &PhongShaderUniformLocations.fogColor},
+				{"fogOptions", &PhongShaderUniformLocations.fogOptions},
+
+				{"rimOptions", &PhongShaderUniformLocations.rimOptions},
+				{"rimColor", &PhongShaderUniformLocations.rimColor},
+
+				{"switchAlbedoTosRGB", &PhongShaderUniformLocations.switchAlbedoTosRGB},
+				{"useMatCap", &PhongShaderUniformLocations.useMatCap},
+				{"useLightmap", &PhongShaderUniformLocations.useLightmap},
+			};
+
+			for (const auto& [name, locationPtr] : uniformMap) {
+				*locationPtr = shader->findLocation(name);
+				if (*locationPtr == -1) {
+					LOGE("[SuperShader] Warning: Uniform %s not found in phong shader.", name);
+				}
+			}
+
+			shader->UnBind();
+
+			mShaderShading = std::move(shader);
+		}
+		
 		return lSuccess;
 	}
 
@@ -543,9 +535,9 @@ namespace Graphics {
 			}
 			else
 			{
-				if (mBufferIdLoc.useDiffuseSampler >= 0)
+				if (BufferIdShaderUniformLocations.useDiffuseSampler >= 0)
 				{
-					glUniform1f(mBufferIdLoc.useDiffuseSampler, (difId > 0));
+					glUniform1f(BufferIdShaderUniformLocations.useDiffuseSampler, (difId > 0));
 				}
 			}
 		}
@@ -606,9 +598,9 @@ namespace Graphics {
 			{
 				FBColor lColorId = pModel->UniqueColorId;
 
-				if (mBufferIdLoc.colorId >= 0)
+				if (BufferIdShaderUniformLocations.colorId >= 0)
 				{
-					glUniform4f(mBufferIdLoc.colorId, (float)lColorId[0], (float)lColorId[1], (float)lColorId[2], (float)mAlpha);
+					glUniform4f(BufferIdShaderUniformLocations.colorId, (float)lColorId[0], (float)lColorId[1], (float)lColorId[2], (float)mAlpha);
 				}
 			}
 		}
@@ -616,7 +608,7 @@ namespace Graphics {
 
 	void SuperShader::SetMatCap(GLuint texId)
 	{
-		if (mShadingLoc.useMatCap >= 0)
+		if (PhongShaderUniformLocations.useMatCap >= 0)
 		{
 			if (texId > 0)
 			{
@@ -624,18 +616,18 @@ namespace Graphics {
 				glBindTexture(GL_TEXTURE_2D, texId);
 				glActiveTexture(GL_TEXTURE0);
 
-				glUniform1f(mShadingLoc.useMatCap, 1.0f);
+				glUniform1f(PhongShaderUniformLocations.useMatCap, 1.0f);
 			}
 			else
 			{
-				glUniform1f(mShadingLoc.useMatCap, 0.0f);
+				glUniform1f(PhongShaderUniformLocations.useMatCap, 0.0f);
 			}
 		}
 	}
 
 	void SuperShader::SetLightmap(GLuint texId, double transparency)
 	{
-		if (mShadingLoc.useLightmap >= 0)
+		if (PhongShaderUniformLocations.useLightmap >= 0)
 		{
 			if (texId > 0 && transparency > 0.0)
 			{
@@ -645,14 +637,14 @@ namespace Graphics {
 					glBindTexture(GL_TEXTURE_2D, texId);
 					glActiveTexture(GL_TEXTURE0);
 
-					glUniform1f(mShadingLoc.useLightmap, 1.0f * (float)transparency);
+					glUniform1f(PhongShaderUniformLocations.useLightmap, 1.0f * (float)transparency);
 
 					mLastLightmapId = texId;
 				}
 			}
 			else
 			{
-				glUniform1f(mShadingLoc.useLightmap, 0.0f);
+				glUniform1f(PhongShaderUniformLocations.useLightmap, 0.0f);
 			}
 		}
 	}
@@ -667,7 +659,7 @@ namespace Graphics {
 	bool SuperShader::CCameraInfoCachePrep(FBCamera *pCamera, CCameraInfoCache &cache)
 	{
 		using namespace nv;
-		if (nullptr == pCamera)
+		if (!pCamera)
 			return false;
 
 		FBMatrix mv, p, mvInv;
@@ -675,14 +667,13 @@ namespace Graphics {
 		pCamera->GetCameraMatrix(mv, kFBModelView);
 		pCamera->GetCameraMatrix(p, kFBProjection);
 
-		
 		FBMatrixInverse(mvInv, mv);
 
 		for (int i = 0; i<16; ++i)
 		{
-			cache.mv4.mat_array[i] = (nv_scalar)mv[i];
-			cache.mvInv4.mat_array[i] = (nv_scalar)mvInv[i];
-			cache.p4.mat_array[i] = (nv_scalar)p[i];
+			cache.mv4.mat_array[i] = static_cast<nv_scalar>(mv[i]);
+			cache.mvInv4.mat_array[i] = static_cast<nv_scalar>(mvInv[i]);
+			cache.p4.mat_array[i] = static_cast<nv_scalar>(p[i]);
 
 			cache.mv[i] = mv[i];
 		}
@@ -690,9 +681,8 @@ namespace Graphics {
 		FBVector3d v;
 		pCamera->GetVector(v);
 		for (int i = 0; i<3; ++i)
-			cache.pos[i] = (float)v[i];
-		//cache.pos = vec4( &cache.mv4.x );
-
+			cache.pos[i] = static_cast<float>(v[i]);
+		
 		cache.fov = pCamera->FieldOfView;
 		cache.width = pCamera->CameraViewportWidth;
 		cache.height = pCamera->CameraViewportHeight;
@@ -704,39 +694,39 @@ namespace Graphics {
 
 	void SuperShader::UploadRimInformation(double useRim, double rimPower, double *rimColor)
 	{
-		if (mShadingLoc.rimOptions >= 0)
+		if (PhongShaderUniformLocations.rimOptions >= 0)
 		{
-			glUniform4f(mShadingLoc.rimOptions, useRim, rimPower, 0.0f, 0.0f);
+			glUniform4f(PhongShaderUniformLocations.rimOptions, useRim, rimPower, 0.0f, 0.0f);
 		}
-		if (mShadingLoc.rimColor >= 0)
+		if (PhongShaderUniformLocations.rimColor >= 0)
 		{
-			glUniform4f(mShadingLoc.rimColor, rimColor[0], rimColor[1], rimColor[2], 1.0f);
+			glUniform4f(PhongShaderUniformLocations.rimColor, rimColor[0], rimColor[1], rimColor[2], 1.0f);
 		}
 	}
 
 	void SuperShader::UploadFogInformation(double *color, bool enable, double begin, double end, double density, FBFogMode mode)
 	{
-		if (mShadingLoc.fogColor >= 0)
+		if (PhongShaderUniformLocations.fogColor >= 0)
 		{
-			glUniform4f(mShadingLoc.fogColor, (float)color[0], (float)color[1], (float)color[2], (enable)?1.0 : 0.0);
+			glUniform4f(PhongShaderUniformLocations.fogColor, (float)color[0], (float)color[1], (float)color[2], (enable)?1.0 : 0.0);
 		}
-		if (mShadingLoc.fogOptions >= 0)
+		if (PhongShaderUniformLocations.fogOptions >= 0)
 		{
-			glUniform4f(mShadingLoc.fogOptions, (float)begin, (float)end, (float)density, (float)mode);
+			glUniform4f(PhongShaderUniformLocations.fogOptions, (float)begin, (float)end, (float)density, (float)mode);
 		}
 	}
 
 	void SuperShader::SetDisplacementInfo(bool useDisp, double dispMult, double dispCenter)
 	{
-		if (mShadingLoc.displacementOption >= 0)
+		if (PhongShaderUniformLocations.displacementOption >= 0)
 		{
 			if (false == useDisp)
 			{
-				glUniform4f(mShadingLoc.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
+				glUniform4f(PhongShaderUniformLocations.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
 			}
 			else
 			{
-				glUniform4f(mShadingLoc.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
+				glUniform4f(PhongShaderUniformLocations.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
 			}
 		}
 
@@ -757,21 +747,21 @@ namespace Graphics {
 	{
 		if (useDisp != mLastUseDisplacement || dispMult != mLastDispMult || dispCenter != mLastDispCenter)
 		{
-			if (mShadingLoc.displacementOption >= 0)
+			if (PhongShaderUniformLocations.displacementOption >= 0)
 			{
 				if (false == useDisp)
 				{
-					glUniform4f(mShadingLoc.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
+					glUniform4f(PhongShaderUniformLocations.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
 				}
 				else
 				{
-					glUniform4f(mShadingLoc.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
+					glUniform4f(PhongShaderUniformLocations.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
 
 					float m[16];
 					for (int i = 0; i < 16; ++i)
 						m[i] = (float)dispMatrix[i];
 
-					glUniformMatrix4fv(mShadingLoc.displacementMatrix, 1, GL_FALSE, m);
+					glUniformMatrix4fv(PhongShaderUniformLocations.displacementMatrix, 1, GL_FALSE, m);
 				}
 			}
 

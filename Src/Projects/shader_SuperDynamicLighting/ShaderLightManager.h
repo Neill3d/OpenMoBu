@@ -51,7 +51,7 @@ namespace Graphics
 		nv::mat4		p4;	// projection matrix
 		nv::mat4		proj2d;
 
-		double				mv[16];
+		double				mv[16]; //!< modelview in double precision
 
 		/*
 		// pre-loaded data from camera

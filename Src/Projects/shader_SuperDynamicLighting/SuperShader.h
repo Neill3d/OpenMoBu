@@ -62,7 +62,7 @@ namespace Graphics
 			GLint		colorId{ -1 };
 			GLint		useDiffuseSampler{ -1 };
 
-		} mBufferIdLoc;
+		} BufferIdShaderUniformLocations;
 
 		struct ShadingLocations
 		{
@@ -83,14 +83,14 @@ namespace Graphics
 			GLint		rimOptions{ -1 };
 			GLint		rimColor{ -1 };
 
-		} mShadingLoc;
+		} PhongShaderUniformLocations;
 
 		double						mAlpha;
-		GLSLShader					*mLastBinded;
-		GLuint						mLastTexId;
-		GLuint						mLastLightmapId;
-		FBMaterial					*mLastMaterial;
-		FBModel						*mLastModel;
+		GLSLShader* mLastBinded{ nullptr };
+		GLuint						mLastTexId{ 0 };
+		GLuint						mLastLightmapId{ 0 };
+		FBMaterial* mLastMaterial{ nullptr };
+		FBModel* mLastModel{ nullptr };
 
 		TTransform					mLastTransform;
 
@@ -117,12 +117,12 @@ namespace Graphics
 		std::unique_ptr<ShaderLightManager>			mGPUSceneLights;
 
 		// last lights for a frame - default if no lights, scene lights if no composition override
-		ShaderLightManager					*mLastLightsBinded;
+		ShaderLightManager* mLastLightsBinded{ nullptr };
 
 		//
-		bool			mLastUseDisplacement;
-		double			mLastDispMult;
-		double			mLastDispCenter;
+		bool			mLastUseDisplacement{ false };
+		double			mLastDispMult{ 0.0 };
+		double			mLastDispCenter{ 0.0 };
 		FBMatrix		mLastDispMatrix;
 
 	public:
@@ -179,6 +179,13 @@ namespace Graphics
 		ShaderLightManager *GetGPUSceneLightsPtr() {
 			return mGPUSceneLights.get();
 		}
+
+
+	private:
+
+		static void SetCameraTransform(TTransform& transform, FBRenderOptions* pRenderOptions);
+		static void SetTransform(TTransform& transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo);
+		static void SetMaterial(TMaterial& mat, FBMaterial* pMaterial);
 	};
 
 };

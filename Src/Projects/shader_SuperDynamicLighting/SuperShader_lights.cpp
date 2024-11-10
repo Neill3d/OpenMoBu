@@ -594,7 +594,7 @@ namespace Graphics
 		
 		const ShaderLightManager *pShaderLights = mGPUSceneLights.get();
 
-		if (nullptr != pUserLights)
+		if (pUserLights)
 		{
 			if (pUserLights->GetNumberOfDirLights() > 0 || pUserLights->GetNumberOfLights() > 0)
 			{
@@ -602,14 +602,14 @@ namespace Graphics
 			}
 		}
 
-		if (nullptr == pShaderLights)
+		if (pShaderLights)
 		{
 			UploadLightingInformation(0, 0);
 			return false;
 		}
 
 		// TODO: check for last uberShader lights binded
-		if (true == resetLastBind)
+		if (resetLastBind)
 			mLastLightsBinded = nullptr;
 
 		if (mLastLightsBinded == pShaderLights)
@@ -639,22 +639,22 @@ namespace Graphics
 
 	void SuperShader::UploadSwitchAlbedoTosRGB(bool sRGB)
 	{
-		if (mShadingLoc.switchAlbedoTosRGB >= 0)
-			glUniform1f(mShadingLoc.switchAlbedoTosRGB, (sRGB) ? 1.0f : 0.0f);
+		if (PhongShaderUniformLocations.switchAlbedoTosRGB >= 0)
+			glUniform1f(PhongShaderUniformLocations.switchAlbedoTosRGB, (sRGB) ? 1.0f : 0.0f);
 	}
 
 	void SuperShader::UploadGlobalAmbient(double *color)
 	{
-		if (mShadingLoc.globalAmbientLight >= 0)
-			glUniform4f(mShadingLoc.globalAmbientLight, (float)color[0], (float)color[1], (float)color[2], 1.0f);
+		if (PhongShaderUniformLocations.globalAmbientLight >= 0)
+			glUniform4f(PhongShaderUniformLocations.globalAmbientLight, (float)color[0], (float)color[1], (float)color[2], 1.0f);
 	}
 
 	void SuperShader::UploadLightingInformation(const int numdir, const int numpoint)
 	{
-		if (mShadingLoc.numberOfDirLights >= 0)
-			glUniform1i(mShadingLoc.numberOfDirLights, numdir);
-		if (mShadingLoc.numberOfPointLights >= 0)
-			glUniform1i(mShadingLoc.numberOfPointLights, numpoint);
+		if (PhongShaderUniformLocations.numberOfDirLights >= 0)
+			glUniform1i(PhongShaderUniformLocations.numberOfDirLights, numdir);
+		if (PhongShaderUniformLocations.numberOfPointLights >= 0)
+			glUniform1i(PhongShaderUniformLocations.numberOfPointLights, numpoint);
 	}
 }
 
