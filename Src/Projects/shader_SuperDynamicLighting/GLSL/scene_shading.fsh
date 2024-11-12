@@ -81,7 +81,7 @@ struct TLight
 	float		shadowPCFKernelSize;
 	float		castSpecularOnObject;
 	// 16
-	//mat4		shadowVP;	// view projection matrix of a shadow map
+	mat4		shadowVP;	// view projection matrix of a shadow map
 	vec4		shadowIndex;	// index and count in the shadow matrix array
 	vec4		normalizedFarPlanes;	// for cascaded shadows
 	// 64
@@ -109,6 +109,7 @@ struct LIGHTRES
 	//vec3 R;	// reflection vector : returned by the reflection computation
 	//vec4 reflectionHi; // result from a high res env.map
 	//vec4 reflectionLow; // result from a Low res env.map
+	float shadowContrib;
 };
 
 
@@ -154,8 +155,45 @@ uniform sampler2D	samplerNormal;
 uniform sampler2D	samplerReflect;
 uniform sampler2D	samplerMatCap;
 
+// Sampler for the shadow map
+uniform sampler2DShadow samplerShadowMap;
+
 //////////////////////////////////////////////////////////////////////////////
 // lights
+
+// The main function for shadow computation with PCF
+// no shadow returns 1.0
+float calculateShadowPCF(vec4 shadowCoord) {
+    // Divide by w to perform perspective division and map to [0, 1]
+    vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
+    
+    // Check if the fragment is outside the shadow map's valid range
+    if (projCoords.z > 1.0) {
+        return 0.0; // No shadow
+    }
+
+    // Add a small bias to prevent shadow acne
+    //float bias = 0.005;
+    //projCoords.z -= bias;
+
+    // PCF kernel size (example: 3x3)
+    float shadow = 0.0;
+    float samples = 0.0;
+
+    // Loop to sample shadow map (3x3 kernel)
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            vec2 offset = vec2(x, y) * 0.001; // Adjust as necessary for shadow map resolution
+            shadow += texture(samplerShadowMap, vec3(projCoords.xy + offset, projCoords.z));
+            samples += 1.0;
+        }
+    }
+
+    // Average the results for smoother shadow edges
+    shadow /= samples;
+
+    return shadow;
+}
 
 void evalDirLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)
 {
@@ -168,10 +206,20 @@ void evalDirLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)
 		float ndotl = max(0.0, dot( info.normal, dir ) );
 		
 		result.diffContrib += ndotl * intensity * dirLightsBuffer.lights[i].color.rgb;
+
+		if (dirLightsBuffer.lights[i].shadowMapLayer >= 0.0)
+		{
+			//float lshadow = spotFactor * mix(1.0, shadow, ndotL);
+			vec4 shadowCoord = dirLightsBuffer.lights[i].shadowVP * vec4(info.worldPosition, 1.0);
+			// Calculate shadow factor
+			float shadowFactor = calculateShadowPCF(shadowCoord);
+
+			result.shadowContrib *= shadowFactor;
+		}
 	}
 }
  
-void doLight(in LIGHTINFOS info, in TLight light, in float shadow, inout vec3 diffContrib, inout vec3 specContrib)
+void doLight(in LIGHTINFOS info, in TLight light, inout float shadow, inout vec3 diffContrib, inout vec3 specContrib)
 {
 	vec3 lightDir = light.position.xyz - info.position;
 	float dist = length(lightDir);
@@ -216,15 +264,23 @@ void doLight(in LIGHTINFOS info, in TLight light, in float shadow, inout vec3 di
 		spotFactor = max(0.0,  (dot( -lightDir, spotLightDir ) - light.dir.w) / (1.0 - light.dir.w) );
 	}
 
-	//float lshadow = spotFactor * mix(1.0, shadow, ndotL);
+	float shadowFactor = 1.0; // no shadow
+
+	if (light.shadowMapLayer >= 0.0)
+	{
+		//float lshadow = spotFactor * mix(1.0, shadow, ndotL);
+		vec4 shadowCoord = light.shadowVP * vec4(info.worldPosition, 1.0);
+		// Calculate shadow factor
+		float shadowFactor = calculateShadowPCF(shadowCoord);
+	}
 
 	float factor = light.attenuations.w * att * spotFactor;
 
 	//
 	
-	diffContrib += ndotL * factor * light.color.xyz; // * lshadow
+	diffContrib += ndotL * factor * light.color.xyz;
 	specContrib += specular * factor * light.color.xyz;
-	//specContrib = vec3(specular);
+	shadow = mix(shadow, shadow * shadowFactor, factor);
 }
 
 void evalLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)
@@ -242,6 +298,7 @@ void evalLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)
 	
 	result.diffContrib += diffContrib;
 	result.specContrib += specContrib;
+	result.shadowContrib *= shadow;
 }
 
 void ApplyRim(in vec3 Nn, in vec3 inPw, in vec4 rimOptions, in vec4 rimColor, inout vec4 difColor)
@@ -367,6 +424,7 @@ void main (void)
 	lResult.ambientContrib = vec3(0.0);
 	lResult.diffContrib = vec3(0.0);
 	lResult.specContrib = vec3(0.0);
+	lResult.shadowContrib = 1.0;
 	//lResult.R = vec3(0.0);
 	
 	if (numberOfDirLights > 0)
@@ -404,7 +462,8 @@ void main (void)
 	//
 	vec3 reflColor = ApplyReflection( inWV, n_eye );
 	color.rgb += lResult.diffContrib * reflColor;
-	
+	color.rgb *= lResult.shadowContrib;
+
 	if (switchAlbedoTosRGB > 0.0)
 	{
 		// linear to sRGB

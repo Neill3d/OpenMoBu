@@ -118,7 +118,7 @@ void main(void)
 	outTC           = inTexCoords;
 	outTC2 			= inTexCoords2;
 	outPw           = vPosition3; // / vPosition4.w;
-	outWV           =  transformBuffer.transform.eyePos.xyz - Po.xyz; // / Po.w; //(Po.xyz - eyePos);
+    outWV = Po.xyz; //transformBuffer.transform.eyePos.xyz - Po.xyz; // / Po.w; //(Po.xyz - eyePos);
 	
 	normalMatrix = transpose(inverse(transformBuffer.transform.m4_World * transformBuffer.transform.m4_Model));
 	n_eye = (normalMatrix * vec4(inNormal.xyz, 1.0)).xyz; // inNormal.xyz;

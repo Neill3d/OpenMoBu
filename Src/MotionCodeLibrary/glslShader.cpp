@@ -19,7 +19,7 @@ extern void LOGE(const char* pFormatString, ...);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                            GLSLShader
 
-bool GLSLShader::PRINT_WARNINGS = false;
+bool GLSLShader::PRINT_WARNINGS = true;
 
 GLSLShader::GLSLShader() 
 {}

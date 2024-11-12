@@ -18,6 +18,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "mobu_logging.h"
 #include "postpersistentdata.h"
 
+#include "gl/glew.h"
+
 // for back compatibility
 extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 
@@ -50,14 +52,29 @@ FBLibraryDeclareEnd;
 extern bool InitializeSockets();
 extern void ShutdownSockets();
 
-bool FBLibrary::LibInit()       { return true; }
+static bool g_isGlewInitialized = false;
+
+bool FBLibrary::LibInit()       { 
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+	{
+		// Problem: glewInit failed, something is seriously wrong.
+		LOGE("GLEW error: %s\n", glewGetErrorString(err));
+		return false;
+	}
+	
+	LOGI("GLEW version: %s\n", glewGetString(GLEW_VERSION));
+	g_isGlewInitialized = true;
+	return true; 
+}
 bool FBLibrary::LibOpen()       { 
 	//InitializeSockets();
-	return true; }
+
+	return g_isGlewInitialized; }
 bool FBLibrary::LibReady()      { 
 
 	PostPersistentData::AddPropertiesToPropertyViewManager();
-	return true; 
+	return g_isGlewInitialized; 
 }
 bool FBLibrary::LibClose()      { 
 	//ShutdownSockets();

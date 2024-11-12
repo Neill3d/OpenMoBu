@@ -95,11 +95,11 @@ bool FrameBuffer::IsOk() const
 		glReadBuffer         ( GL_COLOR_ATTACHMENT0 );
 	}
 
-	int	 status = glCheckFramebufferStatus ( GL_FRAMEBUFFER );
+	const GLenum status = glCheckFramebufferStatus ( GL_FRAMEBUFFER );
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LOGE( "test framebuffer\n" );
+		LOGE( "[Framebuffer] test frame buffer status returns - %u\n", status );
 	}
 
 	if ( currentFb != (int) mFrameBuffer )
@@ -193,11 +193,11 @@ bool FrameBuffer::AttachTexture(GLenum target, unsigned texId, const EAttachment
 
 	glBindTexture( target, 0 );
 	
-	int	 status = glCheckFramebufferStatus ( GL_FRAMEBUFFER );
+	const GLenum status = glCheckFramebufferStatus ( GL_FRAMEBUFFER );
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		LOGE( "test framebuffer\n" );
+		LOGE( "[Framebuffer] AttachTexture with incomplete status - %u\n", status );
 	}
 
 	return true;

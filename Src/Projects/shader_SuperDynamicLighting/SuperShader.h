@@ -147,16 +147,13 @@ namespace Graphics
 
 		void SetMatCap(GLuint texId);
 
-		static void ConstructDefaultLight0(bool inEyeSpace, const nv::mat4 &lViewMatrix, const nv::mat4 &lViewRotationMatrix, TLight &light);
-		static void ConstructDefaultLight1(bool inEyeSpace, const nv::mat4 &lViewMatrix, const nv::mat4 &lViewRotationMatrix, TLight &light);
-		static void ConstructFromFBLight(const bool ToEyeSpace, const nv::mat4 &lViewMatrix,
-			const nv::mat4 &lViewRotationMatrix, FBLight *pLight, TLight &light);
+		
 
 		// this is a GPU buffer preparation, not an actual binding
 		void			PrepFBSceneLights();
-		void			PrepLightsInViewSpace(ShaderLightManager*pLights);
+		void			PrepLightsInViewSpace(ShaderLightManager* pLights) const;
 
-		void			PrepLightsFromFBList(ShaderLightManager*pLightsManager, const CCameraInfoCache &cameraCache, std::vector<FBLight*> &lights);
+		void			PrepLightsFromFBList(ShaderLightManager* pLightsManager, const CCameraInfoCache &cameraCache, std::vector<FBLight*> &lights);
 
 		void		MapLightsOnGPU();
 
@@ -180,12 +177,16 @@ namespace Graphics
 			return mGPUSceneLights.get();
 		}
 
+		GLuint GetSamplerSlotShadow() const;
 
 	private:
 
 		static void SetCameraTransform(TTransform& transform, FBRenderOptions* pRenderOptions);
 		static void SetTransform(TTransform& transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo);
 		static void SetMaterial(TMaterial& mat, FBMaterial* pMaterial);
+
+
+		static GLuint GetTextureId(FBMaterial* pMaterial, const FBMaterialTextureType textureType, bool forceUpdate);
 	};
 
 };

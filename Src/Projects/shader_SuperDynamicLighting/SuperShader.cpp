@@ -12,6 +12,8 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "CheckGLError.h"
 #include "mobu_logging.h"
 #include <map>
+#include <glm/gtc/matrix_transform.hpp>
+#include "glm_utils.h"
 
 #define SHADER_BUFFERID_VERTEX		"scene_bufferid.vsh"
 #define SHADER_BUFFERID_FRAGMENT	"scene_bufferid.fsh"
@@ -27,8 +29,14 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #define SAMPLER_SLOT_DISPLACE		5
 #define SAMPLER_SLOT_MATCAP			6
 #define SAMPLER_SLOT_DETAIL			7	// possible with a second UV for lightmaps
+#define SAMPLER_SLOT_SHADOW			8
 
 namespace Graphics {
+
+	GLuint SuperShader::GetSamplerSlotShadow() const
+	{
+		return SAMPLER_SLOT_SHADOW;
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,7 +45,6 @@ namespace Graphics {
 
 	void SuperShader::SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
 	{
-		using namespace nv;
 		FBCamera *pCamera = pRenderOptions->GetRenderingCamera();
 
 		FBVector3d	eyePos;
@@ -50,7 +57,7 @@ namespace Graphics {
 		}
 		lWorldMatrix.Identity();
 
-		transform.eyePos = vec4((float)eyePos[0], (float)eyePos[1], (float)eyePos[2], 1.0f);
+		transform.eyePos = glm::vec4(static_cast<float>(eyePos[0]), static_cast<float>(eyePos[1]), static_cast<float>(eyePos[2]), 1.0f);
 
 		FBSVector scl;
 
@@ -60,35 +67,31 @@ namespace Graphics {
 			transform.eyePos[3] = -1.0f;
 		}
 
-		for (int i = 0; i < 16; ++i)
-		{
-			transform.m4_World.mat_array[i] = (float)lWorldMatrix[i];
-			transform.m4_View.mat_array[i] = (float)lCameraMVMatrix[i];
-			transform.m4_Proj.mat_array[i] = (float)lCameraVPMatrix[i];
-		}
+		FBMatrixToGLM(transform.m4_World, lWorldMatrix);
+		FBMatrixToGLM(transform.m4_View, lCameraMVMatrix);
+		FBMatrixToGLM(transform.m4_Proj, lCameraVPMatrix);
 	}
 
 	void SuperShader::SetTransform(TTransform &transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo)
 	{
-		using namespace nv;
 		FBMatrix lModelMatrix;
 		if (pInfo->GetFBModel())
 			pInfo->GetFBModel()->GetMatrix(lModelMatrix, kModelTransformation_Geometry);
 
-		for (int i = 0; i < 16; ++i)
-		{
-			transform.m4_Model.mat_array[i] = (float)lModelMatrix[i];
-		}
+		FBMatrixToGLM(transform.m4_Model, lModelMatrix);
+
 		// DONE: assign a normal matrix !
-		const mat4 tm = transform.m4_View * transform.m4_Model;
-		invert(transform.normalMatrix, tm);
-		transpose(transform.normalMatrix);
+		const glm::mat4 tm = transform.m4_View * transform.m4_Model;
+		transform.normalMatrix = glm::inverse(tm);
+		transform.normalMatrix = glm::transpose(transform.normalMatrix);
 	}
 
 	void SuperShader::SetMaterial(TMaterial &mat, FBMaterial *pMaterial)
 	{
 		if (nullptr == pMaterial)
 			return;
+
+		memset(&mat, 0, sizeof(TMaterial));
 
 		FBColor lEmissiveColor = pMaterial->Emissive;
 		FBColor lDiffuseColor = pMaterial->Diffuse;
@@ -108,21 +111,21 @@ namespace Graphics {
 
 		for (int i = 0; i < 3; ++i)
 		{
-			mat.emissiveColor.vec_array[i] = (float)lEmissiveColor[i];
-			mat.diffuseColor.vec_array[i] = (float)lDiffuseColor[i];
-			mat.ambientColor.vec_array[i] = (float)lAmbientColor[i];
-			mat.specularColor.vec_array[i] = (float)lSpecularColor[i];
-			mat.reflectColor.vec_array[i] = (float)lReflectionColor[i];
+			mat.emissiveColor[i] = static_cast<float>(lEmissiveColor[i]);
+			mat.diffuseColor[i] = static_cast<float>(lDiffuseColor[i]);
+			mat.ambientColor[i] = static_cast<float>(lAmbientColor[i]);
+			mat.specularColor[i] = static_cast<float>(lSpecularColor[i]);
+			mat.reflectColor[i] = static_cast<float>(lReflectionColor[i]);
 		}
 
 		mat.specExp = shin;
 
-		mat.emissiveColor[3] = (float)lEmissiveFactor;
-		mat.diffuseColor[3] = (float)lDiffuseFactor;
-		mat.ambientColor[3] = (float)lAmbientFactor;
-		mat.specularColor[3] = (float)lSpecularFactor;
-		mat.reflectColor[3] = (float)lReflectionFactor;
-		mat.transparencyColor[3] = (float)lTransparencyFactor;
+		mat.emissiveColor[3] = static_cast<float>(lEmissiveFactor);
+		mat.diffuseColor[3] = static_cast<float>(lDiffuseFactor);
+		mat.ambientColor[3] = static_cast<float>(lAmbientFactor);
+		mat.specularColor[3] = static_cast<float>(lSpecularFactor);
+		mat.reflectColor[3] = static_cast<float>(lReflectionFactor);
+		mat.transparencyColor[3] = static_cast<float>(lTransparencyFactor);
 
 		mat.useDiffuse = 0.0f;
 		mat.useTransparency = 0.0f;
@@ -136,16 +139,14 @@ namespace Graphics {
 			mat.useDiffuse = 1.0f;
 
 			const double *tm = pMaterial->GetTexture()->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.diffuseTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.diffuseTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureTransparent) && lTransparencyFactor > 0.0)
 		{
 			mat.useTransparency = 1.0f;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureTransparent)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.transparencyTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.transparencyTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureDisplacementColor))
 		{
@@ -161,24 +162,21 @@ namespace Graphics {
 			mat.useSpecular = 1.0f;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureSpecular)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.specularTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.specularTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureReflection) && lReflectionFactor > 0.0)
 		{
 			mat.useReflect = 1.0f;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureReflection)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.reflectTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.reflectTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureNormalMap) && lBumpFactor > 0.0)
 		{
 			mat.useNormalmap = 1.0f * (float) lBumpFactor;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureNormalMap)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.normalTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.normalTransform, tm);
 		}
 	}
 
@@ -269,7 +267,8 @@ namespace Graphics {
 				{"samplerSpecular", SAMPLER_SLOT_SPECULAR},
 				{"samplerNormal", SAMPLER_SLOT_NORMAL},
 				{"samplerMatCap", SAMPLER_SLOT_MATCAP},
-				{"samplerDetail", SAMPLER_SLOT_DETAIL}
+				{"samplerDetail", SAMPLER_SLOT_DETAIL},
+				{"samplerShadowMap", SAMPLER_SLOT_SHADOW}
 			};
 
 			for (const auto& [name, slot] : uniforms) {
@@ -412,7 +411,7 @@ namespace Graphics {
 	}
 
 	
-	GLuint GetTextureId(FBMaterial *pMaterial, const FBMaterialTextureType textureType, bool forceUpdate)
+	GLuint SuperShader::GetTextureId(FBMaterial *pMaterial, const FBMaterialTextureType textureType, bool forceUpdate)
 	{
 		GLuint texId = 0;
 		bool lForceUpdate = forceUpdate;
@@ -468,10 +467,9 @@ namespace Graphics {
 
 
 		// DONE: bind a texture matrix !
-		if (nullptr != mLastBinded)
+		if (mLastBinded)
 		{
-			
-			if (false == pRenderOptions->IsIDBufferRendering())
+			if (!pRenderOptions->IsIDBufferRendering())
 			{
 				TMaterial lMaterial;
 				SetMaterial(lMaterial, pMaterial);
@@ -658,7 +656,6 @@ namespace Graphics {
 
 	bool SuperShader::CCameraInfoCachePrep(FBCamera *pCamera, CCameraInfoCache &cache)
 	{
-		using namespace nv;
 		if (!pCamera)
 			return false;
 
@@ -669,14 +666,11 @@ namespace Graphics {
 
 		FBMatrixInverse(mvInv, mv);
 
-		for (int i = 0; i<16; ++i)
-		{
-			cache.mv4.mat_array[i] = static_cast<nv_scalar>(mv[i]);
-			cache.mvInv4.mat_array[i] = static_cast<nv_scalar>(mvInv[i]);
-			cache.p4.mat_array[i] = static_cast<nv_scalar>(p[i]);
+		FBMatrixToGLM(cache.mv4, mv);
+		FBMatrixToGLM(cache.mvInv4, mvInv);
+		FBMatrixToGLM(cache.p4, p);
 
-			cache.mv[i] = mv[i];
-		}
+		memcpy(cache.mv, mv, sizeof(double) * 16);
 
 		FBVector3d v;
 		pCamera->GetVector(v);

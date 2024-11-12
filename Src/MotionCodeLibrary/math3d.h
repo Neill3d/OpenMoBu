@@ -38,6 +38,12 @@ float clampf(const float x, const float lower, const float upper);
 double smoothstep(const double edge0, const double edge1, const double x);
 float smootherstep(float edge0, float edge1, float x);
 
+//
+
+void FBVectorToVec3(const double* v, float* dst);
+void FBVectorToVec4KeepW(const double* v, float* dst);
+void FBVectorToVec4(const double* v, float* dst);
+
 // vector part
 double DotProduct(const FBVector3d v1, double *v2);
 FBVector3d CrossProduct(const FBVector3d &left, const FBVector3d &right);

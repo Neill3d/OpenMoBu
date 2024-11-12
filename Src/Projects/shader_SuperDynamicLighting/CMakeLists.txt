@@ -6,6 +6,8 @@ set (SHADERS
     GLSL/scene_bufferid.vsh
     GLSL/scene_shading.fsh
     GLSL/scene_shading.vsh
+    GLSL/scene_shadow.fsh
+    GLSL/scene_shadow.vsh
 )
 source_group("Shaders" FILES ${SHADERS})
 
@@ -30,9 +32,15 @@ include_directories(${GLEW_INCLUDE_DIRS})
 link_libraries(${GLEW_LIBRARIES})
 
 #
+# GLM
+
+set(glm_DIR ${CMAKE_SOURCE_DIR}/third_party/glm) # if necessary
+find_package(glm REQUIRED)
+
+#
 # link libraries
 
-target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk OpenGL::GL OpenGL::GLU GLEW::glew_s MotionCodeLibrary)
+target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk OpenGL::GL OpenGL::GLU GLEW::glew_s glm MotionCodeLibrary)
 
 if (COPY_TO_PLUGINS)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

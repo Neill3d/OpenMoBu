@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <fbsdk/fbsdk.h>
 #include "SuperShader.h"
 #include "OGL_Utils.h"
+#include "ShadowManager.h"
 
 #include <vector>
 
@@ -142,6 +143,15 @@ public:
     FBPropertyAlphaSource   Transparency;
     FBPropertyAnimatableDouble TransparencyFactor;  
 
+    //
+    FBPropertyBool				Shadows;			//!< flag to enable rendering to offscreen shadow textures and use them in lighting shader
+    FBPropertyInt               ShadowMapSize;
+    FBPropertyInt               ShadowPCFKernelSize;
+    FBPropertyListObject        ShadowCasters;
+    FBPropertyAnimatableDouble  ShadowStrength;
+    FBPropertyAnimatableDouble  OffsetScale;
+    FBPropertyAnimatableDouble  OffsetBias;
+
 	//
 	FBPropertyBool				SwitchAlbedoTosRGB;
 	FBPropertyBool				ForceUpdateTextures;
@@ -185,6 +195,8 @@ protected:
 	FBModelCullingMode		mLastCullingMode;
 
 	bool					mHasExclusiveLights;
+
+    Graphics::ShadowManager shadowManager;
 
 };
 

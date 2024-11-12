@@ -12,6 +12,10 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 
 namespace Graphics {
 
+
+
+	
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// FBShaderLights
 
@@ -25,7 +29,7 @@ namespace Graphics {
 	{
 	}
 
-	void ShaderLightManager::UpdateTransformedLights(const nv::mat4 &modelview, const nv::mat4 &rotation, const nv::mat4 &scaling)
+	void ShaderLightManager::UpdateTransformedLights(const glm::mat4& modelview, const glm::mat4& rotation, const glm::mat4& scaling)
 	{
 		// Ensure transformed vectors are the right size, if needed
 		if (transformedLights.size() != lights.size()) {
@@ -38,14 +42,14 @@ namespace Graphics {
 		// Transform point/spot lights
 		for (std::size_t i = 0; i < lights.size(); ++i) {
 			transformedLights[i] = lights[i];  // Copy source light to destination
-			transformedLights[i].position = modelview * lights[i].position;  // Transform position
-			transformedLights[i].dir = rotation * lights[i].dir;  // Transform direction
+			transformedLights[i].position = modelview * glm::vec4(lights[i].position, 1.0f);  // Transform position
+			transformedLights[i].dir = rotation * glm::vec4(lights[i].dir, 0.0f);  // Transform direction
 		}
 
 		// Transform directional lights
 		for (std::size_t i = 0; i < dirLights.size(); ++i) {
 			transformedDirLights[i] = dirLights[i];  // Copy source light to destination
-			transformedDirLights[i].dir = rotation * dirLights[i].dir;  // Transform direction only
+			transformedDirLights[i].dir = rotation * glm::vec4(dirLights[i].dir, 0.0f);  // Transform direction only
 			// Note: No position transform for directional lights as they represent directions.
 		}
 	}
@@ -53,11 +57,17 @@ namespace Graphics {
 	void ShaderLightManager::MapOnGPU()
 	{
 		// dir lights
-		bufferDirLights.UpdateData(sizeof(TLight), transformedDirLights.size(), transformedDirLights.data());
-
+		if (!transformedDirLights.empty())
+		{
+			bufferDirLights.UpdateData(sizeof(TLight), transformedDirLights.size(), transformedDirLights.data());
+		}
+		
 		// point / spot lights
-		bufferLights.UpdateData(sizeof(TLight), transformedLights.size(), transformedLights.data());
-
+		if (!transformedLights.empty())
+		{
+			bufferLights.UpdateData(sizeof(TLight), transformedLights.size(), transformedLights.data());
+		}
+		
 		//
 		//mNumberOfDirLights = (int) mTransformedDirLights.size();
 		//mNumberOfLights = (int) mTransformedLights.size();

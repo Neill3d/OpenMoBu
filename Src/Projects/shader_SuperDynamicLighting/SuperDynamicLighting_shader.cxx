@@ -11,7 +11,10 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "SuperDynamicLighting_shader.h"
 #include "SuperShaderModelInfo.h"
 #include "FileUtils.h"
+#include "FBResourcePathResolver.h"
 #include <math.h>
+#include "FBLightProxy.h"
+#include "FBModelProxy.h"
 
 //--- Registration defines
 #define DYNAMICLIGHTING__CLASS DYNAMICLIGHTING__CLASSNAME
@@ -50,6 +53,34 @@ bool SuperDynamicLighting::FBCreate()
 	FBPropertyPublish(this, TransparencyFactor, "TransparencyFactor", nullptr, nullptr);
     TransparencyFactor.SetMinMax(0.0, 1.0);
     TransparencyFactor = 1.0;
+
+	//
+	FBPropertyPublish(this, Shadows, "Shadows", nullptr, nullptr);
+	Shadows = true;
+
+	FBPropertyPublish(this, ShadowMapSize, "ShadowMapSize", nullptr, nullptr);
+	ShadowMapSize.SetMinMax(128, 8192, true, false);
+	ShadowMapSize = 2048;
+
+	FBPropertyPublish(this, ShadowPCFKernelSize, "ShadowPCFKernelSize", nullptr, nullptr);
+	ShadowPCFKernelSize.SetMinMax(1, 9, true, true);
+	ShadowPCFKernelSize = 9;
+
+	FBPropertyPublish(this, ShadowCasters, "ShadowCasters", nullptr, nullptr);
+	ShadowCasters.SetFilter(FBModel::GetInternalClassId());
+	ShadowCasters.SetSingleConnect(false);
+
+	FBPropertyPublish(this, ShadowStrength, "ShadowStrength", nullptr, nullptr);
+	ShadowStrength.SetMinMax(0.0, 1.0f, true, true);
+	ShadowStrength = 1.0f;
+
+	FBPropertyPublish(this, OffsetScale, "OffsetScale", nullptr, nullptr);
+	OffsetScale.SetMinMax(-10.0, 10.0);
+	OffsetScale = 5.0;
+
+	FBPropertyPublish(this, OffsetBias, "OffsetBias", nullptr, nullptr);
+	OffsetBias.SetMinMax(-100000.0, 100000.0);
+	OffsetBias = 0.0;
 
 	//
 	FBPropertyPublish(this, SwitchAlbedoTosRGB, "Switch Albedo To sRGB", nullptr, nullptr);
@@ -120,36 +151,28 @@ void SuperDynamicLighting::FBDestroy()
 /************************************************
 *	Shader functions.
 ************************************************/
-bool CheckShadersPath(const char* path)
-{
-#define SHADER_SHADING_VERTEX		"/GLSL/scene_shading.vsh"
-#define SHADER_SHADING_FRAGMENT		"/GLSL/scene_shading.fsh"
 
-	constexpr const char* test_shaders[] = {
-		SHADER_SHADING_VERTEX,
-		SHADER_SHADING_FRAGMENT
-	};
-
-	for (const char* shader_path : test_shaders)
-	{
-		FBString full_path(path, shader_path);
-
-		if (!IsFileExists(full_path))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
 
 void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass)
 {
-    if ( nullptr == mpLightShader )
-    {
-        // Setup the path to the shader ...
-        FBSystem system;
-        
+#define SHADER_SHADING_VERTEX		"scene_shading.vsh"
+#define SHADER_SHADING_FRAGMENT		"scene_shading.fsh"
+
+	if (nullptr == mpLightShader)
+	{
+		const std::vector<std::string> test_shaders = {
+			SHADER_SHADING_VERTEX,
+			SHADER_SHADING_FRAGMENT
+		};
+
+		FBShaderPathResolver	pathResolver;
+
+		const std::filesystem::path shadersPath = pathResolver.FindShaderPath(test_shaders);
+
+		/*
+		// Setup the path to the shader ...
+		FBSystem system;
+
 		FBString shaders_path(system.ApplicationPath);
 		shaders_path = shaders_path + "\\plugins";
 
@@ -158,7 +181,7 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 		if (!CheckShadersPath(shaders_path))
 		{
 			status = false;
-			
+
 			const FBStringList& plugin_paths = system.GetPluginPath();
 
 			for (int i = 0; i < plugin_paths.GetCount(); ++i)
@@ -177,22 +200,70 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 			FBTrace("[SyperDynamicLighting] Failed to find shaders!\n");
 			return;
 		}
+		*/
 
-		shaders_path += "/GLSL/";
+		if (shadersPath.empty())
+		{
+			LOGE("[SyperDynamicLighting] Failed to find shaders!\n");
+			return;
+		}
 
-        // Create the lighting shader
-        mpLightShader = new Graphics::SuperShader();
-        if( !mpLightShader->Initialize(shaders_path) )
-        {
+		// Create the lighting shader
+		mpLightShader = new Graphics::SuperShader();
+		if (!mpLightShader->Initialize(shadersPath.generic_string().c_str()))
+		{
 			FBTrace("Failed to initialize a super lighting effect!\n");
 			delete mpLightShader;
 			mpLightShader = nullptr;
 			mSkipRendering = true;
 			Enable = false;
-            return;
-        }
-    }
+			return;
+		}
 
+		if (AffectingLights.GetCount() > 0)
+		{
+			std::vector<std::shared_ptr<Graphics::LightProxy>> lights =
+			{
+				std::make_shared<Graphics::FBLightProxy>(FBCast<FBLight>(AffectingLights[0]))
+			};
+
+			shadowManager.SetLights(std::move(lights));
+		}
+		
+		if (ShadowCasters.GetCount() > 0)
+		{
+			std::vector<std::shared_ptr<Graphics::ModelProxy>> models;
+			
+			for (int i = 0; i < ShadowCasters.GetCount(); ++i)
+			{
+				models.emplace_back(std::make_shared<Graphics::FBModelProxy>(FBCast<FBModel>(ShadowCasters[i])));
+			}
+
+			shadowManager.SetShadowCasters(std::move(models));
+		}
+	}
+
+	if (Shadows)
+	{
+		double offsetBias, offsetScale;
+		OffsetBias.GetData(&offsetBias, sizeof(double));
+		OffsetScale.GetData(&offsetScale, sizeof(double));
+
+		shadowManager.SetProperties({
+				ShadowMapSize,
+				true, // use PCF
+				ShadowPCFKernelSize,
+				static_cast<float>(offsetBias),
+				static_cast<float>(offsetScale)
+			});
+
+		shadowManager.Render();
+
+
+		glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
+		shadowManager.Bind();
+		glActiveTexture(GL_TEXTURE0);
+	}
 
 	StoreCullMode(mCullFaceInfo);
 	mLastCullingMode = kFBCullingOff;
@@ -226,6 +297,13 @@ void SuperDynamicLighting::ShaderPassTypeEnd(FBRenderOptions* pRenderOptions, FB
 
 	FetchCullMode(mCullFaceInfo);
 
+	if (Shadows)
+	{
+		glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
+		shadowManager.UnBind();
+		glActiveTexture(GL_TEXTURE0);
+	}
+	
 	mNeedUpdateTextures = false;
 }
 
@@ -236,9 +314,9 @@ void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptio
 
 	mHasExclusiveLights = false;
 
-	if (false == pRenderOptions->IsIDBufferRendering() && nullptr != mpLightShader)
+	if (!pRenderOptions->IsIDBufferRendering() && nullptr != mpLightShader)
 	{
-		if (false == UseSceneLights && AffectingLights.GetCount() > 0)
+		if (!UseSceneLights && AffectingLights.GetCount() > 0)
 		{
 			mpLightShader->BindLights(false, GetShaderLightsPtr());
 			mHasExclusiveLights = true;
@@ -468,7 +546,7 @@ void SuperDynamicLighting::SetReloadShaders(HIObject pObject, bool val)
 
 void SuperDynamicLighting::DoReloadShaders()
 {
-	if (nullptr != mpLightShader)
+	if (mpLightShader)
 	{
 		delete mpLightShader;
 		mpLightShader = nullptr;
@@ -477,13 +555,14 @@ void SuperDynamicLighting::DoReloadShaders()
 
 void SuperDynamicLighting::DetachDisplayContext(FBRenderOptions* pOptions, FBShaderModelInfo* pInfo)
 {
-	// TODO:
 	DoReloadShaders();
 
 	if (mShaderLights.get())
 		mShaderLights.reset(nullptr);
 	mNeedUpdateLightsList = true;
 	mNeedUpdateTextures = true;
+
+	shadowManager.ChangeContext();
 }
 
 bool SuperDynamicLighting::PlugDataNotify(FBConnectionAction pAction, FBPlug* pThis, void* pData, void* pDataOld, int pDataSize)
@@ -549,13 +628,22 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 
 	if (mNeedUpdateLightsList && false == UseSceneLights)
 	{
-		if (nullptr == mShaderLights.get())
+		if (!mShaderLights.get())
 			mShaderLights.reset(new Graphics::ShaderLightManager());
 
-		if (nullptr != mpLightShader)
+		if (mpLightShader)
 		{
 			mpLightShader->PrepShaderLights(UseSceneLights,
 				&AffectingLights, mLightsPtr, mShaderLights.get());
+
+			if (mShaderLights->GetNumberOfDirLights() > 0)
+			{
+				shadowManager.UpdateLightsBufferData(mShaderLights->GetDirLightRef(0));
+			}
+			else if (mShaderLights->GetNumberOfLights() > 0)
+			{
+				shadowManager.UpdateLightsBufferData(mShaderLights->GetLightRef(0));
+			}
 
 			mpLightShader->PrepLightsInViewSpace(mShaderLights.get());
 		}

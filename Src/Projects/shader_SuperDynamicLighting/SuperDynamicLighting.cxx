@@ -41,11 +41,11 @@ bool FBLibrary::LibReady()	{
 	if (GLEW_OK != err)
 	{
 		// Problem: glewInit failed, something is seriously wrong.
-		FBTrace("GLEW error: %s\n", glewGetErrorString(err));
+		LOGE("GLEW error: %s\n", glewGetErrorString(err));
 	}
 	else
 	{
-		FBTrace("GLEW version: %s\n", glewGetString(GLEW_VERSION));
+		LOGE("GLEW version: %s\n", glewGetString(GLEW_VERSION));
 	}
 
 	
