@@ -82,10 +82,10 @@ namespace Graphics
 		virtual bool PrepareMatrices(const glm::vec3& worldMin, const glm::vec3& worldMax) = 0;
 
 		// Gets the projection matrix for shadow mapping
-		virtual glm::mat4 GetProjectionMatrix() const = 0;
+		virtual const glm::mat4& GetProjectionMatrix() const = 0;
 
 		// Gets the view matrix for rendering the shadow map from the light's perspective
-		virtual glm::mat4 GetViewMatrix() const = 0;
+		virtual const glm::mat4& GetViewMatrix() const = 0;
 
 	};
 
@@ -203,14 +203,7 @@ namespace Graphics
 
 		GLuint CreateDepthTexture(const int size, const bool use_hardware_pcf);
 
-		static void SetDefaultProperties(ShadowProperties& properties)
-		{
-			properties.shadowMapResolution = 2048;
-			properties.usePCF = true;
-			properties.kernelSize = 9;
-			properties.depthBias = 1.0f;
-			properties.offset = 1.0f;
-		}
+		void SetDefaultProperties(ShadowProperties& properties);
 	};
 
 };

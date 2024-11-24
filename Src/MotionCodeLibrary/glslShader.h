@@ -73,7 +73,7 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
   static void setUniformVector( const GLint location, const float x, const float y, const float z, const float w );
   static void setUniformVector2f( const GLint location, const float x, const float y );
   static void setUniformMatrix33( const GLint location, const float *m );
-  static void setUniformMatrix( const GLint location, const float *m );
+  static void setUniformMatrix( const GLint location, const float *m, bool doTranspose = false );
 
 	void bindTexture(GLenum target, const char *texname, GLuint texid, GLenum texunit)
 	{

@@ -14,21 +14,25 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "math3d.h"
 #include "glm_utils.h"
 
+#include <glm\mat4x4.hpp>
+#include <glm\gtc\matrix_transform.hpp>
+#include <glm\gtc\type_ptr.hpp>
+
 namespace Graphics
 {
 	double sDefaultAttenuationNone[3] = { 1.0, 0.0, 0.0 };
 	double sDefaultAttenuationLinear[3] = { 0.0, 0.01, 0.0 };
 	double sDefaultAttenuationQuadratic[3] = { 0.0, 0.0, 0.0001 };
 
-	bool ComputeSpotLightMatrices(FBLight* pLight, FBMatrix& pLightView, FBMatrix& pLightProj)
+	bool ComputeSpotLightMatrices(FBLight* pLight, glm::mat4& lightView, glm::mat4& lightProj)
 	{
 		if (pLight->LightType != kFBLightTypeSpot)
 		{
 			return false;
 		}
 
-		pLightView.Identity();
-		pLightProj.Identity();
+		lightView = glm::mat4(1.0f);
+		lightProj = glm::mat4(1.0f);
 
 		// Spotlight support
 
@@ -39,7 +43,7 @@ namespace Graphics
 
 		// We need a base matrix because the transformation matrix doesn't take into account that lights
 		// start out with transforms that are not represented ... grr ...
-		double base[16] =
+		const double base[16] =
 		{
 			1.0, 0.0, 0.0, 0.0,
 			0.0, 0.0, -1.0, 0.0,
@@ -53,14 +57,27 @@ namespace Graphics
 		FBMatrix transformationMat;
 		pLight->GetMatrix(rotationMat, kModelRotation, true);
 		FBMatrixMult(transformationMat, rotationMat, baseMat);
-
+		
 		transformationMat(3, 0) = ((FBVector3d)pLight->Translation)[0];
 		transformationMat(3, 1) = ((FBVector3d)pLight->Translation)[1];
 		transformationMat(3, 2) = ((FBVector3d)pLight->Translation)[2];
 		transformationMat(3, 3) = 1.0f;
 
-		FBMatrixInverse(pLightView, transformationMat);
+		//FBMatrixInverse(transformationMat, transformationMat);
 
+		FBMatrixToGLM(lightView, transformationMat);
+		//lightView = glm::inverse(lightView);
+		//FBMatrixInverse(pLightView, transformationMat);
+		
+		//double cosAngle;
+		//if (pLight->LightType == kFBLightTypeSpot)
+//			cosAngle = cos(DEG2RAD(pLight->OuterAngle) / 2.0f);
+	//	else
+		//	cosAngle = 0.0;
+
+		//const float spotAngle = (float)cosAngle;
+		
+		/*
 		// Ok .. now we just need a projection matrix ...
 		float fov = 1.2f * pLight->OuterAngle / 2.0f;
 		float fFar = (double)pLight->Intensity * 2.0f;
@@ -69,28 +86,43 @@ namespace Graphics
 		float bottom = -top;
 		float left = bottom;
 		float right = top;
-		double perspectiveValues[16] =
+		const float perspectiveValues[16] =
 		{
-			(2.0 * fNear) / (right - left),   0,                          0,                          0,
-			0,                         (2.0 * fNear) / (top - bottom),    0,                          0,
-			0,                         0,                           -(fFar + fNear) / (fFar - fNear), -(2.0f * fFar * fNear) / (fFar - fNear),
-			0,                         0,                           -1.0f,                      0
+			(2.0f * fNear) / (right - left),   0.0f,                    0.0f,                          0.0f,
+			0.0f,                         (2.0f * fNear) / (top - bottom),    0.0f,                          0.0f,
+			0.0f,                         0.0f,                           -(fFar + fNear) / (fFar - fNear), -(2.0f * fFar * fNear) / (fFar - fNear),
+			0.0f,                         0.0f,                           -1.0f,                      0.0f
 		};
+		
+		lightProj = glm::make_mat4(perspectiveValues);
+		*/
+		//pLightProj = FBMatrix(perspectiveValues);
 
-		pLightProj = FBMatrix(perspectiveValues);
+		//float Translate = 25.0f;
+		//glm::vec2 Rotate(DEG2RAD(0.0f), DEG2RAD(35.0f));
+		//glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -300.0f));
+		//View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
+		//View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
+		//lightView = View;
+
+		//lightView = glm::lookAt(glm::vec3(lightView[3][0], lightView[3][1], lightView[3][2]), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		const float fFar = 10000.0f;
+		const float fNear = 0.1f;
+		lightProj = glm::perspective(static_cast<float>(DEG2RAD(pLight->OuterAngle)), 1.0f, fNear, fFar);
 
 		return true;
 	}
 
-	bool ComputeInfiniteLightMatrices(FBLight* pLight, FBMatrix& pLightView, FBMatrix& pLightProj, const FBVector4d& worldMin, const FBVector4d& worldMax)
+	bool ComputeInfiniteLightMatrices(FBLight* pLight, glm::mat4& lightView, glm::mat4& lightProj, const FBVector4d& worldMin, const FBVector4d& worldMax)
 	{
 		if (pLight->LightType != kFBLightTypeInfinite)
 		{
 			return false;
 		}
 
-		pLightView.Identity();
-		pLightProj.Identity();
+		lightView = glm::mat4(1.0f);
+		lightProj = glm::mat4(1.0f);
 
 		// Directional light support
 
@@ -116,39 +148,42 @@ namespace Graphics
 		pLight->GetMatrix(rotationMat, kModelRotation, true);
 		FBMatrixMult(transformationMat, rotationMat, baseMat);
 
-		double radius;
+		double dradius;
 		FBVector4d newPos;
-		OpenMobu::GetWorldBounds(pLight, radius, newPos, worldMin, worldMax);
+		OpenMobu::GetWorldBounds(pLight, dradius, newPos, worldMin, worldMax);
+		const float radius = static_cast<float>(dradius);
 
 		transformationMat(3, 0) = newPos[0];
 		transformationMat(3, 1) = newPos[1];
 		transformationMat(3, 2) = newPos[2];
 		transformationMat(3, 3) = 1.0f;
 
-		FBMatrixInverse(pLightView, transformationMat);
+		FBMatrixToGLM(lightView, transformationMat);
+
+		//FBMatrixInverse(pLightView, transformationMat);
 
 		// Ok .. now we just need a projection matrix ...
-		double left = -radius;
-		double right = radius;
-		double top = radius;
-		double bottom = -radius;
+		const float left = -radius;
+		const float right = radius;
+		const float top = radius;
+		const float bottom = -radius;
 
-		double fNear = 0.0f;
-		double fFar = radius * 2.0f;
+		const float fNear = 0.0f;
+		const float fFar = radius * 2.0f;
 
-		double diffRL = 1.0 / (right - left);
-		double diffTB = 1.0 / (top - bottom);
-		double diffFN = 1.0 / (fFar - fNear);
+		const float diffRL = 1.0 / (right - left);
+		const float diffTB = 1.0 / (top - bottom);
+		const float diffFN = 1.0 / (fFar - fNear);
 
-		double orthoValues[16] =
+		const float orthoValues[16] =
 		{
-			2.0 * diffRL, 0,            0,                        0,
-			0,            2.0 * diffTB, 0,                        0,
-			0,            0,            -2.0 * diffFN,            0,
-			0,            0,            -(fFar + fNear) * diffFN, 1.0
+			2.0f * diffRL, 0.0f,            0.0f,                        0.0f,
+			0.0f,            2.0f * diffTB, 0.0f,                        0.0f,
+			0.0f,            0.0f,            -2.0f * diffFN,            0.0f,
+			0.0f,            0.0f,            -(fFar + fNear) * diffFN, 1.0f
 		};
 
-		pLightProj = FBMatrix(orthoValues);
+		lightProj = glm::make_mat4(orthoValues);
 
 		return true;
 	}
@@ -174,19 +209,21 @@ namespace Graphics
 	}
 
 	// Gets the projection matrix for shadow mapping
-	glm::mat4 FBLightProxy::GetProjectionMatrix() const
+	const glm::mat4& FBLightProxy::GetProjectionMatrix() const
 	{
-		glm::mat4 tm;
-		FBMatrixToGLM(tm, lightProj);
-		return tm;
+		//glm::mat4 tm;
+		//FBMatrixToGLM(tm, lightProj);
+		//return tm;
+		return lightProj;
 	}
 
 	// Gets the view matrix for rendering the shadow map from the light's perspective
-	glm::mat4 FBLightProxy::GetViewMatrix() const
+	const glm::mat4& FBLightProxy::GetViewMatrix() const
 	{
-		glm::mat4 tm;
-		FBMatrixToGLM(tm, lightView);
-		return tm;
+		//glm::mat4 tm;
+		//FBMatrixToGLM(tm, lightView);
+		//return tm;
+		return lightView;
 	}
 
 	void FBLightProxy::ConstructFromFBLight(TLight& light, const bool ToEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix, FBLight* pLight)

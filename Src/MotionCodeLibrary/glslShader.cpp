@@ -395,7 +395,7 @@ void GLSLShader::setUniformMatrix33( const GLint location, const float *m )
 	glUniformMatrix3fvARB( location, 1, GL_FALSE, m );
 }
 
-void GLSLShader::setUniformMatrix( const GLint location, const float *m )
+void GLSLShader::setUniformMatrix( const GLint location, const float *m, bool doTranspose )
 {
-	glUniformMatrix4fvARB( location, 1, GL_FALSE, m );
+	glUniformMatrix4fvARB( location, 1, (doTranspose) ? GL_TRUE : GL_FALSE, m );
 }

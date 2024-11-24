@@ -12,10 +12,20 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "FBResourcePathResolver.h"
 #include "BoundingBox.h"
 #include "glm_utils.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Graphics
 {
 	
+	void ShadowManager::SetDefaultProperties(ShadowProperties& properties)
+	{
+		properties.shadowMapResolution = 2048;
+		properties.usePCF = true;
+		properties.kernelSize = 9;
+		properties.depthBias = 1.0f;
+		properties.offset = 1.0f;
+	}
+
 	ShadowManager::ShadowManager()
 		: frameBuffer(1024, 1024, 0, 0)
 	{
@@ -83,9 +93,6 @@ namespace Graphics
 
 		SaveFrameBuffer(&frameBufferBindingInfo);
 
-		// Set the viewport to the proper size
-		glViewport(0, 0, properties.shadowMapResolution, properties.shadowMapResolution);
-
 		// Compute the world bounds for infinite light adjustment.
 		// TODO: should bounding box be around casters only ?!
 		FBVector4d fbWorldMin, fbWorldMax;
@@ -96,6 +103,9 @@ namespace Graphics
 
 		if (!frameBuffer.GetFrameBuffer())
 			frameBuffer.Create();
+
+		// Set the viewport to the proper size
+		glViewport(0, 0, properties.shadowMapResolution, properties.shadowMapResolution);
 
 		frameBuffer.Bind();
 
@@ -110,15 +120,18 @@ namespace Graphics
 		}
 		
 		frameBuffer.AttachTexture(GL_TEXTURE_2D, shadowTexId, FrameBuffer::eAttachmentTypeDepth, false);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
 
 		// Clear the depth buffer
+		glEnable(GL_DEPTH_TEST);
 		glClearDepth(1.0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		shader.Bind();
 
-		//glEnable(GL_POLYGON_OFFSET_FILL);
-		//glPolygonOffset(0.1f, 0.1f);
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(1.0f, 4.0f);
 
 		for (auto& light : lights)
 		{
@@ -129,12 +142,12 @@ namespace Graphics
 
 			light->PrepareMatrices(worldMin, worldMax);
 
-			const glm::mat4 proj = light->GetProjectionMatrix();
-			const glm::mat4 view = light->GetViewMatrix();
+			const glm::mat4& proj = light->GetProjectionMatrix();
+			const glm::mat4 view = glm::inverse(light->GetViewMatrix());
 
 			// bind uniforms
-			shader.setUniformMatrix(shaderProjMatrixLoc, &proj[0][0]);
-			shader.setUniformMatrix(shaderViewMatrixLoc, &view[0][0]);
+			shader.setUniformMatrix(shaderProjMatrixLoc, glm::value_ptr(proj));
+			shader.setUniformMatrix(shaderViewMatrixLoc, glm::value_ptr(view));
 
 			for (auto& model : casters)
 			{
@@ -142,7 +155,7 @@ namespace Graphics
 			}
 		}
 
-		//glDisable(GL_POLYGON_OFFSET_FILL);
+		glDisable(GL_POLYGON_OFFSET_FILL);
 
 		shader.UnBind();
 
@@ -161,7 +174,7 @@ namespace Graphics
 
 		if (!lights.empty())
 		{
-			lightData.shadowVP = lights[0]->GetProjectionMatrix() * lights[0]->GetViewMatrix();
+			lightData.shadowVP = lights[0]->GetProjectionMatrix() * glm::inverse(lights[0]->GetViewMatrix());
 		}
 	}
 
@@ -209,11 +222,15 @@ namespace Graphics
 		// Specify texture parameters and attach each texture to an FBO.
 		glBindTexture(GL_TEXTURE_2D, id);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, size, size, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, size, size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
 
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		
 		if (use_hardware_pcf)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -226,7 +243,7 @@ namespace Graphics
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		}
-
+		
 		return id;
 	}
 

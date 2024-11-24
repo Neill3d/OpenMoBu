@@ -156,25 +156,56 @@ uniform sampler2D	samplerReflect;
 uniform sampler2D	samplerMatCap;
 
 // Sampler for the shadow map
-uniform sampler2DShadow samplerShadowMap;
+uniform sampler2DShadow samplerShadowMap; // sampler2DShadow
 
 //////////////////////////////////////////////////////////////////////////////
 // lights
+/*
+float calculateShadow(vec4 shadowCoord) 
+{
+	// perform perspective divide
+    vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(samplerShadowMap, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+
+    return shadow;
+}
+*/
+/*
+float calculateShadow(vec4 shadowCoord)
+{
+	// Divide by w to perform perspective division and map to [0, 1]
+    vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
+	// transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+
+	float visibility = texture(samplerShadowMap, projCoords);
+	return visibility;
+}
+*/
 
 // The main function for shadow computation with PCF
 // no shadow returns 1.0
-float calculateShadowPCF(vec4 shadowCoord) {
+float calculateShadow(vec4 shadowCoord) {
     // Divide by w to perform perspective division and map to [0, 1]
     vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
-    
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+
     // Check if the fragment is outside the shadow map's valid range
-    if (projCoords.z > 1.0) {
-        return 0.0; // No shadow
-    }
+    //if (projCoords.z > 1.0) {
+    //    return 0.0; // No shadow
+    //}
 
     // Add a small bias to prevent shadow acne
     //float bias = 0.005;
-    //projCoords.z -= bias;
+    //projCoords.z += bias;
 
     // PCF kernel size (example: 3x3)
     float shadow = 0.0;
@@ -212,7 +243,7 @@ void evalDirLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)
 			//float lshadow = spotFactor * mix(1.0, shadow, ndotL);
 			vec4 shadowCoord = dirLightsBuffer.lights[i].shadowVP * vec4(info.worldPosition, 1.0);
 			// Calculate shadow factor
-			float shadowFactor = calculateShadowPCF(shadowCoord);
+			float shadowFactor = calculateShadow(shadowCoord);
 
 			result.shadowContrib *= shadowFactor;
 		}
@@ -271,7 +302,7 @@ void doLight(in LIGHTINFOS info, in TLight light, inout float shadow, inout vec3
 		//float lshadow = spotFactor * mix(1.0, shadow, ndotL);
 		vec4 shadowCoord = light.shadowVP * vec4(info.worldPosition, 1.0);
 		// Calculate shadow factor
-		float shadowFactor = calculateShadowPCF(shadowCoord);
+		shadowFactor = calculateShadow(shadowCoord);
 	}
 
 	float factor = light.attenuations.w * att * spotFactor;
@@ -280,7 +311,7 @@ void doLight(in LIGHTINFOS info, in TLight light, inout float shadow, inout vec3
 	
 	diffContrib += ndotL * factor * light.color.xyz;
 	specContrib += specular * factor * light.color.xyz;
-	shadow = mix(shadow, shadow * shadowFactor, factor);
+	shadow = shadow * shadowFactor; //mix(shadow, shadow * shadowFactor, factor);
 }
 
 void evalLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)

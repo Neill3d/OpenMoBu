@@ -83,13 +83,14 @@ namespace Graphics
 		}
 
 		// do a preparation of light matrices with a given world min and max (for infinite light)
+		//  matrices are used for rendering shadow maps and applying them in the scene
 		bool PrepareMatrices(const glm::vec3& worldMin, const glm::vec3& worldMax) override;
 
 		// Gets the projection matrix for shadow mapping
-		virtual glm::mat4 GetProjectionMatrix() const override;
+		virtual const glm::mat4& GetProjectionMatrix() const override;
 
 		// Gets the view matrix for rendering the shadow map from the light's perspective
-		virtual glm::mat4 GetViewMatrix() const override;
+		virtual const glm::mat4& GetViewMatrix() const override;
 
 		// Retrieves the shadow map texture associated with this light (if any)
 		//virtual unsigned int GetShadowMapTextureID() const = 0;
@@ -106,8 +107,8 @@ namespace Graphics
 
 		HdlFBPlugTemplate<FBLight> lightPlug;
 
-		FBMatrix	lightView;
-		FBMatrix	lightProj;
+		glm::mat4	lightView;
+		glm::mat4	lightProj;
 	};
 
 };
