@@ -91,6 +91,10 @@ namespace Graphics
 			doNeedInitialization = false;
 		}
 
+		// make copies of lights and casters to avoid having changes during render evaluation
+		const auto thisFrameLights = lights;
+		const auto thisFrameCasters = casters;
+
 		SaveFrameBuffer(&frameBufferBindingInfo);
 
 		// Compute the world bounds for infinite light adjustment.
@@ -111,15 +115,24 @@ namespace Graphics
 
 		// TODO: initialize framebuffer for needed amount of textures and shadow texture size
 
+		const TextureCreationInfo thisFrameTextureInfo = CalculateCurrentTextureCreationInfo(properties, thisFrameLights);
+
 		// allocate a new texture
 		
-		if (shadowTexId == 0 || doNeedRecreateTextures)
+		if (shadowTexId == 0 || doNeedRecreateTextures || textureInfo != thisFrameTextureInfo)
 		{
-			shadowTexId = CreateDepthTexture(properties.shadowMapResolution, properties.usePCF);
+			if (shadowTexId)
+			{
+				FreeTextures();
+			}
+			
+			shadowTexId = CreateDepthTextureArray(thisFrameTextureInfo);
 			doNeedRecreateTextures = false;
+			textureInfo = thisFrameTextureInfo;
 		}
 		
-		frameBuffer.AttachTexture(GL_TEXTURE_2D, shadowTexId, FrameBuffer::eAttachmentTypeDepth, false);
+		const GLenum target = GetTextureTarget(thisFrameTextureInfo);
+		//frameBuffer.AttachTexture(target, shadowTexId, FrameBuffer::eAttachmentTypeDepth, false);
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 
@@ -133,12 +146,16 @@ namespace Graphics
 		glEnable(GL_POLYGON_OFFSET_FILL);
 		glPolygonOffset(1.0f, 4.0f);
 
-		for (auto& light : lights)
-		{
-			// setup global uniforms like light projection and world matrices
+		unsigned int textureIndex = 0;
 
-			if (!light->IsShadowCaster())
+		for (const auto& light : thisFrameLights)
+		{
+			if (!IsLightCastShadow(light.get()))
 				continue;
+
+			frameBuffer.AttachTextureLayer(target, shadowTexId, textureIndex, FrameBuffer::eAttachmentTypeDepth, false);
+
+			// setup global uniforms like light projection and world matrices
 
 			light->PrepareMatrices(worldMin, worldMax);
 
@@ -153,6 +170,8 @@ namespace Graphics
 			{
 				model->Render(false, shaderModelMatrixLoc, -1);
 			}
+
+			textureIndex += 1;
 		}
 
 		glDisable(GL_POLYGON_OFFSET_FILL);
@@ -163,19 +182,45 @@ namespace Graphics
 
 		frameBuffer.UnBind();
 
+		// update shadow data SSBO
+		UpdateShadowsData(thisFrameLights);
+
 		// restore current framebuffer bind state
 		RestoreFrameBuffer(&frameBufferBindingInfo);
 	}
 
-	// get a shadow map matrix for each calculated shadow map, in order to use it in lighting shader
-	void ShadowManager::UpdateLightsBufferData(TLight& lightData)
+	bool ShadowManager::IsLightCastShadow(const LightProxy* lightProxy)
 	{
-		lightData.shadowMapLayer = (shadowTexId > 0) ? 1.0f : -1.0f;
+		if (!lightProxy->IsShadowCaster())
+			return false;
 
-		if (!lights.empty())
+		if (lightProxy->GetLightType() == LightProxy::LightType::Spot
+			|| lightProxy->GetLightType() == LightProxy::LightType::Infinite)
 		{
-			lightData.shadowVP = lights[0]->GetProjectionMatrix() * glm::inverse(lights[0]->GetViewMatrix());
+			return true;
 		}
+		return false;
+	}
+
+	ShadowManager::TextureCreationInfo ShadowManager::CalculateCurrentTextureCreationInfo(const ShadowProperties& propertiesIn, const std::vector<std::shared_ptr<LightProxy>>& lightsIn)
+	{
+		TextureCreationInfo info;
+
+		info.textureSize = propertiesIn.shadowMapResolution;
+		info.useHardwarePCF = propertiesIn.usePCF;
+
+		int numberOfShadowMaps = 0;
+
+		for (const auto& light : lightsIn)
+		{
+			if (IsLightCastShadow(light.get()))
+			{
+				numberOfShadowMaps += 1;
+			}
+		}
+
+		info.numberOfMaps = numberOfShadowMaps;
+		return info;
 	}
 
 	// bind shadow map textures to use in lighting shader
@@ -184,15 +229,21 @@ namespace Graphics
 	{
 		if (shadowTexId > 0)
 		{
-			glBindTexture(GL_TEXTURE_2D, shadowTexId);
+			const GLenum target = GetTextureTarget(textureInfo);
+			glBindTexture(target, shadowTexId);
 		}
 	}
 
-	void ShadowManager::UnBind()
+	void ShadowManager::UnBind() const
 	{
-		glBindTexture(GL_TEXTURE_2D, 0);
+		const GLenum target = GetTextureTarget(textureInfo);
+		glBindTexture(target, 0);
 	}
 
+	void ShadowManager::BindShadowsBuffer(GLuint shadowsBufferLoc)
+	{
+		shadowsBuffer.Bind(shadowsBufferLoc);
+	}
 
 	void ShadowManager::PrepareListOfLights(std::vector<std::shared_ptr<LightProxy>>& renderLights)
 	{
@@ -212,26 +263,67 @@ namespace Graphics
 		}
 	}
 
-	GLuint ShadowManager::CreateDepthTexture(const int size, const bool use_hardware_pcf)
+	GLenum ShadowManager::GetTextureTarget(const TextureCreationInfo& info)
 	{
+		return (!info.useMultisampling) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+	}
+
+	GLuint ShadowManager::CreateDepthTexture(const TextureCreationInfo& info)
+	{
+		const GLenum target = GL_TEXTURE_2D;
+
 		GLuint id = 0;
 
 		// Create offscreen textures and FBOs for offscreen shadow map rendering.
 		glGenTextures(1, &id);
 
 		// Specify texture parameters and attach each texture to an FBO.
-		glBindTexture(GL_TEXTURE_2D, id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, size, size, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
-		//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, size, size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+		glBindTexture(target, id);
 
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexImage2D(target, 0, GL_DEPTH_COMPONENT32, info.textureSize, info.textureSize, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(target, GL_TEXTURE_BORDER_COLOR, color);
+
+		if (info.useHardwarePCF)
+		{
+			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+			glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		}
+		else
+		{
+			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
 		
-		if (use_hardware_pcf)
+		return id;
+	}
+
+	GLuint ShadowManager::CreateDepthTextureArray(const TextureCreationInfo& info)
+	{
+		const GLenum target = GetTextureTarget(info);
+
+		GLuint id = 0;
+
+		// Create offscreen textures and FBOs for offscreen shadow map rendering.
+		glGenTextures(1, &id);
+
+		// Specify texture parameters and attach each texture to an FBO.
+		glBindTexture(target, id);
+
+		if (info.useMultisampling)
+		{
+			glTexStorage3DMultisample(target, info.samplesCount, GL_DEPTH_COMPONENT32F, info.textureSize, info.textureSize, info.numberOfMaps, GL_FALSE);
+		}
+		else
+		{
+			glTexStorage3D(target, 1, GL_DEPTH_COMPONENT32F, info.textureSize, info.textureSize, info.numberOfMaps);
+		}
+
+		if (info.useHardwarePCF)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -243,8 +335,45 @@ namespace Graphics
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		}
-		
+
 		return id;
 	}
 
+	void ShadowManager::FreeTextures()
+	{
+		if (shadowTexId > 0)
+		{
+			glDeleteTextures(1, &shadowTexId);
+			shadowTexId = 0;
+		}
+	}
+
+	void ShadowManager::UpdateShadowsData(const std::vector<std::shared_ptr<LightProxy>>& lightsIn)
+	{
+		shadowsData.resize(lightsIn.size());
+
+		for (size_t i = 0; i < lightsIn.size(); ++i)
+		{
+			const auto& light = lightsIn[i];
+			auto& shadow = shadowsData[i];
+
+			shadow.shadowMapLayer = -1.0f;
+
+			if (!light->IsShadowCaster())
+				continue;
+
+			if (light->GetLightType() == LightProxy::LightType::Spot
+				|| light->GetLightType() == LightProxy::LightType::Infinite)
+			{
+				shadow.shadowMapLayer = static_cast<float>(i);
+				shadow.shadowVP = light->GetProjectionMatrix() * glm::inverse(light->GetViewMatrix());
+			}
+		}
+
+		// upload data on gpu
+		if (!shadowsData.empty())
+		{
+			shadowsBuffer.UpdateData(sizeof(TShadow), shadowsData.size(), shadowsData.data());
+		}
+	}
 };

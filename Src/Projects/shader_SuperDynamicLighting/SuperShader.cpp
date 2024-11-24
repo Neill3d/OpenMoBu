@@ -268,7 +268,7 @@ namespace Graphics {
 				{"samplerNormal", SAMPLER_SLOT_NORMAL},
 				{"samplerMatCap", SAMPLER_SLOT_MATCAP},
 				{"samplerDetail", SAMPLER_SLOT_DETAIL},
-				{"samplerShadowMap", SAMPLER_SLOT_SHADOW}
+				{"samplerShadowMaps", SAMPLER_SLOT_SHADOW}
 			};
 
 			for (const auto& [name, slot] : uniforms) {
@@ -287,6 +287,7 @@ namespace Graphics {
 				
 				{"numberOfDirLights", &PhongShaderUniformLocations.numberOfDirLights},
 				{"numberOfPointLights", &PhongShaderUniformLocations.numberOfPointLights},
+				{"numberOfShadows", &PhongShaderUniformLocations.numberOfShadows},
 
 				{"globalAmbientLight", &PhongShaderUniformLocations.globalAmbientLight},
 

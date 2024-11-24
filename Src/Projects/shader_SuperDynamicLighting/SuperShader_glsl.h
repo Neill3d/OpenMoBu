@@ -37,18 +37,23 @@ struct TLight
 	glm::vec3	color;
 	float		radius;
 
+	float		castSpecularOnObject;
+
+	static void ConstructDefaultLight0(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
+	static void ConstructDefaultLight1(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
+};
+
+struct TShadow
+{
+	float		lightType;
 	float		shadowMapLayer{ -1.0f };
 	float		shadowMapSize;
 	float		shadowPCFKernelSize;
-	float		castSpecularOnObject;
-
+	
 	glm::mat4		shadowVP;	// view projection matrix of a shadow map
 	glm::vec4	shadowIndex;	// index and count in the shadow matrix array
 	glm::vec4	normalizedFarPlanes;	// for cascaded shadows
 
-
-	static void ConstructDefaultLight0(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
-	static void ConstructDefaultLight1(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
 };
 
 struct TTransform

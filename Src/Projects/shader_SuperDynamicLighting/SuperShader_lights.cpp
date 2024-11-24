@@ -206,7 +206,7 @@ namespace Graphics
 		const glm::mat4 camRotationMatrix = glm::mat4_cast(camRotation);
 
 		//
-		const int numLights = (int)mobuLights.size();
+		const int numLights = static_cast<int>(mobuLights.size());
 
 		//auto &dstLights = pShaderLights->GetLightsVector();
 		//auto &dstDirLights = pShaderLights->GetDirLightsVector();
@@ -418,6 +418,16 @@ namespace Graphics
 			glUniform1i(PhongShaderUniformLocations.numberOfDirLights, numdir);
 		if (PhongShaderUniformLocations.numberOfPointLights >= 0)
 			glUniform1i(PhongShaderUniformLocations.numberOfPointLights, numpoint);
+	}
+
+	void SuperShader::UploadShadowsInformation(const int numShadow)
+	{
+
+
+		if (PhongShaderUniformLocations.numberOfShadows >= 0)
+		{
+			glUniform1f(PhongShaderUniformLocations.numberOfShadows, numShadow);
+		}
 	}
 }
 

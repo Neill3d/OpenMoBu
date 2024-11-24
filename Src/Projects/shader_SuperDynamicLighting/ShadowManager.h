@@ -14,6 +14,7 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include <glm/glm.hpp>
 #include "SuperShader_glsl.h"
 #include "OGL_Utils.h"
+#include "GPUBuffer.h"
 
 #include <vector>
 #include <memory>
@@ -132,6 +133,8 @@ namespace Graphics
 			lights = std::move(lightsIn);
 		}
 
+		void ClearLights() { lights.clear(); }
+
 		// set which models are going to take part in shadow rendering
 		void SetShadowCasters(const std::vector<std::shared_ptr<ModelProxy>>& castersIn)
 		{
@@ -142,6 +145,8 @@ namespace Graphics
 		{
 			casters = std::move(castersIn);
 		}
+
+		void ClearShadowCasters() { casters.clear(); }
 
 		struct ShadowProperties {
 			int shadowMapResolution;
@@ -163,11 +168,15 @@ namespace Graphics
 		void Render();
 
 		// using TLight buffer data and update with shadow values of view proj matrix and shadow map layer
-		void UpdateLightsBufferData(TLight& lightData);
+		//void UpdateLightsBufferData(TLight& lightData);
 
 		// bind shadow map textures to use in lighting shader
 		void Bind();
-		void UnBind();
+		void UnBind() const;
+
+		void BindShadowsBuffer(GLuint shadowsBufferLoc);
+
+		int GetNumberOfShadows() const { return static_cast<int>(shadowsData.size()); }
 
 	private:
 
@@ -187,21 +196,70 @@ namespace Graphics
 		GLint shaderViewMatrixLoc{ -1 };
 		GLint shaderModelMatrixLoc{ -1 };
 
-		GLuint shadowTexId{ 0 };
-
 		glm::vec3 worldMin;
 		glm::vec3 worldMax;
 
 		void PrepareListOfLights(std::vector<std::shared_ptr<LightProxy>>& renderLights);
 
+		static bool IsLightCastShadow(const LightProxy* lightProxy);
+
 	private:
-		///static constexpr int32_t MAX_DRAW_BUFFERS{ 10 };
+
+		// SSBO with TShadow array
+
+		std::vector<TShadow>	shadowsData;
+
+		GPUBufferSSBO			shadowsBuffer;        ///< describe each shadow projection for the lighting shader
+
+		void UpdateShadowsData(const std::vector<std::shared_ptr<LightProxy>>& lightsIn);
+
+	private:
+		
+		struct TextureCreationInfo
+		{
+			int textureSize{ 64 };
+			int numberOfMaps{ 1 }; // for texture array
+			bool useHardwarePCF{ true };
+			bool useMultisampling{ false };
+			int samplesCount{ 4 };
+
+			bool operator != (const ShadowManager::TextureCreationInfo& anotherInfo)
+			{
+				if (textureSize != anotherInfo.textureSize)
+					return true;
+				if (numberOfMaps != anotherInfo.numberOfMaps)
+					return true;
+				if (useHardwarePCF != anotherInfo.useHardwarePCF)
+					return true;
+				if (useMultisampling != anotherInfo.useMultisampling)
+					return true;
+				if (samplesCount != anotherInfo.samplesCount)
+					return true;
+
+				return false;
+			}
+
+		};
+
+		
+
+		TextureCreationInfo	textureInfo;
 
 		bool		doNeedRecreateTextures{ true };
 
+		GLuint shadowTexId{ 0 };
+
 		FrameBufferInfo frameBufferBindingInfo;
 
-		GLuint CreateDepthTexture(const int size, const bool use_hardware_pcf);
+		static TextureCreationInfo CalculateCurrentTextureCreationInfo(const ShadowProperties& propertiesIn, const std::vector<std::shared_ptr<LightProxy>>& lightsIn);
+
+		// return a texture target type, depends on current options (like multisampling, texture array, etc.)
+		static GLenum GetTextureTarget(const TextureCreationInfo& info);
+
+		static GLuint CreateDepthTextureArray(const TextureCreationInfo& info);
+		static GLuint CreateDepthTexture(const TextureCreationInfo& info);
+
+		void FreeTextures();
 
 		void SetDefaultProperties(ShadowProperties& properties);
 	};

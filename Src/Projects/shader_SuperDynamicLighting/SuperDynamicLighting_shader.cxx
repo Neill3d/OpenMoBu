@@ -158,7 +158,7 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 #define SHADER_SHADING_VERTEX		"scene_shading.vsh"
 #define SHADER_SHADING_FRAGMENT		"scene_shading.fsh"
 
-	if (nullptr == mpLightShader)
+	if (!mpLightShader)
 	{
 		const std::vector<std::string> test_shaders = {
 			SHADER_SHADING_VERTEX,
@@ -168,39 +168,6 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 		FBShaderPathResolver	pathResolver;
 
 		const std::filesystem::path shadersPath = pathResolver.FindShaderPath(test_shaders);
-
-		/*
-		// Setup the path to the shader ...
-		FBSystem system;
-
-		FBString shaders_path(system.ApplicationPath);
-		shaders_path = shaders_path + "\\plugins";
-
-		bool status = true;
-
-		if (!CheckShadersPath(shaders_path))
-		{
-			status = false;
-
-			const FBStringList& plugin_paths = system.GetPluginPath();
-
-			for (int i = 0; i < plugin_paths.GetCount(); ++i)
-			{
-				if (CheckShadersPath(plugin_paths[i]))
-				{
-					shaders_path = plugin_paths[i];
-					status = true;
-					break;
-				}
-			}
-		}
-
-		if (status == false)
-		{
-			FBTrace("[SyperDynamicLighting] Failed to find shaders!\n");
-			return;
-		}
-		*/
 
 		if (shadersPath.empty())
 		{
@@ -219,62 +186,18 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 			Enable = false;
 			return;
 		}
-
-		if (AffectingLights.GetCount() > 0)
-		{
-			std::vector<std::shared_ptr<Graphics::LightProxy>> lights =
-			{
-				std::make_shared<Graphics::FBLightProxy>(FBCast<FBLight>(AffectingLights[0]))
-			};
-
-			shadowManager.SetLights(std::move(lights));
-		}
-		
-		if (ShadowCasters.GetCount() > 0)
-		{
-			std::vector<std::shared_ptr<Graphics::ModelProxy>> models;
-			
-			for (int i = 0; i < ShadowCasters.GetCount(); ++i)
-			{
-				models.emplace_back(std::make_shared<Graphics::FBModelProxy>(FBCast<FBModel>(ShadowCasters[i])));
-			}
-
-			shadowManager.SetShadowCasters(std::move(models));
-		}
-	}
-
-	if (Shadows)
-	{
-		double offsetBias, offsetScale;
-		OffsetBias.GetData(&offsetBias, sizeof(double));
-		OffsetScale.GetData(&offsetScale, sizeof(double));
-
-		shadowManager.SetProperties({
-				ShadowMapSize,
-				true, // use PCF
-				ShadowPCFKernelSize,
-				static_cast<float>(offsetBias),
-				static_cast<float>(offsetScale)
-			});
-
-		shadowManager.Render();
-
-
-		glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
-		shadowManager.Bind();
-		glActiveTexture(GL_TEXTURE0);
 	}
 
 	StoreCullMode(mCullFaceInfo);
 	mLastCullingMode = kFBCullingOff;
 
 	// bind a shader here, prepare a global scene light set
-	if (false == mpLightShader->BeginShading(pRenderOptions, nullptr))
+	if (!mpLightShader->BeginShading(pRenderOptions, nullptr))
 	{
 		mSkipRendering = true;
 	}
 	else
-	if (true == pRenderOptions->IsIDBufferRendering() || nullptr == mpLightShader)
+	if (pRenderOptions->IsIDBufferRendering() || nullptr == mpLightShader)
 		mSkipRendering = true;
 	else
 	{
@@ -314,7 +237,7 @@ void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptio
 
 	mHasExclusiveLights = false;
 
-	if (!pRenderOptions->IsIDBufferRendering() && nullptr != mpLightShader)
+	if (!pRenderOptions->IsIDBufferRendering() && mpLightShader)
 	{
 		if (!UseSceneLights && AffectingLights.GetCount() > 0)
 		{
@@ -359,6 +282,10 @@ void SuperDynamicLighting::ShaderPassInstanceEnd(FBRenderOptions* pRenderOptions
 
 	if (mHasExclusiveLights)
 		mpLightShader->BindLights(false);
+
+	glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
+	shadowManager.UnBind();
+	glActiveTexture(GL_TEXTURE0);
 }
 
 void SuperDynamicLighting::ShaderPassMaterialBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass, FBShaderModelInfo* pInfo)
@@ -580,7 +507,7 @@ bool SuperDynamicLighting::PlugDataNotify(FBConnectionAction pAction, FBPlug* pT
 
 bool SuperDynamicLighting::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug)
 {
-	if (pThis == &AffectingLights)
+	if (pThis == &AffectingLights || pThis == &ShadowCasters)
 	{
 		if (pAction == kFBConnectedSrc)
 		{
@@ -628,6 +555,50 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 
 	if (mNeedUpdateLightsList && false == UseSceneLights)
 	{
+		{
+			std::vector<std::shared_ptr<Graphics::LightProxy>> lights;
+
+			for (int i = 0; i < AffectingLights.GetCount(); ++i)
+			{
+				lights.emplace_back(std::make_shared<Graphics::FBLightProxy>(FBCast<FBLight>(AffectingLights[i])));
+			}
+			shadowManager.SetLights(std::move(lights));
+
+			//
+
+			std::vector<std::shared_ptr<Graphics::ModelProxy>> models;
+
+			for (int i = 0; i < ShadowCasters.GetCount(); ++i)
+			{
+				models.emplace_back(std::make_shared<Graphics::FBModelProxy>(FBCast<FBModel>(ShadowCasters[i])));
+			}
+			shadowManager.SetShadowCasters(std::move(models));
+		}
+
+		if (Shadows)
+		{
+			double offsetBias, offsetScale;
+			OffsetBias.GetData(&offsetBias, sizeof(double));
+			OffsetScale.GetData(&offsetScale, sizeof(double));
+
+			shadowManager.SetProperties({
+					ShadowMapSize,
+					true, // use PCF
+					ShadowPCFKernelSize,
+					static_cast<float>(offsetBias),
+					static_cast<float>(offsetScale)
+				});
+
+			shadowManager.Render();
+
+			glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
+			shadowManager.Bind();
+			glActiveTexture(GL_TEXTURE0);
+
+			shadowManager.BindShadowsBuffer(4);
+			mpLightShader->UploadShadowsInformation(shadowManager.GetNumberOfShadows());
+		}
+
 		if (!mShaderLights.get())
 			mShaderLights.reset(new Graphics::ShaderLightManager());
 
@@ -635,15 +606,6 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 		{
 			mpLightShader->PrepShaderLights(UseSceneLights,
 				&AffectingLights, mLightsPtr, mShaderLights.get());
-
-			if (mShaderLights->GetNumberOfDirLights() > 0)
-			{
-				shadowManager.UpdateLightsBufferData(mShaderLights->GetDirLightRef(0));
-			}
-			else if (mShaderLights->GetNumberOfLights() > 0)
-			{
-				shadowManager.UpdateLightsBufferData(mShaderLights->GetLightRef(0));
-			}
 
 			mpLightShader->PrepLightsInViewSpace(mShaderLights.get());
 		}

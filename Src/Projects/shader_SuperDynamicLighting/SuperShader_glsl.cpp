@@ -13,8 +13,7 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 void TLight::ConstructDefaultLight0(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix)
 {
 	memset(&light, 0, sizeof(TLight));
-	light.shadowMapLayer = -1.0f;
-
+	
 	// If there is no light in the scene, we must put the two default lights
 	// in order to have almost the same behavior as MB. Those two lights are
 	// not present as soon as there is one light in the scene.
@@ -40,8 +39,7 @@ void TLight::ConstructDefaultLight0(TLight& light, bool inEyeSpace, const glm::m
 void TLight::ConstructDefaultLight1(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix)
 {
 	memset(&light, 0, sizeof(TLight));
-	light.shadowMapLayer = -1.0f;
-
+	
 	// If there is no light in the scene, we must put the two default lights
 	// in order to have almost the same behavior as MB. Those two lights are
 	// not present as soon as there is one light in the scene.
