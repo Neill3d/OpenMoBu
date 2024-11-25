@@ -239,7 +239,7 @@ void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptio
 
 	if (!pRenderOptions->IsIDBufferRendering() && mpLightShader)
 	{
-		if (!UseSceneLights && AffectingLights.GetCount() > 0)
+		if (UseSceneLights == false && AffectingLights.GetCount() > 0)
 		{
 			mpLightShader->BindLights(false, GetShaderLightsPtr());
 			mHasExclusiveLights = true;
@@ -272,6 +272,8 @@ void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptio
 		}
 
 		EventBeforeRenderNotify();
+
+
 	}	
 }
 
@@ -591,6 +593,9 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 
 			shadowManager.Render();
 
+			// bind back a lighting shader!
+			mpLightShader->BindShader();
+			
 			glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
 			shadowManager.Bind();
 			glActiveTexture(GL_TEXTURE0);

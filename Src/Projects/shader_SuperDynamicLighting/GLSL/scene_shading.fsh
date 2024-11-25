@@ -76,7 +76,7 @@ struct TLight
 	vec4 		color;			// w - radius	
 	// 16
 	
-	float		castSpecularOnObject;
+	vec4		pad_castSpecularOnObject;
 
 	// total - 68 bytes
 };
@@ -168,40 +168,41 @@ uniform sampler2D	samplerReflect;
 uniform sampler2D	samplerMatCap;
 
 // Sampler for the shadow map
-uniform sampler2DArrayShadow samplerShadowMaps; // sampler2DShadow
+uniform sampler2DArray samplerShadowMaps; // sampler2DShadow
 
 //////////////////////////////////////////////////////////////////////////////
 // lights
-/*
-float calculateShadow(vec4 shadowCoord) 
+
+float calculateShadow(vec4 shadowCoord, float shadowMapLayer) 
 {
 	// perform perspective divide
     vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(samplerShadowMap, projCoords.xy).r; 
+    float closestDepth = texture(samplerShadowMaps, vec3(projCoords.xy, shadowMapLayer)).r; 
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+    float shadow = currentDepth > closestDepth  ? 0.5 : 1.0;
 
     return shadow;
 }
-*/
+
 /*
-float calculateShadow(vec4 shadowCoord)
+// for sampler2DArrayShadow
+float calculateShadow(vec4 shadowCoord, float shadowMapLayer)
 {
 	// Divide by w to perform perspective division and map to [0, 1]
     vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
 	// transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
 
-	float visibility = texture(samplerShadowMap, projCoords);
+	float visibility = texture(samplerShadowMaps, vec4(projCoords, shadowMapLayer));
 	return visibility;
 }
 */
-
+/*
 // The main function for shadow computation with PCF
 // no shadow returns 1.0
 float calculateShadow(vec4 shadowCoord, float shadowMapLayer) {
@@ -237,7 +238,7 @@ float calculateShadow(vec4 shadowCoord, float shadowMapLayer) {
 
     return shadow;
 }
-
+*/
 float evalShadows(in LIGHTINFOS info)
 {
 	float shadowContrib = 1.0;
@@ -255,9 +256,9 @@ float evalShadows(in LIGHTINFOS info)
 	return shadowContrib;
 }
 
-void evalDirLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)
+void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 {
-	for (int i=0; i<count; ++i)
+	for (int i=0; i<numberOfDirLights; ++i)
 	{
 		vec3 dir = -normalize(dirLightsBuffer.lights[i].dir.xyz);
 		
@@ -458,29 +459,28 @@ void main (void)
 	lResult.ambientContrib = vec3(0.0);
 	lResult.diffContrib = vec3(0.0);
 	lResult.specContrib = vec3(0.0);
-	float shadowContrib = 0.0;
+	float shadowContrib = 1.0;
 	//lResult.R = vec3(0.0);
 	
 	if (numberOfDirLights > 0)
 	{
-		evalDirLighting(lInfo, numberOfDirLights, lResult);
+		evalDirLighting(lInfo, lResult);
 	}
 	if (numberOfPointLights > 0)
 	{
 		evalLighting(lInfo, numberOfPointLights, lResult);
 	}
-	if (numberOfShadows > 10)
+	if (numberOfShadows > 0)
 	{
 		shadowContrib = evalShadows(lInfo);
-		shadowContrib *= 0.001f;
 	}
 	float difFactor = clamp(materialBuffer.mat.diffuseColor.w, 0.0, 1.0);
 	vec3 ambientColor = materialBuffer.mat.ambientColor.rgb * globalAmbientLight.rgb * materialBuffer.mat.ambientColor.w;
 	vec3 emissiveColor = materialBuffer.mat.emissiveColor.a * materialBuffer.mat.emissiveColor.rgb;
-	vec3 difColor = mix(lResult.diffContrib * difFactor, materialBuffer.mat.emissiveColor.rgb, materialBuffer.mat.emissiveColor.w);
+	vec3 difColor = lResult.diffContrib * difFactor;
 	
 	color *= vec4(ambientColor + difColor, materialBuffer.mat.shaderTransparency); // ambientColor +
-	
+	color.rgb = color.rgb + materialBuffer.mat.emissiveColor.rgb * materialBuffer.mat.emissiveColor.w;
 	
 	float specularFactor = materialBuffer.mat.specularColor.w;
 	
@@ -501,6 +501,8 @@ void main (void)
 	vec3 reflColor = ApplyReflection( inWV, n_eye );
 	color.rgb += lResult.diffContrib * reflColor;
 	color.rgb *= shadowContrib;
+
+	color = clamp(color, 0.0, 1.0);
 
 	if (switchAlbedoTosRGB > 0.0)
 	{

@@ -385,6 +385,11 @@ namespace Graphics {
 		return true;
 	}
 
+	void SuperShader::BindShader()
+	{
+		mShaderShading->Bind();
+	}
+
 	void SuperShader::EndShading(FBRenderOptions *pRenderOptions)
 	{
 		if (nullptr != mLastBinded)

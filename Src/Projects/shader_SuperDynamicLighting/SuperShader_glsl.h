@@ -37,6 +37,7 @@ struct TLight
 	glm::vec3	color;
 	float		radius;
 
+	glm::vec3	pad;
 	float		castSpecularOnObject;
 
 	static void ConstructDefaultLight0(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);

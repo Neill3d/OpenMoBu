@@ -422,11 +422,10 @@ namespace Graphics
 
 	void SuperShader::UploadShadowsInformation(const int numShadow)
 	{
-
-
 		if (PhongShaderUniformLocations.numberOfShadows >= 0)
 		{
-			glUniform1f(PhongShaderUniformLocations.numberOfShadows, numShadow);
+			glProgramUniform1i(mShaderShading->GetProgramObj(), PhongShaderUniformLocations.numberOfShadows, numShadow);
+			//glUniform1f(PhongShaderUniformLocations.numberOfShadows, numShadow);
 		}
 	}
 }

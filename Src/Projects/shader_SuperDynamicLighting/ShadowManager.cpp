@@ -108,16 +108,9 @@ namespace Graphics
 		if (!frameBuffer.GetFrameBuffer())
 			frameBuffer.Create();
 
-		// Set the viewport to the proper size
-		glViewport(0, 0, properties.shadowMapResolution, properties.shadowMapResolution);
-
-		frameBuffer.Bind();
-
-		// TODO: initialize framebuffer for needed amount of textures and shadow texture size
-
 		const TextureCreationInfo thisFrameTextureInfo = CalculateCurrentTextureCreationInfo(properties, thisFrameLights);
 
-		// allocate a new texture
+		// initialize framebuffer for needed amount of textures and shadow texture size
 		
 		if (shadowTexId == 0 || doNeedRecreateTextures || textureInfo != thisFrameTextureInfo)
 		{
@@ -133,14 +126,7 @@ namespace Graphics
 		
 		const GLenum target = GetTextureTarget(thisFrameTextureInfo);
 		//frameBuffer.AttachTexture(target, shadowTexId, FrameBuffer::eAttachmentTypeDepth, false);
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
-
-		// Clear the depth buffer
-		glEnable(GL_DEPTH_TEST);
-		glClearDepth(1.0);
-		glClear(GL_DEPTH_BUFFER_BIT);
-
+		
 		shader.Bind();
 
 		glEnable(GL_POLYGON_OFFSET_FILL);
@@ -152,8 +138,19 @@ namespace Graphics
 		{
 			if (!IsLightCastShadow(light.get()))
 				continue;
+			frameBuffer.Bind();
+
+			// Set the viewport to the proper size
+			glViewport(0, 0, properties.shadowMapResolution, properties.shadowMapResolution);
 
 			frameBuffer.AttachTextureLayer(target, shadowTexId, textureIndex, FrameBuffer::eAttachmentTypeDepth, false);
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
+
+			// Clear the depth buffer
+			glEnable(GL_DEPTH_TEST);
+			glClearDepth(1.0);
+			glClear(GL_DEPTH_BUFFER_BIT);
 
 			// setup global uniforms like light projection and world matrices
 
@@ -171,16 +168,14 @@ namespace Graphics
 				model->Render(false, shaderModelMatrixLoc, -1);
 			}
 
+			frameBuffer.UnBind();
+
 			textureIndex += 1;
 		}
 
 		glDisable(GL_POLYGON_OFFSET_FILL);
 
 		shader.UnBind();
-
-		// for each light, render casters into a texture
-
-		frameBuffer.UnBind();
 
 		// update shadow data SSBO
 		UpdateShadowsData(thisFrameLights);
@@ -233,6 +228,8 @@ namespace Graphics
 			glBindTexture(target, shadowTexId);
 		}
 	}
+
+
 
 	void ShadowManager::UnBind() const
 	{
@@ -323,19 +320,28 @@ namespace Graphics
 			glTexStorage3D(target, 1, GL_DEPTH_COMPONENT32F, info.textureSize, info.textureSize, info.numberOfMaps);
 		}
 
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		glTexParameterfv(target, GL_TEXTURE_BORDER_COLOR, color);
+
+
+
+
+		/*
 		if (info.useHardwarePCF)
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+			glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		}
 		else
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		}
-
+		*/
 		return id;
 	}
 
