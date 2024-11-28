@@ -241,6 +241,15 @@ namespace Graphics
 		}
 	}
 
+	void SceneManager::ResetShadowInformation()
+	{
+		for (size_t j = 0; j < mUsedSceneLights.size(); ++j)
+		{
+			TLight& lightData = mGPUSceneLights->GetLightRef(j);
+			lightData.shadowMapLayer = -1.0f;
+		}
+	}
+
 	void SceneManager::UpdateShadowInformation(const ShadowManager* shadowManagerIn)
 	{
 		for (size_t i = 0; i < static_cast<size_t>(shadowManagerIn->GetNumberOfShadows()); ++i)

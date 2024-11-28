@@ -186,7 +186,7 @@ float calculateShadow(vec4 shadowCoord, float shadowMapLayer)
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.5;
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -267,7 +267,7 @@ void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 		float intensity = dirLightsBuffer.lights[i].attenuations.w;
 		float ndotl = max(0.0, dot( info.normal, dir ) );
 		
-		float shadow =1.0;
+		float shadow = 1.0;
 		float shadowLayer = dirLightsBuffer.lights[i].pad_castSpecularOnObject_shadowMapLayer.w;
 		if (shadowLayer >= 0.0)
 		{

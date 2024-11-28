@@ -613,6 +613,8 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 		shadowManager.SetShadowCasters(std::move(models));
 	}
 
+	mSceneManager->ResetShadowInformation();
+
 	if (Shadows)
 	{
 		double offsetBias, offsetScale;
@@ -652,7 +654,5 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 	mShaderLights->MapOnGPU();
 	mShaderLights->PrepGPUPtr();
 
-	mNeedUpdateLightsList = false;	
-
-
+	mNeedUpdateLightsList = false;
 }

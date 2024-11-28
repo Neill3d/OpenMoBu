@@ -27,7 +27,7 @@ namespace Graphics
 		if (modelMatrixLoc >= 0)
 		{
 			FBMatrix modelMatrix;
-			model->GetMatrix(modelMatrix);
+			model->GetMatrix(modelMatrix, kModelTransformation_Geometry);
 			BindUniformMatrix(modelMatrixLoc, modelMatrix);
 		}
 		
@@ -43,10 +43,31 @@ namespace Graphics
 			const GLuint id = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Point);
 			const GLvoid* positionOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Point);
 			
+			const GLuint indexId = vertexData->GetIndexArrayVBOId();
+			
+			
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
+			
+			bool useDrawingFallback = false;
+
+			for (int i = 0; i < vertexData->GetSubPatchCount(); ++i)
+			{
+				bool isOptimized = false;
+				const FBGeometryPrimitiveType primitiveType = vertexData->GetSubPatchPrimitiveType(i, &isOptimized);
+
+				if (primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLES
+					&& primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_FAN
+					&& primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_STRIP)
+				{
+					useDrawingFallback = true;
+					break;
+				}
+			}
+
 			glBindBuffer(GL_ARRAY_BUFFER, id);
 			glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, positionOffset);
 			glEnableVertexAttribArray(0);
-
+			
 			if (useNormalAttrib)
 			{
 				const GLuint normalId = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Normal);
@@ -57,23 +78,70 @@ namespace Graphics
 				glEnableVertexAttribArray(2);
 			}
 			
-			for (int lSubRegionIndex = 0; lSubRegionIndex < lSubRegionCount; lSubRegionIndex++)
-			{
-				// Setup material, texture, shader, parameters here.
-				/*
-				FBMaterial* lMaterial = lModelVertexData->GetSubRegionMaterial(lSubRegionIndex);
-				*/
-				vertexData->DrawSubRegion(lSubRegionIndex);
+			int* indexArray = nullptr;
+			FBVertex* posArray = nullptr;
 
-				//Cleanup material, texture, shader, parameters here
+			if (useDrawingFallback)
+			{
+				vertexData->VertexArrayMappingRequest();
+
+				indexArray = vertexData->GetIndexArray();
+				posArray = static_cast<FBVertex*>(vertexData->GetVertexArray(kFBGeometryArrayID_Point));
 			}
 
+			for (int lSubPatchIndex = 0; lSubPatchIndex < vertexData->GetSubPatchCount(); ++lSubPatchIndex)
+			{
+				bool isOptimized = false;
+				const FBGeometryPrimitiveType primitiveType = vertexData->GetSubPatchPrimitiveType(lSubPatchIndex, &isOptimized);
+
+				const int offset = vertexData->GetSubPatchIndexOffset(lSubPatchIndex);
+				const int size = vertexData->GetSubPatchIndexSize(lSubPatchIndex);
+
+				switch (primitiveType)
+				{
+				case FBGeometryPrimitiveType::kFBGeometry_TRIANGLES:
+					glDrawRangeElements(GL_TRIANGLES, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
+					break;
+				case FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_FAN:
+					glDrawRangeElements(GL_TRIANGLE_FAN, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
+					break;
+				case FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_STRIP:
+					glDrawRangeElements(GL_TRIANGLE_STRIP, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
+					break;
+				case FBGeometryPrimitiveType::kFBGeometry_QUADS:
+				{
+					assert(indexArray != nullptr);
+					assert(posArray != nullptr);
+
+					// fallback
+					glBegin(GL_QUADS);
+
+					for (int j = 0; j < size; j += 4)
+					{
+						glVertex3fv(posArray[indexArray[offset + j]]);
+						glVertex3fv(posArray[indexArray[offset + j + 1]]);
+						glVertex3fv(posArray[indexArray[offset + j + 2]]);
+						glVertex3fv(posArray[indexArray[offset + j + 3]]);
+					}
+
+					glEnd();
+				} break;
+				default:
+					FBTrace("Not supported primitive type %d for color renderer\n", static_cast<int>(primitiveType));
+				}
+			}
+			
 			glDisableVertexAttribArray(0);
 			if (useNormalAttrib)
 			{
 				glDisableVertexAttribArray(2);
 			}
 			
+			if (useDrawingFallback)
+			{
+				vertexData->VertexArrayMappingRelease();
+			}
+
 			vertexData->DisableOGLVertexData();
 		}
 	}

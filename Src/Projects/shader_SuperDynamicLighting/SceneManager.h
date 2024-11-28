@@ -107,6 +107,7 @@ namespace Graphics
 		bool PrepShaderLights(FBPropertyListObject* AffectingLightsIn,
 			std::vector<FBLight*>& shaderLightsPtrOut, LightGPUBuffersManager* shaderLightManagerOut);
 
+		void ResetShadowInformation();
 		void UpdateShadowInformation(const ShadowManager* shadowManagerIn);
 		
 		LightGPUBuffersManager* GetGPUSceneLightsPtr() { return mGPUSceneLights.get(); }
