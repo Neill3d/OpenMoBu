@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <fbsdk/fbsdk.h>
 #include "SuperShader.h"
 #include "OGL_Utils.h"
+#include "SceneManager.h"
 #include "ShadowManager.h"
 
 #include <vector>
@@ -167,7 +168,7 @@ public:
 
 public:
 
-	const Graphics::ShaderLightManager *GetShaderLightsPtr() const {
+	const Graphics::LightGPUBuffersManager *GetShaderLightsPtr() const {
 		return mShaderLights.get();
 	}
 
@@ -177,10 +178,16 @@ public:
 	void		EventBeforeRenderNotify();
 
 protected:
-    static Graphics::SuperShader*  mpLightShader;
-    static int                     mpLightShaderRefCount;
+
+    static Graphics::SceneManager*  mSceneManager;
+    static int                      mSceneManagerRefCount;
+
+    static Graphics::SuperShader*   mpLightShader;
+    static int                      mpLightShaderRefCount;
 
 	void DoReloadShaders();
+
+    void BeginFrameForSharedManagers();
 
 protected:
 
@@ -189,7 +196,7 @@ protected:
 	bool								mNeedUpdateTextures;	// we should update textures after change a context
 
 	std::vector<FBLight*>							mLightsPtr;
-	std::unique_ptr<Graphics::ShaderLightManager>		mShaderLights;
+	std::unique_ptr<Graphics::LightGPUBuffersManager>		mShaderLights;
 	
 	OGLCullFaceInfo			mCullFaceInfo;
 	FBModelCullingMode		mLastCullingMode;

@@ -76,9 +76,11 @@ struct TLight
 	vec4 		color;			// w - radius	
 	// 16
 	
-	vec4		pad_castSpecularOnObject;
+	vec4		pad_castSpecularOnObject_shadowMapLayer; // where xy - pad, z - castSpecularOnObject, w - shadow map layer
 
-	// total - 68 bytes
+	mat4		shadowVP; // view & projection matrix of a shadow map
+
+	// total - 144 bytes
 };
 
 struct TShadow
@@ -184,7 +186,7 @@ float calculateShadow(vec4 shadowCoord, float shadowMapLayer)
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth  ? 0.5 : 1.0;
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.5;
 
     return shadow;
 }
@@ -265,7 +267,15 @@ void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 		float intensity = dirLightsBuffer.lights[i].attenuations.w;
 		float ndotl = max(0.0, dot( info.normal, dir ) );
 		
-		result.diffContrib += ndotl * intensity * dirLightsBuffer.lights[i].color.rgb;
+		float shadow =1.0;
+		float shadowLayer = dirLightsBuffer.lights[i].pad_castSpecularOnObject_shadowMapLayer.w;
+		if (shadowLayer >= 0.0)
+		{
+			vec4 shadowCoord = dirLightsBuffer.lights[i].shadowVP * vec4(info.worldPosition, 1.0);
+			shadow = 1.0 - calculateShadow(shadowCoord, shadowLayer);
+		}
+
+		result.diffContrib += ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;
 	}
 }
  
@@ -313,7 +323,15 @@ void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout 
 		spotFactor = max(0.0,  (dot( -lightDir, spotLightDir ) - light.dir.w) / (1.0 - light.dir.w) );
 	}
 
-	float factor = light.attenuations.w * att * spotFactor;
+	float shadow = 1.0;
+	float shadowLayer = light.pad_castSpecularOnObject_shadowMapLayer.w;
+	if (shadowLayer >= 0.0)
+	{
+		vec4 shadowCoord = light.shadowVP * vec4(info.worldPosition, 1.0);
+		shadow = 1.0 - calculateShadow(shadowCoord, shadowLayer);
+	}
+
+	float factor = light.attenuations.w * att * spotFactor * shadow;
 
 	//
 	
@@ -470,10 +488,10 @@ void main (void)
 	{
 		evalLighting(lInfo, numberOfPointLights, lResult);
 	}
-	if (numberOfShadows > 0)
-	{
-		shadowContrib = evalShadows(lInfo);
-	}
+	//if (numberOfShadows > 0)
+	//{
+	//	shadowContrib = evalShadows(lInfo);
+	//}
 	float difFactor = clamp(materialBuffer.mat.diffuseColor.w, 0.0, 1.0);
 	vec3 ambientColor = materialBuffer.mat.ambientColor.rgb * globalAmbientLight.rgb * materialBuffer.mat.ambientColor.w;
 	vec3 emissiveColor = materialBuffer.mat.emissiveColor.a * materialBuffer.mat.emissiveColor.rgb;

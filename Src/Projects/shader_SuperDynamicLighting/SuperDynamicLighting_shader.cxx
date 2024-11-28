@@ -29,7 +29,10 @@ FBRegisterShader	(DYNAMICLIGHTING__DESCSTR,	    // Unique name
                      DYNAMICLIGHTING__DESC,		    // Long description
                      FB_DEFAULT_SDK_ICON	);		// Icon filename (default=Open Reality icon)
 
-Graphics::SuperShader*	SuperDynamicLighting::mpLightShader = nullptr;
+Graphics::SceneManager*	SuperDynamicLighting::mSceneManager = nullptr;
+int						SuperDynamicLighting::mSceneManagerRefCount = 0;
+
+Graphics::SuperShader* SuperDynamicLighting::mpLightShader = nullptr;
 int						SuperDynamicLighting::mpLightShaderRefCount = 0;
 
 /************************************************
@@ -37,6 +40,7 @@ int						SuperDynamicLighting::mpLightShaderRefCount = 0;
 ************************************************/
 bool SuperDynamicLighting::FBCreate()
 {
+	mSceneManagerRefCount++;
     mpLightShaderRefCount++;
 
 	FBPropertyPublish(this, ReloadShaders, "Reload Shaders", nullptr, SetReloadShaders);
@@ -133,12 +137,24 @@ bool SuperDynamicLighting::FBCreate()
 ************************************************/
 void SuperDynamicLighting::FBDestroy()
 {
+	// DeRef and Delete scene manager if no longer needed
+	mSceneManagerRefCount--;
+
+	if (mSceneManagerRefCount <= 0)
+	{
+		if (mSceneManager)
+		{
+			delete mSceneManager;
+			mSceneManager = nullptr;
+		}
+	}
+
     // Delete lighting shader
     mpLightShaderRefCount--;
 
-    if (mpLightShaderRefCount == 0)
+	if (mpLightShaderRefCount <= 0)
     {
-		if (nullptr != mpLightShader)
+		if (mpLightShader)
 		{
 			delete mpLightShader;
 			mpLightShader = nullptr;
@@ -152,11 +168,15 @@ void SuperDynamicLighting::FBDestroy()
 *	Shader functions.
 ************************************************/
 
-
-void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass)
+void SuperDynamicLighting::BeginFrameForSharedManagers()
 {
 #define SHADER_SHADING_VERTEX		"scene_shading.vsh"
 #define SHADER_SHADING_FRAGMENT		"scene_shading.fsh"
+
+	if (!mSceneManager)
+	{
+		mSceneManager = new Graphics::SceneManager();
+	}
 
 	if (!mpLightShader)
 	{
@@ -187,9 +207,18 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 			return;
 		}
 	}
+}
+
+
+void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, FBRenderingPass pPass)
+{
+	BeginFrameForSharedManagers();
 
 	StoreCullMode(mCullFaceInfo);
 	mLastCullingMode = kFBCullingOff;
+
+	// global camera cache and scene lights
+	mSceneManager->BeginShading(pRenderOptions);
 
 	// bind a shader here, prepare a global scene light set
 	if (!mpLightShader->BeginShading(pRenderOptions, nullptr))
@@ -202,6 +231,11 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 	else
 	{
 		mSkipRendering = false;
+	}
+
+	if (!mSkipRendering)
+	{
+		mpLightShader->BindLights(true, mSceneManager->GetGPUSceneLightsPtr());
 	}
 
 	mSkipRendering = false;
@@ -241,7 +275,7 @@ void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptio
 	{
 		if (UseSceneLights == false && AffectingLights.GetCount() > 0)
 		{
-			mpLightShader->BindLights(false, GetShaderLightsPtr());
+			mpLightShader->BindLights(false, mSceneManager->GetGPUSceneLightsPtr(), GetShaderLightsPtr());
 			mHasExclusiveLights = true;
 		}
 
@@ -249,8 +283,6 @@ void SuperDynamicLighting::ShaderPassInstanceBegin(FBRenderOptions* pRenderOptio
 		double rimPower = 0.01 * RimPower;
 		FBColor rimColor = RimColor;
 		mpLightShader->UploadRimInformation(useRim, rimPower, rimColor);
-
-
 		mpLightShader->UploadSwitchAlbedoTosRGB(SwitchAlbedoTosRGB);
 
 		//
@@ -283,7 +315,7 @@ void SuperDynamicLighting::ShaderPassInstanceEnd(FBRenderOptions* pRenderOptions
 		return;
 
 	if (mHasExclusiveLights)
-		mpLightShader->BindLights(false);
+		mpLightShader->BindLights(false, mSceneManager->GetGPUSceneLightsPtr());
 
 	glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
 	shadowManager.UnBind();
@@ -545,79 +577,82 @@ void SuperDynamicLighting::AskToUpdateLightList()
 
 void SuperDynamicLighting::EventBeforeRenderNotify()
 {
+	if (!mSceneManager)
+		return;
+
 	// if we have any lights attached
 	//	we should update lights every frame
 
-	if (true == Enable
-		&& false == UseSceneLights
+	if (Enable == true
+		&& UseSceneLights == false
 		&& AffectingLights.GetCount() > 0)
 	{
 		mNeedUpdateLightsList = true;
 	}
 
-	if (mNeedUpdateLightsList && false == UseSceneLights)
+	if (!mNeedUpdateLightsList || UseSceneLights == true)
+		return;
+
 	{
+		std::vector<std::shared_ptr<Graphics::LightProxy>> lights;
+
+		for (int i = 0; i < AffectingLights.GetCount(); ++i)
 		{
-			std::vector<std::shared_ptr<Graphics::LightProxy>> lights;
-
-			for (int i = 0; i < AffectingLights.GetCount(); ++i)
-			{
-				lights.emplace_back(std::make_shared<Graphics::FBLightProxy>(FBCast<FBLight>(AffectingLights[i])));
-			}
-			shadowManager.SetLights(std::move(lights));
-
-			//
-
-			std::vector<std::shared_ptr<Graphics::ModelProxy>> models;
-
-			for (int i = 0; i < ShadowCasters.GetCount(); ++i)
-			{
-				models.emplace_back(std::make_shared<Graphics::FBModelProxy>(FBCast<FBModel>(ShadowCasters[i])));
-			}
-			shadowManager.SetShadowCasters(std::move(models));
+			lights.emplace_back(std::make_shared<Graphics::FBLightProxy>(FBCast<FBLight>(AffectingLights[i])));
 		}
+		shadowManager.SetLights(std::move(lights));
 
-		if (Shadows)
+		//
+
+		std::vector<std::shared_ptr<Graphics::ModelProxy>> models;
+
+		for (int i = 0; i < ShadowCasters.GetCount(); ++i)
 		{
-			double offsetBias, offsetScale;
-			OffsetBias.GetData(&offsetBias, sizeof(double));
-			OffsetScale.GetData(&offsetScale, sizeof(double));
-
-			shadowManager.SetProperties({
-					ShadowMapSize,
-					true, // use PCF
-					ShadowPCFKernelSize,
-					static_cast<float>(offsetBias),
-					static_cast<float>(offsetScale)
-				});
-
-			shadowManager.Render();
-
-			// bind back a lighting shader!
-			mpLightShader->BindShader();
-			
-			glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
-			shadowManager.Bind();
-			glActiveTexture(GL_TEXTURE0);
-
-			shadowManager.BindShadowsBuffer(4);
-			mpLightShader->UploadShadowsInformation(shadowManager.GetNumberOfShadows());
+			models.emplace_back(std::make_shared<Graphics::FBModelProxy>(FBCast<FBModel>(ShadowCasters[i])));
 		}
-
-		if (!mShaderLights.get())
-			mShaderLights.reset(new Graphics::ShaderLightManager());
-
-		if (mpLightShader)
-		{
-			mpLightShader->PrepShaderLights(UseSceneLights,
-				&AffectingLights, mLightsPtr, mShaderLights.get());
-
-			mpLightShader->PrepLightsInViewSpace(mShaderLights.get());
-		}
-		
-		mShaderLights->MapOnGPU();
-		mShaderLights->PrepGPUPtr();
-
-		mNeedUpdateLightsList = false;
+		shadowManager.SetShadowCasters(std::move(models));
 	}
+
+	if (Shadows)
+	{
+		double offsetBias, offsetScale;
+		OffsetBias.GetData(&offsetBias, sizeof(double));
+		OffsetScale.GetData(&offsetScale, sizeof(double));
+
+		shadowManager.SetProperties({
+				ShadowMapSize,
+				true, // use PCF
+				ShadowPCFKernelSize,
+				static_cast<float>(offsetBias),
+				static_cast<float>(offsetScale)
+			});
+
+		shadowManager.Render();
+
+		// copy shadow layer and matrix information from shadow manager into scene manager lights
+		mSceneManager->UpdateShadowInformation(&shadowManager);
+
+		// bind back a lighting shader!
+		mpLightShader->BindShader();
+			
+		glActiveTexture(GL_TEXTURE0 + mpLightShader->GetSamplerSlotShadow());
+		shadowManager.Bind();
+		glActiveTexture(GL_TEXTURE0);
+
+		shadowManager.BindShadowsBuffer(4);
+		mpLightShader->UploadShadowsInformation(shadowManager.GetNumberOfShadows());
+	}
+
+	if (!mShaderLights.get())
+		mShaderLights.reset(new Graphics::LightGPUBuffersManager());
+
+	mSceneManager->PrepShaderLights(&AffectingLights, mLightsPtr, mShaderLights.get());
+	mSceneManager->PrepLightsInViewSpace(mShaderLights.get());
+		
+	mShaderLights->MapOnGPU();
+	mShaderLights->PrepGPUPtr();
+
+	mNeedUpdateLightsList = false;	
+
+
 }

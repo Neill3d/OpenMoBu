@@ -31,6 +31,9 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #define SAMPLER_SLOT_DETAIL			7	// possible with a second UV for lightmaps
 #define SAMPLER_SLOT_SHADOW			8
 
+#define SHADER_DIR_LIGHTS_UNITID		2
+#define SHADER_POINT_LIGHTS_UNITID		3	
+
 namespace Graphics {
 
 	GLuint SuperShader::GetSamplerSlotShadow() const
@@ -190,7 +193,6 @@ namespace Graphics {
 		mLastMaterial = nullptr;
 		mLastModel = nullptr;
 		mLastLightsBinded = nullptr;
-		mGPUSceneLights.reset(new ShaderLightManager());
 	}
 
 	SuperShader::~SuperShader()
@@ -322,14 +324,9 @@ namespace Graphics {
 		mLastBinded = nullptr;
 		mLastLightmapId = 0;
 
-		if (false == pRenderOptions->IsIDBufferRendering())
+		if (!pRenderOptions->IsIDBufferRendering())
 		{
 			// skip rendering during reflection pass
-
-			if (false == CCameraInfoCachePrep(pRenderOptions->GetRenderingCamera(), mCameraCache) )
-			{
-			//	return false;
-			}
 
 			if (nullptr != mShaderShading.get())
 			{
@@ -341,17 +338,7 @@ namespace Graphics {
 				glEnableVertexAttribArray(2);		// normal
 
 				SetCameraTransform(mLastTransform, pRenderOptions);
-				
-				//
-				PrepFBSceneLights();
-				
-				// TODO: bind a default scene light list
-				PrepLightsInViewSpace(mGPUSceneLights.get());
-
-				MapLightsOnGPU();
-
-				BindLights(true);
-
+			
 				FBColor ambientColor = FBGlobalLight::TheOne().AmbientColor;
 				UploadGlobalAmbient(ambientColor);
 
@@ -370,7 +357,7 @@ namespace Graphics {
 		}
 		else
 		{
-			if (nullptr != mShaderBufferId.get())
+			if (mShaderBufferId.get())
 			{
 				mShaderBufferId->Bind();
 				mLastBinded = mShaderBufferId.get();		
@@ -392,7 +379,7 @@ namespace Graphics {
 
 	void SuperShader::EndShading(FBRenderOptions *pRenderOptions)
 	{
-		if (nullptr != mLastBinded)
+		if (mLastBinded)
 		{
 			mLastBinded->UnBind();
 			mLastBinded = nullptr;
@@ -658,40 +645,6 @@ namespace Graphics {
 		//cgSetBufferSubData(mParamModelViewArrayBuffer, mParamModelViewArrayBufferOffset, 4 * 4 * sizeof (double) * pCount, pModelViewMatrixArray);
 	}
 
-
-
-	bool SuperShader::CCameraInfoCachePrep(FBCamera *pCamera, CCameraInfoCache &cache)
-	{
-		if (!pCamera)
-			return false;
-
-		FBMatrix mv, p, mvInv;
-
-		pCamera->GetCameraMatrix(mv, kFBModelView);
-		pCamera->GetCameraMatrix(p, kFBProjection);
-
-		FBMatrixInverse(mvInv, mv);
-
-		FBMatrixToGLM(cache.mv4, mv);
-		FBMatrixToGLM(cache.mvInv4, mvInv);
-		FBMatrixToGLM(cache.p4, p);
-
-		memcpy(cache.mv, mv, sizeof(double) * 16);
-
-		FBVector3d v;
-		pCamera->GetVector(v);
-		for (int i = 0; i<3; ++i)
-			cache.pos[i] = static_cast<float>(v[i]);
-		
-		cache.fov = pCamera->FieldOfView;
-		cache.width = pCamera->CameraViewportWidth;
-		cache.height = pCamera->CameraViewportHeight;
-		cache.nearPlane = pCamera->NearPlaneDistance;
-		cache.farPlane = pCamera->FarPlaneDistance;
-
-		return true;
-	}
-
 	void SuperShader::UploadRimInformation(double useRim, double rimPower, double *rimColor)
 	{
 		if (PhongShaderUniformLocations.rimOptions >= 0)
@@ -772,4 +725,78 @@ namespace Graphics {
 		}
 	}
 
+
+	void SuperShader::UploadSwitchAlbedoTosRGB(bool sRGB)
+	{
+		if (PhongShaderUniformLocations.switchAlbedoTosRGB >= 0)
+			glUniform1f(PhongShaderUniformLocations.switchAlbedoTosRGB, (sRGB) ? 1.0f : 0.0f);
+	}
+
+	void SuperShader::UploadGlobalAmbient(double* color)
+	{
+		if (PhongShaderUniformLocations.globalAmbientLight >= 0)
+			glUniform4f(PhongShaderUniformLocations.globalAmbientLight, (float)color[0], (float)color[1], (float)color[2], 1.0f);
+	}
+
+	void SuperShader::UploadLightingInformation(const int numdir, const int numpoint)
+	{
+		if (PhongShaderUniformLocations.numberOfDirLights >= 0)
+			glUniform1i(PhongShaderUniformLocations.numberOfDirLights, numdir);
+		if (PhongShaderUniformLocations.numberOfPointLights >= 0)
+			glUniform1i(PhongShaderUniformLocations.numberOfPointLights, numpoint);
+	}
+
+	void SuperShader::UploadShadowsInformation(const int numShadow)
+	{
+		if (PhongShaderUniformLocations.numberOfShadows >= 0)
+		{
+			glProgramUniform1i(mShaderShading->GetProgramObj(), PhongShaderUniformLocations.numberOfShadows, numShadow);
+			//glUniform1f(PhongShaderUniformLocations.numberOfShadows, numShadow);
+		}
+	}
+
+	bool SuperShader::BindLights(const bool resetLastBind, const LightGPUBuffersManager* sceneLights, const LightGPUBuffersManager* pUserLights)
+	{
+
+		const LightGPUBuffersManager* pShaderLights = sceneLights;
+
+		if (pUserLights && pUserLights->GetNumberOfLights() > 0)
+		{
+			pShaderLights = pUserLights;
+		}
+
+		if (!pShaderLights)
+		{
+			UploadLightingInformation(0, 0);
+			return false;
+		}
+
+		// TODO: check for last uberShader lights binded
+		if (resetLastBind)
+			mLastLightsBinded = nullptr;
+
+		if (mLastLightsBinded == pShaderLights)
+		{
+			return true;
+		}
+
+		// bind a new buffer
+		//const auto loc = mMaterialShaders->GetCurrentEffectLocationsPtr()->fptr();
+		const GLint dirLights = SHADER_DIR_LIGHTS_UNITID; //  loc->GetLocation(Graphics::eCustomLocationDirLights);
+		const GLint lights = SHADER_POINT_LIGHTS_UNITID; // loc->GetLocation(Graphics::eCustomLocationLights);
+
+		if (dirLights >= 0 || lights >= 0)
+		{
+			pShaderLights->Bind(mShaderShading->GetFragmentShader(), dirLights, lights);
+			UploadLightingInformation(pShaderLights->GetNumberOfTransformedDirLights(), pShaderLights->GetNumberOfTransformedSpotLights());
+
+			mLastLightsBinded = (LightGPUBuffersManager*)pShaderLights;
+		}
+		else
+		{
+			UploadLightingInformation(0, 0);
+			return false;
+		}
+		return true;
+	}
 };

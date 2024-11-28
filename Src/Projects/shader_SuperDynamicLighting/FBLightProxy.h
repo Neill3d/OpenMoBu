@@ -29,6 +29,12 @@ namespace Graphics
 		virtual ~FBLightProxy()
 		{}
 
+		virtual bool IsCastLightOnObject() const override
+		{
+			FBLight* light = lightPlug;
+			return light->CastLightOnObject;
+		}
+
 		// Returns true if this light is set to cast shadows
 		virtual bool IsShadowCaster() const override
 		{
@@ -102,6 +108,8 @@ namespace Graphics
 		static void ConstructFromFBLight(TLight& light, const bool ToEyeSpace, const glm::mat4& lViewMatrix,
 			const glm::mat4& lViewRotationMatrix, FBLight* pLight);
 
+
+		FBLight* GetLightPtr() const { return lightPlug; }
 
 	private:
 

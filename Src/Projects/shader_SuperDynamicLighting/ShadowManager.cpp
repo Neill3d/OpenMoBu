@@ -186,7 +186,7 @@ namespace Graphics
 
 	bool ShadowManager::IsLightCastShadow(const LightProxy* lightProxy)
 	{
-		if (!lightProxy->IsShadowCaster())
+		if (!lightProxy->IsCastLightOnObject() || !lightProxy->IsShadowCaster())
 			return false;
 
 		if (lightProxy->GetLightType() == LightProxy::LightType::Spot
@@ -253,7 +253,7 @@ namespace Graphics
 
 		for (auto& light : lights)
 		{
-			if (light->IsShadowCaster() && light->GetLightType() != LightProxy::LightType::Point)
+			if (IsLightCastShadow(light.get()))
 			{
 				renderLights.emplace_back(light);
 			}
@@ -358,6 +358,7 @@ namespace Graphics
 	{
 		shadowsData.resize(lightsIn.size());
 
+		int shadowLayerIndex = 0;
 		for (size_t i = 0; i < lightsIn.size(); ++i)
 		{
 			const auto& light = lightsIn[i];
@@ -365,15 +366,13 @@ namespace Graphics
 
 			shadow.shadowMapLayer = -1.0f;
 
-			if (!light->IsShadowCaster())
+			if (!IsLightCastShadow(light.get()))
 				continue;
 
-			if (light->GetLightType() == LightProxy::LightType::Spot
-				|| light->GetLightType() == LightProxy::LightType::Infinite)
-			{
-				shadow.shadowMapLayer = static_cast<float>(i);
-				shadow.shadowVP = light->GetProjectionMatrix() * glm::inverse(light->GetViewMatrix());
-			}
+			shadow.shadowMapLayer = static_cast<float>(shadowLayerIndex);
+			shadow.shadowVP = light->GetProjectionMatrix() * glm::inverse(light->GetViewMatrix());
+
+			shadowLayerIndex += 1;
 		}
 
 		// upload data on gpu

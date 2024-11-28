@@ -12,7 +12,7 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "glslShader.h"
 #include "SuperShader_glsl.h"
 #include "GPUBuffer.h"
-#include "ShaderLightManager.h"
+#include "LightGPUBuffersManager.h"
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include <vector>
@@ -89,11 +89,11 @@ namespace Graphics
 		} PhongShaderUniformLocations;
 
 		double						mAlpha;
-		GLSLShader* mLastBinded{ nullptr };
+		GLSLShader*					mLastBinded{ nullptr };
 		GLuint						mLastTexId{ 0 };
 		GLuint						mLastLightmapId{ 0 };
-		FBMaterial* mLastMaterial{ nullptr };
-		FBModel* mLastModel{ nullptr };
+		FBMaterial*					mLastMaterial{ nullptr };
+		FBModel*					mLastModel{ nullptr };
 
 		TTransform					mLastTransform;
 
@@ -107,20 +107,11 @@ namespace Graphics
 		std::unique_ptr<GLSLShader>	mShaderBufferId;
 		std::unique_ptr<GLSLShader>	mShaderShading;
 
-		CCameraInfoCache			mCameraCache;
-
 		//
 		//
-
-		// list of used lights, could be exclusive from current composition lights list
-		std::vector<FBLight*>					mUsedSceneLights;
-		std::vector<FBLight*>					mUsedInfiniteLights;
-		std::vector<FBLight*>					mUsedPointLights;
-
-		std::unique_ptr<ShaderLightManager>			mGPUSceneLights;
 
 		// last lights for a frame - default if no lights, scene lights if no composition override
-		ShaderLightManager* mLastLightsBinded{ nullptr };
+		LightGPUBuffersManager* mLastLightsBinded{ nullptr };
 
 		//
 		bool			mLastUseDisplacement{ false };
@@ -129,12 +120,6 @@ namespace Graphics
 		FBMatrix		mLastDispMatrix;
 
 	public:
-
-		bool CCameraInfoCachePrep(FBCamera *pCamera, CCameraInfoCache &cache);
-
-		const CCameraInfoCache &GetCameraCache() const {
-			return mCameraCache;
-		}
 
 		void UploadSwitchAlbedoTosRGB(bool sRGB);
 		void SetLightmap(GLuint texId, double transparency);
@@ -151,35 +136,8 @@ namespace Graphics
 
 		void SetMatCap(GLuint texId);
 
-		
-
-		// this is a GPU buffer preparation, not an actual binding
-		void			PrepFBSceneLights();
-		void			PrepLightsInViewSpace(ShaderLightManager* pLights) const;
-
-		void			PrepLightsFromFBList(ShaderLightManager* pLightsManager, const CCameraInfoCache &cameraCache, std::vector<FBLight*> &lights);
-
-		void		MapLightsOnGPU();
-
 		// when shaderLights nullptr, we will bind all the fbscene lights
-		bool		BindLights(const bool resetLastBind, const ShaderLightManager *pShaderLights = nullptr);
-
-		const int GetNumberOfUsedLights() const {
-			return (int)mUsedSceneLights.size();
-		}
-		std::vector<FBLight*> &GetUsedLightsVector() {
-			return mUsedSceneLights;
-		}
-
-		// just prepare gpu buffer (no binding)
-		bool PrepShaderLights(const bool useSceneLights, FBPropertyListObject *AffectingLights,
-			std::vector<FBLight*> &shaderLightsPtr, ShaderLightManager *shaderLights);
-
-		// TODO: bind a light buffer to the uber shader and update light count
-
-		ShaderLightManager *GetGPUSceneLightsPtr() {
-			return mGPUSceneLights.get();
-		}
+		bool BindLights(const bool resetLastBind, const LightGPUBuffersManager* sceneLights, const LightGPUBuffersManager *pShaderLights = nullptr);
 
 		GLuint GetSamplerSlotShadow() const;
 
@@ -188,7 +146,6 @@ namespace Graphics
 		static void SetCameraTransform(TTransform& transform, FBRenderOptions* pRenderOptions);
 		static void SetTransform(TTransform& transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo);
 		static void SetMaterial(TMaterial& mat, FBMaterial* pMaterial);
-
 
 		static GLuint GetTextureId(FBMaterial* pMaterial, const FBMaterialTextureType textureType, bool forceUpdate);
 	};

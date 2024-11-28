@@ -37,8 +37,11 @@ struct TLight
 	glm::vec3	color;
 	float		radius;
 
-	glm::vec3	pad;
+	glm::vec2	pad;
 	float		castSpecularOnObject;
+	float		shadowMapLayer{ -1.0f };
+
+	glm::mat4		shadowVP;	// view projection matrix of a shadow map
 
 	static void ConstructDefaultLight0(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
 	static void ConstructDefaultLight1(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
