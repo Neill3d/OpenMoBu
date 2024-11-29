@@ -91,6 +91,8 @@ namespace Graphics
 
 			for (int lSubPatchIndex = 0; lSubPatchIndex < vertexData->GetSubPatchCount(); ++lSubPatchIndex)
 			{
+				vertexData->DrawSubPatch(lSubPatchIndex);
+				/*
 				bool isOptimized = false;
 				const FBGeometryPrimitiveType primitiveType = vertexData->GetSubPatchPrimitiveType(lSubPatchIndex, &isOptimized);
 
@@ -129,6 +131,7 @@ namespace Graphics
 				default:
 					FBTrace("Not supported primitive type %d for color renderer\n", static_cast<int>(primitiveType));
 				}
+				*/
 			}
 			
 			glDisableVertexAttribArray(0);

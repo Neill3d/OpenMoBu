@@ -78,13 +78,13 @@ bool SuperDynamicLighting::FBCreate()
 	ShadowStrength.SetMinMax(0.0, 1.0f, true, true);
 	ShadowStrength = 1.0f;
 
-	FBPropertyPublish(this, OffsetScale, "OffsetScale", nullptr, nullptr);
-	OffsetScale.SetMinMax(-10.0, 10.0);
-	OffsetScale = 5.0;
+	FBPropertyPublish(this, OffsetFactor, "Offset Factor", nullptr, nullptr);
+	OffsetFactor.SetMinMax(-10.0, 10.0);
+	OffsetFactor = 2.0;
 
-	FBPropertyPublish(this, OffsetBias, "OffsetBias", nullptr, nullptr);
-	OffsetBias.SetMinMax(-100000.0, 100000.0);
-	OffsetBias = 0.0;
+	FBPropertyPublish(this, OffsetUnits, "Offset Units", nullptr, nullptr);
+	OffsetUnits.SetMinMax(-100000.0, 100000.0);
+	OffsetUnits = 4.0;
 
 	//
 	FBPropertyPublish(this, SwitchAlbedoTosRGB, "Switch Albedo To sRGB", nullptr, nullptr);
@@ -617,16 +617,16 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 
 	if (Shadows)
 	{
-		double offsetBias, offsetScale;
-		OffsetBias.GetData(&offsetBias, sizeof(double));
-		OffsetScale.GetData(&offsetScale, sizeof(double));
+		double offsetFactor, offsetUnits;
+		OffsetFactor.GetData(&offsetFactor, sizeof(double));
+		OffsetUnits.GetData(&offsetUnits, sizeof(double));
 
 		shadowManager.SetProperties({
 				ShadowMapSize,
 				true, // use PCF
 				ShadowPCFKernelSize,
-				static_cast<float>(offsetBias),
-				static_cast<float>(offsetScale)
+				static_cast<float>(offsetFactor),
+				static_cast<float>(offsetUnits)
 			});
 
 		shadowManager.Render();

@@ -150,8 +150,8 @@ public:
     FBPropertyInt               ShadowPCFKernelSize;
     FBPropertyListObject        ShadowCasters;
     FBPropertyAnimatableDouble  ShadowStrength;
-    FBPropertyAnimatableDouble  OffsetScale;
-    FBPropertyAnimatableDouble  OffsetBias;
+    FBPropertyAnimatableDouble  OffsetFactor; //!< multiplies the max depth slope of the polygon
+    FBPropertyAnimatableDouble  OffsetUnits; //!< a fixed const offset in depth units for all polygons
 
 	//
 	FBPropertyBool				SwitchAlbedoTosRGB;

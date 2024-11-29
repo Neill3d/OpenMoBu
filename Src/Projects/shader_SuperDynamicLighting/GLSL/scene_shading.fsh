@@ -3,7 +3,7 @@
 //
 //	Post Processing Toolkit
 //
-// Sergei <Neill3d> Solokhin 2018
+// Sergei <Neill3d> Solokhin 2018-2024
 //
 // GitHub page - https://github.com/Neill3d/OpenMoBu
 // Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -176,7 +176,7 @@ uniform sampler2D	samplerReflect;
 uniform sampler2D	samplerMatCap;
 
 // Sampler for the shadow map
-uniform sampler2DArray samplerShadowMaps; // sampler2DShadow
+uniform sampler2DArray samplerShadowMaps;
 
 //////////////////////////////////////////////////////////////////////////////
 // lights
@@ -197,56 +197,41 @@ float calculateShadow(vec4 shadowCoord, float shadowMapLayer)
     return shadow;
 }
 
-/*
-// for sampler2DArrayShadow
-float calculateShadow(vec4 shadowCoord, float shadowMapLayer)
-{
-	// Divide by w to perform perspective division and map to [0, 1]
+float calculateSoftShadow(vec4 shadowCoord, float shadowMapLayer, int samples, float radius) {
+    // Perform perspective divide
     vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
-	// transform to [0,1] range
+    // Transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
+    
+    // Ensure the fragment is within the shadow map's range
+    if (projCoords.z > 1.0 || projCoords.z < 0.0) {
+        return 0.0; // Outside shadow map bounds
+    }
 
-	float visibility = texture(samplerShadowMaps, vec4(projCoords, shadowMapLayer));
-	return visibility;
-}
-*/
-/*
-// The main function for shadow computation with PCF
-// no shadow returns 1.0
-float calculateShadow(vec4 shadowCoord, float shadowMapLayer) {
-    // Divide by w to perform perspective division and map to [0, 1]
-    vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-
-    // Check if the fragment is outside the shadow map's valid range
-    //if (projCoords.z > 1.0) {
-    //    return 0.0; // No shadow
-    //}
-
-    // Add a small bias to prevent shadow acne
-    //float bias = 0.005;
-    //projCoords.z += bias;
-
-    // PCF kernel size (example: 3x3)
+    // Initialize shadow variable
     float shadow = 0.0;
-    float samples = 0.0;
+    float currentDepth = projCoords.z;
 
-    // Loop to sample shadow map (3x3 kernel)
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            vec2 offset = vec2(x, y) * 0.001; // Adjust as necessary for shadow map resolution
-            shadow += texture(samplerShadowMaps, vec4(projCoords.xy + offset, projCoords.z, shadowMapLayer));
-            samples += 1.0;
+    // Define a sampling kernel for PCF
+    for (int x = -samples; x <= samples; ++x) {
+        for (int y = -samples; y <= samples; ++y) {
+            // Compute offset in texture space
+            vec2 offset = vec2(x, y) * radius / float(samples);
+            // Sample shadow map at the offset
+            float closestDepth = texture(samplerShadowMaps, vec3(projCoords.xy + offset, shadowMapLayer)).r;
+            // Accumulate shadow contribution
+            shadow += currentDepth > closestDepth ? 1.0 : 0.0;
         }
     }
 
-    // Average the results for smoother shadow edges
-    shadow /= samples;
+    // Average shadow contribution
+    float totalSamples = float((samples * 2 + 1) * (samples * 2 + 1));
+    shadow /= totalSamples;
 
     return shadow;
 }
-*/
+
+
 float evalShadows(in LIGHTINFOS info)
 {
 	float shadowContrib = 1.0;
@@ -278,7 +263,7 @@ void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 		if (shadowLayer >= 0.0)
 		{
 			vec4 shadowCoord = dirLightsBuffer.lights[i].shadowVP * vec4(info.worldPosition, 1.0);
-			shadow = 1.0 - calculateShadow(shadowCoord, shadowLayer);
+			shadow = 1.0 - calculateSoftShadow(shadowCoord, shadowLayer, 9, 0.001);
 		}
 
 		result.diffContrib += ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;

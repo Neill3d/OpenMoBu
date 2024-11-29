@@ -22,8 +22,8 @@ namespace Graphics
 		properties.shadowMapResolution = 2048;
 		properties.usePCF = true;
 		properties.kernelSize = 9;
-		properties.depthBias = 1.0f;
-		properties.offset = 1.0f;
+		properties.offsetFactor = 2.0f;
+		properties.offsetUnits = 4.0f;
 	}
 
 	ShadowManager::ShadowManager()
@@ -130,7 +130,8 @@ namespace Graphics
 		shader.Bind();
 
 		glEnable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(1.0f, 4.0f);
+		
+		glPolygonOffset(properties.offsetFactor, properties.offsetUnits);
 
 		unsigned int textureIndex = 0;
 
@@ -325,8 +326,11 @@ namespace Graphics
 		float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		glTexParameterfv(target, GL_TEXTURE_BORDER_COLOR, color);
 
-
-
+		if (info.useHardwarePCF)
+		{
+			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
 
 		/*
 		if (info.useHardwarePCF)

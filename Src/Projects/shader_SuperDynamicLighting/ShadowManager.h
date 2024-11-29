@@ -93,8 +93,8 @@ namespace Graphics
 			int shadowMapResolution;
 			bool usePCF;
 			int kernelSize;
-			float depthBias;
-			float offset;
+			float offsetFactor; // multiplies the max depth slope of the polygon
+			float offsetUnits; // a fixed const offset in depth units for all polygons
 		};
 
 		// quality properties, size of shadow map, use PCM, kernel size, depth bias and offset
