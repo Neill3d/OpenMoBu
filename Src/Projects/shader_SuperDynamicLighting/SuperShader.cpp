@@ -103,6 +103,29 @@ namespace Graphics {
 		FBColor lReflectionColor = pMaterial->Reflection;
 		double shin = pMaterial->Shininess;
 
+		mat.useAnisotropicSpecular = 0.0f;
+		if (FBProperty* useAnisoSpecularProp = pMaterial->PropertyList.Find("Use Anisotropic Specular"))
+		{
+			const bool useAnisoSpecular = useAnisoSpecularProp->AsInt() > 0;
+			mat.useAnisotropicSpecular = (useAnisoSpecular) ? 1.0f : 0.0f;
+
+			if (useAnisoSpecular)
+			{
+				if (FBProperty* anisoRoughnessX = pMaterial->PropertyList.Find("RoughnessX"))
+				{
+					double roughnessX;
+					anisoRoughnessX->GetData(&roughnessX, sizeof(double));
+					mat.roughnessX = 0.01f * static_cast<float>(roughnessX);
+				}
+				if (FBProperty* anisoRoughnessY = pMaterial->PropertyList.Find("RoughnessY"))
+				{
+					double roughnessY;
+					anisoRoughnessY->GetData(&roughnessY, sizeof(double));
+					mat.roughnessY = 0.01f * static_cast<float>(roughnessY);
+				}
+			}
+		}
+		
 		double lEmissiveFactor = pMaterial->EmissiveFactor;
 		double lDiffuseFactor = pMaterial->DiffuseFactor;
 		double lAmbientFactor = pMaterial->AmbientFactor;
@@ -319,6 +342,7 @@ namespace Graphics {
 		return lSuccess;
 	}
 
+
 	bool SuperShader::BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList)
 	{
 		mLastBinded = nullptr;
@@ -466,7 +490,7 @@ namespace Graphics {
 			{
 				TMaterial lMaterial;
 				SetMaterial(lMaterial, pMaterial);
-				lMaterial.shaderTransparency = (float)pShaderTransparencyFactor;
+				lMaterial.shaderTransparency = static_cast<float>(pShaderTransparencyFactor);
 
 				// DONE: prepare SSBO
 				mBufferMaterial.UpdateData(sizeof(TMaterial), 1, &lMaterial);

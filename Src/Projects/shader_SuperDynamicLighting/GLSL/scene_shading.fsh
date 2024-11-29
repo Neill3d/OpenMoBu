@@ -39,6 +39,11 @@ struct TMaterial
 	//
 	float 		shaderTransparency;
 	
+	float		useAnisotropicSpecular;
+	float		roughnessX;
+	float		roughnessY;
+	float		pad;
+
 	//
 	/// Current material
 	//
@@ -100,12 +105,13 @@ struct TShadow
 
 struct LIGHTINFOS
 {
-	mat3	tangentMatrix;
 	vec3	worldPosition;
 	vec3 	position;
 	vec3 	viewDistance;
 	vec3 	viewDir;	
 	vec3 	normal;	
+	vec3	tangent;
+	vec3	bitangent;
 	vec2	uv;
 	float 	shininess;
 };
@@ -278,15 +284,94 @@ void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 		result.diffContrib += ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;
 	}
 }
- 
+
+// GLSL Function for Standard Phong Specular Reflection
+float phongSpecular(
+    vec3 normal,       // Surface normal at the shading point (N), must be normalized
+    vec3 viewDir,      // Direction from the surface point to the camera (V), must be normalized
+    vec3 lightDir,     // Direction from the surface point to the light source (L), must be normalized
+    float shininess    // Shininess exponent controlling the size of the specular highlight
+) {
+    // Compute the reflection vector (R) of the light direction about the normal
+    vec3 reflection = reflect(-lightDir, normal);
+
+    // Compute the dot product between the reflection vector and the view direction
+    // Clamp to avoid negative values
+    float specAngle = max(dot(reflection, viewDir), 0.0);
+
+    // Compute the specular term using the shininess exponent
+    return pow(specAngle, shininess);
+}
+
+// GLSL Function for Physically-Based Anisotropic Specular Reflection
+float anisotropicSpecular(
+    vec3 normal,          // Surface normal (N), must be normalized
+    vec3 viewDir,         // Direction from the surface to the camera (V), must be normalized
+    vec3 lightDir,        // Direction from the surface to the light source (L), must be normalized
+    float roughnessX,     // Roughness along the tangent direction
+    float roughnessY,     // Roughness along the bitangent direction
+    vec3 tangent,         // Tangent vector (aligned with brushing direction)
+    vec3 bitangent        // Bitangent vector (perpendicular to tangent and normal)
+) {
+    // Compute the half-vector (H) between view and light directions
+    vec3 halfVector = normalize(viewDir + lightDir);
+
+    // Transform the half-vector into tangent space
+    vec3 halfVectorTS = vec3(
+        dot(halfVector, tangent),
+        dot(halfVector, bitangent),
+        dot(halfVector, normal)
+    );
+
+    // Transform the normal into tangent space
+    vec3 normalTS = vec3(0.0, 0.0, 1.0);
+
+    // Compute the anisotropic GGX distribution
+    float D = 0.0; // Default value for the distribution
+    {
+        float aX = roughnessX;
+        float aY = roughnessY;
+
+        float hX = halfVectorTS.x / aX;
+        float hY = halfVectorTS.y / aY;
+        float hZ = halfVectorTS.z;
+
+        float hZ2 = hZ * hZ;
+        float normFactor = (hX * hX + hY * hY) / hZ2 + 1.0;
+        float denom = 3.14159265359 * aX * aY * hZ2 * hZ2;
+
+        D = 1.0 / (denom * normFactor * normFactor);
+    }
+
+    // Fresnel term using Schlick's approximation
+    vec3 F0 = vec3(1.0);
+    float dotVH = max(dot(viewDir, halfVector), 0.0);
+    vec3 F = F0 + (1.0 - F0) * pow(1.0 - dotVH, 5.0);
+
+    // Geometry term using Smith's GGX model
+    float G = 0.0; // Default value for the geometry term
+    {
+        float k = 0.5; // Approximated k factor for anisotropic surfaces
+        float geomV = dot(normal, viewDir) / (dot(normal, viewDir) * (1.0 - k) + k);
+        float geomL = dot(normal, lightDir) / (dot(normal, lightDir) * (1.0 - k) + k);
+        G = geomV * geomL;
+    }
+
+    // Combine the terms into the specular reflection
+    float NdotL = max(dot(normal, lightDir), 0.0);
+    float NdotV = max(dot(normal, viewDir), 0.0);
+
+    float specular = (D * F.x * G) / (4.0 * NdotL * NdotV + 0.0001);
+    return specular * NdotL; // Multiply by NdotL for energy conservation
+}
+
+
 void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout vec3 specContrib)
 {
 	vec3 lightDir = light.position.xyz - info.position;
 	float dist = length(lightDir);
 	lightDir = normalize(lightDir);
 	float inner = 0.0;
-	
-	//lightDir = info.tangentMatrix * lightDir;
 	
 	vec3 normal = info.normal;
 	// double sided lighting
@@ -306,20 +391,23 @@ void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout 
 	
 	//if (pLight->castSpecularOnObject > 0.0f)
 	{
-		vec3 eyeVec = normalize( -info.position); // -info.viewDir
-		//eyeVec = info.tangentMatrix * eyeVec;
-		vec3 V = reflect(-lightDir, normal);
-		//vec3 halfVec = (eyeVec + lightDir)/2.0; // view + light
-		//specular = pow( max(0.0, dot( normal, halfVec ) ), 64.0 );
+		if (materialBuffer.mat.useAnisotropicSpecular > 0.0)
+		{
+			float roughnessX = materialBuffer.mat.roughnessX;
+			float roughnessY = materialBuffer.mat.roughnessY;
+			specular = anisotropicSpecular(normal, -info.viewDir, lightDir, roughnessX, roughnessY, normalize(info.tangent), normalize(info.bitangent));
+		}
+		else
+		{
+			specular = phongSpecular(normal, -info.viewDir, lightDir, info.shininess);
+		}
 		
-		specular = pow( max(0.0, dot( V, eyeVec ) ), info.shininess );
+		specular = clamp(specular, 0.0, 1.0);
 	}
-	specular = clamp(specular, 0.0, 1.0);
 	
 	if( light.position.w == LIGHT_TYPE_SPOT )
 	{
 		vec3 spotLightDir = normalize(light.dir.xyz);
-		//spotLightDir = info.tangentMatrix * spotLightDir;
 		spotFactor = max(0.0,  (dot( -lightDir, spotLightDir ) - light.dir.w) / (1.0 - light.dir.w) );
 	}
 
@@ -401,7 +489,8 @@ vec3 ApplyReflection( in vec3 inWV, in vec3 n_eye )
 	layout(location=6) smooth in vec2 	inTC2;
 	
 	layout(location=7) smooth in float fogAmount;
-	
+	layout(location=8) smooth in vec3 inViewPos;
+
 	layout(location=0) out vec4 	outColor;
 
 void main (void)
@@ -467,8 +556,10 @@ void main (void)
 	
 	LIGHTINFOS lInfo;
 	lInfo.viewDistance = Vd;
-	lInfo.viewDir = Vn;
+	lInfo.viewDir = normalize(inWV - inViewPos);
 	lInfo.normal = Nn;
+	lInfo.tangent = normalize(inTangent);
+	lInfo.bitangent = binormal;
 	lInfo.worldPosition = inWV;
 	lInfo.position = inPw;
 	lInfo.shininess = materialBuffer.mat.specExp;

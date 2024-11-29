@@ -79,23 +79,28 @@ struct TMaterial
 	int			ambientChannel;
 	int			diffuseChannel;
 	int			specularChannel;
-	int			emissiveChannel;
+	int			emissiveChannel; //
 	int			transparencyChannel;
 	int			normalmapChannel;
 	int			reflectChannel;
 
-	float		specExp;
+	float		specExp; //
 
 	float 		useDisplacement;
 	float		useDiffuse;
 	float		useSpecular;
-	float		useEmissive;
+	float		useEmissive; //
 	float		useTransparency;
 	float		useNormalmap;
 	float		useReflect;
 
 	//
 	float 		shaderTransparency;
+
+	float		useAnisotropicSpecular;
+	float		roughnessX;
+	float		roughnessY;
+	float		pad;
 
 	//
 	/// Current material
