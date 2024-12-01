@@ -103,13 +103,22 @@ namespace Graphics {
 		FBColor lReflectionColor = pMaterial->Reflection;
 		double shin = pMaterial->Shininess;
 
-		mat.useAnisotropicSpecular = 0.0f;
-		if (FBProperty* useAnisoSpecularProp = pMaterial->PropertyList.Find("Use Anisotropic Specular"))
+		mat.specularType = SPECULAR_PHONG;
+		if (FBProperty* useAnisoSpecularProp = pMaterial->PropertyList.Find("Specular Type"))
 		{
-			const bool useAnisoSpecular = useAnisoSpecularProp->AsInt() > 0;
-			mat.useAnisotropicSpecular = (useAnisoSpecular) ? 1.0f : 0.0f;
-
-			if (useAnisoSpecular)
+			if (useAnisoSpecularProp->GetPropertyType() == FBPropertyType::kFBPT_enum)
+			{
+				const int propSpecularType = useAnisoSpecularProp->AsInt();
+				mat.specularType = static_cast<float>(propSpecularType);
+			}
+			else if (useAnisoSpecularProp->GetPropertyType() == FBPropertyType::kFBPT_double)
+			{
+				double value;
+				useAnisoSpecularProp->GetData(&value, sizeof(double));
+				mat.specularType = static_cast<float>(value);
+			}
+			
+			if (mat.specularType > 0.0f)
 			{
 				if (FBProperty* anisoRoughnessX = pMaterial->PropertyList.Find("RoughnessX"))
 				{
@@ -341,6 +350,7 @@ namespace Graphics {
 		
 		return lSuccess;
 	}
+
 
 
 	bool SuperShader::BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList)

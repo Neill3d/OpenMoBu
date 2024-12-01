@@ -308,8 +308,16 @@ namespace Graphics
 				lprop->SetData(&scale[0]);
 		}
 
-		light.radius = (float)scale[0] * 20.0;
 
+		light.castSpecularOnObject = 1.0f;
+		FBProperty* castSpecularProp = pLight->PropertyList.Find("Cast Specular On Object");
+		if (castSpecularProp)
+		{
+			const bool castSpecularValue = castSpecularProp->AsInt() > 0;
+			light.castSpecularOnObject = (castSpecularValue) ? 1.0f : -1.0f;
+		}
+
+		light.radius = (float)scale[0] * 20.0;
 
 		FBVectorToVec3(diffuseColor, &light.color[0]);
 		FBVectorToVec4(attenuation, &light.attenuations[0]);
@@ -338,27 +346,7 @@ namespace Graphics
 #endif
 		}
 
-		light.spotAngle = (float)cosAngle;
-		
-		//
-		light.castSpecularOnObject = 0.0f;
-
-		/*
-		// TODO: let's change this property value inside the Connection Data Change Event !
-
-		FBProperty *pProp = pLight->PropertyList.Find("Cast Specular On Object");
-		if (pProp)
-		{
-		light.castSpecularOnObject = (float) pProp->AsInt();
-		}
-		else
-		{
-		// add a new property
-
-		pProp = pLight->PropertyCreate( "Cast Specular On Object", kFBPT_bool, "BOOL", false, false );
-		if (pProp) pProp->SetInt( 0 );
-		}
-		*/
+		light.spotAngle = static_cast<float>(cosAngle);
 	}
 
 };

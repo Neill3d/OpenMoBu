@@ -17,6 +17,10 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #define	MAX_NUMBER_OF_LIGHTS			16
 #define MAX_NUMBER_OF_CASCADED_SPLITS	4
 
+#define SPECULAR_PHONG					0.0f
+#define SPECULAR_ANISO					1.0f
+#define SPECULAR_SKIN					2.0f
+
 #define	LIGHT_TYPE_DIRECTION			0.0f
 #define	LIGHT_TYPE_POINT				1.0f
 #define LIGHT_TYPE_SPOT					2.0f
@@ -37,7 +41,8 @@ struct TLight
 	glm::vec3	color;
 	float		radius;
 
-	glm::vec2	pad;
+	float		pad0;
+	float		pad1;
 	float		castSpecularOnObject;
 	float		shadowMapLayer{ -1.0f };
 
@@ -97,7 +102,7 @@ struct TMaterial
 	//
 	float 		shaderTransparency;
 
-	float		useAnisotropicSpecular;
+	float		specularType; // phong, anisotropic or skin (cook torrance)
 	float		roughnessX;
 	float		roughnessY;
 	float		pad;

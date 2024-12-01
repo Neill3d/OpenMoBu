@@ -217,6 +217,12 @@ void SuperDynamicLighting::ShaderPassTypeBegin(FBRenderOptions* pRenderOptions, 
 	StoreCullMode(mCullFaceInfo);
 	mLastCullingMode = kFBCullingOff;
 
+	if (Transparency != kFBAlphaSourceNoAlpha)
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
 	// global camera cache and scene lights
 	mSceneManager->BeginShading(pRenderOptions);
 
@@ -248,6 +254,11 @@ void SuperDynamicLighting::ShaderPassTypeEnd(FBRenderOptions* pRenderOptions, FB
 {
 	if (true == mSkipRendering)
 		return;
+
+	if (Transparency != kFBAlphaSourceNoAlpha)
+	{
+		glDisable(GL_BLEND);
+	}
 
 	// global unbind
 	mpLightShader->EndShading();

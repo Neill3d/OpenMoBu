@@ -15,6 +15,10 @@
 
 #define	PI	3.14159265358979323846264
 
+#define	SPECULAR_PHONG			0.0
+#define	SPECULAR_ANISO			1.0
+#define SPECULAR_SKIN			2.0
+
 struct TMaterial
 {
 	// textures for material channels
@@ -39,7 +43,7 @@ struct TMaterial
 	//
 	float 		shaderTransparency;
 	
-	float		useAnisotropicSpecular;
+	float		specularType; // phong, anisotropic or skin (cook torrance)
 	float		roughnessX;
 	float		roughnessY;
 	float		pad;
@@ -114,6 +118,7 @@ struct LIGHTINFOS
 	vec3	bitangent;
 	vec2	uv;
 	float 	shininess;
+	vec4	specularInput; // xyz - color and w - factor
 };
 
 struct LIGHTRES
@@ -177,6 +182,20 @@ uniform sampler2D	samplerMatCap;
 
 // Sampler for the shadow map
 uniform sampler2DArray samplerShadowMaps;
+
+	layout(location=0) smooth in vec3 inNw;
+	layout(location=1) smooth in vec2 inTC;		// input 8 bytes
+	layout(location=2) smooth in vec3 inPw;
+	layout(location=3) smooth in vec3 inWV;
+	
+	layout(location=4) smooth in vec3 n_eye; // eyePos
+	layout(location=5) smooth in vec3 	inTangent;
+	layout(location=6) smooth in vec2 	inTC2;
+	
+	layout(location=7) smooth in float fogAmount;
+	layout(location=8) smooth in vec3 inViewPos;
+
+	layout(location=0) out vec4 	outColor;
 
 //////////////////////////////////////////////////////////////////////////////
 // lights
@@ -247,27 +266,6 @@ float evalShadows(in LIGHTINFOS info)
 		}
 	}
 	return shadowContrib;
-}
-
-void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
-{
-	for (int i=0; i<numberOfDirLights; ++i)
-	{
-		vec3 dir = -normalize(dirLightsBuffer.lights[i].dir.xyz);
-		
-		float intensity = dirLightsBuffer.lights[i].attenuations.w;
-		float ndotl = max(0.0, dot( info.normal, dir ) );
-		
-		float shadow = 1.0;
-		float shadowLayer = dirLightsBuffer.lights[i].pad_castSpecularOnObject_shadowMapLayer.w;
-		if (shadowLayer >= 0.0)
-		{
-			vec4 shadowCoord = dirLightsBuffer.lights[i].shadowVP * vec4(info.worldPosition, 1.0);
-			shadow = 1.0 - calculateSoftShadow(shadowCoord, shadowLayer, 9, 0.001);
-		}
-
-		result.diffContrib += ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;
-	}
 }
 
 // GLSL Function for Standard Phong Specular Reflection
@@ -350,6 +348,128 @@ float anisotropicSpecular(
     return specular * NdotL; // Multiply by NdotL for energy conservation
 }
 
+// following functions are copies of UE4
+// for computing cook-torrance specular lighting terms
+
+float D_blinn(in float roughness, in float NdH)
+{
+	float m = roughness * roughness;
+	float m2 = m * m;
+	float n = 2.0 / m2 - 2.0;
+	return (n + 2.0) / (2.0 * PI) * pow(NdH, n);
+}
+
+float D_beckmann(in float roughness, in float NdH)
+{
+	float m = roughness * roughness;
+	float m2 = m * m;
+	float NdH2 = NdH * NdH;
+	return exp((NdH2 - 1.0) / (m2 * NdH2)) / (PI * m2 * NdH2 * NdH2);
+}
+
+float D_GGX(in float roughness, in float NdH)
+{
+	float m = roughness * roughness;
+	float m2 = m * m;
+	float d = (NdH * m2 - NdH) * NdH + 1.0;
+	return m2 / (PI * d * d);
+}
+
+float G_schlick(in float roughness, in float NdV, in float NdL)
+{
+	float k = roughness * roughness * 0.5;
+	float V = NdV * (1.0 - k) + k;
+	float L = NdL * (1.0 - k) + k;
+	return 0.25 / (V * L);
+}
+
+#define COOK_BECKMANN	1
+
+// cook-torrance specular calculation                      
+vec3 cooktorrance_specular(in float NdL, in float NdV, in float NdH, in vec3 specular, in float roughness)
+{
+#ifdef COOK_BLINN
+	float D = D_blinn(roughness, NdH);
+#endif
+
+#ifdef COOK_BECKMANN
+	float D = D_beckmann(roughness, NdH);
+#endif
+
+#ifdef COOK_GGX
+	float D = D_GGX(roughness, NdH);
+#endif
+
+	float G = G_schlick(roughness, NdV, NdL);
+	float rim = mix(1.0 - roughness * 1.0 * 0.9, 1.0, NdV); // material.w
+
+	return (1.0 / rim) * specular * G * D;
+}
+
+vec3 skinSpecular(vec3 lightDir, vec3 viewDir, vec3 normal, float roughness1) {
+    
+    vec3 eyeVec = viewDir;
+    // Compute half-vector
+    vec3 halfVector = normalize(lightDir + eyeVec);
+    
+    // Cosine of angles
+    float NdotV = max(dot(normal, viewDir), 0.0);
+    float NdotL = max(dot(normal, lightDir), 0.0);
+    float NdotH = max(dot(normal, halfVector), 0.0);
+    float VdotH = max(dot(eyeVec, halfVector), 0.0);
+    
+    if (NdotL <= 0.0 || NdotV <= 0.0) {
+        return vec3(0.0); // No light contribution if light or view are behind the surface
+    }
+
+    float f = 0.5 * abs( dot( normal, normalize(viewDir) ) );
+    vec3 specfresnel = vec3(f);
+    vec3 ct = cooktorrance_specular(NdotL, NdotV, NdotH, specfresnel, roughness1);
+    return max(ct, vec3(0.0));
+}
+
+void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
+{
+	for (int i=0; i<numberOfDirLights; ++i)
+	{
+		vec3 lightDir = -normalize(dirLightsBuffer.lights[i].dir.xyz);
+		
+		float intensity = dirLightsBuffer.lights[i].attenuations.w;
+		float ndotl = max(0.0, dot( info.normal, lightDir ) );
+		
+		float shadow = 1.0;
+		float shadowLayer = dirLightsBuffer.lights[i].pad_castSpecularOnObject_shadowMapLayer.w;
+		if (shadowLayer >= 0.0)
+		{
+			vec4 shadowCoord = dirLightsBuffer.lights[i].shadowVP * vec4(info.worldPosition, 1.0);
+			shadow = 1.0 - calculateSoftShadow(shadowCoord, shadowLayer, 9, 0.001);
+		}
+
+		result.diffContrib += ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;
+		
+		if (dirLightsBuffer.lights[i].pad_castSpecularOnObject_shadowMapLayer.z < 0.0f)
+			continue;
+		
+		if (materialBuffer.mat.specularType == SPECULAR_SKIN)
+		{
+			result.specContrib += ndotl * shadow * intensity * skinSpecular(lightDir, -info.viewDir, info.normal, info.specularInput.x);
+		}
+		else if (materialBuffer.mat.specularType == SPECULAR_ANISO)
+		{
+			float roughnessX = materialBuffer.mat.roughnessX;
+			float roughnessY = materialBuffer.mat.roughnessY;
+			float specular = anisotropicSpecular(info.normal, -info.viewDir, lightDir, roughnessX, roughnessY, normalize(info.tangent), normalize(info.bitangent));
+			specular = clamp(specular, 0.0, 1.0);
+			result.specContrib += specular * shadow * intensity * dirLightsBuffer.lights[i].color.xyz;
+		}
+		else
+		{
+			float specular = phongSpecular(info.normal, -info.viewDir, lightDir, info.shininess);
+			specular = clamp(specular, 0.0, 1.0);
+			result.specContrib += specular * shadow * intensity * dirLightsBuffer.lights[i].color.xyz;
+		}
+	}
+}
 
 void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout vec3 specContrib)
 {
@@ -369,26 +489,8 @@ void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout 
 	if (dist > radius)
 		att = 0.0f;
 	
-	
 	// And last but not least, figure out the spot factor ...
 	float spotFactor = 1.0;
-	float specular = 0.0;
-	
-	//if (pLight->castSpecularOnObject > 0.0f)
-	{
-		if (materialBuffer.mat.useAnisotropicSpecular > 0.0)
-		{
-			float roughnessX = materialBuffer.mat.roughnessX;
-			float roughnessY = materialBuffer.mat.roughnessY;
-			specular = anisotropicSpecular(normal, -info.viewDir, lightDir, roughnessX, roughnessY, normalize(info.tangent), normalize(info.bitangent));
-		}
-		else
-		{
-			specular = phongSpecular(normal, -info.viewDir, lightDir, info.shininess);
-		}
-		
-		specular = clamp(specular, 0.0, 1.0);
-	}
 	
 	if( light.position.w == LIGHT_TYPE_SPOT )
 	{
@@ -409,7 +511,28 @@ void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout 
 	//
 	
 	diffContrib += ndotL * factor * light.color.xyz;
-	specContrib += specular * factor * light.color.xyz;
+	
+	if (light.pad_castSpecularOnObject_shadowMapLayer.z < 0.0f)
+		return;
+	
+	if (materialBuffer.mat.specularType == SPECULAR_SKIN)
+	{
+		specContrib += ndotL * factor * skinSpecular(lightDir, -info.viewDir, info.normal, info.specularInput.x);
+	}
+	else if (materialBuffer.mat.specularType == SPECULAR_ANISO)
+	{
+		float roughnessX = materialBuffer.mat.roughnessX;
+		float roughnessY = materialBuffer.mat.roughnessY;
+		float specular = anisotropicSpecular(normal, -info.viewDir, lightDir, roughnessX, roughnessY, normalize(info.tangent), normalize(info.bitangent));
+		specular = clamp(specular, 0.0, 1.0);
+		specContrib += specular * factor * light.color.xyz;
+	}
+	else
+	{
+		float specular = phongSpecular(normal, -info.viewDir, lightDir, info.shininess);
+		specular = clamp(specular, 0.0, 1.0);
+		specContrib += specular * factor * light.color.xyz;
+	}
 }
 
 void evalLighting(in LIGHTINFOS info, in int count, inout LIGHTRES result)
@@ -433,7 +556,7 @@ void ApplyRim(in vec3 Nn, in vec3 inPw, in vec4 rimOptions, in vec4 rimColor, in
 		float f = rimOptions.y * abs( dot( Nn, normalize(inPw) ) );
 		f = rimOptions.x * ( 1. - smoothstep( 0.0, 1., f ) );
 		
-		difColor.rgb = mix(difColor.rgb, rimColor.rgb, f);
+		difColor.rgb = mix(difColor.rgb, rimColor.rgb, f * difColor.a);
 	}
 }
 
@@ -464,19 +587,7 @@ vec3 ApplyReflection( in vec3 inWV, in vec3 n_eye )
 //////////////////////////////////////////////////////////////////
 //
 
-	layout(location=0) smooth in vec3 inNw;
-	layout(location=1) smooth in vec2 inTC;		// input 8 bytes
-	layout(location=2) smooth in vec3 inPw;
-	layout(location=3) smooth in vec3 inWV;
 	
-	layout(location=4) smooth in vec3 n_eye; // eyePos
-	layout(location=5) smooth in vec3 	inTangent;
-	layout(location=6) smooth in vec2 	inTC2;
-	
-	layout(location=7) smooth in float fogAmount;
-	layout(location=8) smooth in vec3 inViewPos;
-
-	layout(location=0) out vec4 	outColor;
 
 void main (void)
 {
@@ -536,6 +647,16 @@ void main (void)
 		color.rgb = mix(color.rgb, lightmap, useLightmap);
 	}
 	
+	// specular channel map
+	float specularFactor = materialBuffer.mat.specularColor.w;
+	vec3 specularColor = materialBuffer.mat.specularColor.rgb;
+
+	if (materialBuffer.mat.useSpecular > 0.0)
+	{
+		vec4 coords = materialBuffer.mat.specularTransform * vec4(tx.x, tx.y, 0.0, 1.0);
+		specularColor = texture2D(samplerSpecular, coords.st).rgb;
+	}
+
 	//
 	// calculate lighting indices
 	
@@ -548,13 +669,12 @@ void main (void)
 	lInfo.worldPosition = inWV;
 	lInfo.position = inPw;
 	lInfo.shininess = materialBuffer.mat.specExp;
-	
+	lInfo.specularInput = vec4(specularColor, specularFactor);
+
 	LIGHTRES	lResult;
 	lResult.ambientContrib = vec3(0.0);
 	lResult.diffContrib = vec3(0.0);
 	lResult.specContrib = vec3(0.0);
-	float shadowContrib = 1.0;
-	//lResult.R = vec3(0.0);
 	
 	if (numberOfDirLights > 0)
 	{
@@ -564,10 +684,7 @@ void main (void)
 	{
 		evalLighting(lInfo, numberOfPointLights, lResult);
 	}
-	//if (numberOfShadows > 0)
-	//{
-	//	shadowContrib = evalShadows(lInfo);
-	//}
+
 	float difFactor = clamp(materialBuffer.mat.diffuseColor.w, 0.0, 1.0);
 	vec3 ambientColor = materialBuffer.mat.ambientColor.rgb * globalAmbientLight.rgb * materialBuffer.mat.ambientColor.w;
 	vec3 emissiveColor = materialBuffer.mat.emissiveColor.a * materialBuffer.mat.emissiveColor.rgb;
@@ -575,27 +692,14 @@ void main (void)
 	
 	color *= vec4(ambientColor + difColor, materialBuffer.mat.shaderTransparency); // ambientColor +
 	color.rgb = color.rgb + materialBuffer.mat.emissiveColor.rgb * materialBuffer.mat.emissiveColor.w;
-	
-	float specularFactor = materialBuffer.mat.specularColor.w;
-	
-	if (materialBuffer.mat.useSpecular > 0.0)
-	{
-		vec4 coords = materialBuffer.mat.specularTransform * vec4(tx.x, tx.y, 0.0, 1.0);
-		specularFactor *= texture2D(samplerSpecular, coords.st).r;
-	}
-	
-	color.rgb =  color.rgb + specularFactor * materialBuffer.mat.specularColor.rgb * lResult.specContrib;
-	
-	//color = vec4(1.0, 0.0, 0.0, 1.0);
-	//color.rgb = lResult.diffContrib * color.rgb;
-	
+	color.rgb += color.a * lResult.specContrib;
+
 	ApplyRim(Nn, inPw, rimOptions, rimColor, color);
 	
 	//
 	vec3 reflColor = ApplyReflection( inWV, n_eye );
 	color.rgb += lResult.diffContrib * reflColor;
-	color.rgb *= shadowContrib;
-
+	
 	color = clamp(color, 0.0, 1.0);
 
 	if (switchAlbedoTosRGB > 0.0)
@@ -607,5 +711,11 @@ void main (void)
 	// apply fog
 	color.rgb = mix(color.rgb, fogColor.rgb, fogColor.w * fogAmount);
 	
+	if (color.a < 0.5)
+	{
+		discard;
+		return;
+	}
+
 	outColor = color;
 }
