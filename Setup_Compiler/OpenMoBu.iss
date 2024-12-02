@@ -2,10 +2,10 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenMoBu for Autodesk® MotionBuilder®"
-#define MyAppVersion "2024.3"
+#define MyAppVersion "2024.4"
 #define MyAppPublisher "Neill3d"
 #define MyAppURL "http://openmobu.org"
-#define MyAppExeName "Setup_OpenMoBu_2024_3"
+#define MyAppExeName "Setup_OpenMoBu_2024_4"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile:"infoBefore_en.txt"; InfoAfterFile: "infoAfter_en.txt"
@@ -309,6 +309,7 @@ Source: "..\Build\bin\2023\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app
 
 Source: "..\Build\bin\2023\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2023
 Source: "..\Build\bin\2023\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2023
+Source: "..\Build\bin\2023\plugins\GLSL_FX\*"; DestDir: "{app}\bin\x64\plugins\GLSL_FX\"; Flags: ignoreversion; Components: MotionBuilder2023
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2023; Tasks: scripts\references
@@ -348,6 +349,7 @@ Source: "..\Build\bin\2024\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app
 
 Source: "..\Build\bin\2024\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2024
 Source: "..\Build\bin\2024\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2024
+Source: "..\Build\bin\2024\plugins\GLSL_FX\*"; DestDir: "{app}\bin\x64\plugins\GLSL_FX\"; Flags: ignoreversion; Components: MotionBuilder2024
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2024; Tasks: scripts\references
@@ -387,6 +389,7 @@ Source: "..\Build\bin\2025\plugins\FBX\FBXExt_ReferencesFix.dll"; DestDir: "{app
 
 Source: "..\Build\bin\2025\plugins\GLSL\*"; DestDir: "{app}\bin\x64\plugins\GLSL\"; Flags: ignoreversion; Components: MotionBuilder2025
 Source: "..\Build\bin\2025\plugins\GLSL_CS\*"; DestDir: "{app}\bin\x64\plugins\GLSL_CS\"; Flags: ignoreversion; Components: MotionBuilder2025
+Source: "..\Build\bin\2025\plugins\GLSL_FX\*"; DestDir: "{app}\bin\x64\plugins\GLSL_FX\"; Flags: ignoreversion; Components: MotionBuilder2025
 Source: "..\PythonScripts\Startup\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\*"; DestDir: "{app}\bin\config\PythonStartup\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: scripts\startup
 Source: "..\PythonScripts\Startup_Qt5\MBFileRefAdvanced\*"; DestDir: "{app}\bin\config\PythonStartup\MBFileRefAdvanced\"; Flags: ignoreversion; Components: MotionBuilder2025; Tasks: scripts\references
