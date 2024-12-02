@@ -202,7 +202,7 @@ namespace Graphics {
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureDisplacementColor))
 		{
-			mat.useDisplacement = (float) lDisplacementFactor;
+			mat.useDisplacement = static_cast<float>(lDisplacementFactor);
 			/*
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureDisplacementColor)->GetMatrix();
 			for (int i = 0; i < 16; ++i)
@@ -699,11 +699,12 @@ namespace Graphics {
 	{
 		if (PhongShaderUniformLocations.rimOptions >= 0)
 		{
-			glUniform4f(PhongShaderUniformLocations.rimOptions, useRim, rimPower, 0.0f, 0.0f);
+			glUniform4f(PhongShaderUniformLocations.rimOptions, static_cast<float>(useRim), static_cast<float>(rimPower), 0.0f, 0.0f);
 		}
 		if (PhongShaderUniformLocations.rimColor >= 0)
 		{
-			glUniform4f(PhongShaderUniformLocations.rimColor, rimColor[0], rimColor[1], rimColor[2], 1.0f);
+			glUniform4f(PhongShaderUniformLocations.rimColor, static_cast<float>(rimColor[0]), static_cast<float>(rimColor[1]), 
+				static_cast<float>(rimColor[2]), 1.0f);
 		}
 	}
 
@@ -711,11 +712,13 @@ namespace Graphics {
 	{
 		if (PhongShaderUniformLocations.fogColor >= 0)
 		{
-			glUniform4f(PhongShaderUniformLocations.fogColor, (float)color[0], (float)color[1], (float)color[2], (enable)?1.0 : 0.0);
+			glUniform4f(PhongShaderUniformLocations.fogColor, static_cast<float>(color[0]), static_cast<float>(color[1]), 
+				static_cast<float>(color[2]), (enable) ? 1.0 : 0.0);
 		}
 		if (PhongShaderUniformLocations.fogOptions >= 0)
 		{
-			glUniform4f(PhongShaderUniformLocations.fogOptions, (float)begin, (float)end, (float)density, (float)mode);
+			glUniform4f(PhongShaderUniformLocations.fogOptions, static_cast<float>(begin), static_cast<float>(end), 
+				static_cast<float>(density), static_cast<float>(mode));
 		}
 	}
 
@@ -729,7 +732,7 @@ namespace Graphics {
 			}
 			else
 			{
-				glUniform4f(PhongShaderUniformLocations.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
+				glUniform4f(PhongShaderUniformLocations.displacementOption, static_cast<float>(dispMult), static_cast<float>(dispCenter), 0.0f, 0.0f);
 			}
 		}
 
@@ -758,11 +761,11 @@ namespace Graphics {
 				}
 				else
 				{
-					glUniform4f(PhongShaderUniformLocations.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
+					glUniform4f(PhongShaderUniformLocations.displacementOption, static_cast<float>(dispMult), static_cast<float>(dispCenter), 0.0f, 0.0f);
 
 					float m[16];
 					for (int i = 0; i < 16; ++i)
-						m[i] = (float)dispMatrix[i];
+						m[i] = static_cast<float>(dispMatrix[i]);
 
 					glUniformMatrix4fv(PhongShaderUniformLocations.displacementMatrix, 1, GL_FALSE, m);
 				}
