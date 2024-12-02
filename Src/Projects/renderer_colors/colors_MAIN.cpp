@@ -24,6 +24,7 @@
 
 #include "mobu_logging.h"
 
+DEFINE_LOGI;
 DEFINE_LOGE;
 
 //--- Library declaration
