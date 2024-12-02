@@ -47,12 +47,15 @@ private:
     // UI variables.
     FBLabel mTransLabel;
     FBLabel mAffectLabel;
+    FBLabel mCastersLabel;
 	FBLabel mMatCapLabel;
     FBLabel mTransFactorLabel;
     FBList  mTransparency;
     FBEditProperty				mTransparencyFactor;
 	FBEditProperty				mUseSceneLights;
 	FBPropertyConnectionEditor	mAffectingLights;
+    FBEditProperty              mCastShadows;
+    FBPropertyConnectionEditor  mShadowCasters; // models that cast shadows
 	FBEditProperty				mUseRim;
 	FBEditProperty				mRimPower;
 	FBEditProperty				mRimColor;

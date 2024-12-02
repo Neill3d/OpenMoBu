@@ -94,9 +94,26 @@ void SuperDynamicLightingLayout::UICreate()
         2*lW,	kFBAttachNone,	NULL,		1.00,
         0,		kFBAttachHeight,"AffectLabel",	1.00 );
 
+    AddRegion("CastShadows", "CastShadows",
+        lB, kFBAttachLeft, "", 1.00,
+        lB, kFBAttachBottom, "AffectLabel", 1.00,
+        lW, kFBAttachNone, NULL, 1.00,
+        lH, kFBAttachNone, "", 1.00);
+
+    AddRegion("CastersLabel", "CastersLabel",
+        lB, kFBAttachLeft, "", 1.00,
+        lB, kFBAttachBottom, "CastShadows", 1.00,
+        lW, kFBAttachNone, NULL, 1.00,
+        lH, kFBAttachNone, NULL, 1.00);
+    AddRegion("Casters", "Casters",
+        lS, kFBAttachRight, "CastersLabel", 1.00,
+        0, kFBAttachTop, "CastersLabel", 1.00,
+        2 * lW, kFBAttachNone, NULL, 1.00,
+        0, kFBAttachHeight, "CastersLabel", 1.00);
+
 	AddRegion("UseRim", "UseRim",
 		lB, kFBAttachLeft, "", 1.00,
-		lB, kFBAttachBottom, "AffectLabel", 1.00,
+		lB, kFBAttachBottom, "CastersLabel", 1.00,
 		3*lW, kFBAttachNone, NULL, 1.00,
 		lH, kFBAttachNone, "", 1.00);
 
@@ -138,6 +155,10 @@ void SuperDynamicLightingLayout::UICreate()
     SetControl( "AffectLabel",      mAffectLabel);
     SetControl( "AffectingLights",  mAffectingLights);
 
+    SetControl("CastShadows", mCastShadows);
+    SetControl("CastersLabel", mCastersLabel);
+    SetControl("Casters", mShadowCasters);
+
 	SetControl("UseRim", mUseRim);
 	SetControl("RimPower", mRimPower);
 	SetControl("RimColor", mRimColor);
@@ -170,6 +191,12 @@ void SuperDynamicLightingLayout::UIConfigure()
 
     mAffectLabel.Caption = "Affecting Lights";
     mAffectingLights.Property = &mShader->AffectingLights;
+
+    mCastShadows.Caption = "Cast Shadows";
+    mCastShadows.Property = &mShader->Shadows;
+
+    mCastersLabel.Caption = "Shadow Casters";
+    mShadowCasters.Property = &mShader->ShadowCasters;
 
 	mUseRim.Caption = "Use Rim";
 	mUseRim.Property = &mShader->UseRim;
