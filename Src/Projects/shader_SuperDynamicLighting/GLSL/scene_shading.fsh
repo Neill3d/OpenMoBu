@@ -1,14 +1,17 @@
 //
-// Fragment shader - Model Phong Shading 
+// Fragment shader - Model Shading 
+//   diffuse shading - Lambert, Oren-Nayar
+//   specular shading - Phong, Anisotropic, Cook Torrance
+//  with shadow map support
 //
-//	Post Processing Toolkit
+//	OpenMoBu project
 //
 // Sergei <Neill3d> Solokhin 2018-2024
 //
 // GitHub page - https://github.com/Neill3d/OpenMoBu
 // Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 //
-//	Special for Les Androids Associes
+//	Special thanks for Les Androids Associes
 //
 
 #version 430 compatibility
@@ -119,7 +122,6 @@ struct LIGHTINFOS
 	vec3 	normal;	
 	vec3	tangent;
 	vec3	bitangent;
-	vec2	uv;
 	float 	shininess;
 	vec4	specularInput; // xyz - color and w - factor
 };
@@ -153,16 +155,10 @@ layout (std430, binding = 3) buffer LightsBuffer
 
 } lightsBuffer;
 
-layout (std430, binding = 4) buffer ShadowsBuffer
-{
-	TShadow shadows[];
-} shadowsBuffer;
-
 /////////////////////////////////////////////////////
 
 uniform int			numberOfDirLights;
 uniform int			numberOfPointLights;
-uniform int			numberOfShadows;
 
 uniform float		switchAlbedoTosRGB;
 uniform float		useMatCap;
@@ -251,24 +247,6 @@ float calculateSoftShadow(vec4 shadowCoord, float shadowMapLayer, int samples, f
     shadow /= totalSamples;
 
     return shadow;
-}
-
-
-float evalShadows(in LIGHTINFOS info)
-{
-	float shadowContrib = 1.0;
-
-	for (int i=0; i<numberOfShadows; ++i)
-	{
-		if (shadowsBuffer.shadows[i].shadowMapLayer >= 0.0)
-		{
-			vec4 shadowCoord = shadowsBuffer.shadows[i].shadowVP * vec4(info.worldPosition, 1.0);
-			float shadowFactor = calculateShadow(shadowCoord, shadowsBuffer.shadows[i].shadowMapLayer);
-
-			shadowContrib *= shadowFactor;
-		}
-	}
-	return shadowContrib;
 }
 
 // GLSL Function for Standard Phong Specular Reflection
@@ -497,13 +475,13 @@ void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 			float roughnessY = materialBuffer.mat.roughnessY;
 			float specular = anisotropicSpecular(info.normal, -info.viewDir, lightDir, roughnessX, roughnessY, normalize(info.tangent), normalize(info.bitangent));
 			specular = clamp(specular, 0.0, 1.0);
-			result.specContrib += specular * shadow * intensity * dirLightsBuffer.lights[i].color.xyz;
+			result.specContrib += specular * shadow * intensity * dirLightsBuffer.lights[i].color.xyz * info.specularInput.rgb;
 		}
 		else
 		{
 			float specular = phongSpecular(info.normal, -info.viewDir, lightDir, info.shininess);
 			specular = clamp(specular, 0.0, 1.0);
-			result.specContrib += specular * shadow * intensity * dirLightsBuffer.lights[i].color.xyz;
+			result.specContrib += specular * shadow * intensity * dirLightsBuffer.lights[i].color.xyz * info.specularInput.rgb;
 		}
 	}
 }
@@ -569,13 +547,13 @@ void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout 
 		float roughnessY = materialBuffer.mat.roughnessY;
 		float specular = anisotropicSpecular(normal, -info.viewDir, lightDir, roughnessX, roughnessY, normalize(info.tangent), normalize(info.bitangent));
 		specular = clamp(specular, 0.0, 1.0);
-		specContrib += specular * factor * light.color.xyz;
+		specContrib += specular * factor * light.color.xyz * info.specularInput.rgb;
 	}
 	else
 	{
 		float specular = phongSpecular(normal, -info.viewDir, lightDir, info.shininess);
 		specular = clamp(specular, 0.0, 1.0);
-		specContrib += specular * factor * light.color.xyz;
+		specContrib += specular * factor * light.color.xyz * info.specularInput.rgb;
 	}
 }
 
@@ -736,7 +714,7 @@ void main (void)
 	
 	color *= vec4(ambientColor + difColor, materialBuffer.mat.shaderTransparency); // ambientColor +
 	color.rgb = color.rgb + materialBuffer.mat.emissiveColor.rgb * materialBuffer.mat.emissiveColor.w;
-	color.rgb += color.a * lResult.specContrib;
+	color.rgb += color.a * specularFactor * lResult.specContrib;
 
 	ApplyRim(Nn, inPw, rimOptions, rimColor, color);
 	

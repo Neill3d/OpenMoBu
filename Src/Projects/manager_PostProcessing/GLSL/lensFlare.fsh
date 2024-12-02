@@ -41,16 +41,6 @@ uniform float feather; // = 1.0;
 float width = textureWidth; //texture width
 float height = textureHeight; //texture height
 
-/*
-float noise(float t)
-{
-	return texture(iChannel0,vec2(t, 0.0) / iChannelResolution[0].xy).x;
-}
-float noise(vec2 t)
-{
-	return texture(iChannel0,(t + vec2(iTime)) / iChannelResolution[0].xy).x;
-}
-*/
 
 float noise(float t) //generating noise/pattern texture for dithering
 {

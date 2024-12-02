@@ -8,7 +8,7 @@
 // GitHub page - https://github.com/Neill3d/OpenMoBu
 // Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 //
-//	Special for Les Androids Associes
+//	Special thanks for Les Androids Associes
 //
 
 #version 430 compatibility

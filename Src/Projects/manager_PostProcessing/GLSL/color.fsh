@@ -348,6 +348,6 @@ void main (void)
 	{
 		mask = texture2D(maskSampler, tx);
 	}
-	outColor.rgb = mix(outColor, inputColor, mask.r * useMasking);
+	outColor.rgb = mix(outColor.rgb, inputColor.rgb, mask.r * useMasking);
 	gl_FragColor = outColor;
 }

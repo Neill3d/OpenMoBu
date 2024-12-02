@@ -653,7 +653,6 @@ void SuperDynamicLighting::EventBeforeRenderNotify()
 		glActiveTexture(GL_TEXTURE0);
 
 		shadowManager.BindShadowsBuffer(4);
-		mpLightShader->UploadShadowsInformation(shadowManager.GetNumberOfShadows());
 	}
 
 	if (!mShaderLights.get())

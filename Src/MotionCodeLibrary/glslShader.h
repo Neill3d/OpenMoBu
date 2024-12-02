@@ -31,8 +31,8 @@ class GLSLShader
 	/// shader header text (defines)
 	char          mHeaderText[256]{ 0 };
 
-  bool LoadShader( GLhandleARB shader, FILE *file );
-  void loadlog( GLhandleARB object );
+  bool LoadShader( GLhandleARB shader, FILE *file, const char* debugName );
+  bool LoadLog( GLhandleARB object, const char* debugName ) const;
 
 public:
 

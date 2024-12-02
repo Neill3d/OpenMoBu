@@ -155,7 +155,7 @@ namespace Graphics
 
 		GPUBufferSSBO			shadowsBuffer;        ///< describe each shadow projection for the lighting shader
 
-		void UpdateShadowsData(const std::vector<std::shared_ptr<LightProxy>>& lightsIn);
+		void UpdateShadowsData(const std::vector<std::shared_ptr<LightProxy>>& lightsIn, bool uploadOnGPU);
 
 	private:
 		

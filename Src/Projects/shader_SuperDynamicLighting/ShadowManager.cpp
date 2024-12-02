@@ -179,7 +179,7 @@ namespace Graphics
 		shader.UnBind();
 
 		// update shadow data SSBO
-		UpdateShadowsData(thisFrameLights);
+		UpdateShadowsData(thisFrameLights, false);
 
 		// restore current framebuffer bind state
 		RestoreFrameBuffer(&frameBufferBindingInfo);
@@ -358,7 +358,7 @@ namespace Graphics
 		}
 	}
 
-	void ShadowManager::UpdateShadowsData(const std::vector<std::shared_ptr<LightProxy>>& lightsIn)
+	void ShadowManager::UpdateShadowsData(const std::vector<std::shared_ptr<LightProxy>>& lightsIn, bool uploadOnGPU)
 	{
 		shadowsData.resize(lightsIn.size());
 
@@ -380,7 +380,7 @@ namespace Graphics
 		}
 
 		// upload data on gpu
-		if (!shadowsData.empty())
+		if (!shadowsData.empty() && uploadOnGPU)
 		{
 			shadowsBuffer.UpdateData(sizeof(TShadow), shadowsData.size(), shadowsData.data());
 		}

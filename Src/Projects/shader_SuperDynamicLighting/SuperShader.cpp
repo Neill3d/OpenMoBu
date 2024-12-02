@@ -338,8 +338,7 @@ namespace Graphics {
 				
 				{"numberOfDirLights", &PhongShaderUniformLocations.numberOfDirLights},
 				{"numberOfPointLights", &PhongShaderUniformLocations.numberOfPointLights},
-				{"numberOfShadows", &PhongShaderUniformLocations.numberOfShadows},
-
+				
 				{"globalAmbientLight", &PhongShaderUniformLocations.globalAmbientLight},
 
 				{"fogColor", &PhongShaderUniformLocations.fogColor},
@@ -795,15 +794,6 @@ namespace Graphics {
 			glUniform1i(PhongShaderUniformLocations.numberOfDirLights, numdir);
 		if (PhongShaderUniformLocations.numberOfPointLights >= 0)
 			glUniform1i(PhongShaderUniformLocations.numberOfPointLights, numpoint);
-	}
-
-	void SuperShader::UploadShadowsInformation(const int numShadow)
-	{
-		if (PhongShaderUniformLocations.numberOfShadows >= 0)
-		{
-			glProgramUniform1i(mShaderShading->GetProgramObj(), PhongShaderUniformLocations.numberOfShadows, numShadow);
-			//glUniform1f(PhongShaderUniformLocations.numberOfShadows, numShadow);
-		}
 	}
 
 	bool SuperShader::BindLights(const bool resetLastBind, const LightGPUBuffersManager* sceneLights, const LightGPUBuffersManager* pUserLights)

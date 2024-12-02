@@ -73,8 +73,7 @@ namespace Graphics
 
 			GLint		numberOfDirLights{ -1 };
 			GLint		numberOfPointLights{ -1 };
-			GLint		numberOfShadows{ -1 };
-
+			
 			GLint		globalAmbientLight{ -1 };
 
 			GLint		fogColor{ -1 };
@@ -126,7 +125,6 @@ namespace Graphics
 
 		void UploadGlobalAmbient(double *color);
 		void UploadLightingInformation(const int numdir, const int numpoint);
-		void UploadShadowsInformation(const int numShadows);
 		void UploadRimInformation(double useRim, double rimPower, double *rimColor);
 		void UploadFogInformation(double *color, bool enable, double begin, double end, double density, FBFogMode mode);
 
