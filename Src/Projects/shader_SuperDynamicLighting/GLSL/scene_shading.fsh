@@ -15,6 +15,9 @@
 
 #define	PI	3.14159265358979323846264
 
+#define DIFFUSE_LAMBERT			0.0
+#define DIFFUSE_OREN_NAYAR		1.0
+
 #define	SPECULAR_PHONG			0.0
 #define	SPECULAR_ANISO			1.0
 #define SPECULAR_SKIN			2.0
@@ -43,11 +46,11 @@ struct TMaterial
 	//
 	float 		shaderTransparency;
 	
+	float		diffuseType;	// lambert, oren-nayar
 	float		specularType; // phong, anisotropic or skin (cook torrance)
 	float		roughnessX;
 	float		roughnessY;
-	float		pad;
-
+	
 	//
 	/// Current material
 	//
@@ -428,6 +431,32 @@ vec3 skinSpecular(vec3 lightDir, vec3 viewDir, vec3 normal, float roughness1) {
     return max(ct, vec3(0.0));
 }
 
+float orenNayarDiffuse(vec3 normal, vec3 lightDir, vec3 viewDir, float roughness) {
+    // Cosine of angles
+    float NdotL = max(dot(normal, lightDir), 0.0);
+    float NdotV = max(dot(normal, viewDir), 0.0);
+
+    // Angle between light and view vectors
+    float LdotV = max(dot(lightDir, viewDir), 0.0);
+
+    // Precompute terms
+    float sigma2 = roughness * roughness;
+    float A = 1.0 - (0.5 * sigma2 / (sigma2 + 0.33));
+    float B = 0.45 * sigma2 / (sigma2 + 0.09);
+
+    // Compute the angle-dependent term
+    float theta_i = acos(NdotL);
+    float theta_r = acos(NdotV);
+    float alpha = max(theta_i, theta_r);
+    float beta = min(theta_i, theta_r);
+
+    // Diffuse reflection
+    float diffuse = A + B * max(0.0, LdotV) * sin(alpha) * tan(beta);
+
+    return diffuse * NdotL;
+}
+
+
 void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 {
 	for (int i=0; i<numberOfDirLights; ++i)
@@ -445,8 +474,16 @@ void evalDirLighting(in LIGHTINFOS info, inout LIGHTRES result)
 			shadow = 1.0 - calculateSoftShadow(shadowCoord, shadowLayer, 9, 0.001);
 		}
 
-		result.diffContrib += ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;
-		
+		if (materialBuffer.mat.diffuseType != DIFFUSE_OREN_NAYAR)
+		{
+			result.diffContrib += ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;
+		}
+		else
+		{
+			float diffuse = orenNayarDiffuse(info.normal, lightDir, -info.viewDir, 0.4);
+			result.diffContrib += shadow * diffuse * intensity * dirLightsBuffer.lights[i].color.rgb; //ndotl * shadow * intensity * dirLightsBuffer.lights[i].color.rgb;
+		}
+
 		if (dirLightsBuffer.lights[i].pad_castSpecularOnObject_shadowMapLayer.z < 0.0f)
 			continue;
 		
@@ -509,8 +546,15 @@ void doLight(in LIGHTINFOS info, in TLight light, inout vec3 diffContrib, inout 
 	float factor = light.attenuations.w * att * spotFactor * shadow;
 
 	//
-	
-	diffContrib += ndotL * factor * light.color.xyz;
+	if (materialBuffer.mat.diffuseType != DIFFUSE_OREN_NAYAR)
+	{
+		diffContrib += ndotL * factor * light.color.xyz;
+	}
+	else
+	{
+		float diffuse = orenNayarDiffuse(info.normal, lightDir, -info.viewDir, 0.4);
+		diffContrib += diffuse * factor * light.color.xyz;
+	}
 	
 	if (light.pad_castSpecularOnObject_shadowMapLayer.z < 0.0f)
 		return;

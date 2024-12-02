@@ -89,6 +89,7 @@ namespace Graphics {
 		transform.normalMatrix = glm::transpose(transform.normalMatrix);
 	}
 
+
 	void SuperShader::SetMaterial(TMaterial &mat, FBMaterial *pMaterial)
 	{
 		if (nullptr == pMaterial)
@@ -103,18 +104,34 @@ namespace Graphics {
 		FBColor lReflectionColor = pMaterial->Reflection;
 		double shin = pMaterial->Shininess;
 
-		mat.specularType = SPECULAR_PHONG;
-		if (FBProperty* useAnisoSpecularProp = pMaterial->PropertyList.Find("Specular Type"))
+		mat.diffuseType = DIFFUSE_LAMBERT;
+		if (FBProperty* diffuseProp = pMaterial->PropertyList.Find("Diffuse Type"))
 		{
-			if (useAnisoSpecularProp->GetPropertyType() == FBPropertyType::kFBPT_enum)
+			if (diffuseProp->GetPropertyType() == FBPropertyType::kFBPT_enum)
 			{
-				const int propSpecularType = useAnisoSpecularProp->AsInt();
-				mat.specularType = static_cast<float>(propSpecularType);
+				const int propDiffuseType = diffuseProp->AsInt();
+				mat.diffuseType = static_cast<float>(propDiffuseType);
 			}
-			else if (useAnisoSpecularProp->GetPropertyType() == FBPropertyType::kFBPT_double)
+			else if (diffuseProp->GetPropertyType() == FBPropertyType::kFBPT_double)
 			{
 				double value;
-				useAnisoSpecularProp->GetData(&value, sizeof(double));
+				diffuseProp->GetData(&value, sizeof(double));
+				mat.diffuseType = static_cast<float>(value);
+			}
+		}
+
+		mat.specularType = SPECULAR_PHONG;
+		if (FBProperty* specularProp = pMaterial->PropertyList.Find("Specular Type"))
+		{
+			if (specularProp->GetPropertyType() == FBPropertyType::kFBPT_enum)
+			{
+				const int propSpecularType = specularProp->AsInt();
+				mat.specularType = static_cast<float>(propSpecularType);
+			}
+			else if (specularProp->GetPropertyType() == FBPropertyType::kFBPT_double)
+			{
+				double value;
+				specularProp->GetData(&value, sizeof(double));
 				mat.specularType = static_cast<float>(value);
 			}
 			

@@ -17,6 +17,9 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #define	MAX_NUMBER_OF_LIGHTS			16
 #define MAX_NUMBER_OF_CASCADED_SPLITS	4
 
+#define DIFFUSE_LAMBERT					0.0f
+#define DIFFUSE_OREN_NAYAR				1.0f
+
 #define SPECULAR_PHONG					0.0f
 #define SPECULAR_ANISO					1.0f
 #define SPECULAR_SKIN					2.0f
@@ -102,11 +105,11 @@ struct TMaterial
 	//
 	float 		shaderTransparency;
 
+	float		diffuseType; // lambert or Oren-Nayar
 	float		specularType; // phong, anisotropic or skin (cook torrance)
 	float		roughnessX;
 	float		roughnessY;
-	float		pad;
-
+	
 	//
 	/// Current material
 	//
