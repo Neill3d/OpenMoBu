@@ -211,17 +211,21 @@ bool PostEffectChain::IsAnyObjectMaskedByMaskId(const EMaskingChannel maskId) co
 	for (int i = 0; i < scene->Shaders.GetCount(); ++i)
 	{
 		FBShader* shader = scene->Shaders[i];
-		if (FXMaskingShader* maskingShader = FBCast<FXMaskingShader>(shader))
+
+		if (FBIS(shader, FXMaskingShader))
 		{
-			if ((maskingShader->CompositeMaskA && maskId == EMaskingChannel::eMaskA)
-				|| (maskingShader->CompositeMaskB && maskId == EMaskingChannel::eMaskB)
-				|| (maskingShader->CompositeMaskC && maskId == EMaskingChannel::eMaskC)
-				|| (maskingShader->CompositeMaskD && maskId == EMaskingChannel::eMaskD))
+			if (FXMaskingShader* maskingShader = FBCast<FXMaskingShader>(shader))
 			{
-				for (int j = 0; j < shader->GetDstCount(); ++j)
+				if ((maskingShader->CompositeMaskA && maskId == EMaskingChannel::eMaskA)
+					|| (maskingShader->CompositeMaskB && maskId == EMaskingChannel::eMaskB)
+					|| (maskingShader->CompositeMaskC && maskId == EMaskingChannel::eMaskC)
+					|| (maskingShader->CompositeMaskD && maskId == EMaskingChannel::eMaskD))
 				{
-					if (FBIS(shader->GetDst(j), FBModel))
-						return true;
+					for (int j = 0; j < shader->GetDstCount(); ++j)
+					{
+						if (FBIS(shader->GetDst(j), FBModel))
+							return true;
+					}
 				}
 			}
 		}

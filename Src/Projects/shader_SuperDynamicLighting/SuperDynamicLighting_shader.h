@@ -13,6 +13,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <fbsdk/fbsdk.h>
 #include "SuperShader.h"
 #include "OGL_Utils.h"
+#include "SceneManager.h"
+#include "ShadowManager.h"
 
 #include <vector>
 
@@ -142,6 +144,15 @@ public:
     FBPropertyAlphaSource   Transparency;
     FBPropertyAnimatableDouble TransparencyFactor;  
 
+    //
+    FBPropertyBool				Shadows;			//!< flag to enable rendering to offscreen shadow textures and use them in lighting shader
+    FBPropertyInt               ShadowMapSize;
+    FBPropertyInt               ShadowPCFKernelSize;
+    FBPropertyListObject        ShadowCasters;
+    FBPropertyAnimatableDouble  ShadowStrength;
+    FBPropertyAnimatableDouble  OffsetFactor; //!< multiplies the max depth slope of the polygon
+    FBPropertyAnimatableDouble  OffsetUnits; //!< a fixed const offset in depth units for all polygons
+
 	//
 	FBPropertyBool				SwitchAlbedoTosRGB;
 	FBPropertyBool				ForceUpdateTextures;
@@ -157,7 +168,7 @@ public:
 
 public:
 
-	const Graphics::CGPUShaderLights *GetShaderLightsPtr() const {
+	const Graphics::LightGPUBuffersManager *GetShaderLightsPtr() const {
 		return mShaderLights.get();
 	}
 
@@ -167,10 +178,16 @@ public:
 	void		EventBeforeRenderNotify();
 
 protected:
-    static Graphics::SuperShader*  mpLightShader;
-    static int                     mpLightShaderRefCount;
+
+    static Graphics::SceneManager*  mSceneManager;
+    static int                      mSceneManagerRefCount;
+
+    static Graphics::SuperShader*   mpLightShader;
+    static int                      mpLightShaderRefCount;
 
 	void DoReloadShaders();
+
+    void BeginFrameForSharedManagers();
 
 protected:
 
@@ -179,12 +196,14 @@ protected:
 	bool								mNeedUpdateTextures;	// we should update textures after change a context
 
 	std::vector<FBLight*>							mLightsPtr;
-	std::unique_ptr<Graphics::CGPUShaderLights>		mShaderLights;
+	std::unique_ptr<Graphics::LightGPUBuffersManager>		mShaderLights;
 	
 	OGLCullFaceInfo			mCullFaceInfo;
 	FBModelCullingMode		mLastCullingMode;
 
 	bool					mHasExclusiveLights;
+
+    Graphics::ShadowManager shadowManager;
 
 };
 

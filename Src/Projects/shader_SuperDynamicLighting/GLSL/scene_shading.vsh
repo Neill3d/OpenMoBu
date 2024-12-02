@@ -3,12 +3,12 @@
 //
 //	Post Processing Toolkit
 //
-// Sergei <Neill3d> Solokhin 2018
+// Sergei <Neill3d> Solokhin 2018-2024
 //
 // GitHub page - https://github.com/Neill3d/OpenMoBu
 // Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 //
-//	Special for Les Androids Associes
+//	Special thanks for Les Androids Associes
 //
 
 #version 430 compatibility
@@ -50,7 +50,8 @@ layout (std430, binding = 0) buffer TransformBuffer
 	layout(location=6) smooth out vec2 outTC2;
 	
 	layout(location=7) smooth out float fogAmount;
-	
+	layout(location=8) smooth out vec3 viewPos;
+
 out gl_PerVertex {
 	vec4 gl_Position;		// 16 bytes
 };
@@ -76,7 +77,7 @@ float fogFactorLinear(
 void main(void)
 {
 	// surface normal in eye space
-	mat4 normalMatrix = transformBuffer.transform.normalMatrix; // m4_WorldIT; //	transpose(inverse(matrix));
+	mat4 normalMatrix = transformBuffer.transform.normalMatrix;
 	vec4 N = vec4(inNormal.xyz, 1.0);
 
 	if (transformBuffer.transform.eyePos.w > 0.0)
@@ -89,7 +90,6 @@ void main(void)
 		
 	}
 	
-	//gl_Position     = transformBuffer.transform.MVP * vec4(inPosition.xyz, 1.0);
 	vec3 offset = vec3(0.0);
 	
 	if (displacementOption.x > 0.0)
@@ -118,9 +118,9 @@ void main(void)
 	outTC           = inTexCoords;
 	outTC2 			= inTexCoords2;
 	outPw           = vPosition3; // / vPosition4.w;
-	outWV           =  transformBuffer.transform.eyePos.xyz - Po.xyz; // / Po.w; //(Po.xyz - eyePos);
+    outWV = Po.xyz; //transformBuffer.transform.eyePos.xyz - Po.xyz; // / Po.w; //(Po.xyz - eyePos);
 	
 	normalMatrix = transpose(inverse(transformBuffer.transform.m4_World * transformBuffer.transform.m4_Model));
 	n_eye = (normalMatrix * vec4(inNormal.xyz, 1.0)).xyz; // inNormal.xyz;
-	//n_eye = transformBuffer.transform.eyePos.xyz;
+	viewPos = transformBuffer.transform.eyePos.xyz;
 }

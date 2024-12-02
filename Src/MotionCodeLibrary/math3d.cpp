@@ -64,6 +64,32 @@ float smootherstep(float edge0, float edge1, float x)
 }
 
 //
+//
+//
+
+void FBVectorToVec3(const double* v, float* dst)
+{
+	dst[0] = static_cast<float>(v[0]);
+	dst[1] = static_cast<float>(v[1]);
+	dst[2] = static_cast<float>(v[2]);
+}
+
+void FBVectorToVec4KeepW(const double* v, float* dst)
+{
+	dst[0] = static_cast<float>(v[0]);
+	dst[1] = static_cast<float>(v[1]);
+	dst[2] = static_cast<float>(v[2]);
+}
+
+void FBVectorToVec4(const double* v, float* dst)
+{
+	dst[0] = static_cast<float>(v[0]);
+	dst[1] = static_cast<float>(v[1]);
+	dst[2] = static_cast<float>(v[2]);
+	dst[3] = static_cast<float>(v[3]);
+}
+
+//
 // Splines
 //
 

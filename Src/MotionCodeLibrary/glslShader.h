@@ -31,8 +31,8 @@ class GLSLShader
 	/// shader header text (defines)
 	char          mHeaderText[256]{ 0 };
 
-  bool LoadShader( GLhandleARB shader, FILE *file );
-  void loadlog( GLhandleARB object );
+  bool LoadShader( GLhandleARB shader, FILE *file, const char* debugName );
+  bool LoadLog( GLhandleARB object, const char* debugName ) const;
 
 public:
 
@@ -73,7 +73,7 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
   static void setUniformVector( const GLint location, const float x, const float y, const float z, const float w );
   static void setUniformVector2f( const GLint location, const float x, const float y );
   static void setUniformMatrix33( const GLint location, const float *m );
-  static void setUniformMatrix( const GLint location, const float *m );
+  static void setUniformMatrix( const GLint location, const float *m, bool doTranspose = false );
 
 	void bindTexture(GLenum target, const char *texname, GLuint texid, GLenum texunit)
 	{

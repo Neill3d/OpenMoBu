@@ -14,8 +14,8 @@ Plugins
 * relation box - pose transform
 * relation box - pose transform (starting from 2022)
 * relation box - quaternion math
-* device - project Tango
-* device - Connection with a FaceCap iPhone App
+* device - virtual camera / remote control (project Tango tablet)
+* device - Connection with OSC based facial stream (FaceCap iPhone App)
 * constraint - attachment
 * constraint - driven
 * constraint - twist rotation extraction

@@ -10,12 +10,19 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 */
 
 #include <GL\glew.h>
-#include "nv_math.h"
+#include <glm/glm.hpp>
 
 //////////////////////////////////////
 
 #define	MAX_NUMBER_OF_LIGHTS			16
 #define MAX_NUMBER_OF_CASCADED_SPLITS	4
+
+#define DIFFUSE_LAMBERT					0.0f
+#define DIFFUSE_OREN_NAYAR				1.0f
+
+#define SPECULAR_PHONG					0.0f
+#define SPECULAR_ANISO					1.0f
+#define SPECULAR_SKIN					2.0f
 
 #define	LIGHT_TYPE_DIRECTION			0.0f
 #define	LIGHT_TYPE_POINT				1.0f
@@ -26,37 +33,51 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 //
 struct TLight
 {
-	nv::vec4 		attenuations;
+	glm::vec4 	attenuations;
 
-	nv::vec3 		position;
+	glm::vec3 	position;
 	float		type;
 
-	nv::vec3 		dir;
+	glm::vec3 	dir;
 	float		spotAngle;
 
-	nv::vec3 		color;
+	glm::vec3	color;
 	float		radius;
 
-	float		shadowMapLayer;
+	float		pad0;
+	float		pad1;
+	float		castSpecularOnObject;
+	float		shadowMapLayer{ -1.0f };
+
+	glm::mat4		shadowVP;	// view projection matrix of a shadow map
+
+	static void ConstructDefaultLight0(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
+	static void ConstructDefaultLight1(TLight& light, bool inEyeSpace, const glm::mat4& lViewMatrix, const glm::mat4& lViewRotationMatrix);
+};
+
+struct TShadow
+{
+	float		lightType;
+	float		shadowMapLayer{ -1.0f };
 	float		shadowMapSize;
 	float		shadowPCFKernelSize;
-	float		castSpecularOnObject;
+	
+	glm::mat4		shadowVP;	// view projection matrix of a shadow map
+	glm::vec4	shadowIndex;	// index and count in the shadow matrix array
+	glm::vec4	normalizedFarPlanes;	// for cascaded shadows
 
-	//mat4		shadowVP;	// view projection matrix of a shadow map
-	nv::vec4		shadowIndex;	// index and count in the shadow matrix array
-	nv::vec4		normalizedFarPlanes;	// for cascaded shadows
 };
 
 struct TTransform
 {
-	nv::mat4 	m4_World;
-	nv::mat4	m4_View;
-	nv::mat4	m4_Proj;
-	nv::mat4	m4_Model;
+	glm::mat4 	m4_World;
+	glm::mat4	m4_View;
+	glm::mat4	m4_Proj;
+	glm::mat4	m4_Model;
 
-	nv::mat4	normalMatrix;
+	glm::mat4	normalMatrix;
 
-	nv::vec4	eyePos;
+	glm::vec4	eyePos;
 };
 
 
@@ -66,17 +87,17 @@ struct TMaterial
 	int			ambientChannel;
 	int			diffuseChannel;
 	int			specularChannel;
-	int			emissiveChannel;
+	int			emissiveChannel; //
 	int			transparencyChannel;
 	int			normalmapChannel;
 	int			reflectChannel;
 
-	float		specExp;
+	float		specExp; //
 
 	float 		useDisplacement;
 	float		useDiffuse;
 	float		useSpecular;
-	float		useEmissive;
+	float		useEmissive; //
 	float		useTransparency;
 	float		useNormalmap;
 	float		useReflect;
@@ -84,21 +105,26 @@ struct TMaterial
 	//
 	float 		shaderTransparency;
 
+	float		diffuseType; // lambert or Oren-Nayar
+	float		specularType; // phong, anisotropic or skin (cook torrance)
+	float		roughnessX;
+	float		roughnessY;
+	
 	//
 	/// Current material
 	//
-	nv::vec4		emissiveColor;
-	nv::vec4     	diffuseColor;
-	nv::vec4     	ambientColor;
-	nv::vec4		reflectColor;
-	nv::vec4     	transparencyColor;
-	nv::vec4     	specularColor;
+	glm::vec4		emissiveColor;
+	glm::vec4     	diffuseColor;
+	glm::vec4     	ambientColor;
+	glm::vec4		reflectColor;
+	glm::vec4     	transparencyColor;
+	glm::vec4     	specularColor;
 
 	//
-	nv::mat4		diffuseTransform;
-	nv::mat4		transparencyTransform;
-	nv::mat4		specularTransform;
-	nv::mat4		normalTransform;
-	nv::mat4		reflectTransform;
-	// 160 in total
+	glm::mat4		diffuseTransform;
+	glm::mat4		transparencyTransform;
+	glm::mat4		specularTransform;
+	glm::mat4		normalTransform;
+	glm::mat4		reflectTransform;
+	// 480 in total
 };

@@ -10,6 +10,10 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #include "SuperShader.h"
 #include "SuperShader_glsl.h"
 #include "CheckGLError.h"
+#include "mobu_logging.h"
+#include <map>
+#include <glm/gtc/matrix_transform.hpp>
+#include "glm_utils.h"
 
 #define SHADER_BUFFERID_VERTEX		"scene_bufferid.vsh"
 #define SHADER_BUFFERID_FRAGMENT	"scene_bufferid.fsh"
@@ -25,17 +29,25 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 #define SAMPLER_SLOT_DISPLACE		5
 #define SAMPLER_SLOT_MATCAP			6
 #define SAMPLER_SLOT_DETAIL			7	// possible with a second UV for lightmaps
+#define SAMPLER_SLOT_SHADOW			8
+
+#define SHADER_DIR_LIGHTS_UNITID		2
+#define SHADER_POINT_LIGHTS_UNITID		3	
 
 namespace Graphics {
+
+	GLuint SuperShader::GetSamplerSlotShadow() const
+	{
+		return SAMPLER_SLOT_SHADOW;
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	// return false if transformation matrix is reflected (rendering reflection pass)
 
-	void SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
+	void SuperShader::SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
 	{
-		using namespace nv;
 		FBCamera *pCamera = pRenderOptions->GetRenderingCamera();
 
 		FBVector3d	eyePos;
@@ -48,7 +60,7 @@ namespace Graphics {
 		}
 		lWorldMatrix.Identity();
 
-		transform.eyePos = vec4((float)eyePos[0], (float)eyePos[1], (float)eyePos[2], 1.0f);
+		transform.eyePos = glm::vec4(static_cast<float>(eyePos[0]), static_cast<float>(eyePos[1]), static_cast<float>(eyePos[2]), 1.0f);
 
 		FBSVector scl;
 
@@ -58,35 +70,32 @@ namespace Graphics {
 			transform.eyePos[3] = -1.0f;
 		}
 
-		for (int i = 0; i < 16; ++i)
-		{
-			transform.m4_World.mat_array[i] = (float)lWorldMatrix[i];
-			transform.m4_View.mat_array[i] = (float)lCameraMVMatrix[i];
-			transform.m4_Proj.mat_array[i] = (float)lCameraVPMatrix[i];
-		}
+		FBMatrixToGLM(transform.m4_World, lWorldMatrix);
+		FBMatrixToGLM(transform.m4_View, lCameraMVMatrix);
+		FBMatrixToGLM(transform.m4_Proj, lCameraVPMatrix);
 	}
 
-	void SetTransform(TTransform &transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo)
+	void SuperShader::SetTransform(TTransform &transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo)
 	{
-		using namespace nv;
 		FBMatrix lModelMatrix;
 		if (pInfo->GetFBModel())
 			pInfo->GetFBModel()->GetMatrix(lModelMatrix, kModelTransformation_Geometry);
 
-		for (int i = 0; i < 16; ++i)
-		{
-			transform.m4_Model.mat_array[i] = (float)lModelMatrix[i];
-		}
+		FBMatrixToGLM(transform.m4_Model, lModelMatrix);
+
 		// DONE: assign a normal matrix !
-		const mat4 tm = transform.m4_View * transform.m4_Model;
-		invert(transform.normalMatrix, tm);
-		transpose(transform.normalMatrix);
+		const glm::mat4 tm = transform.m4_View * transform.m4_Model;
+		transform.normalMatrix = glm::inverse(tm);
+		transform.normalMatrix = glm::transpose(transform.normalMatrix);
 	}
 
-	void SetMaterial(TMaterial &mat, FBMaterial *pMaterial)
+
+	void SuperShader::SetMaterial(TMaterial &mat, FBMaterial *pMaterial)
 	{
 		if (nullptr == pMaterial)
 			return;
+
+		memset(&mat, 0, sizeof(TMaterial));
 
 		FBColor lEmissiveColor = pMaterial->Emissive;
 		FBColor lDiffuseColor = pMaterial->Diffuse;
@@ -95,6 +104,54 @@ namespace Graphics {
 		FBColor lReflectionColor = pMaterial->Reflection;
 		double shin = pMaterial->Shininess;
 
+		mat.diffuseType = DIFFUSE_LAMBERT;
+		if (FBProperty* diffuseProp = pMaterial->PropertyList.Find("Diffuse Type"))
+		{
+			if (diffuseProp->GetPropertyType() == FBPropertyType::kFBPT_enum)
+			{
+				const int propDiffuseType = diffuseProp->AsInt();
+				mat.diffuseType = static_cast<float>(propDiffuseType);
+			}
+			else if (diffuseProp->GetPropertyType() == FBPropertyType::kFBPT_double)
+			{
+				double value;
+				diffuseProp->GetData(&value, sizeof(double));
+				mat.diffuseType = static_cast<float>(value);
+			}
+		}
+
+		mat.specularType = SPECULAR_PHONG;
+		if (FBProperty* specularProp = pMaterial->PropertyList.Find("Specular Type"))
+		{
+			if (specularProp->GetPropertyType() == FBPropertyType::kFBPT_enum)
+			{
+				const int propSpecularType = specularProp->AsInt();
+				mat.specularType = static_cast<float>(propSpecularType);
+			}
+			else if (specularProp->GetPropertyType() == FBPropertyType::kFBPT_double)
+			{
+				double value;
+				specularProp->GetData(&value, sizeof(double));
+				mat.specularType = static_cast<float>(value);
+			}
+			
+			if (mat.specularType > 0.0f)
+			{
+				if (FBProperty* anisoRoughnessX = pMaterial->PropertyList.Find("RoughnessX"))
+				{
+					double roughnessX;
+					anisoRoughnessX->GetData(&roughnessX, sizeof(double));
+					mat.roughnessX = 0.01f * static_cast<float>(roughnessX);
+				}
+				if (FBProperty* anisoRoughnessY = pMaterial->PropertyList.Find("RoughnessY"))
+				{
+					double roughnessY;
+					anisoRoughnessY->GetData(&roughnessY, sizeof(double));
+					mat.roughnessY = 0.01f * static_cast<float>(roughnessY);
+				}
+			}
+		}
+		
 		double lEmissiveFactor = pMaterial->EmissiveFactor;
 		double lDiffuseFactor = pMaterial->DiffuseFactor;
 		double lAmbientFactor = pMaterial->AmbientFactor;
@@ -106,21 +163,21 @@ namespace Graphics {
 
 		for (int i = 0; i < 3; ++i)
 		{
-			mat.emissiveColor.vec_array[i] = (float)lEmissiveColor[i];
-			mat.diffuseColor.vec_array[i] = (float)lDiffuseColor[i];
-			mat.ambientColor.vec_array[i] = (float)lAmbientColor[i];
-			mat.specularColor.vec_array[i] = (float)lSpecularColor[i];
-			mat.reflectColor.vec_array[i] = (float)lReflectionColor[i];
+			mat.emissiveColor[i] = static_cast<float>(lEmissiveColor[i]);
+			mat.diffuseColor[i] = static_cast<float>(lDiffuseColor[i]);
+			mat.ambientColor[i] = static_cast<float>(lAmbientColor[i]);
+			mat.specularColor[i] = static_cast<float>(lSpecularColor[i]);
+			mat.reflectColor[i] = static_cast<float>(lReflectionColor[i]);
 		}
 
 		mat.specExp = shin;
 
-		mat.emissiveColor[3] = (float)lEmissiveFactor;
-		mat.diffuseColor[3] = (float)lDiffuseFactor;
-		mat.ambientColor[3] = (float)lAmbientFactor;
-		mat.specularColor[3] = (float)lSpecularFactor;
-		mat.reflectColor[3] = (float)lReflectionFactor;
-		mat.transparencyColor[3] = (float)lTransparencyFactor;
+		mat.emissiveColor[3] = static_cast<float>(lEmissiveFactor);
+		mat.diffuseColor[3] = static_cast<float>(lDiffuseFactor);
+		mat.ambientColor[3] = static_cast<float>(lAmbientFactor);
+		mat.specularColor[3] = static_cast<float>(lSpecularFactor);
+		mat.reflectColor[3] = static_cast<float>(lReflectionFactor);
+		mat.transparencyColor[3] = static_cast<float>(lTransparencyFactor);
 
 		mat.useDiffuse = 0.0f;
 		mat.useTransparency = 0.0f;
@@ -134,16 +191,14 @@ namespace Graphics {
 			mat.useDiffuse = 1.0f;
 
 			const double *tm = pMaterial->GetTexture()->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.diffuseTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.diffuseTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureTransparent) && lTransparencyFactor > 0.0)
 		{
 			mat.useTransparency = 1.0f;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureTransparent)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.transparencyTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.transparencyTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureDisplacementColor))
 		{
@@ -159,286 +214,22 @@ namespace Graphics {
 			mat.useSpecular = 1.0f;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureSpecular)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.specularTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.specularTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureReflection) && lReflectionFactor > 0.0)
 		{
 			mat.useReflect = 1.0f;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureReflection)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.reflectTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.reflectTransform, tm);
 		}
 		if (nullptr != pMaterial->GetTexture(kFBMaterialTextureNormalMap) && lBumpFactor > 0.0)
 		{
 			mat.useNormalmap = 1.0f * (float) lBumpFactor;
 
 			const double *tm = pMaterial->GetTexture(kFBMaterialTextureNormalMap)->GetMatrix();
-			for (int i = 0; i < 16; ++i)
-				mat.normalTransform.mat_array[i] = (float)tm[i];
+			FBMatrixToGLM(mat.normalTransform, tm);
 		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-
-	CGPUBuffer::CGPUBuffer()
-	{
-		mBuffer = 0;
-		mBufferSize = 0;
-		mBufferCount = 0;
-	}
-
-	void CGPUBuffer::Free()
-	{
-		if (mBuffer > 0)
-		{
-			glDeleteBuffers(1, &mBuffer);
-			mBuffer = 0;
-		}
-	}
-
-	CGPUBuffer::~CGPUBuffer()
-	{
-		Free();
-	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	// SSBO
-
-	CGPUBufferSSBO::CGPUBufferSSBO()
-		: CGPUBuffer()
-	{
-	}
-
-	CGPUBufferSSBO::~CGPUBufferSSBO()
-	{
-		Free();
-	}
-
-	void CGPUBufferSSBO::UpdateData(const size_t _size, const size_t _count, const void *data)
-	{
-
-		if (mBuffer == 0)
-		{
-			glGenBuffers(1, &mBuffer);
-			CHECK_GL_ERROR();
-		}
-
-		// update data in SSBO
-		if (mBuffer > 0 && _size > 0 && _count > 0)
-		{
-			GLsizeiptr size = (GLsizeiptr)(_size * _count);
-
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, mBuffer);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, size, nullptr, GL_STATIC_DRAW);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_STATIC_DRAW);
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-			CHECK_GL_ERROR();
-		}
-
-		mBufferSize = _size;
-		mBufferCount = _count;
-	}
-
-	void CGPUBufferSSBO::Bind(const GLuint unitId) const
-	{
-		if (mBuffer > 0)
-		{
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, unitId, mBuffer);
-		}
-	}
-
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// FBShaderLights
-
-	CGPUShaderLights::CGPUShaderLights()
-	{
-		//mNumberOfLights = 0;
-		//mNumberOfDirLights = 0;
-	}
-
-	CGPUShaderLights::~CGPUShaderLights()
-	{
-	}
-
-	void CGPUShaderLights::UpdateTransformedLights(const nv::mat4 &modelview, const nv::mat4 &rotation, const nv::mat4 &scaling)
-	{
-		mTransformedLights.resize(mLights.size());
-		mTransformedDirLights.resize(mDirLights.size());
-
-		auto srcLight = begin(mLights);
-		auto dstLight = begin(mTransformedLights);
-
-		for (; srcLight != end(mLights); ++srcLight, ++dstLight)
-		{
-			dstLight->position = modelview * srcLight->position;
-			dstLight->dir = rotation * srcLight->dir;
-
-			dstLight->type = srcLight->type;
-			dstLight->spotAngle = srcLight->spotAngle;
-
-			dstLight->color = srcLight->color;
-			dstLight->radius = srcLight->radius;
-
-			dstLight->attenuations = srcLight->attenuations;
-		}
-
-		auto srcDirLight = begin(mDirLights);
-		auto dstDirLight = begin(mTransformedDirLights);
-
-		for (; srcDirLight != end(mDirLights); ++srcDirLight, ++dstDirLight)
-		{
-			dstDirLight->position = srcDirLight->position;
-			dstDirLight->dir = rotation * srcDirLight->dir;
-
-			dstDirLight->type = srcDirLight->type;
-			dstDirLight->spotAngle = srcDirLight->spotAngle;
-
-			dstDirLight->color = srcDirLight->color;
-			dstDirLight->radius = srcDirLight->radius;
-
-			dstDirLight->attenuations = srcDirLight->attenuations;
-		}
-	}
-
-	void CGPUShaderLights::MapOnGPU()
-	{
-		// dir lights
-		mBufferDirLights.UpdateData(sizeof(TLight), mTransformedDirLights.size(), mTransformedDirLights.data());
-
-		// point / spot lights
-		mBufferLights.UpdateData(sizeof(TLight), mTransformedLights.size(), mTransformedLights.data());
-
-		//
-		//mNumberOfDirLights = (int) mTransformedDirLights.size();
-		//mNumberOfLights = (int) mTransformedLights.size();
-	}
-
-
-
-	void CGPUShaderLights::PrepGPUPtr()
-	{
-		/*
-		// dir lights
-		if ( mBufferDirLights.GetCount() > 0 )
-		mBufferDirLights.UpdateGPUPtr();
-
-		// point / spot
-		if ( mBufferLights.GetCount() > 0 )
-		mBufferLights.UpdateGPUPtr();
-
-		mNumberOfDirLights = (int) mBufferDirLights.GetCount();
-		mNumberOfLights = (int) mBufferLights.GetCount();
-		*/
-
-
-	}
-
-	/*
-	void CGPUShaderLights::Build(CCameraInfoCache &cameraCache, std::vector<FBLight*> &lights)
-	{
-	if (lights.size() == 0)
-	{
-	mDirLights.clear();
-	mLights.clear();
-
-	return;
-	}
-
-	FBMatrix pCamMatrix(cameraCache.mv);
-	//pCamera->GetCameraMatrix( pCamMatrix, kFBModelView );
-
-	FBMatrix lViewMatrix( pCamMatrix );
-
-	FBRVector lViewRotation;
-	FBMatrixToRotation(lViewRotation, lViewMatrix);
-
-	FBMatrix lViewRotationMatrix;
-	FBRotationToMatrix(lViewRotationMatrix, lViewRotation);
-
-	//
-	const int numLights = (int) lights.size();
-
-	// process scene lights and enable clustering if some point/spot light exist
-
-	int numDirLights = 0;
-	int numPointLights = 0;
-	//int numLightCasters = 0;
-
-	for (int i=0; i<numLights; ++i)
-	{
-	FBLight *pLight = lights[i];
-
-	if (pLight->CastLightOnObject)
-	{
-	if (pLight->LightType == kFBLightTypeInfinite) numDirLights++;
-	else numPointLights++;
-	}
-
-	}
-
-
-	mDirLights.resize(numDirLights);
-	mLights.resize(numPointLights);
-
-	numDirLights = 0;
-	numPointLights = 0;
-	//numLightCasters = 0;
-
-	for (int i=0; i<numLights; ++i)
-	{
-	FBLight *pLight = lights[i];
-	LightDATA *pLightData = nullptr;
-
-	if (pLight->CastLightOnObject)
-	{
-	if (pLight->LightType != kFBLightTypeInfinite)
-	{
-	LightDATA::ConstructFromFBLight( false, lViewMatrix, lViewRotationMatrix, pLight, mLights[numPointLights] );
-	pLightData = &mLights[numPointLights];
-	numPointLights++;
-	}
-	else
-	{
-	LightDATA::ConstructFromFBLight( true, lViewMatrix, lViewRotationMatrix, pLight, mDirLights[numDirLights] );
-	pLightData = &mDirLights[numDirLights];
-	numDirLights++;
-	}
-	}
-
-	}
-
-	//
-	//
-
-	mat4 modelrotation;
-
-	for (int i=0; i<16; ++i)
-	{
-	modelrotation.mat_array[i] = (float) lViewRotationMatrix[i];
-	}
-
-	for (size_t i=0; i<mLights.size(); ++i)
-	{
-	mLights[i].position = cameraCache.mv4 * mLights[i].position;
-	mLights[i].dir = modelrotation * mLights[i].dir;
-	}
-	}
-	*/
-	void CGPUShaderLights::Bind(const GLuint programId, const GLuint dirLightsLoc, const GLuint lightsLoc) const
-	{
-		// bind dir lights uniforms
-		if (programId > 0)
-		{
-			mBufferDirLights.Bind(dirLightsLoc);
-			mBufferLights.Bind(lightsLoc);
-		}
-	}
-
-	void CGPUShaderLights::UnBind() const
-	{
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -451,7 +242,6 @@ namespace Graphics {
 		mLastMaterial = nullptr;
 		mLastModel = nullptr;
 		mLastLightsBinded = nullptr;
-		mGPUSceneLights.reset(new CGPUShaderLights());
 	}
 
 	SuperShader::~SuperShader()
@@ -463,142 +253,130 @@ namespace Graphics {
 	{
 		bool lSuccess = true;
 
-		GLSLShader *pNewShader = nullptr;
+		//
+		// release if something already assigned
 
-		try
+		if (mShaderBufferId.get())
+			mShaderBufferId.reset(nullptr);
+
+		if (mShaderShading.get())
+			mShaderShading.reset(nullptr);
+
 		{
-			//
-			// release if something already assigned
-
-			if (nullptr != mShaderBufferId.get())
-				mShaderBufferId.reset(nullptr);
-
-			if (nullptr != mShaderShading.get())
-				mShaderShading.reset(nullptr);
-
-
 			//
 			// BufferId Shader
 
-			pNewShader = new GLSLShader();
+			std::unique_ptr<GLSLShader> shader = std::make_unique<GLSLShader>();
 
-			if (nullptr == pNewShader)
-				throw std::exception("failed to allocate memory for a shader");
+			const FBString vertex_path(path, SHADER_BUFFERID_VERTEX);
+			const FBString fragment_path(path, SHADER_BUFFERID_FRAGMENT);
 
-			FBString vertex_path(path, SHADER_BUFFERID_VERTEX);
-			FBString fragment_path(path, SHADER_BUFFERID_FRAGMENT);
-
-			if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
-				throw std::exception("failed to load and prepare a shader");
-			
+			if (!shader->LoadShaders(vertex_path, fragment_path))
+			{
+				LOGE("[SuperShader] failed to load and prepare a bufferid shader");
+				return false;
+			}
+		
 			// samplers and locations
-			pNewShader->Bind();
+			shader->Bind();
 
-			GLint loc = pNewShader->findLocation("sampler0");
-			if (loc >= 0)
+			if (GLint loc = shader->findLocation("sampler0") >= 0)
 				glUniform1i(loc, 0);
 
-			mBufferIdLoc.colorId = pNewShader->findLocation("ColorId");
-			mBufferIdLoc.useDiffuseSampler = pNewShader->findLocation("UseDiffuseSampler");
+			BufferIdShaderUniformLocations.colorId = shader->findLocation("ColorId");
+			BufferIdShaderUniformLocations.useDiffuseSampler = shader->findLocation("UseDiffuseSampler");
 
-			pNewShader->UnBind();
+			shader->UnBind();
 
-			mShaderBufferId.reset(pNewShader);
-
+			mShaderBufferId = std::move(shader);
+		}
+		
+		{
 			//
 			// Phong Shading Shader
 
-			pNewShader = new GLSLShader();
+			std::unique_ptr<GLSLShader> shader = std::make_unique<GLSLShader>();
 
-			if (nullptr == pNewShader)
-				throw std::exception("failed to allocate memory for a shader");
+			const FBString vertex_path = FBString(path, SHADER_SHADING_VERTEX);
+			const FBString fragment_path = FBString(path, SHADER_SHADING_FRAGMENT);
 
-			vertex_path = FBString(path, SHADER_SHADING_VERTEX);
-			fragment_path = FBString(path, SHADER_SHADING_FRAGMENT);
-
-			if (false == pNewShader->LoadShaders(vertex_path, fragment_path))
-				throw std::exception("failed to load and prepare a shader");
+			if (!shader->LoadShaders(vertex_path, fragment_path))
+			{
+				LOGE("[SuperShader] failed to load and prepare a phone shader");
+				return false;
+			}
+				
 			
 			// samplers and locations
-			pNewShader->Bind();
+			shader->Bind();
 
-			loc = pNewShader->findLocation("samplerDiffuse");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_DIFFUSE);
-			loc = pNewShader->findLocation("samplerDisplacement");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_DISPLACE);
-			loc = pNewShader->findLocation("samplerReflect");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_REFLECT);
-			loc = pNewShader->findLocation("samplerTransparency");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_TRANSPARENCY);
-			loc = pNewShader->findLocation("samplerSpecular");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_SPECULAR);
-			loc = pNewShader->findLocation("samplerNormal");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_NORMAL);
-			loc = pNewShader->findLocation("samplerMatCap");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_MATCAP);
-			loc = pNewShader->findLocation("samplerDetail");
-			if (loc >= 0)
-				glUniform1i(loc, SAMPLER_SLOT_DETAIL);
+			std::vector<std::pair<const char*, int>> uniforms = {
+				{"samplerDiffuse", SAMPLER_SLOT_DIFFUSE},
+				{"samplerDisplacement", SAMPLER_SLOT_DISPLACE},
+				{"samplerReflect", SAMPLER_SLOT_REFLECT},
+				{"samplerTransparency", SAMPLER_SLOT_TRANSPARENCY},
+				{"samplerSpecular", SAMPLER_SLOT_SPECULAR},
+				{"samplerNormal", SAMPLER_SLOT_NORMAL},
+				{"samplerMatCap", SAMPLER_SLOT_MATCAP},
+				{"samplerDetail", SAMPLER_SLOT_DETAIL},
+				{"samplerShadowMaps", SAMPLER_SLOT_SHADOW}
+			};
 
-			mShadingLoc.displacementOption = pNewShader->findLocation("displacementOption");
-			mShadingLoc.displacementMatrix = pNewShader->findLocation("displacementMatrix");
-
-			mShadingLoc.numberOfDirLights = pNewShader->findLocation("numberOfDirLights");
-			mShadingLoc.numberOfPointLights = pNewShader->findLocation("numberOfPointLights");
-
-			mShadingLoc.globalAmbientLight = pNewShader->findLocation("globalAmbientLight");
-
-			mShadingLoc.fogColor = pNewShader->findLocation("fogColor");
-			mShadingLoc.fogOptions = pNewShader->findLocation("fogOptions");
-
-			mShadingLoc.rimOptions = pNewShader->findLocation("rimOptions");
-			mShadingLoc.rimColor = pNewShader->findLocation("rimColor");
-
-			mShadingLoc.switchAlbedoTosRGB = pNewShader->findLocation("switchAlbedoTosRGB");
-			mShadingLoc.useMatCap = pNewShader->findLocation("useMatCap");
-			mShadingLoc.useLightmap = pNewShader->findLocation("useLightmap");
-
-			pNewShader->UnBind();
-
-			mShaderShading.reset(pNewShader);
-
-		}
-		catch (const std::exception &e)
-		{
-			FBTrace("Failed to initialize a shader %s\n", e.what());
-
-			if (nullptr != pNewShader)
-			{
-				delete pNewShader;
-				pNewShader = nullptr;
-
-				lSuccess = false;
+			for (const auto& [name, slot] : uniforms) {
+				if (GLint loc = shader->findLocation(name); loc >= 0) {
+					glUniform1i(loc, slot);
+				}
+				else
+				{
+					LOGE("[SuperShader] phone shader failed to set uniform for slot %s", name);
+				}
 			}
-		}
 
+			std::map<const char*, GLint*> uniformMap = {
+				{"displacementOption", &PhongShaderUniformLocations.displacementOption},
+				{"displacementMatrix", &PhongShaderUniformLocations.displacementMatrix},
+				
+				{"numberOfDirLights", &PhongShaderUniformLocations.numberOfDirLights},
+				{"numberOfPointLights", &PhongShaderUniformLocations.numberOfPointLights},
+				
+				{"globalAmbientLight", &PhongShaderUniformLocations.globalAmbientLight},
+
+				{"fogColor", &PhongShaderUniformLocations.fogColor},
+				{"fogOptions", &PhongShaderUniformLocations.fogOptions},
+
+				{"rimOptions", &PhongShaderUniformLocations.rimOptions},
+				{"rimColor", &PhongShaderUniformLocations.rimColor},
+
+				{"switchAlbedoTosRGB", &PhongShaderUniformLocations.switchAlbedoTosRGB},
+				{"useMatCap", &PhongShaderUniformLocations.useMatCap},
+				{"useLightmap", &PhongShaderUniformLocations.useLightmap},
+			};
+
+			for (const auto& [name, locationPtr] : uniformMap) {
+				*locationPtr = shader->findLocation(name);
+				if (*locationPtr == -1) {
+					LOGE("[SuperShader] Warning: Uniform %s not found in phong shader.", name);
+				}
+			}
+
+			shader->UnBind();
+
+			mShaderShading = std::move(shader);
+		}
+		
 		return lSuccess;
 	}
+
+
 
 	bool SuperShader::BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList)
 	{
 		mLastBinded = nullptr;
 		mLastLightmapId = 0;
 
-		if (false == pRenderOptions->IsIDBufferRendering())
+		if (!pRenderOptions->IsIDBufferRendering())
 		{
 			// skip rendering during reflection pass
-
-			if (false == CCameraInfoCachePrep(pRenderOptions->GetRenderingCamera(), mCameraCache) )
-			{
-			//	return false;
-			}
 
 			if (nullptr != mShaderShading.get())
 			{
@@ -610,17 +388,7 @@ namespace Graphics {
 				glEnableVertexAttribArray(2);		// normal
 
 				SetCameraTransform(mLastTransform, pRenderOptions);
-				
-				//
-				PrepFBSceneLights();
-				
-				// TODO: bind a default scene light list
-				PrepLightsInViewSpace(mGPUSceneLights.get());
-
-				MapLightsOnGPU();
-
-				BindLights(true);
-
+			
 				FBColor ambientColor = FBGlobalLight::TheOne().AmbientColor;
 				UploadGlobalAmbient(ambientColor);
 
@@ -639,7 +407,7 @@ namespace Graphics {
 		}
 		else
 		{
-			if (nullptr != mShaderBufferId.get())
+			if (mShaderBufferId.get())
 			{
 				mShaderBufferId->Bind();
 				mLastBinded = mShaderBufferId.get();		
@@ -654,9 +422,14 @@ namespace Graphics {
 		return true;
 	}
 
+	void SuperShader::BindShader()
+	{
+		mShaderShading->Bind();
+	}
+
 	void SuperShader::EndShading(FBRenderOptions *pRenderOptions)
 	{
-		if (nullptr != mLastBinded)
+		if (mLastBinded)
 		{
 			mLastBinded->UnBind();
 			mLastBinded = nullptr;
@@ -681,7 +454,7 @@ namespace Graphics {
 	}
 
 	
-	GLuint GetTextureId(FBMaterial *pMaterial, const FBMaterialTextureType textureType, bool forceUpdate)
+	GLuint SuperShader::GetTextureId(FBMaterial *pMaterial, const FBMaterialTextureType textureType, bool forceUpdate)
 	{
 		GLuint texId = 0;
 		bool lForceUpdate = forceUpdate;
@@ -737,14 +510,13 @@ namespace Graphics {
 
 
 		// DONE: bind a texture matrix !
-		if (nullptr != mLastBinded)
+		if (mLastBinded)
 		{
-			
-			if (false == pRenderOptions->IsIDBufferRendering())
+			if (!pRenderOptions->IsIDBufferRendering())
 			{
 				TMaterial lMaterial;
 				SetMaterial(lMaterial, pMaterial);
-				lMaterial.shaderTransparency = (float)pShaderTransparencyFactor;
+				lMaterial.shaderTransparency = static_cast<float>(pShaderTransparencyFactor);
 
 				// DONE: prepare SSBO
 				mBufferMaterial.UpdateData(sizeof(TMaterial), 1, &lMaterial);
@@ -804,9 +576,9 @@ namespace Graphics {
 			}
 			else
 			{
-				if (mBufferIdLoc.useDiffuseSampler >= 0)
+				if (BufferIdShaderUniformLocations.useDiffuseSampler >= 0)
 				{
-					glUniform1f(mBufferIdLoc.useDiffuseSampler, (difId > 0));
+					glUniform1f(BufferIdShaderUniformLocations.useDiffuseSampler, (difId > 0));
 				}
 			}
 		}
@@ -867,9 +639,9 @@ namespace Graphics {
 			{
 				FBColor lColorId = pModel->UniqueColorId;
 
-				if (mBufferIdLoc.colorId >= 0)
+				if (BufferIdShaderUniformLocations.colorId >= 0)
 				{
-					glUniform4f(mBufferIdLoc.colorId, (float)lColorId[0], (float)lColorId[1], (float)lColorId[2], (float)mAlpha);
+					glUniform4f(BufferIdShaderUniformLocations.colorId, (float)lColorId[0], (float)lColorId[1], (float)lColorId[2], (float)mAlpha);
 				}
 			}
 		}
@@ -877,7 +649,7 @@ namespace Graphics {
 
 	void SuperShader::SetMatCap(GLuint texId)
 	{
-		if (mShadingLoc.useMatCap >= 0)
+		if (PhongShaderUniformLocations.useMatCap >= 0)
 		{
 			if (texId > 0)
 			{
@@ -885,18 +657,18 @@ namespace Graphics {
 				glBindTexture(GL_TEXTURE_2D, texId);
 				glActiveTexture(GL_TEXTURE0);
 
-				glUniform1f(mShadingLoc.useMatCap, 1.0f);
+				glUniform1f(PhongShaderUniformLocations.useMatCap, 1.0f);
 			}
 			else
 			{
-				glUniform1f(mShadingLoc.useMatCap, 0.0f);
+				glUniform1f(PhongShaderUniformLocations.useMatCap, 0.0f);
 			}
 		}
 	}
 
 	void SuperShader::SetLightmap(GLuint texId, double transparency)
 	{
-		if (mShadingLoc.useLightmap >= 0)
+		if (PhongShaderUniformLocations.useLightmap >= 0)
 		{
 			if (texId > 0 && transparency > 0.0)
 			{
@@ -906,14 +678,14 @@ namespace Graphics {
 					glBindTexture(GL_TEXTURE_2D, texId);
 					glActiveTexture(GL_TEXTURE0);
 
-					glUniform1f(mShadingLoc.useLightmap, 1.0f * (float)transparency);
+					glUniform1f(PhongShaderUniformLocations.useLightmap, 1.0f * (float)transparency);
 
 					mLastLightmapId = texId;
 				}
 			}
 			else
 			{
-				glUniform1f(mShadingLoc.useLightmap, 0.0f);
+				glUniform1f(PhongShaderUniformLocations.useLightmap, 0.0f);
 			}
 		}
 	}
@@ -923,81 +695,41 @@ namespace Graphics {
 		//cgSetBufferSubData(mParamModelViewArrayBuffer, mParamModelViewArrayBufferOffset, 4 * 4 * sizeof (double) * pCount, pModelViewMatrixArray);
 	}
 
-
-
-	bool SuperShader::CCameraInfoCachePrep(FBCamera *pCamera, CCameraInfoCache &cache)
-	{
-		using namespace nv;
-		if (nullptr == pCamera)
-			return false;
-
-		FBMatrix mv, p, mvInv;
-
-		pCamera->GetCameraMatrix(mv, kFBModelView);
-		pCamera->GetCameraMatrix(p, kFBProjection);
-
-		
-		FBMatrixInverse(mvInv, mv);
-
-		for (int i = 0; i<16; ++i)
-		{
-			cache.mv4.mat_array[i] = (nv_scalar)mv[i];
-			cache.mvInv4.mat_array[i] = (nv_scalar)mvInv[i];
-			cache.p4.mat_array[i] = (nv_scalar)p[i];
-
-			cache.mv[i] = mv[i];
-		}
-
-		FBVector3d v;
-		pCamera->GetVector(v);
-		for (int i = 0; i<3; ++i)
-			cache.pos[i] = (float)v[i];
-		//cache.pos = vec4( &cache.mv4.x );
-
-		cache.fov = pCamera->FieldOfView;
-		cache.width = pCamera->CameraViewportWidth;
-		cache.height = pCamera->CameraViewportHeight;
-		cache.nearPlane = pCamera->NearPlaneDistance;
-		cache.farPlane = pCamera->FarPlaneDistance;
-
-		return true;
-	}
-
 	void SuperShader::UploadRimInformation(double useRim, double rimPower, double *rimColor)
 	{
-		if (mShadingLoc.rimOptions >= 0)
+		if (PhongShaderUniformLocations.rimOptions >= 0)
 		{
-			glUniform4f(mShadingLoc.rimOptions, useRim, rimPower, 0.0f, 0.0f);
+			glUniform4f(PhongShaderUniformLocations.rimOptions, useRim, rimPower, 0.0f, 0.0f);
 		}
-		if (mShadingLoc.rimColor >= 0)
+		if (PhongShaderUniformLocations.rimColor >= 0)
 		{
-			glUniform4f(mShadingLoc.rimColor, rimColor[0], rimColor[1], rimColor[2], 1.0f);
+			glUniform4f(PhongShaderUniformLocations.rimColor, rimColor[0], rimColor[1], rimColor[2], 1.0f);
 		}
 	}
 
 	void SuperShader::UploadFogInformation(double *color, bool enable, double begin, double end, double density, FBFogMode mode)
 	{
-		if (mShadingLoc.fogColor >= 0)
+		if (PhongShaderUniformLocations.fogColor >= 0)
 		{
-			glUniform4f(mShadingLoc.fogColor, (float)color[0], (float)color[1], (float)color[2], (enable)?1.0 : 0.0);
+			glUniform4f(PhongShaderUniformLocations.fogColor, (float)color[0], (float)color[1], (float)color[2], (enable)?1.0 : 0.0);
 		}
-		if (mShadingLoc.fogOptions >= 0)
+		if (PhongShaderUniformLocations.fogOptions >= 0)
 		{
-			glUniform4f(mShadingLoc.fogOptions, (float)begin, (float)end, (float)density, (float)mode);
+			glUniform4f(PhongShaderUniformLocations.fogOptions, (float)begin, (float)end, (float)density, (float)mode);
 		}
 	}
 
 	void SuperShader::SetDisplacementInfo(bool useDisp, double dispMult, double dispCenter)
 	{
-		if (mShadingLoc.displacementOption >= 0)
+		if (PhongShaderUniformLocations.displacementOption >= 0)
 		{
 			if (false == useDisp)
 			{
-				glUniform4f(mShadingLoc.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
+				glUniform4f(PhongShaderUniformLocations.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
 			}
 			else
 			{
-				glUniform4f(mShadingLoc.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
+				glUniform4f(PhongShaderUniformLocations.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
 			}
 		}
 
@@ -1018,21 +750,21 @@ namespace Graphics {
 	{
 		if (useDisp != mLastUseDisplacement || dispMult != mLastDispMult || dispCenter != mLastDispCenter)
 		{
-			if (mShadingLoc.displacementOption >= 0)
+			if (PhongShaderUniformLocations.displacementOption >= 0)
 			{
 				if (false == useDisp)
 				{
-					glUniform4f(mShadingLoc.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
+					glUniform4f(PhongShaderUniformLocations.displacementOption, 0.0f, 0.0f, 0.0f, 0.0f);
 				}
 				else
 				{
-					glUniform4f(mShadingLoc.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
+					glUniform4f(PhongShaderUniformLocations.displacementOption, (float)dispMult, (float)dispCenter, 0.0f, 0.0f);
 
 					float m[16];
 					for (int i = 0; i < 16; ++i)
 						m[i] = (float)dispMatrix[i];
 
-					glUniformMatrix4fv(mShadingLoc.displacementMatrix, 1, GL_FALSE, m);
+					glUniformMatrix4fv(PhongShaderUniformLocations.displacementMatrix, 1, GL_FALSE, m);
 				}
 			}
 
@@ -1043,4 +775,69 @@ namespace Graphics {
 		}
 	}
 
+
+	void SuperShader::UploadSwitchAlbedoTosRGB(bool sRGB)
+	{
+		if (PhongShaderUniformLocations.switchAlbedoTosRGB >= 0)
+			glUniform1f(PhongShaderUniformLocations.switchAlbedoTosRGB, (sRGB) ? 1.0f : 0.0f);
+	}
+
+	void SuperShader::UploadGlobalAmbient(double* color)
+	{
+		if (PhongShaderUniformLocations.globalAmbientLight >= 0)
+			glUniform4f(PhongShaderUniformLocations.globalAmbientLight, (float)color[0], (float)color[1], (float)color[2], 1.0f);
+	}
+
+	void SuperShader::UploadLightingInformation(const int numdir, const int numpoint)
+	{
+		if (PhongShaderUniformLocations.numberOfDirLights >= 0)
+			glUniform1i(PhongShaderUniformLocations.numberOfDirLights, numdir);
+		if (PhongShaderUniformLocations.numberOfPointLights >= 0)
+			glUniform1i(PhongShaderUniformLocations.numberOfPointLights, numpoint);
+	}
+
+	bool SuperShader::BindLights(const bool resetLastBind, const LightGPUBuffersManager* sceneLights, const LightGPUBuffersManager* pUserLights)
+	{
+
+		const LightGPUBuffersManager* pShaderLights = sceneLights;
+
+		if (pUserLights && pUserLights->GetNumberOfLights() > 0)
+		{
+			pShaderLights = pUserLights;
+		}
+
+		if (!pShaderLights)
+		{
+			UploadLightingInformation(0, 0);
+			return false;
+		}
+
+		// TODO: check for last uberShader lights binded
+		if (resetLastBind)
+			mLastLightsBinded = nullptr;
+
+		if (mLastLightsBinded == pShaderLights)
+		{
+			return true;
+		}
+
+		// bind a new buffer
+		//const auto loc = mMaterialShaders->GetCurrentEffectLocationsPtr()->fptr();
+		const GLint dirLights = SHADER_DIR_LIGHTS_UNITID; //  loc->GetLocation(Graphics::eCustomLocationDirLights);
+		const GLint lights = SHADER_POINT_LIGHTS_UNITID; // loc->GetLocation(Graphics::eCustomLocationLights);
+
+		if (dirLights >= 0 || lights >= 0)
+		{
+			pShaderLights->Bind(mShaderShading->GetFragmentShader(), dirLights, lights);
+			UploadLightingInformation(pShaderLights->GetNumberOfTransformedDirLights(), pShaderLights->GetNumberOfTransformedSpotLights());
+
+			mLastLightsBinded = (LightGPUBuffersManager*)pShaderLights;
+		}
+		else
+		{
+			UploadLightingInformation(0, 0);
+			return false;
+		}
+		return true;
+	}
 };

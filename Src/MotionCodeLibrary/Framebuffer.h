@@ -26,6 +26,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 	#include	<GL\glew.h>
 #endif
 
+#include <assert.h>
+
 #define MAX_FRAMEBUFFER_ATTACHMENTS			8
 
 //////////////////////////////////////////////////////////////////////////////

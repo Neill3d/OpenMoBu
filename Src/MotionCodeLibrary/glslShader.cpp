@@ -14,12 +14,13 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "FileUtils.h"
 
 //
+extern void LOGI(const char* pFormatString, ...);
 extern void LOGE(const char* pFormatString, ...);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                            GLSLShader
 
-bool GLSLShader::PRINT_WARNINGS = false;
+bool GLSLShader::PRINT_WARNINGS = true;
 
 GLSLShader::GLSLShader() 
 {}
@@ -38,7 +39,7 @@ bool GLSLShader::ReCompileShaders( const char* vertex_file, const char* fragment
 		}
 		
 		fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
-		if (!LoadShader( fragment, fp ) ) {
+		if (!LoadShader( fragment, fp, fragment_file ) ) {
 			return false;
 		}
 
@@ -50,10 +51,19 @@ bool GLSLShader::ReCompileShaders( const char* vertex_file, const char* fragment
 		glLinkProgramARB( programObj );
 
 		glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
-			
-		if (linked == 0 || PRINT_WARNINGS)
+		
+		bool doPrint = PRINT_WARNINGS;
+		if (doPrint && linked == GL_TRUE)
 		{
-			loadlog(programObj);
+			GLint       logLength = 0;
+			glGetObjectParameterivARB(programObj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &logLength);
+			doPrint = logLength > 0;
+		}
+
+		if (linked == GL_FALSE || doPrint)
+		{
+			LOGI("[GLSLShader] Recompile status for vertex - %s, fragment - %s\n", vertex_file, fragment_file);
+			LoadLog(programObj, nullptr);
 		}
 			
 		return (linked != 0);
@@ -72,7 +82,7 @@ bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file
 		if (FILE* fp = readVertex.Get())
 		{
 			vertex = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-			LoadShader(vertex, fp);
+			LoadShader(vertex, fp, vertex_file);
 		}
 	}
 
@@ -82,13 +92,12 @@ bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file
 		if (FILE* fp = readFragment.Get())
 		{
 			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-			LoadShader(fragment, fp);
+			LoadShader(fragment, fp, fragment_file);
 		}
 	}
 
 	if (vertex > 0 && fragment > 0)
 	{
-
 	  programObj = glCreateProgramObjectARB();
 	  // check for errors
 	  //if ( checkopenglerror ) return false;
@@ -106,9 +115,18 @@ bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file
 
 	  glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
 
-	  if (linked == 0 || PRINT_WARNINGS)
+	  bool doPrint = PRINT_WARNINGS;
+	  if (doPrint && linked == GL_TRUE)
 	  {
-		  loadlog(programObj);
+		  GLint       logLength = 0;
+		  glGetObjectParameterivARB(programObj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &logLength);
+		  doPrint = logLength > 0;
+	  }
+
+	  if (linked == GL_FALSE || doPrint)
+	  {
+		  LOGI("[GLSLShader ] link status for vertex - %s, fragment - %s\n", vertex_file, fragment_file);
+		  LoadLog(programObj, nullptr);
 	  }
 	  
 	  return (linked != 0);
@@ -129,7 +147,7 @@ bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 		if (FILE* fp = readFragment.Get())
 		{
 			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-			LoadShader(fragment, fp);
+			LoadShader(fragment, fp, fragment_file);
 		}
 	}
 
@@ -152,9 +170,18 @@ bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 
 	  glGetObjectParameterivARB( programObj, GL_OBJECT_LINK_STATUS_ARB, &linked );
 	  
-	  if (linked == 0 || PRINT_WARNINGS)
+	  bool doPrint = PRINT_WARNINGS;
+	  if (doPrint && linked == GL_TRUE)
 	  {
-		  loadlog(programObj);
+		  GLint       logLength = 0;
+		  glGetObjectParameterivARB(programObj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &logLength);
+		  doPrint = logLength > 0;
+	  }
+
+	  if (linked == GL_FALSE || doPrint)
+	  {
+		  LOGI("[GLSLShader ] link status for fragment - %s\n", fragment_file);
+		  LoadLog(programObj, nullptr);
 	  }
 	  
 	  return (linked != 0);
@@ -163,7 +190,7 @@ bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 	return false;
 }
 
-bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
+bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file, const char* debugName )
 {
 	const size_t headerLen = strlen(mHeaderText); // number of bytes in header
 
@@ -193,7 +220,7 @@ bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
 
 	if (readlen == 0) //(readlen != len)
 	{
-		LOGE("glsl shader file size" );
+		LOGE("[GLSLShader] glsl shader %s has empty file size", debugName );
 		return false;
 	}
 
@@ -202,19 +229,17 @@ bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file )
 	// compile shader
 	glCompileShaderARB( shader );
 
-	//if ( checkopenglerror ) return false;
-
 	glGetObjectParameterivARB ( shader, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus );
 
-	if (compileStatus == 0 || PRINT_WARNINGS)
+	if (compileStatus == GL_FALSE || PRINT_WARNINGS)
 	{
-		loadlog(shader);
+		LoadLog(shader, debugName);
 	}
 	
-	return (compileStatus != 0);
+	return (compileStatus != GL_FALSE);
 }
 
-void GLSLShader::loadlog( GLhandleARB object )
+bool GLSLShader::LoadLog( GLhandleARB object, const char* debugName ) const
 {
 	constexpr int STACK_BUFFER_SIZE{ 2048 };
 
@@ -229,7 +254,7 @@ void GLSLShader::loadlog( GLhandleARB object )
         return;
 */
     if ( logLength < 1 )
-        return;
+        return false;
     
 	// try to avoid allocating buffer
 	bool isAllocOnHeap = false;
@@ -244,13 +269,21 @@ void GLSLShader::loadlog( GLhandleARB object )
 
     glGetInfoLogARB ( object, logLength, &charsWritten, infoLog );
 
+	bool status = false;
 	if ( strlen(infoLog) > 0 )
 	{
+		status = true;
+		if (debugName)
+		{
+			LOGE("[GLSLShader] print info for %s\n", debugName);
+		}
 		LOGE( infoLog );
 	}
 
     if ( isAllocOnHeap )
         delete [] infoLog;
+
+	return status;
 }
 
 void GLSLShader::Bind() const
@@ -280,7 +313,6 @@ GLint GLSLShader::findLocation( const char *name ) const
 {
 	if (!programObj) return -1;
 	int loc = glGetUniformLocationARB( programObj, name );
-	//loadlog( programObj );
 	return loc;
 }
 
@@ -289,15 +321,9 @@ bool GLSLShader::setUniformUINT( const char *name, const GLint value )
   if (!programObj) return false;
   int loc = glGetUniformLocationARB( programObj, name );
   if (loc < 0)
-  {
-    //info("uniform location failed");
     return false;
-  }
-
-  loadlog( programObj );
-
+  
   glUniform1iARB( loc, value );
-
   return true;
 }
 
@@ -395,7 +421,7 @@ void GLSLShader::setUniformMatrix33( const GLint location, const float *m )
 	glUniformMatrix3fvARB( location, 1, GL_FALSE, m );
 }
 
-void GLSLShader::setUniformMatrix( const GLint location, const float *m )
+void GLSLShader::setUniformMatrix( const GLint location, const float *m, bool doTranspose )
 {
-	glUniformMatrix4fvARB( location, 1, GL_FALSE, m );
+	glUniformMatrix4fvARB( location, 1, (doTranspose) ? GL_TRUE : GL_FALSE, m );
 }

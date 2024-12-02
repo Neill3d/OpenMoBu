@@ -418,23 +418,17 @@ bool BlitFBOToFBO(const GLint FBO, const int width, const int height, const GLin
 {
 	CHECK_GL_ERROR();
 
-	if (FBO == 0 || defaultFBO == 0)
+	if (FBO <= 0)
 	{
-		LOGE( "> BlitToDefaultFBO where FBO is empty !!\n" );
+		LOGE( "[BlitFBOToFBO] FBO argument is empty or negative !!\n" );
 		return false;
 	}
-	/*
-	FrameBuffer &lDefaultFBO = GetDefaultFrameBuffer();
-	const int defWidth = lDefaultFBO.getWidth();
-	const int defHeight = lDefaultFBO.getHeight();
-	*/
-	/*
-	if (width != defWidth || height != defHeight)
+	if (defaultFBO < 0)
 	{
-		LOGE( "> BlitToDefaultFBO where size is not equal !!\n" );
+		LOGE("[BlitFBOToFBO] defaultFBO is negative !!\n");
 		return false;
 	}
-	*/
+
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, defaultFBO );
 
