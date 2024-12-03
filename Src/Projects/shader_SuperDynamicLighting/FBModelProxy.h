@@ -28,6 +28,9 @@ namespace Graphics
 		virtual ~FBModelProxy()
 		{}
 
+		virtual bool IsCastsShadows() const override;
+		virtual bool IsReceiveShadows() const override;
+
 		/*
 		*  render model under the current opengl context
 		* 
@@ -38,7 +41,7 @@ namespace Graphics
 		*  5 - model matrix (mat4)
 		*  6 - normal matrix (mat4)
 		*/
-		virtual void Render(bool useNormalAttrib, GLint modelMatrixLoc, GLint normalMatrixLoc) override;
+		virtual void Render(bool useNormalAttrib, GLint modelMatrixLoc, GLint normalMatrixLoc, GLuint programId) override;
 
 	private:
 

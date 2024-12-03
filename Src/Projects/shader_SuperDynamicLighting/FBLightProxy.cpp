@@ -63,50 +63,8 @@ namespace Graphics
 		transformationMat(3, 2) = ((FBVector3d)pLight->Translation)[2];
 		transformationMat(3, 3) = 1.0f;
 
-		//FBMatrixInverse(transformationMat, transformationMat);
-
 		FBMatrixToGLM(lightView, transformationMat);
-		//lightView = glm::inverse(lightView);
-		//FBMatrixInverse(pLightView, transformationMat);
 		
-		//double cosAngle;
-		//if (pLight->LightType == kFBLightTypeSpot)
-//			cosAngle = cos(DEG2RAD(pLight->OuterAngle) / 2.0f);
-	//	else
-		//	cosAngle = 0.0;
-
-		//const float spotAngle = (float)cosAngle;
-		
-		/*
-		// Ok .. now we just need a projection matrix ...
-		float fov = 1.2f * pLight->OuterAngle / 2.0f;
-		float fFar = (double)pLight->Intensity * 2.0f;
-		float fNear = 1.0f;
-		float top = tan(fov * 3.14159f / 360.0f) * fNear;
-		float bottom = -top;
-		float left = bottom;
-		float right = top;
-		const float perspectiveValues[16] =
-		{
-			(2.0f * fNear) / (right - left),   0.0f,                    0.0f,                          0.0f,
-			0.0f,                         (2.0f * fNear) / (top - bottom),    0.0f,                          0.0f,
-			0.0f,                         0.0f,                           -(fFar + fNear) / (fFar - fNear), -(2.0f * fFar * fNear) / (fFar - fNear),
-			0.0f,                         0.0f,                           -1.0f,                      0.0f
-		};
-		
-		lightProj = glm::make_mat4(perspectiveValues);
-		*/
-		//pLightProj = FBMatrix(perspectiveValues);
-
-		//float Translate = 25.0f;
-		//glm::vec2 Rotate(DEG2RAD(0.0f), DEG2RAD(35.0f));
-		//glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -300.0f));
-		//View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
-		//View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
-		//lightView = View;
-
-		//lightView = glm::lookAt(glm::vec3(lightView[3][0], lightView[3][1], lightView[3][2]), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
 		const float fFar = 10000.0f;
 		const float fNear = 0.1f;
 		lightProj = glm::perspective(static_cast<float>(DEG2RAD(pLight->OuterAngle)), 1.0f, fNear, fFar);
@@ -159,7 +117,6 @@ namespace Graphics
 		transformationMat(3, 3) = 1.0f;
 
 		FBMatrixToGLM(lightView, transformationMat);
-
 		//FBMatrixInverse(pLightView, transformationMat);
 
 		// Ok .. now we just need a projection matrix ...
@@ -188,6 +145,51 @@ namespace Graphics
 		return true;
 	}
 
+	bool FBLightProxy::HasCustomBoundingBox() const
+	{
+		if (FBLight* light = lightPlug) 
+		{
+			return light->PropertyList.Find("Shadow Bounding Box") != nullptr;
+		}
+		return false;
+	}
+	bool FBLightProxy::GetCustomBoundingBox(glm::vec3& bbMin, glm::vec3& bbMax) const
+	{
+		if (FBLight* light = lightPlug)
+		{
+			if (FBProperty* prop = light->PropertyList.Find("Shadow Bounding Box"))
+			{
+				if (FBPropertyListObject* listObjectProp = FBCast<FBPropertyListObject>(prop))
+				{
+					FBVector4d worldMin;
+					FBVector4d worldMax;
+
+					double dblMin[4] = { DBL_MIN, DBL_MIN, DBL_MIN, 1.0 };
+					double dblMax[4] = { DBL_MAX, DBL_MAX, DBL_MAX, 1.0 };
+					worldMin.Set(dblMax);
+					worldMax.Set(dblMin);
+
+					for (int i = 0; i < listObjectProp->GetCount(); ++i)
+					{
+						if (FBIS(listObjectProp->GetAt(i), FBModel))
+						{
+							FBModel* boundingBoxModel = FBCast<FBModel>(listObjectProp->GetAt(i));
+							OpenMobu::ComputeWorldBounds(boundingBoxModel, worldMin, worldMax, false);
+						}
+					}
+
+					for (int i = 0; i < 3; ++i)
+					{
+						bbMin[i] = static_cast<float>(worldMin[i]);
+						bbMax[i] = static_cast<float>(worldMax[i]);
+					}
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool FBLightProxy::PrepareMatrices(const glm::vec3& worldMin, const glm::vec3& worldMax)
 	{
 		bool status = false;
@@ -211,18 +213,12 @@ namespace Graphics
 	// Gets the projection matrix for shadow mapping
 	const glm::mat4& FBLightProxy::GetProjectionMatrix() const
 	{
-		//glm::mat4 tm;
-		//FBMatrixToGLM(tm, lightProj);
-		//return tm;
 		return lightProj;
 	}
 
 	// Gets the view matrix for rendering the shadow map from the light's perspective
 	const glm::mat4& FBLightProxy::GetViewMatrix() const
 	{
-		//glm::mat4 tm;
-		//FBMatrixToGLM(tm, lightView);
-		//return tm;
 		return lightView;
 	}
 

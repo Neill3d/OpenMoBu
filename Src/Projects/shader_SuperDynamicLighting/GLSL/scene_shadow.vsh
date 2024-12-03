@@ -13,6 +13,7 @@
 
 // vertex attributes
 layout(location=0) in vec4 inPosition;
+//layout(location=1) in vec2 inTexCoords;
 
 // uniforms
 uniform mat4 projMatrix;
@@ -24,6 +25,8 @@ out gl_PerVertex {
 	vec4 gl_Position; // 16 bytes
 };
 
+layout(location=1) smooth out vec2 outTexCoords; // 8 bytes
+
 void main(void)
 {
     vec4 vertex = vec4(inPosition.xyz, 1.0);
@@ -31,4 +34,5 @@ void main(void)
     vertex = viewMatrix * vertex;
     
     gl_Position = projMatrix * vertex;
+    outTexCoords = vec2(0.0, 0.0); // inTexCoords;
 }

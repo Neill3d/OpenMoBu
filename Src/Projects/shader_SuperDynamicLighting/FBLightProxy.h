@@ -88,6 +88,9 @@ namespace Graphics
 			return glm::vec3();
 		}
 
+		virtual bool HasCustomBoundingBox() const override;
+		virtual bool GetCustomBoundingBox(glm::vec3& bbMin, glm::vec3& bbMax) const override;
+
 		// do a preparation of light matrices with a given world min and max (for infinite light)
 		//  matrices are used for rendering shadow maps and applying them in the scene
 		bool PrepareMatrices(const glm::vec3& worldMin, const glm::vec3& worldMax) override;

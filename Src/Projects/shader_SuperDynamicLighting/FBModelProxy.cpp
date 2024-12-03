@@ -8,7 +8,9 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 */
 
 #include "FBModelProxy.h"
-
+#include "SuperShader.h"
+#include "glm_utils.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Graphics
 {
@@ -22,7 +24,7 @@ namespace Graphics
 		glUniformMatrix4fv(location, 1, GL_FALSE, tm);
 	}
 
-	void RenderModel(FBModel* model, const bool useNormalAttrib, const GLint modelMatrixLoc)
+	void RenderModel(FBModel* model, const bool useNormalAttrib, const GLint modelMatrixLoc, const GLuint programId)
 	{
 		if (modelMatrixLoc >= 0)
 		{
@@ -35,122 +37,117 @@ namespace Graphics
 
 		//Get number of region mapped by different materials.
 		const int lSubRegionCount = vertexData->GetSubRegionCount();
-		if (lSubRegionCount)
+		if (lSubRegionCount == 0)
+			return;
+		
+		//Set up vertex buffer object (VBO) or vertex array
+		vertexData->EnableOGLVertexData();
+
+		const GLuint id = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Point);
+		const GLvoid* positionOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Point);
+		const GLuint uvId = vertexData->GetUVSetVBOId();
+		const GLvoid* uvOffset = vertexData->GetUVSetVBOOffset();
+
+		glBindBuffer(GL_ARRAY_BUFFER, id);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, positionOffset);
+		glEnableVertexAttribArray(0);
+		
+		if (uvId > 0)
 		{
-			//Set up vertex buffer object (VBO) or vertex array
-			vertexData->EnableOGLVertexData();
-
-			const GLuint id = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Point);
-			const GLvoid* positionOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Point);
-			
-			const GLuint indexId = vertexData->GetIndexArrayVBOId();
-			
-			
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
-			
-			bool useDrawingFallback = false;
-
-			for (int i = 0; i < vertexData->GetSubPatchCount(); ++i)
-			{
-				bool isOptimized = false;
-				const FBGeometryPrimitiveType primitiveType = vertexData->GetSubPatchPrimitiveType(i, &isOptimized);
-
-				if (primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLES
-					&& primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_FAN
-					&& primitiveType != FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_STRIP)
-				{
-					useDrawingFallback = true;
-					break;
-				}
-			}
-
-			glBindBuffer(GL_ARRAY_BUFFER, id);
-			glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, positionOffset);
-			glEnableVertexAttribArray(0);
-			
-			if (useNormalAttrib)
-			{
-				const GLuint normalId = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Normal);
-				const GLvoid* normalOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Normal);
-
-				glBindBuffer(GL_ARRAY_BUFFER, normalId);
-				glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, normalOffset);
-				glEnableVertexAttribArray(2);
-			}
-			
-			int* indexArray = nullptr;
-			FBVertex* posArray = nullptr;
-
-			if (useDrawingFallback)
-			{
-				vertexData->VertexArrayMappingRequest();
-
-				indexArray = vertexData->GetIndexArray();
-				posArray = static_cast<FBVertex*>(vertexData->GetVertexArray(kFBGeometryArrayID_Point));
-			}
-
-			for (int lSubPatchIndex = 0; lSubPatchIndex < vertexData->GetSubPatchCount(); ++lSubPatchIndex)
-			{
-				vertexData->DrawSubPatch(lSubPatchIndex);
-				/*
-				bool isOptimized = false;
-				const FBGeometryPrimitiveType primitiveType = vertexData->GetSubPatchPrimitiveType(lSubPatchIndex, &isOptimized);
-
-				const int offset = vertexData->GetSubPatchIndexOffset(lSubPatchIndex);
-				const int size = vertexData->GetSubPatchIndexSize(lSubPatchIndex);
-
-				switch (primitiveType)
-				{
-				case FBGeometryPrimitiveType::kFBGeometry_TRIANGLES:
-					glDrawRangeElements(GL_TRIANGLES, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
-					break;
-				case FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_FAN:
-					glDrawRangeElements(GL_TRIANGLE_FAN, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
-					break;
-				case FBGeometryPrimitiveType::kFBGeometry_TRIANGLE_STRIP:
-					glDrawRangeElements(GL_TRIANGLE_STRIP, offset, offset + size, size, GL_UNSIGNED_INT, nullptr);
-					break;
-				case FBGeometryPrimitiveType::kFBGeometry_QUADS:
-				{
-					assert(indexArray != nullptr);
-					assert(posArray != nullptr);
-
-					// fallback
-					glBegin(GL_QUADS);
-
-					for (int j = 0; j < size; j += 4)
-					{
-						glVertex3fv(posArray[indexArray[offset + j]]);
-						glVertex3fv(posArray[indexArray[offset + j + 1]]);
-						glVertex3fv(posArray[indexArray[offset + j + 2]]);
-						glVertex3fv(posArray[indexArray[offset + j + 3]]);
-					}
-
-					glEnd();
-				} break;
-				default:
-					FBTrace("Not supported primitive type %d for color renderer\n", static_cast<int>(primitiveType));
-				}
-				*/
-			}
-			
-			glDisableVertexAttribArray(0);
-			if (useNormalAttrib)
-			{
-				glDisableVertexAttribArray(2);
-			}
-			
-			if (useDrawingFallback)
-			{
-				vertexData->VertexArrayMappingRelease();
-			}
-
-			vertexData->DisableOGLVertexData();
+			glBindBuffer(GL_ARRAY_BUFFER, uvId);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, uvOffset);
+			glEnableVertexAttribArray(1);
 		}
+		
+		if (useNormalAttrib)
+		{
+			const GLuint normalId = vertexData->GetVertexArrayVBOId(kFBGeometryArrayID_Normal);
+			const GLvoid* normalOffset = vertexData->GetVertexArrayVBOOffset(kFBGeometryArrayID_Normal);
+
+			glBindBuffer(GL_ARRAY_BUFFER, normalId);
+			glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, normalOffset);
+			glEnableVertexAttribArray(2);
+		}
+		
+		const GLuint SAMPLER_SLOT_TRANSPARENCY{ 1 };
+		glm::mat4 textureMatrix;
+
+		const GLint useTransparencyLocation = glGetUniformLocation(programId, "useTransparency");
+		const GLint transparencyTransformLoc = glGetUniformLocation(programId, "transparencyTransform");
+
+		for (int lSubPatchIndex = 0; lSubPatchIndex < vertexData->GetSubPatchCount(); ++lSubPatchIndex)
+		{
+			bool useTransparency = false;
+			GLuint textureId = 0;
+			
+			if (FBMaterial* material = vertexData->GetSubPatchMaterial(lSubPatchIndex))
+			{
+				double lTransparencyFactor = material->TransparencyFactor;
+				if (material->GetTexture(kFBMaterialTextureTransparent) && lTransparencyFactor > 0.0)
+				{
+					useTransparency = true;
+
+					const double* tm = material->GetTexture(kFBMaterialTextureTransparent)->GetMatrix();
+					FBMatrixToGLM(textureMatrix, tm);
+
+					textureId = SuperShader::GetTextureId(material, kFBMaterialTextureTransparent, false);
+				}
+			}
+			
+			glUniform1f(useTransparencyLocation, useTransparency ? 1.0f : 0.0f);
+
+			if (useTransparency)
+			{
+				glUniformMatrix4fv(transparencyTransformLoc, 1, GL_FALSE, glm::value_ptr(textureMatrix));
+			}
+			
+			if (textureId > 0)
+			{	
+				glActiveTexture(GL_TEXTURE0 + SAMPLER_SLOT_TRANSPARENCY);
+				glBindTexture(GL_TEXTURE_2D, textureId);
+				glActiveTexture(GL_TEXTURE0);
+			}
+			
+			vertexData->DrawSubPatch(lSubPatchIndex);
+			
+			if (textureId > 0)
+			{
+				glActiveTexture(GL_TEXTURE0 + SAMPLER_SLOT_TRANSPARENCY);
+				glBindTexture(GL_TEXTURE_2D, 0);
+				glActiveTexture(GL_TEXTURE0);
+			}
+		}
+			
+		glDisableVertexAttribArray(0);
+		//glDisableVertexAttribArray(1); // NOTE: don't disable here, as it's an active attribute for the model shading rendering itself
+		if (useNormalAttrib)
+		{
+			glDisableVertexAttribArray(2);
+		}
+		
+		vertexData->DisableOGLVertexData();
+		
 	}
 
+	bool FBModelProxy::IsCastsShadows() const
+	{
+		if (FBModel* model = modelPlug)
+		{
+			return model->CastsShadows;
+		}
+		return false;
+	}
 
-	void FBModelProxy::Render(bool useNormalAttrib, GLint modelMatrixLoc, GLint normalMatrixLoc)
+	bool FBModelProxy::IsReceiveShadows() const
+	{
+		if (FBModel* model = modelPlug)
+		{
+			return model->ReceiveShadows;
+		}
+		return false;
+	}
+
+	void FBModelProxy::Render(bool useNormalAttrib, GLint modelMatrixLoc, GLint normalMatrixLoc, GLuint programId)
 	{
 		if (FBModel* model = modelPlug)
 		{
@@ -170,7 +167,7 @@ namespace Graphics
 					BindUniformMatrix(6, normalMatrix);
 				}
 				
-				RenderModel(model, useNormalAttrib, modelMatrixLoc);
+				RenderModel(model, useNormalAttrib, modelMatrixLoc, programId);
 			}
 		}
 	}

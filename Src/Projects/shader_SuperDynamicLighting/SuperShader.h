@@ -139,7 +139,7 @@ namespace Graphics
 
 		GLuint GetSamplerSlotShadow() const;
 
-	private:
+	public:
 
 		static void SetCameraTransform(TTransform& transform, FBRenderOptions* pRenderOptions);
 		static void SetTransform(TTransform& transform, FBRenderOptions* pRenderOptions, FBShaderModelInfo* pInfo);

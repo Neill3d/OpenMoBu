@@ -97,19 +97,40 @@ namespace Graphics
 
 		SaveFrameBuffer(&frameBufferBindingInfo);
 
-		// Compute the world bounds for infinite light adjustment.
-		// TODO: should bounding box be around casters only ?!
-		FBVector4d fbWorldMin, fbWorldMax;
-		ComputeWorldBounds(fbWorldMin, fbWorldMax);
-
-		FBVectorToGLM(worldMin, fbWorldMin);
-		FBVectorToGLM(worldMax, fbWorldMax);
-
 		if (!frameBuffer.GetFrameBuffer())
 			frameBuffer.Create();
 
 		const TextureCreationInfo thisFrameTextureInfo = CalculateCurrentTextureCreationInfo(properties, thisFrameLights);
 
+		// Compute the world bounds for infinite light adjustment.
+		// TODO: should bounding box be around casters only ?!
+		
+		bool doNeedToComputeWorldBounds = false;
+
+		for (const auto& light : thisFrameLights)
+		{
+			if (!IsLightCastShadow(light.get()))
+				continue;
+
+			if (light->GetLightType() == LightProxy::LightType::Infinite)
+			{
+				if (!light->HasCustomBoundingBox())
+				{
+					doNeedToComputeWorldBounds = true;
+					break;
+				}
+			}
+		}
+
+		if (doNeedToComputeWorldBounds)
+		{
+			FBVector4d fbWorldMin, fbWorldMax;
+			ComputeWorldBounds(fbWorldMin, fbWorldMax);
+
+			FBVectorToGLM(worldMin, fbWorldMin);
+			FBVectorToGLM(worldMax, fbWorldMax);
+		}
+		
 		// initialize framebuffer for needed amount of textures and shadow texture size
 		
 		if (shadowTexId == 0 || doNeedRecreateTextures || textureInfo != thisFrameTextureInfo)
@@ -155,7 +176,15 @@ namespace Graphics
 
 			// setup global uniforms like light projection and world matrices
 
-			light->PrepareMatrices(worldMin, worldMax);
+			glm::vec3 lightBBMin = worldMin;
+			glm::vec3 lightBBMax = worldMax;
+
+			if (light->GetLightType() == LightProxy::LightType::Infinite)
+			{
+				light->GetCustomBoundingBox(lightBBMin, lightBBMax);
+			}
+
+			light->PrepareMatrices(lightBBMin, lightBBMax);
 
 			const glm::mat4& proj = light->GetProjectionMatrix();
 			const glm::mat4 view = glm::inverse(light->GetViewMatrix());
@@ -166,7 +195,10 @@ namespace Graphics
 
 			for (auto& model : casters)
 			{
-				model->Render(false, shaderModelMatrixLoc, -1);
+				if (model->IsCastsShadows())
+				{
+					model->Render(false, shaderModelMatrixLoc, -1, shader.GetProgramObj());
+				}
 			}
 
 			frameBuffer.UnBind();

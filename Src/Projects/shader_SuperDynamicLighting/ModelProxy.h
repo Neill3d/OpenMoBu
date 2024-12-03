@@ -52,6 +52,9 @@ namespace Graphics
 		// Gets the direction the light is facing (for directional lights or spotlights)
 		virtual glm::vec3 GetDirection() const = 0;
 
+		virtual bool HasCustomBoundingBox() const = 0;
+		virtual bool GetCustomBoundingBox(glm::vec3& bbMin, glm::vec3& bbMax) const = 0;
+
 		virtual bool PrepareMatrices(const glm::vec3& worldMin, const glm::vec3& worldMax) = 0;
 
 		// Gets the projection matrix for shadow mapping
@@ -68,6 +71,9 @@ namespace Graphics
 	public:
 		virtual ~ModelProxy() = default;
 
+		virtual bool IsCastsShadows() const = 0;
+		virtual bool IsReceiveShadows() const = 0;
+
 		/*
 		*  render model under the current opengl context
 		*
@@ -82,7 +88,7 @@ namespace Graphics
 		*  5 - model matrix (mat4)
 		*  6 - normal matrix (mat4)
 		*/
-		virtual void Render(bool useNormalAttrib, GLint modelMatrixLoc, GLint normalMatrixLoc) = 0;
+		virtual void Render(bool useNormalAttrib, GLint modelMatrixLoc, GLint normalMatrixLoc, GLuint programId) = 0;
 	};
 
 	// a class with interface to query a current camera render parameters
