@@ -1,14 +1,3 @@
-
-# ScriptCreateLightAndMaterialProperties.py
-#
-# The script to create propeties in selected material or light models
-# That could help to get access to some extended configuration of the shading
-#
-# OpenMobu project https://github.com/Neill3d/OpenMoBu
-#
-# Sergei <Neill3d> Solokhin 2024
-
-
 from pyfbsdk import*
 
 scene = FBSystem().Scene
@@ -39,3 +28,6 @@ for light in scene.Lights:
         
         if not light.PropertyList.Find('Cast Specular On Object'):
             light.PropertyCreate('Cast Specular On Object', FBPropertyType.kFBPT_bool, 'Bool', True, True, None)     
+            
+        if not light.PropertyList.Find('Shadow Bounding Box'):
+            light.PropertyCreate('Shadow Bounding Box', FBPropertyType.kFBPT_object, 'Object', False, True, None)
