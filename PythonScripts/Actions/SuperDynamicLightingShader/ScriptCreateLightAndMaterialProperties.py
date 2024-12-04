@@ -1,3 +1,8 @@
+
+# ScriptCreateLightAndMaterialProperties.py
+#
+# Sergei <Neill3d> Solokhin 2024
+
 from pyfbsdk import*
 
 scene = FBSystem().Scene
