@@ -82,26 +82,10 @@ void LinkedVertex::NormalizeWeights()
 	
 FBMatrix LinkedVertex::CalculateDeformedPositionMatrix()
 {
-	/*
-	FBMatrix tm;
-
-	for (int i=0; i<links.GetCount(); ++i)
-	{	
-		FBMatrix temp(links[i].tm);
-
-		for (int ii=0; ii<4; ++ii)
-			for (int jj=0; jj<4; ++jj)
-				tm(ii, jj) += temp(ii, jj) * links[i].weight;
-
- 	}
-	return tm;
-	*/
-
 	double total=0.0;
 
 	FBMatrix lClusterDeformation;
-	//lClusterDeformation.Identity();
-
+	
 	for (size_t i=0; i<links.size(); ++i)
 	{
 		
@@ -116,7 +100,7 @@ FBMatrix LinkedVertex::CalculateDeformedPositionMatrix()
 		// Compute the influence of the link on the vertex
 		FBMatrix lInfluence = links[i].tm;
 		
-		const double lScale = lWeight * 100000.0; // (total + 0.000001);
+		const double lScale = lWeight * 100000.0;
 		MatrixScale(lInfluence, lScale);
 
 		switch(mode)

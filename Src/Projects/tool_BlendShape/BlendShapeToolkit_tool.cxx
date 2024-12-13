@@ -126,15 +126,6 @@ void ORTool_BlendShape::UICreate()
 										-lB,kFBAttachLeft,	"ButtonLoad",	1.0,
 										lH,	kFBAttachNone,	"",	1.0 );
 	
-
-	/*
-	AddRegion( "ButtonAssignAuto", "ButtonAssignAuto",
-										lB,	kFBAttachRight,	"ButtonAssign",	1.0	,
-										lB,	kFBAttachTop,	"",	1.0,
-										lW,	kFBAttachNone,	"",	1.0,
-										lH,	kFBAttachNone,	"",	1.0 );
-										*/
-	
 	// scrollbox
 	AddRegion( "ScrollBox", "ScrollBox",
 										lB,	kFBAttachLeft,	"",	1.0	,
@@ -175,7 +166,6 @@ void ORTool_BlendShape::UICreate()
 
 	SetControl( "LabelObject", mLabelObject );
 	SetControl( "ButtonAssign", mContainerObjects );
-	//SetControl( "ButtonAssignAuto", mButtonAutoAssign );
 	SetControl( "ButtonLoad", mButtonLoad );
 	SetControl( "ButtonSave", mButtonSave );
 
@@ -365,18 +355,6 @@ void ORTool_BlendShape::UICreatePanel()
 
 	//
 	
-	/*
-	AddRegion( "ButtonSculptEnter", "ButtonSculptEnter",
-										0,	kFBAttachLeft,	"LabelOperations",	1.0	,
-										lB*2,	kFBAttachBottom,"LabelSculpt",	1.0,
-										lW,	kFBAttachNone,	"",	1.0,
-										lH,	kFBAttachNone,	"",	1.0 );
-	AddRegion( "ButtonSculptLeave", "ButtonSculptLeave",
-										0,	kFBAttachLeft,	"LabelOperations",	1.0	,
-										lB,	kFBAttachBottom,"ButtonSculptEnter",	1.0,
-										lW,	kFBAttachNone,	"",	1.0,
-										lH,	kFBAttachNone,	"",	1.0 );
-										*/
 	mLayoutSculpt.AddRegion( "ButtonSculptTool", "ButtonSculptTool",
 										lB,			kFBAttachLeft,	"",	1.0	,
 										lB*2,		kFBAttachTop,	"",	1.0,
@@ -416,8 +394,6 @@ void ORTool_BlendShape::UICreatePanel()
 	mLayoutOperations.SetControl( "ButtonReComputeNormals", mButtonReComputeNormals );
 	mLayoutOperations.SetControl( "ButtonInvertNormals", mButtonInvertNormals );
 	//
-	//SetControl( "ButtonSculptEnter", mButtonSculptEnter );
-	//SetControl( "ButtonSculptLeave", mButtonSculptLeave );
 	mLayoutSculpt.SetControl( "ButtonSculptTool", mButtonSculptTool );
 	//
 	mLayoutInfo.SetControl( "ButtonAbout", mButtonAbout );
@@ -443,8 +419,7 @@ void ORTool_BlendShape::UIConfig()
 
 	mButtonAutoAssign.Caption = "Auto assign";
 	mButtonAutoAssign.Style.SetPropertyValue(kFBCheckbox);
-	//mButtonAutoAssign.OnClick.Add( this, (FBCallback) &ORTool_BlendShape::EventButtonAutoAssignClick );
-		
+	
 	mLabelCheck.Caption = "Check state: ";
 
 	mButtonCheckAll.Caption = "All";
@@ -597,59 +572,6 @@ void ORTool_BlendShape::FBDestroy()
 }
 
 
-/************************************************
- *	Button click callback.
- ************************************************/
-/*
-void ORTool_BlendShape::EventButtonTestClick( HISender pSender, HKEvent pEvent )
-{
-	
-	switch( mState )
-	{
-		case 0:
-		{
-			// Create a new marker
-			mHdlModel = new FBModelPlane("Tool_Template Model");
-			mButtonTest.Caption = "Make visible";
-		}
-		break;
-		case 1:
-		{
-			// Make the model visible
-			if(mHdlModel.Ok())
-			{
-				mHdlModel->Show = true;
-			}
-			mButtonTest.Caption = "Remove model";
-		}
-		break;
-		case 2:
-		{
-			// Remove model from visible set
-			if( mHdlModel.Ok() )
-			{
-				mHdlModel->Show = false;
-			}
-			mButtonTest.Caption = "Delete model";
-		}
-		break;
-		case 3:
-		{
-			// Delete model
-			if( mHdlModel.Ok() )
-			{
-				mHdlModel->FBDelete();
-			}
-
-			mButtonTest.Caption = "Create model";
-		}
-		break;
-	}
-	mState = (mState+1) % 4;
-	
-}
-*/
-
 void ORTool_BlendShape::EventContainerDragAndDrop( HISender pSender, HKEvent pEvent )
 {
     FBEventDragAndDrop lDragAndDrop( pEvent );
@@ -671,34 +593,10 @@ void ORTool_BlendShape::EventContainerDragAndDrop( HISender pSender, HKEvent pEv
 
 void ORTool_BlendShape::SetupBlendShapes( FBModel *pModel )
 {
-	//mContainerObjects.Items.Clear();
-    //mListProperties.Items.Clear();
-	/*
-    mEditProperty.Property          = 0;
-    mEditPropertyModern.Property    = 0;
-    mButtonPreviousProperty.Enabled = false;
-    mButtonNextProperty.Enabled     = false;
-	*/
     if( pModel )
     {
         mContainerObjects.Items.Add( pModel->Name, (kReference)pModel );
-        /*
-		int lIdx = 0;
-        int lNbProps = lModel->PropertyList.GetCount();
-
-        mListProperties.Items.Add( "<Select Property>", (kReference)0 );
-        mListProperties.ItemIndex = 0;
-        for( lIdx = 0; lIdx < lNbProps; ++lIdx )
-        {
-            FBProperty* lProp = lModel->PropertyList[lIdx];
-            if( lProp->IsInternal() && !lProp->GetPropertyFlag( kFBPropertyFlagHideProperty ))
-            {
-                mListProperties.Items.Add( lProp->GetName(), (kReference)lProp );
-            }
-        }
-        mButtonPreviousProperty.Enabled = true;
-        mButtonNextProperty.Enabled = true;
-		*/
+        
 		UpdateBlendShapesView(true);
     }
 }
@@ -763,8 +661,6 @@ void ORTool_BlendShape::UpdateBlendShapesView(const bool resetCheckState)
 
 				mBlendshapes[idx].Caption = shapeName;
 				mBlendshapes[idx].CaptionSize = UI_BLENDSHAPE_CAPTION_SIZE;
-				//mBlendshapes[idx].Property = pModel->PropertyList.Find( shapeName );
-
 				idx++;
 			}
 		}
@@ -777,7 +673,6 @@ void ORTool_BlendShape::UpdateBlendShapesView(const bool resetCheckState)
 
 void ORTool_BlendShape::EventContainerDblClick( HISender pSender, HKEvent pEvent )
 {
-    //SetupBlendShapes( nullptr );
 	mContainerObjects.Items.Clear();
 
 	UpdateBlendShapesView(true);
@@ -921,36 +816,9 @@ void ORTool_BlendShape::EventButtonRemoveClick( HISender pSender, HKEvent pEvent
 			FBGeometry *pGeometry = pModel->Geometry;
 
 			PrepareCheckList( pModel, checkList );
-			/*
-			for(int i=0; i<shapesCount; ++i)
-			{
-				if (removeList[i])
-				{
-					FBProperty *pProperty = pModel->PropertyList.Find( pGeometry->ShapeGetName(i) );
-					if (pProperty)
-						pModel->PropertyRemove(pProperty);
-				}
-			}
-			*/
-
+			
 			ModifyGeometryShapes( pGeometry, checkList.GetArray(), kFBShapeRemove );
 
-			/*
-			int propIndex = pModel->PropertyList.GetCount() - 1;
-
-			while(propIndex >= 0)
-			{
-				FBProperty *pProperty = pModel->PropertyList[propIndex];
-
-				const char *typeName = pProperty->GetPropertyTypeName();
-				if ( strstr(typeName, "shape") != nullptr )
-				{
-					pModel->PropertyRemove(pProperty);
-				}
-
-				propIndex -= 1;
-			}
-			*/
 			pModel->SetupPropertiesForShapes();
 		}
 
@@ -1243,15 +1111,8 @@ void ORTool_BlendShape::EventButtonCalcDeltaClick( HISender pSender, HKEvent pEv
 				lPropScale->GetData( scale, sizeof(double) * 3 );
 
 				FBTRSToMatrix( InvTM, pos, rot, scale );
-				//FBMatrixInverse( InvTM, InvTM );
-
-				//FBMatrix TM;
-				//pModelEDIT->GetMatrix(TM);
-
-				//FBMatrixMult( InvTM, TM, InvTM );
 			}
 		}
-		
 		
 		//
 		// Calculate difference between BaseModel and Model. Store difference in the third model DeltaModel
@@ -1283,28 +1144,15 @@ void ORTool_BlendShape::EventButtonCalcDeltaClick( HISender pSender, HKEvent pEv
 		FBModelVertexData *pVertexDataBASE = pModelBASE->ModelVertexData;
 		pVertexDataBASE->VertexArrayMappingRequest();
 		
-		//int vertCountBASE = pVertexDataBASE->GetVertexCount();
 		int vertCountEDIT = pGeometryEDIT->VertexCount();
-		//int *indicesBASE = pVertexDataBASE->GetIndexArray();
 		
-
 		ClusterAdvance	clusterAdvance( nullptr );
 
 		bool UseCluster = clusterAdvance.Init(pModelBASE);
 
-		//unsigned int dubCount = 0;
-		//const int *dubIndices = pVertexDataBASE->GetVertexArrayDuplicationMap( dubCount );
-
 		FBVertex *positionsT = (FBVertex*) pVertexDataBASE->GetVertexArray( kFBGeometryArrayID_Point, false ); // before deform
-		//FBNormal *normalsT = (FBNormal*) pVertexDataBASE->GetVertexArray( kFBGeometryArrayID_Normal, false );
-		
-		//FBVertex *positionsBASE = (FBVertex*) pVertexDataBASE->GetVertexArray( kFBGeometryArrayID_Point, true ); // after deform
-		//FBNormal *normalsBASE = (FBNormal*) pVertexDataBASE->GetVertexArray( kFBGeometryArrayID_Normal, true );
 		
 		pVertexDataBASE->VertexArrayMappingRelease();
-
-		
-		//FBTRSToMatrix( scaleM, FBTVector(), FBRVector(), FBSVector(0.5, 0.5, 0.5) );
 
 		FBMesh *pMeshDELTA = new FBMesh( FBString( strDELTA, "_mesh" ) );
 		pModelDELTA->Geometry = pMeshDELTA;
@@ -1329,11 +1177,8 @@ void ORTool_BlendShape::EventButtonCalcDeltaClick( HISender pSender, HKEvent pEv
 				FBMatrixInverse( m, clusterAdvance.CalculateDeformedPositionMatrix(i) );
 			}
 
-			
-
 			// UNTRANSFORM SKELETAL ANIMATION
 
-			//FBVertexMatrixMult( v, m, positionsEDIT[i] );
 			FBVertexMatrixMult( v, m, v );
 
 			// UNTRANSFORM BLEND SHAPES
@@ -1354,7 +1199,6 @@ void ORTool_BlendShape::EventButtonCalcDeltaClick( HISender pSender, HKEvent pEv
 			}
 
 			pMeshDELTA->VertexSet( v, i );
-			//pMeshDELTA->VertexNormalSet( normalsBASE[i], i );
 		}
 
 		//
@@ -1424,26 +1268,6 @@ void ORTool_BlendShape::EventButtonBrushToolClick( HISender pSender, HKEvent pEv
 
 void ORTool_BlendShape::EventButtonAboutClick( HISender pSender, HKEvent pEvent )
 {
-	/*
-	FBModelList pList;
-	FBGetSelectedModels(pList);
-
-	try
-	{
-		if (pList.GetCount() != 1)
-			throw ("Please select a one snapshot model to calculate delta");
-
-		FBModel *pModel = pList.GetAt(0);
-
-		CalculateDeformedMesh(pModel);
-
-	}
-	catch( const char *message )
-	{
-		FBMessageBox( "BlendShape Toolkit", message, "Ok" );
-	}
-	*/
-	
 	const char* szTitle = LoadStringFromResource1(IDS_TITLE);
 	const char* szVersion = LoadVersionFromResource();
 	const char* szMsg = LoadStringFromResource2(IDS_ABOUT);
