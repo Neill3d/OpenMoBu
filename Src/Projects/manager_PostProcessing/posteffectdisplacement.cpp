@@ -52,7 +52,7 @@ bool PostEffectDisplacement::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
-	GLSLShader* shader = mShaders[shaderIndex];
+	GLSLShaderProgram* shader = mShaders[shaderIndex];
 
 	if (shader)
 	{

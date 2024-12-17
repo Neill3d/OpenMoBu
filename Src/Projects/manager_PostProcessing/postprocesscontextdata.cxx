@@ -554,11 +554,11 @@ bool PostProcessContextData::LoadShaders()
         return false;
     }
 
-    GLSLShader *pNewShader = nullptr;
+    GLSLShaderProgram *pNewShader = nullptr;
 
     try
     {
-        pNewShader = new GLSLShader();
+        pNewShader = new GLSLShaderProgram();
 
         if (nullptr == pNewShader)
         {

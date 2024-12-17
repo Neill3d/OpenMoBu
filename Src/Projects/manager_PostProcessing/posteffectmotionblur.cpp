@@ -50,7 +50,7 @@ bool PostEffectMotionBlur::PrepUniforms(const int shaderIndex)
 {
 	bool lSuccess = false;
 
-	GLSLShader* mShader = mShaders[shaderIndex];
+	GLSLShaderProgram* mShader = mShaders[shaderIndex];
 	if (nullptr != mShader)
 	{
 		mShader->Bind();
@@ -182,7 +182,7 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, PostEffect
 	int quarterWidth = ((effectContext.w + 3) / 4);
 	int quarterHeight = ((effectContext.h + 3) / 4);
 
-	GLSLShader* mShader = GetShaderPtr();
+	GLSLShaderProgram* mShader = GetShaderPtr();
 	if (nullptr != mShader)
 	{
 		mShader->Bind();

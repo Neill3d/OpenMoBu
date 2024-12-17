@@ -17,7 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postpersistentdata.h"
 #include "posteffectbase.h"
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
 #include <memory>
@@ -83,13 +83,13 @@ protected:
 
 	// shared shaders
 	
-	std::unique_ptr<GLSLShader>			mShaderDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
-	std::unique_ptr<GLSLShader>			mShaderBlur;		//!< bilateral blur effect, for SSAO
-	std::unique_ptr<GLSLShader>			mShaderImageBlur;	//!< for masking
-	std::unique_ptr<GLSLShader>			mShaderMix;			//!< multiplication result of two inputs, (for SSAO)
-	std::unique_ptr<GLSLShader>			mShaderDownscale;
+	std::unique_ptr<GLSLShaderProgram>			mShaderDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
+	std::unique_ptr<GLSLShaderProgram>			mShaderBlur;		//!< bilateral blur effect, for SSAO
+	std::unique_ptr<GLSLShaderProgram>			mShaderImageBlur;	//!< for masking
+	std::unique_ptr<GLSLShaderProgram>			mShaderMix;			//!< multiplication result of two inputs, (for SSAO)
+	std::unique_ptr<GLSLShaderProgram>			mShaderDownscale;
 
-	std::unique_ptr<GLSLShader>			mShaderSceneMasked; //!< render models into mask with some additional filtering
+	std::unique_ptr<GLSLShaderProgram>			mShaderSceneMasked; //!< render models into mask with some additional filtering
 
 	// order execution chain
 	std::vector<PostEffectBase*>		mChain;

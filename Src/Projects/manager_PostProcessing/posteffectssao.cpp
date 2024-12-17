@@ -76,7 +76,7 @@ const char *PostEffectSSAO::GetFragmentFname(const int) const
 
 bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 {
-	GLSLShader* mShader = mShaders[shaderIndex];
+	GLSLShaderProgram* mShader = mShaders[shaderIndex];
 	if (!mShader)
 		return false;
 
@@ -212,7 +212,7 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContex
 	int quarterWidth = ((effectContext.w + 3) / 4);
 	int quarterHeight = ((effectContext.h + 3) / 4);
 
-	GLSLShader* mShader = GetShaderPtr();
+	GLSLShaderProgram* mShader = GetShaderPtr();
 	if (!mShader)
 		return false;
 	

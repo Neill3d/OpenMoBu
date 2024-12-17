@@ -13,7 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "graphics_framebuffer.h"
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
 #include <memory>
@@ -58,7 +58,7 @@ struct CommonEffectUniforms
 {
 public:
 
-	void PrepareUniformLocations(GLSLShader* shader);
+	void PrepareUniformLocations(GLSLShaderProgram* shader);
 
 	/// <summary>
 	/// must be called inside the binded glsl shader
@@ -109,34 +109,46 @@ public:
 	//! a destructor
 	virtual ~PostEffectBase();
 
-	virtual int GetNumberOfShaders() const abstract; 
+	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
+	virtual int GetNumberOfVariations() const abstract; 
 
+	//! an effect public name
 	virtual const char *GetName() const abstract;
-	virtual const char *GetVertexFname(const int shaderIndex) const abstract;
-	virtual const char *GetFragmentFname(const int shaderIndex) const abstract;
+	//! get a filename of vertex shader, for this effect. returns a relative filename
+	virtual const char *GetVertexFname(const int variationIndex) const abstract;
+	//! get a filename of a fragment shader, for this effect, returns a relative filename
+	virtual const char *GetFragmentFname(const int variationIndex) const abstract;
 
-	/// load and initialize shader from a specified location
-	bool Load(const int shaderIndex, const char *vname, const char *fname);
+	/// load and initialize shader from a specified location, vname and fname are computed absolute path
+	bool Load(const int variationIndex, const char *vname, const char *fname);
 
-	virtual bool PrepUniforms(const int shaderIndex);
+	//! prepare uniforms for a given variation of the effect
+	virtual bool PrepUniforms(const int variationIndex);
+	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);		//!< grab main UI values for the effect
 
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const;
+	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass);
 
+	//! bind effect shader program
 	virtual void Bind();
+	//! unbind effect shader program
 	virtual void UnBind();
 
-	GLSLShader *GetShaderPtr();
+	//! get a pointer to a current shader program
+	GLSLShaderProgram *GetShaderPtr();
 
+	//! define internal mask channel index or -1 for default, it comes from a user input (UI)
 	void SetMaskIndex(const int maskIndex) { mMaskIndex = maskIndex; }
+	//! get defined mask channel index
 	int GetMaskIndex() const { return mMaskIndex; }
 
 protected:
 
 	int mCurrentShader{ 0 };
-	std::vector<GLSLShader*>	mShaders;
+	std::vector<GLSLShaderProgram*>	mShaders;
 
 	int mMaskIndex{ -1 }; //!< which mask channel the effect is use (-1 for a default, globally defined mask channel)
 

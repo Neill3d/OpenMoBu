@@ -9,7 +9,7 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "SuperShader_glsl.h"
 #include "GPUBuffer.h"
 #include "LightGPUBuffersManager.h"
@@ -88,7 +88,7 @@ namespace Graphics
 		} PhongShaderUniformLocations;
 
 		double						mAlpha;
-		GLSLShader*					mLastBinded{ nullptr };
+		GLSLShaderProgram*					mLastBinded{ nullptr };
 		GLuint						mLastTexId{ 0 };
 		GLuint						mLastLightmapId{ 0 };
 		FBMaterial*					mLastMaterial{ nullptr };
@@ -103,8 +103,8 @@ namespace Graphics
 		GPUBufferSSBO				mBufferDirLights;
 		GPUBufferSSBO				mBufferLights;
 
-		std::unique_ptr<GLSLShader>	mShaderBufferId;
-		std::unique_ptr<GLSLShader>	mShaderShading;
+		std::unique_ptr<GLSLShaderProgram>	mShaderBufferId;
+		std::unique_ptr<GLSLShaderProgram>	mShaderShading;
 
 		//
 		//

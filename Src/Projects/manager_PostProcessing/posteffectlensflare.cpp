@@ -69,11 +69,11 @@ const char *PostEffectLensFlare::GetFragmentFname(const int shaderIndex) const
 
 bool PostEffectLensFlare::PrepUniforms(const int shaderIndex)
 {
-	GLSLShader* mShader = mShaders[shaderIndex];
+	GLSLShaderProgram* mShader = mShaders[shaderIndex];
 	return subShaders[shaderIndex].PrepUniforms(mShader);	
 }
 
-bool PostEffectLensFlare::SubShader::PrepUniforms(GLSLShader* mShader)
+bool PostEffectLensFlare::SubShader::PrepUniforms(GLSLShaderProgram* mShader)
 {
 	bool lSuccess = false;
 
@@ -116,8 +116,8 @@ bool PostEffectLensFlare::SubShader::PrepUniforms(GLSLShader* mShader)
 
 bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
-	mCurrentShader = pData->FlareType.AsInt();
-
+	SetCurrentShader(pData->FlareType.AsInt());
+	
 	if (mCurrentShader < 0 || mCurrentShader >= NUMBER_OF_SHADERS)
 	{
 		mCurrentShader = 0;
@@ -128,7 +128,7 @@ bool PostEffectLensFlare::CollectUIValues(PostPersistentData *pData, PostEffectC
 	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, GetShaderPtr(), pData, effectContext);
 }
 
-bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSLShader* mShader, PostPersistentData *pData, PostEffectContext& effectContext)
+bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSLShaderProgram* mShader, PostPersistentData *pData, PostEffectContext& effectContext)
 {
 	m_NumberOfPasses = 1;
 	bool lSuccess = false;
@@ -273,7 +273,7 @@ void PostEffectLensFlare::SubShader::ProcessSingleLight(PostPersistentData* pDat
 	m_LightAlpha[index] = alpha;
 }
 
-void PostEffectLensFlare::SubShader::UpdateShaderUniforms(GLSLShader* mShader, PostPersistentData* pData, int w, int h,
+void PostEffectLensFlare::SubShader::UpdateShaderUniforms(GLSLShaderProgram* mShader, PostPersistentData* pData, int w, int h,
 	double seedValue, double flareAmount, double flareTimer, double* flarePos,
 	FBColor& flareTint, double flareInner, double flareOuter, float fadeToBordersValue, double borderWidthValue, double featherValue)
 {
@@ -303,7 +303,7 @@ bool PostEffectLensFlare::PrepPass(const int pass)
 	return subShaders[mCurrentShader].PrepPass(GetShaderPtr(), pass);
 }
 
-bool PostEffectLensFlare::SubShader::PrepPass(GLSLShader* mShader, const int pass)
+bool PostEffectLensFlare::SubShader::PrepPass(GLSLShaderProgram* mShader, const int pass)
 {
 	// shader must be binded
 	if (light_pos >= 0 && pass < static_cast<int>(m_LightPositions.size()))

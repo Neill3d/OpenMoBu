@@ -960,7 +960,7 @@ PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shade
 			throw std::exception("failed to allocate memory for the shader");
 		}
 
-		for (int i = 0; i < newEffect->GetNumberOfShaders(); ++i)
+		for (int i = 0; i < newEffect->GetNumberOfVariations(); ++i)
 		{
 			FBString vertex_path(shadersLocation, newEffect->GetVertexFname(i));
 			FBString fragment_path(shadersLocation, newEffect->GetFragmentFname(i));
@@ -1050,7 +1050,7 @@ bool PostEffectChain::LoadShaders()
 		//
 		// DEPTH LINEARIZE
 
-		std::unique_ptr<GLSLShader> pNewShader(new GLSLShader);
+		std::unique_ptr<GLSLShaderProgram> pNewShader(new GLSLShaderProgram);
 
 		FBString vertex_path(shadersPath, SHADER_DEPTH_LINEARIZE_VERTEX);
 		FBString fragment_path(shadersPath, SHADER_DEPTH_LINEARIZE_FRAGMENT);
@@ -1075,7 +1075,7 @@ bool PostEffectChain::LoadShaders()
 		//
 		// BLUR (for SSAO)
 
-		pNewShader.reset(new GLSLShader);
+		pNewShader.reset(new GLSLShaderProgram);
 
 		vertex_path = FBString(shadersPath, SHADER_BLUR_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_BLUR_FRAGMENT);
@@ -1105,7 +1105,7 @@ bool PostEffectChain::LoadShaders()
 		//
 		// IMAGE BLUR
 
-		pNewShader.reset(new GLSLShader);
+		pNewShader.reset(new GLSLShaderProgram);
 
 		vertex_path = FBString(shadersPath, SHADER_IMAGE_BLUR_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_IMAGE_BLUR_FRAGMENT);
@@ -1131,7 +1131,7 @@ bool PostEffectChain::LoadShaders()
 		//
 		// MIX
 
-		pNewShader.reset(new GLSLShader);
+		pNewShader.reset(new GLSLShaderProgram);
 
 		vertex_path = FBString(shadersPath, SHADER_MIX_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_MIX_FRAGMENT);
@@ -1158,7 +1158,7 @@ bool PostEffectChain::LoadShaders()
 		//
 		// DOWNSCALE
 
-		pNewShader.reset(new GLSLShader);
+		pNewShader.reset(new GLSLShaderProgram);
 
 		vertex_path = FBString(shadersPath, SHADER_DOWNSCALE_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_DOWNSCALE_FRAGMENT);
@@ -1182,7 +1182,7 @@ bool PostEffectChain::LoadShaders()
 		//
 		// SCENE MASKED
 
-		pNewShader.reset(new GLSLShader);
+		pNewShader.reset(new GLSLShaderProgram);
 
 		vertex_path = FBString(shadersPath, SHADER_SCENE_MASKED_VERTEX);
 		fragment_path = FBString(shadersPath, SHADER_SCENE_MASKED_FRAGMENT);

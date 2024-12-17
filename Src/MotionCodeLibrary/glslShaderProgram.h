@@ -17,7 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 ///
 /// profile for GLSL, OpenGL 2.0+
 ///
-class GLSLShader
+class GLSLShaderProgram
 {
 	/// vertex shader handle
 	GLhandleARB     vertex{ 0 };
@@ -38,9 +38,9 @@ public:
 
 	static bool PRINT_WARNINGS;
 
-  GLSLShader();
+  GLSLShaderProgram();
   void Free();
-  virtual ~GLSLShader() {
+  virtual ~GLSLShaderProgram() {
       Free();
   }
 

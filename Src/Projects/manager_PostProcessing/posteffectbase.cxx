@@ -43,7 +43,7 @@ void PostEffectBase::FreeShaders()
 	mShaders.clear();
 }
 
-void CommonEffectUniforms::PrepareUniformLocations(GLSLShader* shader)
+void CommonEffectUniforms::PrepareUniformLocations(GLSLShaderProgram* shader)
 {
 	const GLint loc = shader->findLocation("maskSampler");
 	if (loc >= 0)
@@ -82,7 +82,7 @@ bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *
 	}
 
 	bool lSuccess = true;
-	GLSLShader* shader = new GLSLShader();
+	GLSLShaderProgram* shader = new GLSLShaderProgram();
 
 	try
 	{
@@ -153,6 +153,6 @@ void PostEffectBase::UnBind()
 	}
 }
 
-GLSLShader *PostEffectBase::GetShaderPtr() {
+GLSLShaderProgram *PostEffectBase::GetShaderPtr() {
 	return mShaders[mCurrentShader];
 }

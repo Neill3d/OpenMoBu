@@ -51,7 +51,7 @@ const char* PostEffectFishEye::GetFragmentFname(const int shaderIndex) const
 
 bool PostEffectFishEye::PrepUniforms(const int shaderIndex)
 {
-	GLSLShader* shader = mShaders[shaderIndex];
+	GLSLShaderProgram* shader = mShaders[shaderIndex];
 	if (!shader)
 		return false;
 
@@ -76,7 +76,7 @@ bool PostEffectFishEye::CollectUIValues(PostPersistentData* pData, PostEffectCon
 	const double lensradius = pData->FishEyeLensRadius;
 	const double signcurvature = pData->FishEyeSignCurvature;
 
-	GLSLShader* shader = GetShaderPtr();
+	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
 		return false;
 

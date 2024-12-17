@@ -480,14 +480,14 @@ bool CompositeShaderManagerImpl::CheckAndLoadShader( const ECompositeShader shad
 	return (nullptr != GetShaderPtr(shader, useMask));
 }
 
-const GLSLShader* CompositeShaderManagerImpl::GetShaderPtr( const ECompositeShader shader, const bool useMask )
+const GLSLShaderProgram* CompositeShaderManagerImpl::GetShaderPtr( const ECompositeShader shader, const bool useMask )
 {
 	const int32_t shaderIndex = static_cast<int32_t>(shader);
 
 	if (shaderIndex < 0 || shaderIndex >= ECompositeShader::eCompositeShaderCount)
 		return nullptr;
 
-	GLSLShader* pShader = nullptr;
+	GLSLShaderProgram* pShader = nullptr;
 
 	if (useMask)
 	{
@@ -503,7 +503,7 @@ const GLSLShader* CompositeShaderManagerImpl::GetShaderPtr( const ECompositeShad
 	{
 		UnLoadShader(shader, useMask);
 
-		pShader = new GLSLShader();
+		pShader = new GLSLShaderProgram();
 		ShaderBaseLocations *pLocations = CreateShaderLocations(shader);
 		mShaderUseMask[shaderIndex] = useMask;
 
@@ -551,7 +551,7 @@ const ShaderBaseLocations *CompositeShaderManagerImpl::GetShaderLocationsPtr( co
 
 GLhandleARB CompositeShaderManagerImpl::GetVertexShader()
 {
-	const GLSLShader *pShader = GetShaderPtr( eCompositeShaderBlit, mShaderUseMask[eCompositeShaderBlit] );
+	const GLSLShaderProgram *pShader = GetShaderPtr( eCompositeShaderBlit, mShaderUseMask[eCompositeShaderBlit] );
 	if (pShader)
 	{
 		return pShader->GetVertexShader();
@@ -562,7 +562,7 @@ GLhandleARB CompositeShaderManagerImpl::GetVertexShader()
 
 bool CompositeShaderManagerImpl::Bind( const ECompositeShader shader, const bool useMask )
 {
-	mShader = const_cast<GLSLShader*>(GetShaderPtr( shader, useMask ));
+	mShader = const_cast<GLSLShaderProgram*>(GetShaderPtr( shader, useMask ));
 	mLocations = const_cast<ShaderBaseLocations*>(GetShaderLocationsPtr( shader, useMask ));
 
 	if (mShader)
@@ -864,7 +864,7 @@ void CompositeShaderManagerImpl::SetSSAOUniforms(	const int	_numberOfSamples,
 	}
 }
 
-bool CompositeShaderManagerImpl::InitShader(const char *vertex_filename, const char *fragment_filename, GLSLShader *&pShader, ShaderBaseLocations *&pLocations, bool useMask)
+bool CompositeShaderManagerImpl::InitShader(const char *vertex_filename, const char *fragment_filename, GLSLShaderProgram *&pShader, ShaderBaseLocations *&pLocations, bool useMask)
 {
 	if (pShader == nullptr || pLocations == nullptr)
 		return false;
@@ -908,7 +908,7 @@ bool CompositeShaderManagerImpl::InitShader(const char *vertex_filename, const c
 	return result;
 }
 
-void CompositeShaderManagerImpl::FreeShader(GLSLShader *&pShader, ShaderBaseLocations *&pLocations)
+void CompositeShaderManagerImpl::FreeShader(GLSLShaderProgram *&pShader, ShaderBaseLocations *&pLocations)
 {
 	if (pShader)
 	{

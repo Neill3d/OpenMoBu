@@ -19,7 +19,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "graphics_framebuffer.h"
 #include "postpersistentdata.h"
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
 //#include "WGLFONT.h"

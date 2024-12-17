@@ -50,7 +50,7 @@ const char* PostEffectColor::GetFragmentFname(const int) const
 
 bool PostEffectColor::PrepUniforms(const int shaderIndex)
 {
-	GLSLShader* shader = mShaders[shaderIndex];
+	GLSLShaderProgram* shader = mShaders[shaderIndex];
 	if (!shader)
 		return false;
 
@@ -88,7 +88,7 @@ bool PostEffectColor::CollectUIValues(PostPersistentData* pData, PostEffectConte
 	double hueSat = 0.01 * pData->HueSaturation;
 	double lightness = 0.01 * pData->Lightness;
 
-	GLSLShader* mShader = GetShaderPtr();
+	GLSLShaderProgram* mShader = GetShaderPtr();
 	if (!mShader)
 		return false;
 

@@ -28,7 +28,7 @@ public:
 	//! a destructor
 	virtual ~PostEffectDisplacement();
 
-	int GetNumberOfShaders() const override { return 1; }
+	int GetNumberOfVariations() const override { return 1; }
 
 	const char *GetName() const override;
 	const char *GetVertexFname(const int shaderIndex) const override;

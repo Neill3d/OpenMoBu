@@ -30,7 +30,7 @@ public:
 	//! a destructor
 	virtual ~PostEffectVignetting();
 
-	int GetNumberOfShaders() const override { return 1; }
+	int GetNumberOfVariations() const override { return 1; }
 
 	virtual const char* GetName() const override;
 	virtual const char* GetVertexFname(const int shaderIndex) const override;

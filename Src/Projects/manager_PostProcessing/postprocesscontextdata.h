@@ -20,7 +20,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "graphics_framebuffer.h"
 #include "postpersistentdata.h"
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
 //#include "WGLFONT.h"
@@ -61,7 +61,7 @@ public:
 	//
 	MainFrameBuffer						mMainFrameBuffer;
 
-	std::unique_ptr<GLSLShader>			mShaderSimple;	//!< for simple blit quads on a screen
+	std::unique_ptr<GLSLShaderProgram>			mShaderSimple;	//!< for simple blit quads on a screen
 
 	PostEffectChain						mEffectChain;
 

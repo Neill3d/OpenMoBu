@@ -119,7 +119,7 @@ bool ColorsRendererCallback::LoadShader()
 {
 	FreeShader();
 
-	mColorShader.reset(new GLSLShader());
+	mColorShader.reset(new GLSLShaderProgram());
 
 	const FBString fragment_filename( "\\GLSL\\renderer_colorRamp.fsh" );
 	const FBString vertex_filename( "\\GLSL\\renderer_colorRamp.vsh" );

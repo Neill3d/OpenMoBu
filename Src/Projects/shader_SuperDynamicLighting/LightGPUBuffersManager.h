@@ -9,7 +9,7 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "SuperShader_glsl.h"
 #include "GPUBuffer.h"
 

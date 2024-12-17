@@ -9,7 +9,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include <stdio.h>
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "CheckGLError.h"
 #include "FileUtils.h"
 
@@ -20,13 +20,13 @@ extern void LOGE(const char* pFormatString, ...);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                            GLSLShader
 
-bool GLSLShader::PRINT_WARNINGS = true;
+bool GLSLShaderProgram::PRINT_WARNINGS = true;
 
-GLSLShader::GLSLShader() 
+GLSLShaderProgram::GLSLShaderProgram() 
 {}
 
 
-bool GLSLShader::ReCompileShaders( const char* vertex_file, const char* fragment_file )
+bool GLSLShaderProgram::ReCompileShaders( const char* vertex_file, const char* fragment_file )
 {	
 	FileReadScope readFragment(fragment_file);
 
@@ -72,7 +72,7 @@ bool GLSLShader::ReCompileShaders( const char* vertex_file, const char* fragment
 	return false;
 }
 
-bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file )
+bool GLSLShaderProgram::LoadShaders( const char* vertex_file, const char* fragment_file )
 {
 	Free();
 
@@ -135,7 +135,7 @@ bool GLSLShader::LoadShaders( const char* vertex_file, const char* fragment_file
 	return false;
 }
 
-bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
+bool GLSLShaderProgram::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 {
 	Free();
 
@@ -190,7 +190,7 @@ bool GLSLShader::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
 	return false;
 }
 
-bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file, const char* debugName )
+bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, const char* debugName )
 {
 	const size_t headerLen = strlen(mHeaderText); // number of bytes in header
 
@@ -239,7 +239,7 @@ bool GLSLShader::LoadShader( GLhandleARB shader, FILE *file, const char* debugNa
 	return (compileStatus != GL_FALSE);
 }
 
-bool GLSLShader::LoadLog( GLhandleARB object, const char* debugName ) const
+bool GLSLShaderProgram::LoadLog( GLhandleARB object, const char* debugName ) const
 {
 	constexpr int STACK_BUFFER_SIZE{ 2048 };
 
@@ -286,19 +286,19 @@ bool GLSLShader::LoadLog( GLhandleARB object, const char* debugName ) const
 	return status;
 }
 
-void GLSLShader::Bind() const
+void GLSLShaderProgram::Bind() const
 {
   if (programObj)
     glUseProgramObjectARB( programObj );
 }
 
-void GLSLShader::UnBind() const
+void GLSLShaderProgram::UnBind() const
 {
   glUseProgramObjectARB( 0 );
 }
 
 
-void GLSLShader::Free()
+void GLSLShaderProgram::Free()
 {
   if (programObj) glDeleteObjectARB( programObj );
   if (vertex)     glDeleteObjectARB( vertex );
@@ -309,14 +309,14 @@ void GLSLShader::Free()
   fragment = 0;
 }
 
-GLint GLSLShader::findLocation( const char *name ) const
+GLint GLSLShaderProgram::findLocation( const char *name ) const
 {
 	if (!programObj) return -1;
 	int loc = glGetUniformLocationARB( programObj, name );
 	return loc;
 }
 
-bool GLSLShader::setUniformUINT( const char *name, const GLint value )
+bool GLSLShaderProgram::setUniformUINT( const char *name, const GLint value )
 {
   if (!programObj) return false;
   int loc = glGetUniformLocationARB( programObj, name );
@@ -327,7 +327,7 @@ bool GLSLShader::setUniformUINT( const char *name, const GLint value )
   return true;
 }
 
-bool GLSLShader::setUniformFloat( const char *name, const float value )
+bool GLSLShaderProgram::setUniformFloat( const char *name, const float value )
 {
   if (!programObj) return false;
   int loc = glGetUniformLocationARB( programObj, name );
@@ -338,7 +338,7 @@ bool GLSLShader::setUniformFloat( const char *name, const float value )
   return true;
 }
 
-bool GLSLShader::setUniformVector( const char *name, const float x, const float y, const float z, const float w )
+bool GLSLShaderProgram::setUniformVector( const char *name, const float x, const float y, const float z, const float w )
 {
   if (!programObj) return false;
   int loc = glGetUniformLocationARB( programObj, name );
@@ -349,7 +349,7 @@ bool GLSLShader::setUniformVector( const char *name, const float x, const float 
   return true;
 }
 
-bool GLSLShader::setUniformVector3f(const char* name, const float x, const float y, const float z)
+bool GLSLShaderProgram::setUniformVector3f(const char* name, const float x, const float y, const float z)
 {
 	if (!programObj) return false;
 	int loc = glGetUniformLocationARB(programObj, name);
@@ -360,7 +360,7 @@ bool GLSLShader::setUniformVector3f(const char* name, const float x, const float
 	return true;
 }
 
-bool GLSLShader::setUniformVector2f( const char *name, const float x, const float y )
+bool GLSLShaderProgram::setUniformVector2f( const char *name, const float x, const float y )
 {
   if (!programObj) return false;
   int loc = glGetUniformLocationARB( programObj, name );
@@ -372,7 +372,7 @@ bool GLSLShader::setUniformVector2f( const char *name, const float x, const floa
 }
 
 
-bool GLSLShader::setUniformMatrix33( const char *name, const float *m )
+bool GLSLShaderProgram::setUniformMatrix33( const char *name, const float *m )
 {
   if (!programObj) return false;
   int loc = glGetUniformLocationARB( programObj, name );
@@ -383,7 +383,7 @@ bool GLSLShader::setUniformMatrix33( const char *name, const float *m )
   return true;
 }
 
-bool GLSLShader::setUniformMatrix( const char *name, const float *m )
+bool GLSLShaderProgram::setUniformMatrix( const char *name, const float *m )
 {
   if (!programObj) return false;
   int loc = glGetUniformLocationARB( programObj, name );
@@ -396,32 +396,32 @@ bool GLSLShader::setUniformMatrix( const char *name, const float *m )
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-void GLSLShader::setUniformUINT( const GLint location, const GLint value )
+void GLSLShaderProgram::setUniformUINT( const GLint location, const GLint value )
 {
 	glUniform1iARB( location, value );
 }
 
-void GLSLShader::setUniformFloat( const GLint location, const float value )
+void GLSLShaderProgram::setUniformFloat( const GLint location, const float value )
 {
 	glUniform1fARB( location, value );
 }
 
-void GLSLShader::setUniformVector( const GLint location, const float x, const float y, const float z, const float w )
+void GLSLShaderProgram::setUniformVector( const GLint location, const float x, const float y, const float z, const float w )
 {
 	glUniform4fARB( location, x, y, z ,w );
 }
 
-void GLSLShader::setUniformVector2f( const GLint location, const float x, const float y )
+void GLSLShaderProgram::setUniformVector2f( const GLint location, const float x, const float y )
 {
 	glUniform2fARB( location, x, y );
 }
 
-void GLSLShader::setUniformMatrix33( const GLint location, const float *m )
+void GLSLShaderProgram::setUniformMatrix33( const GLint location, const float *m )
 {
 	glUniformMatrix3fvARB( location, 1, GL_FALSE, m );
 }
 
-void GLSLShader::setUniformMatrix( const GLint location, const float *m, bool doTranspose )
+void GLSLShaderProgram::setUniformMatrix( const GLint location, const float *m, bool doTranspose )
 {
 	glUniformMatrix4fvARB( location, 1, (doTranspose) ? GL_TRUE : GL_FALSE, m );
 }

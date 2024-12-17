@@ -48,7 +48,7 @@ const char *PostEffectDOF::GetFragmentFname(const int) const
 
 bool PostEffectDOF::PrepUniforms(const int shaderIndex)
 {
-	GLSLShader* mShader = mShaders[shaderIndex];
+	GLSLShaderProgram* mShader = mShaders[shaderIndex];
 	if (!mShader)
 		return false;
 
@@ -190,7 +190,7 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, PostEffectContext
 		_focalDistance = dist;
 	}
 
-	GLSLShader* mShader = GetShaderPtr();
+	GLSLShaderProgram* mShader = GetShaderPtr();
 	if (!mShader)
 		return false;
 	

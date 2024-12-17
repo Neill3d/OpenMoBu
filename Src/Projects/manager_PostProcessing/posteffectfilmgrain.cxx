@@ -48,7 +48,7 @@ const char* PostEffectFilmGrain::GetFragmentFname(const int) const
 
 bool PostEffectFilmGrain::PrepUniforms(const int shaderIndex)
 {
-	GLSLShader* mShader = mShaders[shaderIndex];
+	GLSLShaderProgram* mShader = mShaders[shaderIndex];
 	if (!mShader)
 		return false;
 
@@ -87,7 +87,7 @@ bool PostEffectFilmGrain::CollectUIValues(PostPersistentData* pData, PostEffectC
 	const double _grainsize = pData->FG_GrainSize;
 	const double _lumamount = pData->FG_LumAmount;
 
-	GLSLShader* mShader = GetShaderPtr();
+	GLSLShaderProgram* mShader = GetShaderPtr();
 	if (!mShader)
 		return false;
 

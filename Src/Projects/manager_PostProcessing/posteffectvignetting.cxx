@@ -48,7 +48,7 @@ const char* PostEffectVignetting::GetFragmentFname(const int) const
 
 bool PostEffectVignetting::PrepUniforms(const int shaderIndex)
 {
-	GLSLShader* mShader = mShaders[shaderIndex];
+	GLSLShaderProgram* mShader = mShaders[shaderIndex];
 	if (!mShader)
 		return false;
 
@@ -76,7 +76,7 @@ bool PostEffectVignetting::CollectUIValues(PostPersistentData* pData, PostEffect
 	const double vignin = pData->VignIn;
 	const double vignfade = pData->VignFade;
 
-	GLSLShader* mShader = GetShaderPtr();
+	GLSLShaderProgram* mShader = GetShaderPtr();
 
 	if (!mShader)
 		return false;

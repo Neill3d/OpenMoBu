@@ -30,7 +30,7 @@ public:
 	//! a destructor
 	virtual ~PostEffectLensFlare();
 
-	int GetNumberOfShaders() const override { return NUMBER_OF_SHADERS; }
+	int GetNumberOfVariations() const override { return NUMBER_OF_SHADERS; }
 
 	const char *GetName() const override;
 	const char *GetVertexFname(const int shaderIndex) const override;
@@ -96,16 +96,16 @@ protected:
 		const char* GetEnableMaskPropertyName() const override { return "Flare Use Masking"; }
 
 		void Init();
-		bool PrepUniforms(GLSLShader* mShader);
-		bool CollectUIValues(const int shaderIndex, GLSLShader* mShader, PostPersistentData *pData, PostEffectContext& effectContext);
-		bool PrepPass(GLSLShader* mShader, const int pass);
+		bool PrepUniforms(GLSLShaderProgram* mShader);
+		bool CollectUIValues(const int shaderIndex, GLSLShaderProgram* mShader, PostPersistentData *pData, PostEffectContext& effectContext);
+		bool PrepPass(GLSLShaderProgram* mShader, const int pass);
 
 	private:
 		void ProcessLightObjects(PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
 
 		void ProcessSingleLight(PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
 
-		void UpdateShaderUniforms(GLSLShader* mShader, PostPersistentData* pData, int w, int h, 
+		void UpdateShaderUniforms(GLSLShaderProgram* mShader, PostPersistentData* pData, int w, int h, 
 			double seedValue, double flareAmount, double flareTimer, double* flarePos, 
 			FBColor& flareTint, double flareInner, double flareOuter, float fadeToBordersValue, 
 			double borderWidthValue, double featherValue);

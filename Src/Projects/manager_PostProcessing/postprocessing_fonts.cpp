@@ -37,7 +37,7 @@ typedef struct {
 } vertex_t;
 
 
-GLSLShader* CFont::g_glslShader = nullptr;
+GLSLShaderProgram* CFont::g_glslShader = nullptr;
 int CFont::g_shaderCounter = 0;
 
 ////////////////////////////////////////////////////////////////////////////
@@ -267,7 +267,7 @@ bool CFont::Display()
 			FBString vert(path, SHADER_VERTEX);
 			FBString frag(path, SHADER_FRAGMENT);
 
-			g_glslShader = new GLSLShader;
+			g_glslShader = new GLSLShaderProgram;
 			g_glslShader->LoadShaders(vert, frag);
 		}
 	}

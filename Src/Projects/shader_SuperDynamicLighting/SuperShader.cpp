@@ -266,7 +266,7 @@ namespace Graphics {
 			//
 			// BufferId Shader
 
-			std::unique_ptr<GLSLShader> shader = std::make_unique<GLSLShader>();
+			std::unique_ptr<GLSLShaderProgram> shader = std::make_unique<GLSLShaderProgram>();
 
 			const FBString vertex_path(path, SHADER_BUFFERID_VERTEX);
 			const FBString fragment_path(path, SHADER_BUFFERID_FRAGMENT);
@@ -295,7 +295,7 @@ namespace Graphics {
 			//
 			// Phong Shading Shader
 
-			std::unique_ptr<GLSLShader> shader = std::make_unique<GLSLShader>();
+			std::unique_ptr<GLSLShaderProgram> shader = std::make_unique<GLSLShaderProgram>();
 
 			const FBString vertex_path = FBString(path, SHADER_SHADING_VERTEX);
 			const FBString fragment_path = FBString(path, SHADER_SHADING_FRAGMENT);

@@ -347,7 +347,7 @@ void ORTextureParamBlend::TextureLayerComposition(FBTime pTime,FBTime pTimeInCur
 		//
 		// draw quad with a shader
 
-		GLSLShader *pShader=mShaders[SpriteOrder];
+		GLSLShaderProgram *pShader=mShaders[SpriteOrder];
 		Locations &loc = mLocations[SpriteOrder];
 		pShader->Bind();
 
@@ -443,7 +443,7 @@ bool ORTextureParamBlend::InitShaders()
 		
 		for (int i=0; i<TOTAL_NUMBER_OF_SPRITE_SHADERS; ++i)
 		{
-			mShaders[i] = new GLSLShader();
+			mShaders[i] = new GLSLShaderProgram();
 
 			if (false == mShaders[i]->LoadShaders( FBString(buffer, gBlendVertexShaders[i]), FBString(buffer, gBlendFragmentShaders[i]) ) )
 				throw std::exception( "Failed to load shader" );
@@ -466,7 +466,7 @@ bool ORTextureParamBlend::InitShaders()
 	return result;
 }
 
-bool ORTextureParamBlend::InitLocations(const GLSLShader *shader, Locations &locations)
+bool ORTextureParamBlend::InitLocations(const GLSLShaderProgram *shader, Locations &locations)
 {
 	if (shader)
 	{
