@@ -827,38 +827,38 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 				glActiveTexture(GL_TEXTURE0);
 			}
 
-			mChain[i]->Bind();
-
-			for (int j = 0; j < mChain[i]->GetNumberOfPasses(); ++j)
 			{
-				mChain[i]->PrepPass(j);
+				ScopedEffectBind effectBind(mChain[i]);
 
-				texid = buffers->GetSrcBufferPtr()->GetColorObject();
-				glBindTexture(GL_TEXTURE_2D, texid);
-
-				if (generateMips)
+				for (int j = 0; j < mChain[i]->GetNumberOfPasses(); ++j)
 				{
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+					mChain[i]->PrepPass(j);
+
+					texid = buffers->GetSrcBufferPtr()->GetColorObject();
+					glBindTexture(GL_TEXTURE_2D, texid);
+
+					if (generateMips)
+					{
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+					}
+					else
+					{
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					}
+
+					buffers->GetDstBufferPtr()->Bind();
+
+					drawOrthoQuad2d(w, h);
+
+					buffers->GetDstBufferPtr()->UnBind(generateMips);
+
+					//
+					buffers->SwapBuffers();
 				}
-				else
-				{
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				}
-
-				buffers->GetDstBufferPtr()->Bind();
-
-				drawOrthoQuad2d(w, h);
-
-				buffers->GetDstBufferPtr()->UnBind(generateMips);
-
-				//
-				buffers->SwapBuffers();
 			}
-
-			mChain[i]->UnBind();
-
+			
 			// 7. blur effect if applied
 
 			// if we need more passes, blur and mix for SSAO or Bloom (Color Correction)

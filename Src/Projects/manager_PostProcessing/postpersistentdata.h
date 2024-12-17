@@ -40,7 +40,7 @@ enum EPostAction
 };
 
 /// <summary>
-/// This class will make sure that the data related to the tool is persistent.
+/// This class will make sure that the data related to the post processing is persistent.
 /// </summary>
 class PostPersistentData : public FBUserObject 
 {

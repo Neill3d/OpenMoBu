@@ -22,6 +22,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 // forward
 class PostEffectBuffers;
 class PostPersistentData;
+class ScopedEffectBind;
 
 namespace FBSDKNamespace
 {
@@ -132,11 +133,6 @@ public:
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass);
 
-	//! bind effect shader program
-	virtual void Bind();
-	//! unbind effect shader program
-	virtual void UnBind();
-
 	//! get a pointer to a current shader program
 	GLSLShaderProgram *GetShaderPtr();
 
@@ -155,4 +151,19 @@ protected:
  	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();
 
+	//! bind effect shader program
+	virtual void Bind();
+	//! unbind effect shader program
+	virtual void UnBind();
+
+	friend class ScopedEffectBind;
+};
+
+
+class ScopedEffectBind {
+public:
+	ScopedEffectBind(PostEffectBase* effect) : mEffect(effect) { mEffect->Bind(); }
+	~ScopedEffectBind() { mEffect->UnBind(); }
+private:
+	PostEffectBase* mEffect;
 };

@@ -38,6 +38,9 @@ FBLibraryDeclare( manager_postprocessing )
 	FBLibraryRegister(PostPersistentData);
 	FBLibraryRegisterElement(PostPersistentData);
 
+	FBLibraryRegister(PostEffectUserObject);
+	FBLibraryRegisterElement(PostEffectUserObject);
+
 	FBLibraryRegister(ORManip_Template);
 	//FBLibraryRegisterStorable(ORHUDElementCustom);
 
