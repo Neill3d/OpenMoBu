@@ -195,7 +195,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
                 // 1. blit part of a main screen
                 const GLuint postBufferObj = currBuffers->PrepAndGetBufferObject();
 
-                if (false == mMainFrameBuffer.isFboAttached())
+                if (!mMainFrameBuffer.isFboAttached())
                 {
                     BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
                         postBufferObj, 0, 0, localViewport[2], localViewport[3], true, false, false, false);
@@ -290,8 +290,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
         // DONE: draw a resulted rect
         // render background
-        if (false == mMainFrameBuffer.isFboAttached()
-            && nullptr != mShaderSimple.get())
+        if (!mMainFrameBuffer.isFboAttached() && mShaderSimple.get())
         {
             mShaderSimple->Bind();
 
@@ -481,10 +480,8 @@ void PostProcessContextData::PreRenderFirstEntry()
         mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
     else
         mMainFrameBuffer.DetachFBO();
-    /*
-    CHECK_GL_ERROR();
-
-    if (mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
+    
+    if (mAttachedFBO[mEnterId] == 0 && mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
     {
         mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
 
@@ -496,7 +493,6 @@ void PostProcessContextData::PreRenderFirstEntry()
 
         CHECK_GL_ERROR();
     }
-    */
 }
 
 const bool PostProcessContextData::CheckShadersPath(const char* path) const
