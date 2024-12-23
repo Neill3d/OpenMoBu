@@ -18,12 +18,45 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "glslShaderProgram.h"
 #include <string>
 #include <unordered_map>
+
+/*
+ system postfix for uniforms
+
+ uniform float with
+ _slider - double value with a range [0; 100]
+ _flag - bool checkbox casted to float [0; 1]
+
+ vec3
+ _color - color RGB picker
+
+ vec4
+ _color - color RGBA picker
+
+*/
+
 //--- Registration define
 
 #define POSTEFFECT_USEROBJECT__CLASSSTR	"PostEffectUserObject"
 
 // forward
 class PostEffectUserObject;
+
+
+enum class ShaderSystemUniform
+{
+	INPUT_COLOR_SAMPLER_2D, //!< this is an input image that we read from
+	INPUT_DEPTH_SAMPLER_2D, //!< this is a scene depth texture sampler in case shader will need it for processing
+	INPUT_MASK_SAMPLER_2D, //!< binded mask for a shader processing
+
+	USE_MASKING, //!< float uniform [0; 1] to define if the mask have to be used
+	UPPER_CLIP, //!< this is an upper clip image level. defined in a texture coord space to skip processing
+	LOWER_CLIP, //!< this is a lower clip image level. defined in a texture coord space to skip processing
+
+	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
+	COUNT
+};
+
+
 
 class PostUserEffect : public PostEffectBase
 {
@@ -128,16 +161,20 @@ protected:
 
 	struct ShaderProperty
 	{
-
 		GLchar uniformName[256];
 		GLsizei length;
 		GLint size;
 		GLenum type;
 
-		FBProperty* property; //!< property associated with the given shader uniform
+		GLint location{ -1 };
+		FBProperty* property{ nullptr }; //!< property associated with the given shader uniform
 	};
 
 	std::unordered_map<std::string, ShaderProperty> mShaderProperties;
+
+	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
+	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
+
 
 	void		DefaultValues();
 	void		LoadFromConfig(const char *sessionFilter=nullptr);
@@ -145,7 +182,15 @@ protected:
 
 	void		RemoveShaderProperties();
 
+	void ResetSystemUniformLocations();
 	void		CheckUniforms();
+
+	int IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
+
+	FBProperty* MakePropertyFloat(const ShaderProperty& prop);
+	FBProperty* MakePropertyVec2(const ShaderProperty& prop);
+	FBProperty* MakePropertyVec3(const ShaderProperty& prop);
+	FBProperty* MakePropertyVec4(const ShaderProperty& prop);
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
 

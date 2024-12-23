@@ -49,6 +49,19 @@ PostEffectFBElementClassImplementation(PostEffectUserObject, "Post Effect", "cam
 ////////////////////////////////////////////////////////////////////////////////
 //
 
+const char* PostEffectUserObject::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
+{
+	"inputSampler", //!< this is an input image that we read from
+	"depthSampler", //!< this is a scene depth texture sampler in case shader will need it for processing
+	"maskSampler", //!< binded mask for a shader processing
+
+	"useMasking", //!< float uniform [0; 1] to define if the mask have to be used
+	"upperClip", //!< this is an upper clip image level. defined in a texture coord space to skip processing
+	"lowerClip", //!< this is a lower clip image level. defined in a texture coord space to skip processing
+
+	"gResolution", //!< vec2 that contains processing absolute resolution, like 1920x1080
+};
+
 /************************************************
  *  Constructor.
  ************************************************/
@@ -130,9 +143,117 @@ void PostEffectUserObject::RemoveShaderProperties()
 	mShaderProperties.clear();
 }
 
+// use uniformName to track down some type casts
+FBPropertyType UniformTypeToFBPropertyType(GLenum type, const char* uniformName)
+{
+	switch (type)
+	{
+	case GL_FLOAT:
+		return (strstr(uniformName, "_flag") != nullptr) ? FBPropertyType::kFBPT_bool : FBPropertyType::kFBPT_double;
+	case GL_INT:
+		return FBPropertyType::kFBPT_int;
+	case GL_BOOL:
+		return FBPropertyType::kFBPT_bool;
+	case GL_FLOAT_VEC2:
+		return FBPropertyType::kFBPT_Vector2D;
+	case GL_FLOAT_VEC3:
+		return (strstr(uniformName, "_color") != nullptr) ? FBPropertyType::kFBPT_ColorRGB : FBPropertyType::kFBPT_Vector3D;
+	case GL_FLOAT_VEC4:
+		return (strstr(uniformName, "_color") != nullptr) ? FBPropertyType::kFBPT_ColorRGBA : FBPropertyType::kFBPT_Vector4D;
+	case GL_FLOAT_MAT4:
+		return FBPropertyType::kFBPT_Vector4D; // TODO:
+	case GL_SAMPLER_2D:
+		return FBPropertyType::kFBPT_object; // reference to a texture object that we could bind to a property
+	default:
+		return FBPropertyType::kFBPT_double;
+	}
+}
+
+FBProperty* PostEffectUserObject::MakePropertyFloat(const ShaderProperty& prop)
+{
+	FBProperty* newProp = nullptr;
+
+	if (strstr(prop.uniformName, "_flag") != nullptr)
+	{
+		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_bool, ANIMATIONNODE_TYPE_BOOL, true, false, nullptr);
+	}
+	else
+	{
+		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, false, nullptr);
+
+		if (strstr(prop.uniformName, "_slider") != nullptr)
+		{
+			newProp->SetMinMax(0.0, 100.0);
+		}
+	}
+	
+	PropertyAdd(newProp);
+	return newProp;
+}
+
+FBProperty* PostEffectUserObject::MakePropertyVec2(const ShaderProperty& prop)
+{
+	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+	PropertyAdd(newProp);
+	return newProp;
+}
+
+FBProperty* PostEffectUserObject::MakePropertyVec3(const ShaderProperty& prop)
+{
+	FBProperty* newProp = nullptr;
+
+	if (strstr(prop.uniformName, "_color") != nullptr)
+	{
+		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_ColorRGB, ANIMATIONNODE_TYPE_COLOR, true, false, nullptr);
+	}
+	else
+	{
+		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+	}
+
+	PropertyAdd(newProp);
+	return newProp;
+}
+
+FBProperty* PostEffectUserObject::MakePropertyVec4(const ShaderProperty& prop)
+{
+	FBProperty* newProp = nullptr;
+
+	if (strstr(prop.uniformName, "_color") != nullptr)
+	{
+		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_ColorRGBA, ANIMATIONNODE_TYPE_COLOR_RGBA, true, false, nullptr);
+	}
+	else
+	{
+		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector4D, ANIMATIONNODE_TYPE_VECTOR_4, true, false, nullptr);
+	}
+
+	PropertyAdd(newProp);
+	return newProp;
+}
+
+void PostEffectUserObject::ResetSystemUniformLocations()
+{
+	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
+	{
+		mSystemUniformLocations[i] = -1;
+	}
+}
+
+int PostEffectUserObject::IsSystemUniform(const char* uniformName)
+{
+	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
+	{
+		if (strncmp(uniformName, gSystemUniformNames[i], 256) == 0)
+			return i;
+	}
+	return -1;
+}
+
 void PostEffectUserObject::CheckUniforms()
 {
 	RemoveShaderProperties();
+	ResetSystemUniformLocations();
 
 	if (!mUserEffect || !mUserEffect->GetShaderPtr())
 		return;
@@ -146,32 +267,54 @@ void PostEffectUserObject::CheckUniforms()
 	for (GLint i = 0; i < numUniforms; ++i)
 	{
 		ShaderProperty prop;
-		prop.property = nullptr;
-
-		glGetActiveUniform(programId, i, sizeof(prop.uniformName), &prop.length, &prop.size, &prop.type, prop.uniformName);
 		
-		// base on type, make a custom property
-		if (prop.type == GL_FLOAT)
-		{
-			FBProperty* fbProperty = PropertyList.Find(prop.uniformName);
-			// NOTE: check not only user property, but also a property type !
-			if (fbProperty && fbProperty->IsUserProperty() && fbProperty->GetPropertyType() == FBPropertyType::kFBPT_double )
-			{
-				prop.property = fbProperty;
-			}
-			else
-			{
-				prop.property = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, false, nullptr);
-				PropertyAdd(prop.property);
+		glGetActiveUniform(programId, i, sizeof(prop.uniformName), &prop.length, &prop.size, &prop.type, prop.uniformName);
+		prop.location = glGetUniformLocation(programId, prop.uniformName);
 
-				if (strstr(prop.uniformName, "_slider") != nullptr)
-				{
-					prop.property->SetMinMax(0.0, 100.0);
-				}
+		// TODO: skip system properties, but track down the locations
+		const int systemUniformId = IsSystemUniform(prop.uniformName);
+		if (systemUniformId >= 0)
+		{
+			mSystemUniformLocations[systemUniformId] = prop.location;
+			continue;
+		}
+		
+		const FBPropertyType fbPropertyType = UniformTypeToFBPropertyType(prop.type, prop.uniformName);
+
+		FBProperty* fbProperty = PropertyList.Find(prop.uniformName);
+		// NOTE: check not only user property, but also a property type !
+		if (fbProperty && fbProperty->IsUserProperty() && fbProperty->GetPropertyType() == fbPropertyType)
+		{
+			prop.property = fbProperty;
+		}
+		else
+		{
+			// base on type, make a custom property
+			prop.property = nullptr;
+
+			switch (prop.type)
+			{
+			case GL_FLOAT:
+				prop.property = MakePropertyFloat(prop);
+				break;
+			case GL_FLOAT_VEC2:
+				prop.property = MakePropertyVec2(prop);
+				break;
+			case GL_FLOAT_VEC3:
+				prop.property = MakePropertyVec3(prop);
+				break;
+			case GL_FLOAT_VEC4:
+				prop.property = MakePropertyVec4(prop);
+				break;
+			default:
+				LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.uniformName);
 			}
 		}
 
-		mShaderProperties.emplace(prop.uniformName, prop);
+		if (prop.property != nullptr)
+		{
+			mShaderProperties.emplace(prop.uniformName, prop);
+		}
 	}
 }
 
@@ -242,17 +385,49 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 
+	FBVector4d v;
+
 	shader->Bind();
+
+	// TODO: setup system uniforms
+	// TODO:
+	//
+	// 
+	// 
+	// setup user uniforms
 
 	for (auto& prop : mUserObject->mShaderProperties)
 	{
 		if (prop.second.type == GL_FLOAT)
 		{
-			double value = 0.0;
-			prop.second.property->GetData(&value, sizeof(double));
+			prop.second.property->GetData(v, sizeof(double));
 
 			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
-			glUniform1f(loc, static_cast<float>(value));
+			glUniform1f(loc, static_cast<float>(v[0]));
+		}
+		else if (prop.second.type == GL_FLOAT_VEC2)
+		{
+			prop.second.property->GetData(v, sizeof(double) * 2);
+
+			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+			const float fValues[2] = { static_cast<float>(v[0]), static_cast<float>(v[1]) };
+			glUniform2fv(loc, 1, fValues);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC3)
+		{
+			prop.second.property->GetData(v, sizeof(double) * 3);
+
+			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+			const float fValues[3] = { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]) };
+			glUniform3fv(loc, 1, fValues);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC4)
+		{
+			prop.second.property->GetData(v, sizeof(double) * 4);
+
+			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+			const float fValues[4] = { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) };
+			glUniform4fv(loc, 1, fValues);
 		}
 	}
 
