@@ -14,6 +14,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <vector>
 #include <limits>
 
+#include "posteffect_userobject.h"
+
 // custom assets inserting
 
 /** Element Class implementation. (Asset system)
@@ -234,6 +236,8 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Reload Shaders", "");
 	AddPropertyView("Reset To Default", "");
 	
+	AddPropertyView("User Effects", "");
+
 	AddPropertyView("SSAO", "");
 	AddPropertyView("Motion Blur", "");
 	AddPropertyView("Depth Of Field", "");
@@ -510,6 +514,8 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, ReloadShaders, "Reload Shaders", nullptr, ActionReloadShaders);
 	FBPropertyPublish(this, GenerateMipMaps, "Generate MipMaps", nullptr, nullptr);
 	FBPropertyPublish(this, ResetToDefault, "Reset To Default", nullptr, ActionResetToDefault);
+
+	FBPropertyPublish(this, UserEffects, "User Effects", nullptr, nullptr);
 
 	FBPropertyPublish(this, AutoClipFromHUD, "Auto Clip From HUD", nullptr, nullptr);
 	FBPropertyPublish(this, UpperClip, "Bottom Clip Percent", nullptr, nullptr);
@@ -1300,6 +1306,17 @@ bool PostPersistentData::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, i
 			DisconnectSrc(pPlug);
 		}
 	}
+	else if (pThis == &UserEffects)
+	{
+		if (pAction == kFBConnectedSrc)
+		{
+			ConnectSrc(pPlug);
+		}
+		else if (pAction == kFBDisconnectedSrc)
+		{
+			DisconnectSrc(pPlug);
+		}
+	}
 	else if (pThis == &FlareLight)
 	{
 		if (pAction == kFBConnectedSrc)
@@ -1708,4 +1725,42 @@ int PostPersistentData::GetGlobalMaskIndex() const
 {
 	const EMaskingChannel maskingChannel = GlobalMaskingChannel;
 	return static_cast<int>(maskingChannel);
+}
+
+int PostPersistentData::GetNumberOfActiveUserEffects()
+{
+	int count = 0;
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], PostEffectUserObject))
+		{
+			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active && UserObject->GetUserEffectPtr())
+			{
+				count += 1;
+			}
+		}
+	}
+	return count;
+}
+
+PostEffectBase* PostPersistentData::GetActiveUserEffect(const int index)
+{
+	int count = 0;
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], PostEffectUserObject))
+		{
+			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active)
+			{
+				if (count == index)
+				{
+					return UserObject->GetUserEffectPtr();
+				}
+				count += 1;
+			}
+		}
+	}
+	return nullptr;
 }

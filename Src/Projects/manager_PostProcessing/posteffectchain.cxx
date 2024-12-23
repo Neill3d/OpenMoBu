@@ -140,6 +140,14 @@ bool PostEffectChain::Prep(PostPersistentData *pData, PostEffectContext& effectC
 	if (true == mSettings->MotionBlur && mMotionBlur.get())
 		mMotionBlur->CollectUIValues(mSettings, effectContext);
 
+	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
+	{
+		if (PostEffectBase* postEffect = mSettings->GetActiveUserEffect(i))
+		{
+			postEffect->CollectUIValues(mSettings, effectContext);
+		}
+	}
+
 	return lSuccess;
 }
 
@@ -307,6 +315,8 @@ bool PostEffectChain::PrepareChainOrder(int& blurAndMix, int& blurAndMix2)
 	if (mSettings->MotionBlur)
 		count += 1;
 
+	count += mSettings->GetNumberOfActiveUserEffects();
+	
 	if (0 == count && 0 == mSettings->OutputPreview.AsInt())
 		return false;
 
@@ -379,6 +389,13 @@ bool PostEffectChain::PrepareChainOrder(int& blurAndMix, int& blurAndMix2)
 	{
 		mChain[count] = mVignetting.get();
 		mChain[count]->SetMaskIndex((mSettings->Vign_UseMasking) ? static_cast<int>(mSettings->Vign_MaskingChannel) : -1);
+		count += 1;
+	}
+
+	// TODO: add user effects here !
+	for (int i = 0; i < mSettings->GetNumberOfActiveUserEffects(); ++i)
+	{
+		mChain[count] = mSettings->GetActiveUserEffect(i);
 		count += 1;
 	}
 

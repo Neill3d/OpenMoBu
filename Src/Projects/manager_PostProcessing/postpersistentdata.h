@@ -21,6 +21,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward declaration
 class PostPersistentData;
+class PostEffectBase;
 
 enum EBlurQuality
 {
@@ -118,6 +119,8 @@ public: // PROPERTIES
 	FBPropertyAction			ReloadShaders;
 	FBPropertyBool				GenerateMipMaps;
 	FBPropertyAction			ResetToDefault;
+
+	FBPropertyListObject		UserEffects; //!< connected custom effects to use in the processing chain
 
 	FBPropertyBool				AutoClipFromHUD;
 	FBPropertyDouble			UpperClip;
@@ -396,6 +399,9 @@ public:
 	/// return an index of mask we define globally in settings
 	/// </summary>
 	int GetGlobalMaskIndex() const;
+
+	int GetNumberOfActiveUserEffects();
+	PostEffectBase* GetActiveUserEffect(const int index);
 
 protected:
 
