@@ -738,10 +738,22 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	}
 
 	// 3. in case of SSAO active, render a linear depth texture
-
-	if (mSettings->SSAO)
+	bool isLinearDepthSamplerBinded = mSettings->SSAO;
+	if (!isLinearDepthSamplerBinded)
+	{
+		for (int i = 0, count = static_cast<int>(mChain.size()); i < count; ++i)
+		{
+			if (mChain[i] && mChain[i]->IsLinearDepthSamplerUsed())
+			{
+				isLinearDepthSamplerBinded = true;
+				break;
+			}
+		}
+	}
+	if (isLinearDepthSamplerBinded)
 	{
 		RenderLinearDepth(buffers);
+		isLinearDepthSamplerBinded = true;
 	}
 	
 	// 4a. blur masks (if applied)
@@ -795,7 +807,21 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 		glActiveTexture(GL_TEXTURE0);
 	}
 	
-	if (mSettings->DepthOfField)
+	bool isDepthSamplerBinded = mSettings->DepthOfField;
+
+	if (!isDepthSamplerBinded)
+	{
+		for (int i = 0, count = static_cast<int>(mChain.size()); i < count; ++i)
+		{
+			if (mChain[i] && mChain[i]->IsDepthSamplerUsed())
+			{
+				isDepthSamplerBinded = true;
+				break;
+			}
+		}
+	}
+	
+	if (isDepthSamplerBinded)
 	{
 		const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
 
@@ -912,12 +938,12 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 	// unbind additional texture slots (from depth, masks)
 
-	if (mSettings->DepthOfField)
+	if (isDepthSamplerBinded)
 	{
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	if (mSettings->SSAO)
+	if (isLinearDepthSamplerBinded)
 	{
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, 0);

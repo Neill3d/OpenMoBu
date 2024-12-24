@@ -47,6 +47,7 @@ enum class ShaderSystemUniform
 	INPUT_COLOR_SAMPLER_2D, //!< this is an input image that we read from
 	iCHANNEL0, //!< this is an input image, compatible with shadertoy
 	INPUT_DEPTH_SAMPLER_2D, //!< this is a scene depth texture sampler in case shader will need it for processing
+	LINEAR_DEPTH_SAMPLER_2D, //!< a depth texture converted into linear space (used in SSAO)
 	INPUT_MASK_SAMPLER_2D, //!< binded mask for a shader processing
 
 	USE_MASKING, //!< float uniform [0; 1] to define if the mask have to be used
@@ -55,6 +56,14 @@ enum class ShaderSystemUniform
 
 	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
 	iRESOLUTION, //!< vec2 absolute resolution, compatible with shadertoy
+
+	iTIME, //!< compatible with shadertoy, float, shader playback time (in seconds)
+	iDATE, //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
+
+	MODELVIEW,	//!< current camera modelview matrix
+	PROJ,		//!< current camera projection matrix
+	MODELVIEWPROJ,	//!< current camera modelview-projection matrix
+
 	COUNT
 };
 
@@ -100,6 +109,10 @@ public:
 	{
 		return true;
 	}
+
+	virtual bool IsDepthSamplerUsed() const override;
+	virtual bool IsLinearDepthSamplerUsed() const override;
+
 
 protected:
 	PostEffectUserObject* mUserObject;
@@ -188,6 +201,11 @@ protected:
 	void		CheckUniforms();
 
 	int IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
+
+	bool IsDepthSamplerUsed() const { return mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0; }
+	bool IsLinearDepthSamplerUsed() const { return mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)] >= 0; }
+
+	void BindSystemUniforms(PostPersistentData* pData, PostEffectContext& effectContext) const;
 
 	FBProperty* MakePropertyFloat(const ShaderProperty& prop);
 	FBProperty* MakePropertyVec2(const ShaderProperty& prop);

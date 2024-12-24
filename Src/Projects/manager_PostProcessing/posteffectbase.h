@@ -87,14 +87,14 @@ protected:
 struct PostEffectContext
 {
 	FBCamera* camera{ nullptr };
-	int w{ 1 };
-	int h{ 1 };
-	int localFrame{ 0 };
+	int w{ 1 }; //!< viewport width
+	int h{ 1 }; //!< viewport height
+	int localFrame{ 0 }; //!< playback frame number
 	
-	double sysTime{ 0.0 };
+	double sysTime{ 0.0 }; //!< system time (in seconds)
 	double sysTimeDT{ 0.0 };
 
-	double localTime{ 0.0 };
+	double localTime{ 0.0 }; //!< playback time (in seconds)
 	double localTimeDT{ 0.0 };
 };
 
@@ -140,6 +140,9 @@ public:
 	void SetMaskIndex(const int maskIndex) { mMaskIndex = maskIndex; }
 	//! get defined mask channel index
 	int GetMaskIndex() const { return mMaskIndex; }
+
+	virtual bool IsDepthSamplerUsed() const { return false; }
+	virtual bool IsLinearDepthSamplerUsed() const { return false; }
 
 protected:
 

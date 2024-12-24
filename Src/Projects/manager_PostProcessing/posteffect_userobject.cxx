@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_ini.h"
 #include <vector>
 #include <limits>
+#include <ctime>
 
 #include "FileUtils.h"
 #include "mobu_logging.h"
@@ -56,6 +57,7 @@ const char* PostEffectUserObject::gSystemUniformNames[static_cast<int>(ShaderSys
 	"inputSampler", //!< this is an input image that we read from
 	"iChannel0", //!< this is an input image, compatible with shadertoy
 	"depthSampler", //!< this is a scene depth texture sampler in case shader will need it for processing
+	"linearDepthSampler",
 	"maskSampler", //!< binded mask for a shader processing
 
 	"useMasking", //!< float uniform [0; 1] to define if the mask have to be used
@@ -64,6 +66,13 @@ const char* PostEffectUserObject::gSystemUniformNames[static_cast<int>(ShaderSys
 
 	"gResolution", //!< vec2 that contains processing absolute resolution, like 1920x1080
 	"iResolution", //!< vec2 image absolute resolution, compatible with shadertoy naming
+
+	"iTime", //!< compatible with shadertoy, float, shader playback time (in seconds)
+	"iDate",  //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
+
+	"modelView", //!< current camera modelview matrix
+	"projection", //!< current camera projection matrix
+	"modelViewProj" //!< current camera modelview-projection matrix
 };
 
 /************************************************
@@ -268,6 +277,128 @@ int PostEffectUserObject::IsSystemUniform(const char* uniformName)
 	return -1;
 }
 
+
+void PostEffectUserObject::BindSystemUniforms(PostPersistentData* pData, PostEffectContext& effectContext) const
+{
+	const GLint* sysLocations = mSystemUniformLocations;
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)] >= 0)
+	{
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)], 0);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)] >= 0)
+	{
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)], 0);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0)
+	{
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], 1);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)] >= 0)
+	{
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)], 2);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)] >= 0)
+	{
+		const GLint maskSlot = CommonEffectUniforms::GetMaskSamplerSlot();
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], maskSlot);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)];
+		glUniform1f(loc, (UseMasking) ? 1.0f : 0.0f);
+	}
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)];
+		const double value = pData->UpperClip;
+		glUniform1f(loc, 0.01f * static_cast<float>(value));
+	}
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)];
+		const double value = pData->LowerClip;
+		glUniform1f(loc, 0.01f * static_cast<float>(value));
+	}
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)];
+		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)];
+		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
+	}
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::iTIME)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iTIME)];
+		glUniform1f(loc, static_cast<float>(effectContext.sysTime));
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::iDATE)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iDATE)];
+
+		std::time_t now = std::time(nullptr);
+		std::tm* localTime = std::localtime(&now);
+
+		float dateTimeArray[4];
+
+		dateTimeArray[0] = static_cast<float>(localTime->tm_year + 1900);
+		dateTimeArray[1] = static_cast<float>(localTime->tm_mon + 1);
+		dateTimeArray[2] = static_cast<float>(localTime->tm_mday);
+
+		float secondsSinceMidnight = static_cast<float>(localTime->tm_hour * 3600 + localTime->tm_min * 60 + localTime->tm_sec);
+		dateTimeArray[3] = secondsSinceMidnight;
+
+		glUniform4fv(loc, 1, dateTimeArray);
+	}
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEW)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEW)];
+
+		FBMatrix tm;
+		effectContext.camera->GetCameraMatrix(tm, kFBModelView);
+		float fModelView[16];
+		for (int i = 0; i < 16; ++i)
+		{
+			fModelView[i] = static_cast<float>(tm[i]);
+		}
+		glUniformMatrix4fv(loc, 1, GL_FALSE, fModelView);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::PROJ)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::PROJ)];
+		FBMatrix tm;
+		effectContext.camera->GetCameraMatrix(tm, kFBProjection);
+
+		float fMatrix[16];
+		for (int i = 0; i < 16; ++i)
+		{
+			fMatrix[i] = static_cast<float>(tm[i]);
+		}
+		glUniformMatrix4fv(loc, 1, GL_FALSE, fMatrix);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEWPROJ)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEWPROJ)];
+		FBMatrix tm;
+		effectContext.camera->GetCameraMatrix(tm, kFBModelViewProj);
+
+		float fMatrix[16];
+		for (int i = 0; i < 16; ++i)
+		{
+			fMatrix[i] = static_cast<float>(tm[i]);
+		}
+		glUniformMatrix4fv(loc, 1, GL_FALSE, fMatrix);
+	}
+}
+
 void PostEffectUserObject::CheckUniforms()
 {
 	RemoveShaderProperties();
@@ -400,6 +531,18 @@ void PostEffectUserObject::DefaultValues()
 
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+
+
+bool PostUserEffect::IsDepthSamplerUsed() const
+{
+	return mUserObject->IsDepthSamplerUsed();
+}
+bool PostUserEffect::IsLinearDepthSamplerUsed() const
+{
+	return mUserObject->IsLinearDepthSamplerUsed();
+}
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
@@ -410,63 +553,11 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 
 	shader->Bind();
 
-	// TODO: setup system uniforms
-	// TODO:
-	//
-	// 
-	const GLint* sysLocations = mUserObject->mSystemUniformLocations;
-
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)] >= 0)
-	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)], 0);
-	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)] >= 0)
-	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)], 0);
-	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0)
-	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], 2);
-	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)] >= 0)
-	{
-		const GLint maskSlot = CommonEffectUniforms::GetMaskSamplerSlot();
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], maskSlot);
-	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)] >= 0)
-	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)];
-		glUniform1f(loc, (mUserObject->UseMasking) ? 1.0f : 0.0f);
-	}
-
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)] >= 0)
-	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)];
-		const double value = pData->UpperClip;
-		glUniform1f(loc, 0.01f * static_cast<float>(value));
-	}
-
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)] >= 0)
-	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)];
-		const double value = pData->LowerClip;
-		glUniform1f(loc, 0.01f * static_cast<float>(value));
-	}
-	
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)] >= 0)
-	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)];
-		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
-	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)] >= 0)
-	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)];
-		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
-	}
+	mUserObject->BindSystemUniforms(pData, effectContext);
 
 	// setup user uniforms
 
-	GLint userTextureSlot = 4; //!< start index to bind user textures
+	GLint userTextureSlot = 5; //!< start index to bind user textures
 
 	for (auto& prop : mUserObject->mShaderProperties)
 	{
