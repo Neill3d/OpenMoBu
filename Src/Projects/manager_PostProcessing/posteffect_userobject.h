@@ -45,6 +45,7 @@ class PostEffectUserObject;
 enum class ShaderSystemUniform
 {
 	INPUT_COLOR_SAMPLER_2D, //!< this is an input image that we read from
+	iCHANNEL0, //!< this is an input image, compatible with shadertoy
 	INPUT_DEPTH_SAMPLER_2D, //!< this is a scene depth texture sampler in case shader will need it for processing
 	INPUT_MASK_SAMPLER_2D, //!< binded mask for a shader processing
 
@@ -53,6 +54,7 @@ enum class ShaderSystemUniform
 	LOWER_CLIP, //!< this is a lower clip image level. defined in a texture coord space to skip processing
 
 	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
+	iRESOLUTION, //!< vec2 absolute resolution, compatible with shadertoy
 	COUNT
 };
 

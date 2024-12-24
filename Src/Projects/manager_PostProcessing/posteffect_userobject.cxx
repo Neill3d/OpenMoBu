@@ -54,6 +54,7 @@ PostEffectFBElementClassImplementation(PostEffectUserObject, "Post Effect", "cam
 const char* PostEffectUserObject::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
 {
 	"inputSampler", //!< this is an input image that we read from
+	"iChannel0", //!< this is an input image, compatible with shadertoy
 	"depthSampler", //!< this is a scene depth texture sampler in case shader will need it for processing
 	"maskSampler", //!< binded mask for a shader processing
 
@@ -62,6 +63,7 @@ const char* PostEffectUserObject::gSystemUniformNames[static_cast<int>(ShaderSys
 	"lowerClip", //!< this is a lower clip image level. defined in a texture coord space to skip processing
 
 	"gResolution", //!< vec2 that contains processing absolute resolution, like 1920x1080
+	"iResolution", //!< vec2 image absolute resolution, compatible with shadertoy naming
 };
 
 /************************************************
@@ -418,6 +420,10 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 	{
 		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)], 0);
 	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)] >= 0)
+	{
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)], 0);
+	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0)
 	{
 		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], 2);
@@ -452,6 +458,11 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)];
 		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
 	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)];
+		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
+	}
 
 	// setup user uniforms
 
@@ -461,10 +472,19 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 	{
 		if (prop.second.type == GL_FLOAT)
 		{
-			prop.second.property->GetData(v, sizeof(double));
-
 			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
-			glUniform1f(loc, static_cast<float>(v[0]));
+
+			if (strstr(prop.first.c_str(), "_flag") != nullptr)
+			{
+				bool bvalue = false;
+				prop.second.property->GetData(&bvalue, sizeof(bool));
+				glUniform1f(loc, bvalue ? 1.0f : 0.0f);
+			}
+			else
+			{
+				prop.second.property->GetData(v, sizeof(double));
+				glUniform1f(loc, static_cast<float>(v[0]));
+			}
 		}
 		else if (prop.second.type == GL_FLOAT_VEC2)
 		{
