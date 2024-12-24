@@ -191,6 +191,7 @@ protected:
 	FBProperty* MakePropertyVec2(const ShaderProperty& prop);
 	FBProperty* MakePropertyVec3(const ShaderProperty& prop);
 	FBProperty* MakePropertyVec4(const ShaderProperty& prop);
+	FBProperty* MakePropertySampler(const ShaderProperty& prop);
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
 

@@ -17,6 +17,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "FileUtils.h"
 #include "mobu_logging.h"
 
+#include "postpersistentdata.h"
+
 // custom assets inserting
 
 /** Element Class implementation. (Asset system)
@@ -232,6 +234,20 @@ FBProperty* PostEffectUserObject::MakePropertyVec4(const ShaderProperty& prop)
 	return newProp;
 }
 
+FBProperty* PostEffectUserObject::MakePropertySampler(const ShaderProperty& prop)
+{
+	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
+	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
+	{
+		listObjProp->SetFilter(FBTexture::GetInternalClassId());
+		listObjProp->SetSingleConnect(true);
+
+		PropertyAdd(newProp);
+		return newProp;
+	}
+	return nullptr;
+}
+
 void PostEffectUserObject::ResetSystemUniformLocations()
 {
 	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
@@ -305,6 +321,9 @@ void PostEffectUserObject::CheckUniforms()
 				break;
 			case GL_FLOAT_VEC4:
 				prop.property = MakePropertyVec4(prop);
+				break;
+			case GL_SAMPLER_2D:
+				prop.property = MakePropertySampler(prop);
 				break;
 			default:
 				LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.uniformName);
@@ -393,8 +412,50 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 	// TODO:
 	//
 	// 
-	// 
+	const GLint* sysLocations = mUserObject->mSystemUniformLocations;
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)] >= 0)
+	{
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)], 0);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0)
+	{
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], 2);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)] >= 0)
+	{
+		const GLint maskSlot = CommonEffectUniforms::GetMaskSamplerSlot();
+		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], maskSlot);
+	}
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)];
+		glUniform1f(loc, (mUserObject->UseMasking) ? 1.0f : 0.0f);
+	}
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)];
+		const double value = pData->UpperClip;
+		glUniform1f(loc, 0.01f * static_cast<float>(value));
+	}
+
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)];
+		const double value = pData->LowerClip;
+		glUniform1f(loc, 0.01f * static_cast<float>(value));
+	}
+	
+	if (sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)] >= 0)
+	{
+		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)];
+		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
+	}
+
 	// setup user uniforms
+
+	GLint userTextureSlot = 4; //!< start index to bind user textures
 
 	for (auto& prop : mUserObject->mShaderProperties)
 	{
@@ -428,6 +489,33 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
 			const float fValues[4] = { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) };
 			glUniform4fv(loc, 1, fValues);
+		}
+		else if (prop.second.type == GL_SAMPLER_2D)
+		{
+			if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(prop.second.property))
+			{
+				FBTexture* texture = (listObjProp->GetCount() > 0 && FBIS(listObjProp->GetAt(0), FBTexture)) ? FBCast<FBTexture>(listObjProp->GetAt(0)) : nullptr;
+
+				if (texture)
+				{
+					int textureId = texture->TextureOGLId;
+					if (textureId == 0)
+					{
+						texture->OGLInit();
+						textureId = texture->TextureOGLId;
+					}
+
+					if (textureId > 0)
+					{
+						const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+						glUniform1i(loc, userTextureSlot);
+
+						glActiveTexture(GL_TEXTURE0 + userTextureSlot);
+						glBindTexture(GL_TEXTURE_2D, textureId);
+						glActiveTexture(GL_TEXTURE0);
+					}
+				}
+			}
 		}
 	}
 
