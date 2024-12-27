@@ -92,7 +92,7 @@ protected:
 	std::unique_ptr<GLSLShaderProgram>			mShaderSceneMasked; //!< render models into mask with some additional filtering
 
 	// order execution chain
-	std::vector<PostEffectBase*>		mChain;
+	//std::vector<PostEffectBase*>		mChain;
 
 	GLint							mLocDepthLinearizeClipInfo{ -1 };
 	GLint							mLocBlurSharpness{ -1 };
@@ -103,7 +103,7 @@ protected:
 	bool							mIsCompressedDataReady{ false };
 	double							mLastCompressTime{ 0.0 };
 
-	PostEffectBase *ShaderFactory(const int type, const char *shadersLocation);
+	PostEffectBase *ShaderFactory(const int type, const char *shadersLocation, bool immediatelyLoad=true);
 
 	bool LoadShaders();
 	void FreeShaders();
@@ -117,7 +117,10 @@ private:
 	/// blurAndMix2 - index of effect where bilateral blur and mix is requested (Bloom for ColorCorrection)
 	/// </summary>
 	/// <returns>true if chain of effects is not empty</returns>
-	bool PrepareChainOrder(int& blurAndMix, int& blurAndMix2);
+	bool PrepareChainOrder(std::vector<PostEffectBase*>& chain, int& blurAndMix, int& blurAndMix2);
+
+	void RenderEffectToBuffer(PostEffectBase* effect, const GLuint inputLayerSampler);
+	void RenderEffectToChain(PostEffectBase* effect, PostEffectBuffers* chainBuffers, bool generateMips, int w, int h);
 
 	/// <summary>
 	/// render a linear depth (for SSAO)

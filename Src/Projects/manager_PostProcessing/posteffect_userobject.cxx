@@ -43,16 +43,22 @@ else {\
 		}
 
 //--- FiLMBOX Registration & Implementation.
+FBClassImplementation(EffectShaderUserObject);
+FBUserObjectImplement(EffectShaderUserObject,
+                        "User Object used to store a persistance data for one effect shader.",
+						"cam_switcher_toggle.png");                                          //Register UserObject class
+PostEffectFBElementClassImplementation(EffectShaderUserObject, "Effect Shader", "cam_switcher_toggle.png");                  //Register to the asset system
+
 FBClassImplementation(PostEffectUserObject);
 FBUserObjectImplement(PostEffectUserObject,
-                        "Use Object used to store a persistance data for the post effect.",
-						"cam_switcher_toggle.png");                                          //Register UserObject class
+	"User Object used to store a persistance data for an effect",
+	"cam_switcher_toggle.png");                                          //Register UserObject class
 PostEffectFBElementClassImplementation(PostEffectUserObject, "Post Effect", "cam_switcher_toggle.png");                  //Register to the asset system
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-const char* PostEffectUserObject::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
+const char* EffectShaderUserObject::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
 {
 	"inputSampler", //!< this is an input image that we read from
 	"iChannel0", //!< this is an input image, compatible with shadertoy
@@ -78,18 +84,23 @@ const char* PostEffectUserObject::gSystemUniformNames[static_cast<int>(ShaderSys
 /************************************************
  *  Constructor.
  ************************************************/
-PostEffectUserObject::PostEffectUserObject(const char* pName, HIObject pObject)
+EffectShaderUserObject::EffectShaderUserObject(const char* pName, HIObject pObject)
 	: FBUserObject(pName, pObject)
 	, mText("")
 {
     FBClassInit;
 
 	mReloadShaders = false;
+
+	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
+	{
+		mSystemUniformLocations[i] = -1;
+	}
 }
 
-void PostEffectUserObject::ActionReloadShaders(HIObject pObject, bool value)
+void EffectShaderUserObject::ActionReloadShaders(HIObject pObject, bool value)
 {
-	PostEffectUserObject* p = FBCast<PostEffectUserObject>(pObject);
+	EffectShaderUserObject* p = FBCast<EffectShaderUserObject>(pObject);
 	if (p && value)
 	{
 		p->DoReloadShaders();
@@ -99,7 +110,7 @@ void PostEffectUserObject::ActionReloadShaders(HIObject pObject, bool value)
 /************************************************
  *  FiLMBOX Constructor.
  ************************************************/
-bool PostEffectUserObject::FBCreate()
+bool EffectShaderUserObject::FBCreate()
 {
 	// modify system behavoiur
 	DisableObjectFlags(kFBFlagClonable);
@@ -107,10 +118,12 @@ bool PostEffectUserObject::FBCreate()
 	FBPropertyPublish(this, UniqueClassId, "UniqueClassId", nullptr, nullptr);
 	FBPropertyPublish(this, Active, "Active", nullptr, nullptr);
 	
+	//FBPropertyPublish(this, RenderToTexture, "Render To Texture", nullptr, nullptr);
+	FBPropertyPublish(this, OutputVideo, "Output Video", nullptr, nullptr);
+
 	FBPropertyPublish(this, ShaderFile, "Shader File", nullptr, nullptr);
 	FBPropertyPublish(this, ReloadShaders, "Reload Shader", nullptr, ActionReloadShaders);
 
-	
 	FBPropertyPublish(this, UseMasking, "Use Masking", nullptr, nullptr);
 	FBPropertyPublish(this, MaskingChannel, "Masking Channel", nullptr, nullptr);
 
@@ -125,24 +138,25 @@ bool PostEffectUserObject::FBCreate()
 	// DONE: READ default values from config file !
 	DefaultValues();
 
-	mUserEffect = nullptr;
-
     return true;
 }
 
 /************************************************
  *  FiLMBOX Destructor.
  ************************************************/
-void PostEffectUserObject::FBDestroy()
+void EffectShaderUserObject::FBDestroy()
 {
+	mUserShader.reset(nullptr);
+	/*
 	if (mUserEffect)
 	{
 		delete mUserEffect;
 		mUserEffect = nullptr;
 	}
+	*/
 }
 
-void PostEffectUserObject::RemoveShaderProperties()
+void EffectShaderUserObject::RemoveShaderProperties()
 {
 	for (auto& shaderProperty : mShaderProperties)
 	{
@@ -182,7 +196,7 @@ FBPropertyType UniformTypeToFBPropertyType(GLenum type, const char* uniformName)
 	}
 }
 
-FBProperty* PostEffectUserObject::MakePropertyFloat(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyFloat(const ShaderProperty& prop)
 {
 	FBProperty* newProp = nullptr;
 
@@ -204,14 +218,14 @@ FBProperty* PostEffectUserObject::MakePropertyFloat(const ShaderProperty& prop)
 	return newProp;
 }
 
-FBProperty* PostEffectUserObject::MakePropertyVec2(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec2(const ShaderProperty& prop)
 {
 	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	PropertyAdd(newProp);
 	return newProp;
 }
 
-FBProperty* PostEffectUserObject::MakePropertyVec3(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec3(const ShaderProperty& prop)
 {
 	FBProperty* newProp = nullptr;
 
@@ -228,7 +242,7 @@ FBProperty* PostEffectUserObject::MakePropertyVec3(const ShaderProperty& prop)
 	return newProp;
 }
 
-FBProperty* PostEffectUserObject::MakePropertyVec4(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec4(const ShaderProperty& prop)
 {
 	FBProperty* newProp = nullptr;
 
@@ -245,7 +259,7 @@ FBProperty* PostEffectUserObject::MakePropertyVec4(const ShaderProperty& prop)
 	return newProp;
 }
 
-FBProperty* PostEffectUserObject::MakePropertySampler(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertySampler(const ShaderProperty& prop)
 {
 	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
 	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
@@ -259,7 +273,7 @@ FBProperty* PostEffectUserObject::MakePropertySampler(const ShaderProperty& prop
 	return nullptr;
 }
 
-void PostEffectUserObject::ResetSystemUniformLocations()
+void EffectShaderUserObject::ResetSystemUniformLocations()
 {
 	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
 	{
@@ -267,7 +281,7 @@ void PostEffectUserObject::ResetSystemUniformLocations()
 	}
 }
 
-int PostEffectUserObject::IsSystemUniform(const char* uniformName)
+int EffectShaderUserObject::IsSystemUniform(const char* uniformName)
 {
 	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
 	{
@@ -278,7 +292,7 @@ int PostEffectUserObject::IsSystemUniform(const char* uniformName)
 }
 
 
-void PostEffectUserObject::BindSystemUniforms(PostPersistentData* pData, PostEffectContext& effectContext) const
+void EffectShaderUserObject::BindSystemUniforms(PostPersistentData* pData, PostEffectContext& effectContext) const
 {
 	const GLint* sysLocations = mSystemUniformLocations;
 
@@ -399,15 +413,15 @@ void PostEffectUserObject::BindSystemUniforms(PostPersistentData* pData, PostEff
 	}
 }
 
-void PostEffectUserObject::CheckUniforms()
+void EffectShaderUserObject::CheckUniforms()
 {
 	RemoveShaderProperties();
 	ResetSystemUniformLocations();
 
-	if (!mUserEffect || !mUserEffect->GetShaderPtr())
+	if (!mUserShader.get() || !mUserShader->GetShaderPtr())
 		return;
 
-	const GLuint programId = mUserEffect->GetShaderPtr()->GetProgramObj();
+	const GLuint programId = mUserShader->GetShaderPtr()->GetProgramObj();
 
 	GLint numUniforms = 0;
 	glGetProgramiv(programId, GL_ACTIVE_UNIFORMS, &numUniforms);
@@ -470,7 +484,7 @@ void PostEffectUserObject::CheckUniforms()
 	}
 }
 
-void PostEffectUserObject::DoReloadShaders()
+bool EffectShaderUserObject::DoReloadShaders()
 {
 	// load a fragment shader from a given path and try to validate the shader and the program
 
@@ -478,18 +492,21 @@ void PostEffectUserObject::DoReloadShaders()
 	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
 	{
 		LOGE("[PostEffectUserObject] Fragment shader relative path is not defined!\n");
-		return;
+		return false;
 	}
 
+	mUserShader.reset(new UserBufferShader(this));
+	/*
 	if (mUserEffect)
 	{
 		delete mUserEffect;
 		mUserEffect = nullptr;
 	}
+	
+	mUserShader = new PostUserEffect(this);
+	*/
 
-	mUserEffect = new PostUserEffect(this);
-
-	constexpr const char* vertex_shader_rpath = "\\GLSL\\simple.vsh";
+	constexpr const char* vertex_shader_rpath = "/GLSL/simple.vsh";
 
 	char vertex_abs_path_only[MAX_PATH];
 	char fragment_abs_path_only[MAX_PATH];
@@ -497,7 +514,7 @@ void PostEffectUserObject::DoReloadShaders()
 		|| !FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
 	{
 		LOGE("[PostEffectUserObject] Failed to find shaders location!\n");
-		return;
+		return false;
 	}
 
 	LOGI("[PostEffectUserObject] Vertex shader Location - %s\n", vertex_abs_path_only);
@@ -506,12 +523,13 @@ void PostEffectUserObject::DoReloadShaders()
 	FBString vertex_path(vertex_abs_path_only, vertex_shader_rpath);
 	FBString fragment_path(fragment_abs_path_only, fragment_shader_rpath);
 
-	if (!mUserEffect->Load(0, vertex_path, fragment_path))
+	if (!mUserShader->Load(0, vertex_path, fragment_path))
 	{
 		LOGE("[PostEffectUserObject] Failed to load shaders!\n");
-		delete mUserEffect;
-		mUserEffect = nullptr;
-		return;
+		//delete mUserEffect;
+		//mUserEffect = nullptr;
+		mUserShader.reset(nullptr);
+		return false;
 	}
 
 	//mShaderProgram->Bind();
@@ -522,11 +540,11 @@ void PostEffectUserObject::DoReloadShaders()
 	// TODO: extract uniforms to prepare a UI layout
 
 	//mShaderProgram->UnBind();
-
+	return true;
 }
 
 
-void PostEffectUserObject::DefaultValues()
+void EffectShaderUserObject::DefaultValues()
 {
 
 }
@@ -535,17 +553,17 @@ void PostEffectUserObject::DefaultValues()
 //
 
 
-bool PostUserEffect::IsDepthSamplerUsed() const
+bool UserBufferShader::IsDepthSamplerUsed() const
 {
 	return mUserObject->IsDepthSamplerUsed();
 }
-bool PostUserEffect::IsLinearDepthSamplerUsed() const
+bool UserBufferShader::IsLinearDepthSamplerUsed() const
 {
 	return mUserObject->IsLinearDepthSamplerUsed();
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool UserBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 
@@ -633,4 +651,143 @@ bool PostUserEffect::CollectUIValues(PostPersistentData* pData, PostEffectContex
 	shader->UnBind();
 
 	return true;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// UserEffect
+
+int UserEffect::GetNumberOfBufferShaders() const
+{
+	const int count = mUserObject->BufferShaders.GetCount();
+	return count;
+}
+
+PostEffectBufferShader* UserEffect::GetBufferShaderPtr(const int bufferShaderIndex)
+{
+	FBComponent* component = mUserObject->BufferShaders[bufferShaderIndex];
+	if (FBIS(component, EffectShaderUserObject))
+	{
+		EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component);
+		if (shaderUserObject)
+		{
+			shaderUserObject->GetUserShaderPtr();
+		}
+	}
+	return nullptr;
+}
+
+const PostEffectBufferShader* UserEffect::GetBufferShaderPtr(const int bufferShaderIndex) const
+{
+	FBComponent* component = mUserObject->BufferShaders[bufferShaderIndex];
+	if (FBIS(component, EffectShaderUserObject))
+	{
+		EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component);
+		if (shaderUserObject)
+		{
+			shaderUserObject->GetUserShaderPtr();
+		}
+	}
+	return nullptr;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// PostEffectUserObject
+
+
+
+/************************************************
+ *  Constructor.
+ ************************************************/
+PostEffectUserObject::PostEffectUserObject(const char* pName, HIObject pObject)
+	: FBUserObject(pName, pObject)
+	, mText("")
+{
+	FBClassInit;
+
+	mReloadShaders = false;
+}
+
+void PostEffectUserObject::ActionReloadShaders(HIObject pObject, bool value)
+{
+	PostEffectUserObject* p = FBCast<PostEffectUserObject>(pObject);
+	if (p && value)
+	{
+		p->DoReloadShaders();
+	}
+}
+
+/************************************************
+ *  FiLMBOX Constructor.
+ ************************************************/
+bool PostEffectUserObject::FBCreate()
+{
+	// modify system behavoiur
+	DisableObjectFlags(kFBFlagClonable);
+
+	FBPropertyPublish(this, UniqueClassId, "UniqueClassId", nullptr, nullptr);
+	FBPropertyPublish(this, Active, "Active", nullptr, nullptr);
+
+	//FBPropertyPublish(this, RenderToTexture, "Render To Texture", nullptr, nullptr);
+	FBPropertyPublish(this, OutputVideo, "Output Video", nullptr, nullptr);
+
+	FBPropertyPublish(this, BufferShaders, "Shaders", nullptr, nullptr);
+	FBPropertyPublish(this, ReloadShaders, "Reload Shader", nullptr, ActionReloadShaders);
+
+	FBPropertyPublish(this, UseMasking, "Use Masking", nullptr, nullptr);
+	FBPropertyPublish(this, MaskingChannel, "Masking Channel", nullptr, nullptr);
+
+	//
+	UniqueClassId.ModifyPropertyFlag(kFBPropertyFlagHideProperty, true);
+	UniqueClassId.ModifyPropertyFlag(kFBPropertyFlagNotSavable, true);
+	UniqueClassId.ModifyPropertyFlag(kFBPropertyFlagReadOnly, true);
+	UniqueClassId = 57;
+
+	mUserEffect.reset(new UserEffect(this));
+	return true;
+}
+
+/************************************************
+ *  FiLMBOX Destructor.
+ ************************************************/
+void PostEffectUserObject::FBDestroy()
+{
+	mUserEffect.reset(nullptr);
+	/*
+	if (mUserEffect)
+	{
+		delete mUserEffect;
+		mUserEffect = nullptr;
+	}
+	*/
+}
+
+void PostEffectUserObject::DoReloadShaders()
+{
+	for (int i = 0; i < BufferShaders.GetCount(); ++i)
+	{
+		if (FBIS(BufferShaders[i], EffectShaderUserObject))
+		{
+			if (EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(BufferShaders[i]))
+			{
+				if (!UserObject->DoReloadShaders())
+				{
+					// TODO: stop reloading of next shaders if something failed
+					break;
+				}
+			}
+		}
+	}
+}
+
+bool PostEffectUserObject::IsDepthSamplerUsed() const
+{
+	return mUserEffect->IsDepthSamplerUsed();
+}
+
+bool PostEffectUserObject::IsLinearDepthSamplerUsed() const
+{
+	return mUserEffect->IsLinearDepthSamplerUsed();
 }

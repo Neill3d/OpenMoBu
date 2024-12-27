@@ -11,35 +11,29 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectbase.h"
 #include "postpersistentdata.h"
-
-//
-extern void LOGE(const char* pFormatString, ...);
+#include "mobu_logging.h"
 
 /////////////////////////////////////////////////////////////////////////
-// EffectBase
+// PostEffectBufferShader
 
-PostEffectBase::PostEffectBase()
+PostEffectBufferShader::PostEffectBufferShader()
 {
 }
 
-PostEffectBase::~PostEffectBase()
+PostEffectBufferShader::~PostEffectBufferShader()
 {
 	FreeShaders();
 }
 
-const char *PostEffectBase::GetName() const
+const char* PostEffectBufferShader::GetName() const
 {
 	return "empty";
 }
 
 // load and initialize shader from a specified location
 
-void PostEffectBase::FreeShaders()
+void PostEffectBufferShader::FreeShaders()
 {
-	for (auto shaderptr : mShaders)
-	{
-		delete shaderptr;
-	}
 	mShaders.clear();
 }
 
@@ -48,37 +42,41 @@ void CommonEffectUniforms::PrepareUniformLocations(GLSLShaderProgram* shader)
 	const GLint loc = shader->findLocation("maskSampler");
 	if (loc >= 0)
 		glUniform1i(loc, GetMaskSamplerSlot());
-	
+
 	useMaskLoc = shader->findLocation("useMasking");
 	upperClipLoc = shader->findLocation("upperClip");
 	lowerClipLoc = shader->findLocation("lowerClip");
 }
 
-void CommonEffectUniforms::UpdateUniforms(PostPersistentData* data)
+void CommonEffectUniforms::CollectCommonData(PostPersistentData* data, const char* enableMaskingPropertyName)
 {
-	const bool isEnabledEffectMasking = data->PropertyList.Find(GetEnableMaskPropertyName())->AsInt() > 0;
+	const bool isEnabledEffectMasking = data->PropertyList.Find(enableMaskingPropertyName)->AsInt() > 0;
 	const bool useMasking = data->UseCompositeMasking && (data->EnableMaskingForAllEffects || isEnabledEffectMasking);
 	const double _upperClip = data->UpperClip;
 	const double _lowerClip = data->LowerClip;
 
-	if (useMaskLoc >= 0)
-		glUniform1f(useMaskLoc, (useMasking) ? 1.0f : 0.0f);
-
-	if (upperClipLoc >= 0)
-	{
-		glUniform1f(upperClipLoc, 0.01f * (float)_upperClip);
-	}
-
-	if (lowerClipLoc >= 0)
-		glUniform1f(lowerClipLoc, 1.0f - 0.01f * (float)_lowerClip);
+	mCommonShaderData.useMasking = (useMasking) ? 1.0f : 0.0f;
+	mCommonShaderData.upperClip = 0.01f * static_cast<float>(_upperClip);
+	mCommonShaderData.lowerClip = 1.0f - 0.01f * static_cast<float>(_lowerClip);
 }
 
-bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *fname)
+void CommonEffectUniforms::UploadCommonData()
+{
+	if (useMaskLoc >= 0)
+		glUniform1f(useMaskLoc, mCommonShaderData.useMasking);
+
+	if (upperClipLoc >= 0)
+		glUniform1f(upperClipLoc, mCommonShaderData.upperClip);
+
+	if (lowerClipLoc >= 0)
+		glUniform1f(lowerClipLoc, mCommonShaderData.lowerClip);
+}
+
+bool PostEffectBufferShader::Load(const int shaderIndex, const char* vname, const char* fname)
 {
 	if (mShaders.size() > shaderIndex)
 	{
-		delete mShaders[shaderIndex];
-		mShaders[shaderIndex] = nullptr;
+		mShaders[shaderIndex].reset();
 	}
 
 	bool lSuccess = true;
@@ -86,18 +84,18 @@ bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *
 
 	try
 	{
-		if (nullptr == shader)
+		if (!shader)
 		{
 			throw std::exception("failed to allocate memory for the shader object");
 		}
 
-		if (false == shader->LoadShaders(vname, fname))
+		if (!shader->LoadShaders(vname, fname))
 		{
 			throw std::exception("failed to locate or load shader files");
 		}
 
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		LOGE("Post Effect Chain (%s, %s) ERROR: %s\n", vname, fname, e.what());
 
@@ -109,50 +107,142 @@ bool PostEffectBase::Load(const int shaderIndex, const char *vname, const char *
 
 	if (mShaders.size() > shaderIndex)
 	{
-		mShaders[shaderIndex] = shader;
+		mShaders[shaderIndex].reset(shader);
 	}
 	else
 	{
-		mShaders.push_back(shader);
+		mShaders.push_back(std::make_unique<GLSLShaderProgram>(shader));
 	}
 
 	return lSuccess;
 }
 
-bool PostEffectBase::PrepUniforms(const int)
+bool PostEffectBufferShader::Load(const char* shadersLocation)
+{
+	for (int i = 0; i < GetNumberOfVariations(); ++i)
+	{
+		FBString vertex_path(shadersLocation, GetVertexFname(i));
+		FBString fragment_path(shadersLocation, GetFragmentFname(i));
+
+		if (!Load(i, vertex_path, fragment_path))
+			return false;
+		
+		// samplers and locations
+		PrepUniforms(i);
+	}
+	return true;
+}
+
+bool PostEffectBufferShader::PrepUniforms(const int)
 {
 	return false;
 }
 
-bool PostEffectBase::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
+bool PostEffectBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
 {
 	return false;
 }
 
-const int PostEffectBase::GetNumberOfPasses() const
+const int PostEffectBufferShader::GetNumberOfPasses() const
 {
 	return 1;
 }
-bool PostEffectBase::PrepPass(const int pass)
+bool PostEffectBufferShader::PrepPass(const int pass)
 {
 	return true;
 }
 
-void PostEffectBase::Bind()
+GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
+	assert(mCurrentShader >= 0 && mCurrentShader < mShaders.size());
+	return mShaders[mCurrentShader].get();
+}
+
+void PostEffectBufferShader::Bind()
 {
-	if (nullptr != GetShaderPtr())
+	if (GetShaderPtr())
 	{
 		GetShaderPtr()->Bind();
 	}
 }
-void PostEffectBase::UnBind()
+void PostEffectBufferShader::UnBind()
 {
-	if (nullptr != GetShaderPtr())
+	if (GetShaderPtr())
 	{
 		GetShaderPtr()->UnBind();
 	}
 }
 
-GLSLShaderProgram *PostEffectBase::GetShaderPtr() {
-	return mShaders[mCurrentShader];
+
+/////////////////////////////////////////////////////////////////////////
+// EffectBase
+
+PostEffectBase::PostEffectBase()
+{
+}
+
+PostEffectBase::~PostEffectBase()
+{
+	//mBufferShaders.clear();
+}
+
+bool PostEffectBase::Load(const char* shadersLocation)
+{
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (!GetBufferShaderPtr(i)->Load(shadersLocation))
+			return false;
+	}
+
+	return true;
+}
+
+bool PostEffectBase::IsDepthSamplerUsed() const
+{
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (GetBufferShaderPtr(i)->IsDepthSamplerUsed())
+			return true;
+	}
+	return false;
+}
+bool PostEffectBase::IsLinearDepthSamplerUsed() const
+{
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (GetBufferShaderPtr(i)->IsLinearDepthSamplerUsed())
+			return true;
+	}
+	return false;
+}
+
+bool PostEffectBase::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+{
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (!GetBufferShaderPtr(i)->CollectUIValues(pData, effectContext))
+			return false;
+	}
+
+	return true;
+}
+
+
+void PostEffectBase::Process(const EffectContext& context)
+{
+	if (GetNumberOfBufferShaders() == 1)
+	{
+		PostEffectBufferShader* bufferShader = GetBufferShaderPtr(0);
+
+		bufferShader->Bind();
+	
+		// process each buffer effect and write to dst framebuffer at the end
+		// apply effect into dst buffer
+		context.dstFrameBuffer->Bind();
+
+		drawOrthoQuad2d(context.viewWidth, context.viewHeight);
+
+		context.dstFrameBuffer->UnBind(context.generateMips);
+
+		bufferShader->UnBind();
+	}	
 }

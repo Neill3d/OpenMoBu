@@ -62,15 +62,27 @@ public:
 	void PrepareUniformLocations(GLSLShaderProgram* shader);
 
 	/// <summary>
-	/// must be called inside the binded glsl shader
+	/// collect common data values into a buffer, /see UploadCommonData to upload values into gpu shader
 	/// </summary>
-	void UpdateUniforms(PostPersistentData* data);
+	void CollectCommonData(PostPersistentData* data, const char* enableMaskingPropertyName);
+
+	/// <summary>
+	/// glsl shader must be binded, upload uniforms from collected common data values
+	/// </summary>
+	void UploadCommonData();
 
 	/// <summary>
 	/// a property name in @sa PostPersistentData
 	///  the property will be used to update useMasking glsl uniform value
 	/// </summary>
-	virtual const char* GetEnableMaskPropertyName() const = 0;
+	//virtual const char* GetEnableMaskPropertyName() const = 0;
+
+
+	static GLint GetColorSamplerSlot() { return 0; }
+
+	static GLint GetDepthSamplerSlot() { return 1; }
+
+	static GLint GetLinearDepthSamplerSlot() { return 2; }
 
 	/// <summary>
 	/// glsl sampler slot binded for a mask texture
@@ -82,6 +94,14 @@ protected:
 	GLint lowerClipLoc{ -1 };
 	GLint upperClipLoc{ -1 };
 	GLint useMaskLoc{ -1 };
+
+	struct CommonShaderData
+	{
+		float useMasking{ 0.0f };
+		float lowerClip{ 0.0f };
+		float upperClip{ 0.0f };
+		float pad{ 0.0f };
+	} mCommonShaderData;
 };
 
 struct PostEffectContext
@@ -99,9 +119,69 @@ struct PostEffectContext
 };
 
 /// <summary>
-/// base class for every effect in a post processing chain
+/// one single fragment shader that we do one number of passes to process the input
 /// </summary>
-struct PostEffectBase
+class PostEffectBufferShader
+{
+public:
+
+	PostEffectBufferShader();
+	virtual ~PostEffectBufferShader();
+
+	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
+	virtual int GetNumberOfVariations() const abstract;
+
+	//! an effect public name
+	virtual const char* GetName() const abstract;
+	//! get a filename of vertex shader, for this effect. returns a relative filename
+	virtual const char* GetVertexFname(const int variationIndex) const abstract;
+	//! get a filename of a fragment shader, for this effect, returns a relative filename
+	virtual const char* GetFragmentFname(const int variationIndex) const abstract;
+
+	// does shader uses the scene depth sampler (part of a system input)
+	virtual bool IsDepthSamplerUsed() const { return false; }
+	// does shader uses the scene linear depth sampler (part of a system input)
+	virtual bool IsLinearDepthSamplerUsed() const { return false; }
+
+	/// load and initialize shader from a specified location, vname and fname are computed absolute path
+	bool Load(const int variationIndex, const char* vname, const char* fname);
+
+	bool Load(const char* shaderLocation);
+
+	//! prepare uniforms for a given variation of the effect
+	virtual bool PrepUniforms(const int variationIndex);
+	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
+	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);		//!< grab main UI values for the effect
+
+	//! upload collected data values into gpu shader
+	virtual void UploadUniforms() {};
+
+	/// new feature to have several passes for a specified effect
+	virtual const int GetNumberOfPasses() const;
+	//! initialize a specific path for drawing
+	virtual bool PrepPass(const int pass);
+
+	//! get a pointer to a current shader program
+	GLSLShaderProgram* GetShaderPtr();
+
+	//! bind effect shader program
+	virtual void Bind();
+	//! unbind effect shader program
+	virtual void UnBind();
+
+protected:
+
+	int mCurrentShader{ 0 };
+	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders;
+
+	void SetCurrentShader(const int index) { mCurrentShader = index; }
+	void FreeShaders();
+};
+
+/// <summary>
+/// a set of effect buffer shaders to process the input and write output to the effects chain
+/// </summary>
+class PostEffectBase
 {
 public:
 
@@ -110,59 +190,77 @@ public:
 	//! a destructor
 	virtual ~PostEffectBase();
 
-	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
-	virtual int GetNumberOfVariations() const abstract; 
+	bool Load(const char* shaderLocation);
 
-	//! an effect public name
-	virtual const char *GetName() const abstract;
-	//! get a filename of vertex shader, for this effect. returns a relative filename
-	virtual const char *GetVertexFname(const int variationIndex) const abstract;
-	//! get a filename of a fragment shader, for this effect, returns a relative filename
-	virtual const char *GetFragmentFname(const int variationIndex) const abstract;
-
-	/// load and initialize shader from a specified location, vname and fname are computed absolute path
-	bool Load(const int variationIndex, const char *vname, const char *fname);
-
-	//! prepare uniforms for a given variation of the effect
-	virtual bool PrepUniforms(const int variationIndex);
-	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);		//!< grab main UI values for the effect
-
-	/// new feature to have several passes for a specified effect
-	virtual const int GetNumberOfPasses() const;
-	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass);
-
-	//! get a pointer to a current shader program
-	GLSLShaderProgram *GetShaderPtr();
+	bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);
 
 	//! define internal mask channel index or -1 for default, it comes from a user input (UI)
 	void SetMaskIndex(const int maskIndex) { mMaskIndex = maskIndex; }
 	//! get defined mask channel index
 	int GetMaskIndex() const { return mMaskIndex; }
 
-	virtual bool IsDepthSamplerUsed() const { return false; }
-	virtual bool IsLinearDepthSamplerUsed() const { return false; }
+	virtual bool IsDepthSamplerUsed() const;
+	virtual bool IsLinearDepthSamplerUsed() const;
+
+	struct EffectContext
+	{
+		// input in the effects chain for this effect
+		GLuint srcTextureId;
+		GLuint depthTextureId;
+
+		// write an effect composition to a given frame buffer
+		FrameBuffer* dstFrameBuffer;
+
+		int viewWidth;
+		int viewHeight;
+
+		bool generateMips;
+	};
+
+	//! bind effect shader program
+	virtual void Process(const EffectContext& context);
+
+	virtual int GetNumberOfBufferShaders() const abstract;
+	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) abstract;
+	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const abstract;
 
 protected:
 
-	int mCurrentShader{ 0 };
-	std::vector<GLSLShaderProgram*>	mShaders;
+	//std::vector<std::unique_ptr<PostEffectBufferShader>>	mBufferShaders;
 
 	int mMaskIndex{ -1 }; //!< which mask channel the effect is use (-1 for a default, globally defined mask channel)
 
- 	void SetCurrentShader(const int index) { mCurrentShader = index; }
-	void FreeShaders();
+	//friend class ScopedEffectBind;
+};
 
-	//! bind effect shader program
-	virtual void Bind();
-	//! unbind effect shader program
-	virtual void UnBind();
+/// <summary>
+/// this is for cases when effect contains of one buffer shader execution and directly output to effects chain buffer
+/// </summary>
+/// <typeparam name="T"></typeparam>
+template<typename T>
+class PostEffectSingleShader : public PostEffectBase
+{
+public:
+	PostEffectSingleShader()
+		: PostEffectBase()
+		, mBufferShader(std::make_unique<T>())
+	{}
+	virtual ~PostEffectSingleShader()
+	{}
 
-	friend class ScopedEffectBind;
+	virtual int GetNumberOfBufferShaders() const override { return 1; }
+	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override { return mBufferShader.get(); }
+	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override { return mBufferShader.get(); }
+
+protected:
+
+	std::unique_ptr<PostEffectBufferShader>		mBufferShader;
 };
 
 
+// TODO: effect mix shaders with input - for effect which do processing on input and then a computed output mix it up with input source
+
+/*
 class ScopedEffectBind {
 public:
 	ScopedEffectBind(PostEffectBase* effect) : mEffect(effect) { mEffect->Bind(); }
@@ -170,3 +268,4 @@ public:
 private:
 	PostEffectBase* mEffect;
 };
+*/

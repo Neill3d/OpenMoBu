@@ -192,7 +192,7 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, PostEffect
 		if (mLoc.zFar >= 0)
 			glUniform1f(mLoc.zFar, zfar);
 
-		UpdateUniforms(pData);
+		CollectCommonData(pData);
 
 		if (mLoc.clipInfo >= 0)
 			glUniform4fv(mLoc.clipInfo, 1, clipInfo);

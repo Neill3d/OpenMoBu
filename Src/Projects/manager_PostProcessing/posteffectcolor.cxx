@@ -104,7 +104,7 @@ bool PostEffectColor::CollectUIValues(PostPersistentData* pData, PostEffectConte
 		glUniform4f(mChromaticAberration, static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
 	}
 
-	UpdateUniforms(pData);
+	CollectCommonData(pData);
 
 	if (mLocCSB >= 0)
 		glUniform4f(mLocCSB, (float)contrast, (float)saturation, (float)brightness, (float)gamma);

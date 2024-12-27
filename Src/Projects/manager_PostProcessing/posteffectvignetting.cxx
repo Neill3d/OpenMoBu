@@ -82,7 +82,7 @@ bool PostEffectVignetting::CollectUIValues(PostPersistentData* pData, PostEffect
 		return false;
 
 	mShader->Bind();
-	UpdateUniforms(pData);
+	CollectCommonData(pData);
 
 	if (mLocAmount >= 0)
 		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));

@@ -92,7 +92,7 @@ bool PostEffectFilmGrain::CollectUIValues(PostPersistentData* pData, PostEffectC
 		return false;
 
 	mShader->Bind();
-	UpdateUniforms(pData);
+	CollectCommonData(pData);
 
 	if (textureWidth >= 0)
 		glUniform1f(textureWidth, static_cast<float>(effectContext.w));

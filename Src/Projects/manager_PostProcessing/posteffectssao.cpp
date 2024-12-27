@@ -218,7 +218,7 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContex
 	
 	mShader->Bind();
 
-	UpdateUniforms(pData);
+	CollectCommonData(pData);
 
 	if (mLoc.clipInfo >= 0)
 		glUniform4fv(mLoc.clipInfo, 1, clipInfo);

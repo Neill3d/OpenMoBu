@@ -15,59 +15,46 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "postprocessing_helper.h"
 
-#define SHADER_DISPLACEMENT_NAME				"Displacement"
-#define SHADER_DISPLACEMENT_VERTEX				"\\GLSL\\displacement.vsh"
-#define SHADER_DISPLACEMENT_FRAGMENT			"\\GLSL\\displacement.fsh"
-
 
 //! a constructor
-PostEffectDisplacement::PostEffectDisplacement()
-	: PostEffectBase()
+EffectShaderDisplacement::EffectShaderDisplacement()
+	: PostEffectBufferShader()
 {
 	for (int i = 0; i < LOCATIONS_COUNT; ++i)
 		mLoc.arr[i] = -1;
 
+	memset(&mData, 0, sizeof(ShaderData));
 }
 
 //! a destructor
-PostEffectDisplacement::~PostEffectDisplacement()
+EffectShaderDisplacement::~EffectShaderDisplacement()
 {
 	
 }
 
-const char *PostEffectDisplacement::GetName() const
+const char * EffectShaderDisplacement::GetName() const
 {
-	return SHADER_DISPLACEMENT_NAME;
+	return SHADER_NAME;
 }
-const char *PostEffectDisplacement::GetVertexFname(const int shaderIndex) const
+const char * EffectShaderDisplacement::GetVertexFname(const int shaderIndex) const
 {
-	return SHADER_DISPLACEMENT_VERTEX;
+	return SHADER_VERTEX;
 }
-const char *PostEffectDisplacement::GetFragmentFname(const int shaderIndex) const
+const char * EffectShaderDisplacement::GetFragmentFname(const int shaderIndex) const
 {
-	return SHADER_DISPLACEMENT_FRAGMENT;
+	return SHADER_FRAGMENT;
 }
 
-bool PostEffectDisplacement::PrepUniforms(const int shaderIndex)
+bool EffectShaderDisplacement::PrepUniforms(const int shaderIndex)
 {
-	bool lSuccess = false;
-
-	GLSLShaderProgram* shader = mShaders[shaderIndex];
-
-	if (shader)
+	if (GLSLShaderProgram* shader = mShaders[shaderIndex].get())
 	{
 		shader->Bind();
 
-		GLint loc = shader->findLocation("colorSampler");
+		const GLint loc = shader->findLocation("colorSampler");
 		if (loc >= 0)
-			glUniform1i(loc, 0);
-		loc = shader->findLocation("depthSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 2);
-		loc = shader->findLocation("texRandom");
-		if (loc >= 0)
-			glUniform1i(loc, 4);
-
+			glUniform1i(loc, CommonEffectUniforms::GetColorSamplerSlot());
+		
 		PrepareUniformLocations(shader);
 
 		mLoc.iTime = shader->findLocation("iTime");
@@ -81,15 +68,15 @@ bool PostEffectDisplacement::PrepUniforms(const int shaderIndex)
 
 		shader->UnBind();
 
-		lSuccess = true;
+		return true;
 	}
 
-	return lSuccess;
+	return false;
 }
 
-bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
+bool EffectShaderDisplacement::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
 {
-	bool lSuccess = false;
+	CollectCommonData(pData, ENABLE_MASKING_PROPERTY_NAME);
 
 	double time = (pData->Disp_UsePlayTime) ? effectContext.localTime : effectContext.sysTime;
 
@@ -102,48 +89,41 @@ bool PostEffectDisplacement::CollectUIValues(PostPersistentData *pData, PostEffe
 	const double xcycles = pData->Disp_SinCyclesX;
 	const double ycycles = pData->Disp_SinCyclesY;
 
-	if (GetShaderPtr())
-	{
-		GetShaderPtr()->Bind();
+	mData.iTime = static_cast<float>(_timer);
+	mData.iSpeed = static_cast<float>(timerMult);
+	mData.useQuakeEffect = (pData->UseQuakeWaterEffect) ? 1.0f : 0.0f;
+	mData.xDistMag = 0.0001f * static_cast<float>(xdist);
+	mData.yDistMag = 0.0001f * static_cast<float>(ydist);
+	mData.xSineCycles = static_cast<float>(xcycles);
+	mData.ySineCycles = static_cast<float>(ycycles);
 
-		UpdateUniforms(pData);
-
-		// iTime
-		if (mLoc.iTime >= 0)
-			glUniform1f(mLoc.iTime, (float)_timer);
-
-		if (mLoc.iSpeed >= 0)
-			glUniform1f(mLoc.iSpeed, (float)timerMult);
-
-		if (mLoc.useQuakeEffect >= 0)
-			glUniform1f(mLoc.useQuakeEffect, (pData->UseQuakeWaterEffect) ? 1.0f : 0.0f);
-
-		if (mLoc.xDistMag >= 0)
-			glUniform1f(mLoc.xDistMag, 0.0001f * (float)xdist);
-
-		if (mLoc.yDistMag >= 0)
-			glUniform1f(mLoc.yDistMag, 0.0001f * (float)ydist);
-
-		if (mLoc.xSineCycles >= 0)
-			glUniform1f(mLoc.xSineCycles, (float) xcycles);
-
-		if (mLoc.ySineCycles >= 0)
-			glUniform1f(mLoc.ySineCycles, (float)ycycles);
-
-		GetShaderPtr()->UnBind();
-
-		lSuccess = true;
-	}
-
-	return lSuccess;
+	return true;
 }
 
-void PostEffectDisplacement::Bind()
+void EffectShaderDisplacement::UploadUniforms()
 {
-	PostEffectBase::Bind();
+	UploadCommonData();
+
+	// iTime
+	if (mLoc.iTime >= 0)
+		glUniform1f(mLoc.iTime, mData.iTime);
+
+	if (mLoc.iSpeed >= 0)
+		glUniform1f(mLoc.iSpeed, mData.iSpeed);
+
+	if (mLoc.useQuakeEffect >= 0)
+		glUniform1f(mLoc.useQuakeEffect, mData.useQuakeEffect);
+
+	if (mLoc.xDistMag >= 0)
+		glUniform1f(mLoc.xDistMag, mData.xDistMag);
+
+	if (mLoc.yDistMag >= 0)
+		glUniform1f(mLoc.yDistMag, mData.yDistMag);
+
+	if (mLoc.xSineCycles >= 0)
+		glUniform1f(mLoc.xSineCycles, mData.xSineCycles);
+
+	if (mLoc.ySineCycles >= 0)
+		glUniform1f(mLoc.ySineCycles, mData.ySineCycles);
 }
 
-void PostEffectDisplacement::UnBind()
-{
-	PostEffectBase::UnBind();
-}

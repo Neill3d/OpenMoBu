@@ -81,7 +81,7 @@ bool PostEffectFishEye::CollectUIValues(PostPersistentData* pData, PostEffectCon
 		return false;
 
 	shader->Bind();
-	UpdateUniforms(pData);
+	CollectCommonData(pData);
 
 	if (mLocAmount >= 0)
 		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));

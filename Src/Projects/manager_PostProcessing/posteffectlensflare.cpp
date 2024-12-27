@@ -172,7 +172,7 @@ bool PostEffectLensFlare::SubShader::CollectUIValues(const int shaderIndex, GLSL
 	{
 		mShader->Bind();
 
-		UpdateUniforms(pData);
+		CollectCommonData(pData);
 		UpdateShaderUniforms(mShader, pData, effectContext.w, effectContext.h, seedValue, flareAmount, flareTimer, flarePos, flareTint, flareInner, flareOuter, flareFadeToBorders,
 			flareBorderWidth, flareFeather);
 

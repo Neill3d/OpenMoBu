@@ -196,7 +196,7 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, PostEffectContext
 	
 	mShader->Bind();
 
-	UpdateUniforms(pData);
+	CollectCommonData(pData);
 
 	if (textureWidth >= 0)
 		glUniform1f(textureWidth, (float)effectContext.w);

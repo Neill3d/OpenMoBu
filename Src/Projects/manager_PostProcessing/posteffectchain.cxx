@@ -10,16 +10,16 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectchain.h"
-#include "posteffectssao.h"
+//#include "posteffectssao.h"
 #include "posteffectdisplacement.h"
-#include "posteffectmotionblur.h"
-#include "posteffectlensflare.h"
-#include "posteffectcolor.h"
-#include "posteffectdof.h"
-#include "posteffectfilmgrain.h"
-#include "posteffectfisheye.h"
-#include "posteffectvignetting.h"
-#include "posteffectdof.h"
+//#include "posteffectmotionblur.h"
+//#include "posteffectlensflare.h"
+//#include "posteffectcolor.h"
+//#include "posteffectdof.h"
+//#include "posteffectfilmgrain.h"
+//#include "posteffectfisheye.h"
+//#include "posteffectvignetting.h"
+//#include "posteffectdof.h"
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
 #include "posteffectbuffers.h"
@@ -112,7 +112,7 @@ bool PostEffectChain::Prep(PostPersistentData *pData, PostEffectContext& effectC
 	}
 
 	// update UI values
-
+	/*
 	if (true == mSettings->FishEye && mFishEye.get())
 		mFishEye->CollectUIValues(mSettings, effectContext);
 	
@@ -134,11 +134,12 @@ bool PostEffectChain::Prep(PostPersistentData *pData, PostEffectContext& effectC
 	if (true == mSettings->DepthOfField && mDOF.get())
 		mDOF->CollectUIValues(mSettings, effectContext);
 
-	if (true == mSettings->Displacement && mDisplacement.get())
-		mDisplacement->CollectUIValues(mSettings, effectContext);
-
 	if (true == mSettings->MotionBlur && mMotionBlur.get())
 		mMotionBlur->CollectUIValues(mSettings, effectContext);
+		*/
+	
+	if (true == mSettings->Displacement && mDisplacement.get())
+		mDisplacement->CollectUIValues(mSettings, effectContext);
 
 	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
 	{
@@ -292,7 +293,7 @@ void PostEffectChain::RenderSceneMaskToTexture(const int maskIndex, PostPersiste
 	maskBuffer->UnBind();
 }
 
-bool PostEffectChain::PrepareChainOrder(int& blurAndMix, int& blurAndMix2)
+bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int& blurAndMix, int& blurAndMix2)
 {
 	int count = 0;
 
@@ -320,7 +321,7 @@ bool PostEffectChain::PrepareChainOrder(int& blurAndMix, int& blurAndMix2)
 	if (0 == count && 0 == mSettings->OutputPreview.AsInt())
 		return false;
 
-	mChain.resize(count);
+	chain.resize(count);
 
 	count = 0;
 
@@ -331,8 +332,8 @@ bool PostEffectChain::PrepareChainOrder(int& blurAndMix, int& blurAndMix2)
 
 	if (mSettings->SSAO)
 	{
-		mChain[count] = mSSAO.get();
-		mChain[count]->SetMaskIndex((mSettings->SSAO_UseMasking) ? static_cast<int>(mSettings->SSAO_MaskingChannel) : -1);
+		chain[count] = mSSAO.get();
+		chain[count]->SetMaskIndex((mSettings->SSAO_UseMasking) ? static_cast<int>(mSettings->SSAO_MaskingChannel) : -1);
 		if (mSettings->SSAO_Blur)
 		{
 			blurAndMix = count;
@@ -341,20 +342,20 @@ bool PostEffectChain::PrepareChainOrder(int& blurAndMix, int& blurAndMix2)
 	}
 	if (mSettings->MotionBlur)
 	{
-		mChain[count] = mMotionBlur.get();
-		mChain[count]->SetMaskIndex((mSettings->MotionBlur_UseMasking) ? static_cast<int>(mSettings->MotionBlur_MaskingChannel) : -1);
+		chain[count] = mMotionBlur.get();
+		chain[count]->SetMaskIndex((mSettings->MotionBlur_UseMasking) ? static_cast<int>(mSettings->MotionBlur_MaskingChannel) : -1);
 		count += 1;
 	}
 	if (mSettings->DepthOfField)
 	{
-		mChain[count] = mDOF.get();
-		mChain[count]->SetMaskIndex((mSettings->DOF_UseMasking) ? static_cast<int>(mSettings->DOF_MaskingChannel) : -1);
+		chain[count] = mDOF.get();
+		chain[count]->SetMaskIndex((mSettings->DOF_UseMasking) ? static_cast<int>(mSettings->DOF_MaskingChannel) : -1);
 		count += 1;
 	}
 	if (mSettings->ColorCorrection)
 	{
-		mChain[count] = mColor.get();
-		mChain[count]->SetMaskIndex((mSettings->ColorCorrection_UseMasking) ? static_cast<int>(mSettings->ColorCorrection_MaskingChannel) : -1);
+		chain[count] = mColor.get();
+		chain[count]->SetMaskIndex((mSettings->ColorCorrection_UseMasking) ? static_cast<int>(mSettings->ColorCorrection_MaskingChannel) : -1);
 		if (mSettings->Bloom)
 		{
 			blurAndMix2 = count;
@@ -363,43 +364,96 @@ bool PostEffectChain::PrepareChainOrder(int& blurAndMix, int& blurAndMix2)
 	}
 	if (mSettings->LensFlare)
 	{
-		mChain[count] = mLensFlare.get();
-		mChain[count]->SetMaskIndex((mSettings->LensFlare_UseMasking) ? static_cast<int>(mSettings->LensFlare_MaskingChannel) : -1);
+		chain[count] = mLensFlare.get();
+		chain[count]->SetMaskIndex((mSettings->LensFlare_UseMasking) ? static_cast<int>(mSettings->LensFlare_MaskingChannel) : -1);
 		count += 1;
 	}
 	if (mSettings->Displacement)
 	{
-		mChain[count] = mDisplacement.get();
-		mChain[count]->SetMaskIndex((mSettings->Disp_UseMasking) ? static_cast<int>(mSettings->Disp_MaskingChannel) : -1);
+		chain[count] = mDisplacement.get();
+		chain[count]->SetMaskIndex((mSettings->Disp_UseMasking) ? static_cast<int>(mSettings->Disp_MaskingChannel) : -1);
 		count += 1;
 	}
 	if (mSettings->FishEye)
 	{
-		mChain[count] = mFishEye.get();
-		mChain[count]->SetMaskIndex((mSettings->FishEye_UseMasking) ? static_cast<int>(mSettings->FishEye_MaskingChannel) : -1);
+		chain[count] = mFishEye.get();
+		chain[count]->SetMaskIndex((mSettings->FishEye_UseMasking) ? static_cast<int>(mSettings->FishEye_MaskingChannel) : -1);
 		count += 1;
 	}
 	if (mSettings->FilmGrain)
 	{
-		mChain[count] = mFilmGrain.get();
-		mChain[count]->SetMaskIndex((mSettings->FilmGrain_UseMasking) ? static_cast<int>(mSettings->FilmGrain_MaskingChannel) : -1);
+		chain[count] = mFilmGrain.get();
+		chain[count]->SetMaskIndex((mSettings->FilmGrain_UseMasking) ? static_cast<int>(mSettings->FilmGrain_MaskingChannel) : -1);
 		count += 1;
 	}
 	if (mSettings->Vignetting)
 	{
-		mChain[count] = mVignetting.get();
-		mChain[count]->SetMaskIndex((mSettings->Vign_UseMasking) ? static_cast<int>(mSettings->Vign_MaskingChannel) : -1);
+		chain[count] = mVignetting.get();
+		chain[count]->SetMaskIndex((mSettings->Vign_UseMasking) ? static_cast<int>(mSettings->Vign_MaskingChannel) : -1);
 		count += 1;
 	}
 
 	// TODO: add user effects here !
 	for (int i = 0; i < mSettings->GetNumberOfActiveUserEffects(); ++i)
 	{
-		mChain[count] = mSettings->GetActiveUserEffect(i);
+		chain[count] = mSettings->GetActiveUserEffect(i);
 		count += 1;
 	}
 
 	return true;
+}
+
+void PostEffectChain::RenderEffectToBuffer(PostEffectBase* effect, const GLuint inputLayerSampler)
+{
+	//ScopedEffectBind effectBind(effect);
+
+
+}
+
+void PostEffectChain::RenderEffectToChain(PostEffectBase* effect, PostEffectBuffers* chainBuffers, bool generateMips, int w, int h)
+{
+	const PostEffectBase::EffectContext context{
+		chainBuffers->GetSrcBufferPtr()->GetColorObject(), // src texture id
+		chainBuffers->GetBufferDepthPtr()->GetDepthObject(), // depth texture id
+		chainBuffers->GetDstBufferPtr(), // dst frame buffer
+		w,
+		h,
+		generateMips
+	};
+
+	effect->Process(context);
+
+
+	/*
+	for (int j = 0; j < effect->GetNumberOfPasses(); ++j)
+	{
+		effect->PrepPass(j);
+
+		// bind an input source image for processing by the effect
+		const GLuint texid = chainBuffers->GetSrcBufferPtr()->GetColorObject();
+		glBindTexture(GL_TEXTURE_2D, texid);
+
+		if (generateMips)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		}
+
+		// apply effect into dst buffer
+		chainBuffers->GetDstBufferPtr()->Bind();
+
+		drawOrthoQuad2d(w, h);
+
+		chainBuffers->GetDstBufferPtr()->UnBind(generateMips);
+
+		//
+		chainBuffers->SwapBuffers();
+	}*/
 }
 
 void PostEffectChain::BilateralBlurPass(PostEffectBuffers* buffers)
@@ -599,7 +653,7 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
 	// DONE: bind a depth texture
 	const GLuint linearDepthId = pBufferDepth->GetColorObject();
 
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetLinearDepthSamplerSlot());
 	glBindTexture(GL_TEXTURE_2D, linearDepthId);
 	glActiveTexture(GL_TEXTURE0);
 }
@@ -677,8 +731,11 @@ void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, Po
 		buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), maskIndex);
 }
 
+/*
 bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 {
+	std::vector<PostEffectBase*>		mChain;
+
 	//
 	// Start PostEffectChain task cycle profiling, 
 	//
@@ -693,7 +750,7 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	int blurAndMix{ -1 };
 	int blurAndMix2{ -1 };
 
-	if (!PrepareChainOrder(blurAndMix, blurAndMix2))
+	if (!PrepareChainOrder(mChain, blurAndMix, blurAndMix2))
 		return false;
 
 	// 2. prepare and render into masks
@@ -825,7 +882,7 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	{
 		const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
 
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetDepthSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, depthId);
 		glActiveTexture(GL_TEXTURE0);
 	}
@@ -857,12 +914,13 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 		for (int i = 0, count=static_cast<int>(mChain.size()); i < count; ++i)
 		{
-			if (!mChain[i])
+			PostEffectBase* effect = mChain[i];
+			if (!effect)
 				continue;
 
 			// activate local mask for the effect if applied
-			const unsigned int effectMaskingIndex = (mChain[i]->GetMaskIndex() >= 0) ? static_cast<unsigned int>(mChain[i]->GetMaskIndex()) : globalMaskingIndex;
-			if (IsAnyObjectMaskedByMaskId(static_cast<EMaskingChannel>(mChain[i]->GetMaskIndex())) && effectMaskingIndex != globalMaskingIndex)
+			const unsigned int effectMaskingIndex = (effect->GetMaskIndex() >= 0) ? static_cast<unsigned int>(effect->GetMaskIndex()) : globalMaskingIndex;
+			if (IsAnyObjectMaskedByMaskId(static_cast<EMaskingChannel>(effect->GetMaskIndex())) && effectMaskingIndex != globalMaskingIndex)
 			{
 				const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject(effectMaskingIndex);
 				glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
@@ -870,36 +928,13 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 				glActiveTexture(GL_TEXTURE0);
 			}
 
+			if (!effect->IsRenderToTexture())
 			{
-				ScopedEffectBind effectBind(mChain[i]);
-
-				for (int j = 0; j < mChain[i]->GetNumberOfPasses(); ++j)
-				{
-					mChain[i]->PrepPass(j);
-
-					texid = buffers->GetSrcBufferPtr()->GetColorObject();
-					glBindTexture(GL_TEXTURE_2D, texid);
-
-					if (generateMips)
-					{
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-					}
-					else
-					{
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-					}
-
-					buffers->GetDstBufferPtr()->Bind();
-
-					drawOrthoQuad2d(w, h);
-
-					buffers->GetDstBufferPtr()->UnBind(generateMips);
-
-					//
-					buffers->SwapBuffers();
-				}
+				RenderEffectToChain(effect, buffers, generateMips, w, h);
+			}
+			else
+			{
+				RenderEffectToBuffer(effect, buffers->GetSrcBufferPtr()->GetColorObject());
 			}
 			
 			// 7. blur effect if applied
@@ -940,12 +975,249 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 
 	if (isDepthSamplerBinded)
 	{
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetDepthSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	if (isLinearDepthSamplerBinded)
 	{
-		glActiveTexture(GL_TEXTURE2);
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetLinearDepthSamplerSlot());
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	if (isMaskTextureBinded)
+	{
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	glActiveTexture(GL_TEXTURE0);
+	return lSuccess;
+}
+*/
+
+bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
+{
+	std::vector<PostEffectBase*>		mChain;
+
+	//
+	// Start PostEffectChain task cycle profiling, 
+	//
+	FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostEffectChain), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
+
+	mIsCompressedDataReady = false;
+
+	if (!buffers->Ok() || !mSettings.Ok())
+		return false;
+
+	// 1. prepare chain count and order
+	int blurAndMix{ -1 };
+	int blurAndMix2{ -1 };
+
+	if (!PrepareChainOrder(mChain, blurAndMix, blurAndMix2))
+		return false;
+
+	// 2. prepare and render into masks
+
+	bool isMaskTextureBinded = false;
+	bool isMaskBlurRequested = false;
+	bool isMaskMixRequested = false;
+
+	bool maskRenderFlags[PostPersistentData::NUMBER_OF_MASKS] = { false, false, false, false };
+
+	if (HasAnyMaskUsedByEffect() && HasAnyObjectMasked() && mLastCamera)
+	{
+		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		{
+			const EMaskingChannel maskId = static_cast<EMaskingChannel>(i);
+			if (IsMaskUsedByEffect(maskId) && IsAnyObjectMaskedByMaskId(maskId))
+			{
+				if (mSettings->Masks[i].BlurMask)
+				{
+					isMaskBlurRequested = true;
+				}
+
+				if (mSettings->Masks[i].UseMixWithMask && mSettings->Masks[i].MixWithMask != maskId)
+				{
+					isMaskMixRequested = true;
+					const int maskIndex2 = static_cast<int>(mSettings->Masks[i].MixWithMask);
+					maskRenderFlags[maskIndex2] = true;
+				}
+
+				maskRenderFlags[i] = true;
+				isMaskTextureBinded = true;
+			}
+		}
+
+		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		{
+			if (maskRenderFlags[i])
+			{
+				RenderSceneMaskToTexture(i, mSettings->Masks[i], buffers);
+			}
+		}
+	}
+
+	// 3. in case of SSAO active, render a linear depth texture
+	const bool isLinearDepthSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase * effect) 
+		{
+			return effect->IsLinearDepthSamplerUsed();
+		}) != end(mChain);
+	
+	if (isLinearDepthSamplerBinded)
+	{
+		RenderLinearDepth(buffers);
+	}
+
+	// 4a. blur masks (if applied)
+
+	if (isMaskBlurRequested)
+	{
+		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		{
+			if (maskRenderFlags[i] && mSettings->Masks[i].BlurMask)
+			{
+				BlurMasksPass(i, buffers);
+			}
+		}
+	}
+
+	// 4b. mix masks (if applied)
+	if (isMaskMixRequested)
+	{
+		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		{
+			const int mask2 = static_cast<int>(mSettings->Masks[i].MixWithMask);
+
+			if (maskRenderFlags[i] && mSettings->Masks[i].UseMixWithMask
+				&& i != mask2
+				&& maskRenderFlags[mask2])
+			{
+				MixMasksPass(i, mask2, buffers);
+			}
+		}
+	}
+
+	// user option to show only mask result on a screen
+	const unsigned int globalMaskingIndex = static_cast<unsigned int>(mSettings->GetGlobalMaskIndex());
+
+	if (mSettings->DebugDisplyMasking)
+	{
+		FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+		BlitFBOToFBOCustomAttachment(maskBuffer->GetFrameBuffer(), maskBuffer->GetWidth(), maskBuffer->GetHeight(), globalMaskingIndex,
+			buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), 0u);
+		buffers->SwapBuffers();
+		return true;
+	}
+
+	// 5. bind textures of mask and depth for effects
+
+	if (isMaskTextureBinded)
+	{
+		const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject(globalMaskingIndex);
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+		glBindTexture(GL_TEXTURE_2D, maskTextureId);
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	const bool isDepthSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
+		{
+			return effect->IsDepthSamplerUsed();
+		}) != end(mChain);
+
+	if (isDepthSamplerBinded)
+	{
+		const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
+
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetDepthSamplerSlot());
+		glBindTexture(GL_TEXTURE_2D, depthId);
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	// compute effect chain with double buffer
+
+	// DONE: when buffer is attached, buffer is used itself !
+	bool lSuccess = false;
+	const bool generateMips = mSettings->GenerateMipMaps;
+
+	if (!mChain.empty())
+	{
+		// optional. generate mipmaps for the first target
+		GLuint texid = buffers->GetSrcBufferPtr()->GetColorObject();
+		const int w = buffers->GetWidth();
+		const int h = buffers->GetHeight();
+
+		if (generateMips)
+		{
+			if (texid > 0)
+			{
+				glBindTexture(GL_TEXTURE_2D, texid);
+				glGenerateMipmap(GL_TEXTURE_2D);
+				glBindTexture(GL_TEXTURE_2D, 0);
+			}
+		}
+
+		// 6. render each effect in order
+
+		for (const auto& effect : mChain)
+		{
+			if (!effect)
+				continue;
+
+			// activate local mask for the effect if applied
+			const unsigned int effectMaskingIndex = (effect->GetMaskIndex() >= 0) ? static_cast<unsigned int>(effect->GetMaskIndex()) : globalMaskingIndex;
+			if (IsAnyObjectMaskedByMaskId(static_cast<EMaskingChannel>(effect->GetMaskIndex())) && effectMaskingIndex != globalMaskingIndex)
+			{
+				const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject(effectMaskingIndex);
+				glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+				glBindTexture(GL_TEXTURE_2D, maskTextureId);
+				glActiveTexture(GL_TEXTURE0);
+			}
+
+			RenderEffectToChain(effect, buffers, generateMips, w, h);
+			
+			// 7. blur effect if applied
+			/*
+			// if we need more passes, blur and mix for SSAO or Bloom (Color Correction)
+			if (i == blurAndMix || i == blurAndMix2)
+			{
+				if (false == mSettings->OnlyAO || (i == blurAndMix2))
+				{
+					BilateralBlurAndMixPass(buffers);
+				}
+				else
+				{
+					BilateralBlurPass(buffers);
+				}
+			}
+			*/
+			// if local masking index was used, switch back to global mask for next effect
+			if (effectMaskingIndex != globalMaskingIndex)
+			{
+				const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject(globalMaskingIndex);
+				glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+				glBindTexture(GL_TEXTURE_2D, maskTextureId);
+				glActiveTexture(GL_TEXTURE0);
+			}
+		}
+
+		lSuccess = true;
+	}
+
+	// optional. send a preview packet if applied (rate - compress 25-30 frames per second)
+	if (mSettings->OutputPreview)
+	{
+		SendPreview(buffers, systime);
+	}
+
+	// unbind additional texture slots (from depth, masks)
+
+	if (isDepthSamplerBinded)
+	{
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetDepthSamplerSlot());
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	if (isLinearDepthSamplerBinded)
+	{
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetLinearDepthSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	if (isMaskTextureBinded)
@@ -958,73 +1230,53 @@ bool PostEffectChain::Process(PostEffectBuffers *buffers, double systime)
 	return lSuccess;
 }
 
-
-PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shadersLocation)
+PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shadersLocation, bool immediatelyLoad)
 {
 
 	PostEffectBase *newEffect = nullptr;
 
 	switch (type)
 	{
-	case SHADER_TYPE_FISHEYE:
-		newEffect = new PostEffectFishEye();
-		break;
-	case SHADER_TYPE_COLOR:
-		newEffect = new PostEffectColor();
-		break;
-	case SHADER_TYPE_VIGNETTE:
-		newEffect = new PostEffectVignetting();
-		break;
-	case SHADER_TYPE_FILMGRAIN:
-		newEffect = new PostEffectFilmGrain();
-		break;
-	case SHADER_TYPE_LENSFLARE:
-		newEffect = new PostEffectLensFlare();
-		break;
-	case SHADER_TYPE_SSAO:
-		newEffect = new PostEffectSSAO();
-		break;
-	case SHADER_TYPE_DOF:
-		newEffect = new PostEffectDOF();
-		break;
+	//case SHADER_TYPE_FISHEYE:
+	//	newEffect = new PostEffectFishEye();
+	//	break;
+	//case SHADER_TYPE_COLOR:
+	//	newEffect = new PostEffectColor();
+	//	break;
+	//case SHADER_TYPE_VIGNETTE:
+	//	newEffect = new PostEffectVignetting();
+	//	break;
+	//case SHADER_TYPE_FILMGRAIN:
+	//	newEffect = new PostEffectFilmGrain();
+	//	break;
+	//case SHADER_TYPE_LENSFLARE:
+	//	newEffect = new PostEffectLensFlare();
+	//	break;
+	//case SHADER_TYPE_SSAO:
+	//	newEffect = new PostEffectSSAO();
+	//	break;
+	//case SHADER_TYPE_DOF:
+	//	newEffect = new PostEffectDOF();
+	//	break;
 	case SHADER_TYPE_DISPLACEMENT:
 		newEffect = new PostEffectDisplacement();
 		break;
-	case SHADER_TYPE_MOTIONBLUR:
-		newEffect = new PostEffectMotionBlur();
-		break;
+	//case SHADER_TYPE_MOTIONBLUR:
+	//	newEffect = new PostEffectMotionBlur();
+	//	break;
 	}
 
-
-	try
+	if (immediatelyLoad)
 	{
-		if (nullptr == newEffect)
+		if (!newEffect->Load(shadersLocation))
 		{
-			throw std::exception("failed to allocate memory for the shader");
-		}
+			LOGE("Post Effect failed to Load\n");
 
-		for (int i = 0; i < newEffect->GetNumberOfVariations(); ++i)
-		{
-			FBString vertex_path(shadersLocation, newEffect->GetVertexFname(i));
-			FBString fragment_path(shadersLocation, newEffect->GetFragmentFname(i));
-
-			if (false == newEffect->Load(i, vertex_path, fragment_path))
-			{
-				throw std::exception("failed to load and prepare effect");
-			}
-
-			// samplers and locations
-			newEffect->PrepUniforms(i);
+			delete newEffect;
+			newEffect = nullptr;
 		}
 	}
-	catch (const std::exception &e)
-	{
-		FBTrace("Post Effect Chain ERROR: %s\n", e.what());
-
-		delete newEffect;
-		newEffect = nullptr;
-	}
-
+	
 	return newEffect;
 }
 
