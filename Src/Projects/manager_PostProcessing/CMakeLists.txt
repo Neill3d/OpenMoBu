@@ -41,6 +41,7 @@ source_group("ImGuiNodes" FILES ${IMGUI_NODES})
 file(GLOB_RECURSE SRCS *.cxx *.cpp *.c *.h)
 
 set (SHADERS
+    GLSL/blur.fsh
     GLSL/color.fsh
     GLSL/depthLinearize.fsh
     GLSL/displacement.fsh
@@ -69,7 +70,43 @@ set (SHADERS
 )
 source_group("Shaders" FILES ${SHADERS})
 
-add_library(${PROJECT_NAME} SHARED ${SRCS} ${SHADERS} ${IMGUI_CORE} ${IMGUI_NODES})
+set (POSTEFFECTS
+    posteffectbase.h
+    posteffectbase.cxx
+    posteffectcolor.h
+    posteffectcolor.cxx
+    posteffectdisplacement.h
+    posteffectdisplacement.cpp
+    posteffectdof.h
+    posteffectdof.cxx
+    posteffectfilmgrain.h
+    posteffectfilmgrain.cxx
+    posteffectfisheye.h
+    posteffectfisheye.cxx
+    posteffectlensflare.h
+    posteffectlensflare.cpp
+    posteffectmotionblur.h
+    posteffectmotionblur.cpp
+    posteffectssao.h
+    posteffectssao.cpp
+    posteffectvignetting.h
+    posteffectvignetting.cxx
+)
+source_group("PostEffects" FILES ${POSTEFFECTS})
+
+set (POSTEFFECTSSHADERS
+    posteffectshader_bilateral_blur.h
+    posteffectshader_bilateral_blur.cxx
+    posteffectshader_blur_lineardepth.h
+    posteffectshader_blur_lineardepth.cxx
+    posteffectshader_downscale.h
+    posteffectshader_downscale.cxx
+    posteffectshader_lineardepth.h
+    posteffectshader_lineardepth.cxx
+)
+source_group("PostEffectsShaders" FILES ${POSTEFFECTSSHADERS})
+
+add_library(${PROJECT_NAME} SHARED ${SRCS} ${SHADERS} ${POSTEFFECTS} ${POSTEFFECTSSHADERS} ${IMGUI_CORE} ${IMGUI_NODES})
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
