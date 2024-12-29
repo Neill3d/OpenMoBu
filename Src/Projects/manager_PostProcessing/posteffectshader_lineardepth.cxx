@@ -31,13 +31,13 @@ const char* PostEffectShaderLinearDepth::GetName() const
 //! get a filename of vertex shader, for this effect. returns a relative filename
 const char* PostEffectShaderLinearDepth::GetVertexFname(const int variationIndex) const
 {
-	return "\\GLSL\\simple.vsh";
+	return "/GLSL/simple.vsh";
 }
 
 //! get a filename of a fragment shader, for this effect, returns a relative filename
 const char* PostEffectShaderLinearDepth::GetFragmentFname(const int variationIndex) const
 {
-	return "\\GLSL\\depthLinearize.fsh";
+	return "/GLSL/depthLinearize.fsh";
 }
 
 //! prepare uniforms for a given variation of the effect
@@ -60,7 +60,7 @@ bool PostEffectShaderLinearDepth::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderLinearDepth::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool PostEffectShaderLinearDepth::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
 {
 	const float znear = static_cast<float>(effectContext.camera->NearPlaneDistance);
 	const float zfar = static_cast<float>(effectContext.camera->FarPlaneDistance);
@@ -84,7 +84,7 @@ const int PostEffectShaderLinearDepth::GetNumberOfPasses() const
 	return 1;
 }
 //! initialize a specific path for drawing
-bool PostEffectShaderLinearDepth::PrepPass(const int pass)
+bool PostEffectShaderLinearDepth::PrepPass(const int pass, int w, int h)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)

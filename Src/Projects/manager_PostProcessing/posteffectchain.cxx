@@ -24,6 +24,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "fxmaskingshader.h"
 #include "posteffectbuffers.h"
 
+#include "posteffectshader_bilateral_blur.h"
+
 // shared shaders
 
 #define SHADER_DEPTH_LINEARIZE_VERTEX		"\\GLSL\\simple.vsh"
@@ -140,6 +142,9 @@ bool PostEffectChain::Prep(PostPersistentData *pData, PostEffectContext& effectC
 	
 	if (true == mSettings->Displacement && mDisplacement.get())
 		mDisplacement->CollectUIValues(mSettings, effectContext);
+
+	if (mEffectBilateralBlur.get())
+		mEffectBilateralBlur->CollectUIValues(pData, effectContext);
 
 	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
 	{
@@ -403,18 +408,13 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 	return true;
 }
 
-void PostEffectChain::RenderEffectToBuffer(PostEffectBase* effect, const GLuint inputLayerSampler)
-{
-	//ScopedEffectBind effectBind(effect);
-
-
-}
 
 void PostEffectChain::RenderEffectToChain(PostEffectBase* effect, PostEffectBuffers* chainBuffers, bool generateMips, int w, int h)
 {
 	const PostEffectBase::EffectContext context{
 		chainBuffers->GetSrcBufferPtr()->GetColorObject(), // src texture id
 		chainBuffers->GetBufferDepthPtr()->GetDepthObject(), // depth texture id
+		chainBuffers,
 		chainBuffers->GetDstBufferPtr(), // dst frame buffer
 		w,
 		h,
@@ -662,42 +662,36 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 {
 	assert(maskIndex < PostPersistentData::NUMBER_OF_MASKS);
 
-	FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
-
 	// Bilateral Blur Pass
 
-	const GLuint texid = maskBuffer->GetColorObject(maskIndex);
-	glBindTexture(GL_TEXTURE_2D, texid);
 	
-	buffers->GetBufferBlurPtr()->Bind();
-	mShaderImageBlur->Bind();
 
+	const FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+	const GLuint texid = maskBuffer->GetColorObject(maskIndex);
 	const int w = buffers->GetWidth();
 	const int h = buffers->GetHeight();
-	
-	const FBVector2d blurMaskScale = mSettings->GetMaskScale(maskIndex);
-	
-	if (mLocImageBlurScale >= 0)
-		glUniform4f(mLocImageBlurScale,
-			blurMaskScale.mValue[0] / static_cast<float>(w),
-			blurMaskScale.mValue[1] / static_cast<float>(h),
-			1.0f / static_cast<float>(w),
-			1.0f / static_cast<float>(h));
-	
-	drawOrthoQuad2d(w, h);
-	
-	mShaderImageBlur->UnBind();
-	buffers->GetBufferBlurPtr()->UnBind();
-	
-	glBindTexture(GL_TEXTURE_2D, 0);
-	
+
+	PostEffectBase::EffectContext context
+	{
+		texid,
+		0,
+		nullptr,
+		buffers->GetBufferBlurPtr(),
+		w,
+		h,
+		false
+	};
+
+	mEffectBilateralBlur->SetMaskIndex(maskIndex);
+	mEffectBilateralBlur->Process(context);
+
 	BlitFBOToFBOCustomAttachment(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(), 0,
 		buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), maskIndex);
 }
 
 void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers)
 {
-	FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+	const FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
 
 	// Mix masks = Mask A * Mask B
 
@@ -1230,12 +1224,12 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 	return lSuccess;
 }
 
-PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shadersLocation, bool immediatelyLoad)
+PostEffectBase* PostEffectChain::ShaderFactory(const BuildInEffect effectType, const char *shadersLocation, bool immediatelyLoad)
 {
 
 	PostEffectBase *newEffect = nullptr;
 
-	switch (type)
+	switch (effectType)
 	{
 	//case SHADER_TYPE_FISHEYE:
 	//	newEffect = new PostEffectFishEye();
@@ -1258,7 +1252,7 @@ PostEffectBase *PostEffectChain::ShaderFactory(const int type, const char *shade
 	//case SHADER_TYPE_DOF:
 	//	newEffect = new PostEffectDOF();
 	//	break;
-	case SHADER_TYPE_DISPLACEMENT:
+	case BuildInEffect::DISPLACEMENT:
 		newEffect = new PostEffectDisplacement();
 		break;
 	//case SHADER_TYPE_MOTIONBLUR:
@@ -1326,15 +1320,15 @@ bool PostEffectChain::LoadShaders()
 
 	FBTrace("[PostProcessing] Shaders Location - %s\n", shadersPath);
 
-	mFishEye.reset(ShaderFactory(SHADER_TYPE_FISHEYE, shadersPath));
-	mColor.reset(ShaderFactory(SHADER_TYPE_COLOR, shadersPath));
-	mVignetting.reset(ShaderFactory(SHADER_TYPE_VIGNETTE, shadersPath));
-	mFilmGrain.reset(ShaderFactory(SHADER_TYPE_FILMGRAIN, shadersPath));
-	mLensFlare.reset(ShaderFactory(SHADER_TYPE_LENSFLARE, shadersPath));
-	mSSAO.reset(ShaderFactory(SHADER_TYPE_SSAO, shadersPath));
-	mDOF.reset(ShaderFactory(SHADER_TYPE_DOF, shadersPath));
-	mDisplacement.reset(ShaderFactory(SHADER_TYPE_DISPLACEMENT, shadersPath));
-	mMotionBlur.reset(ShaderFactory(SHADER_TYPE_MOTIONBLUR, shadersPath));
+	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, shadersPath));
+	mColor.reset(ShaderFactory(BuildInEffect::COLOR, shadersPath));
+	mVignetting.reset(ShaderFactory(BuildInEffect::VIGNETTE, shadersPath));
+	mFilmGrain.reset(ShaderFactory(BuildInEffect::FILMGRAIN, shadersPath));
+	mLensFlare.reset(ShaderFactory(BuildInEffect::LENSFLARE, shadersPath));
+	mSSAO.reset(ShaderFactory(BuildInEffect::SSAO, shadersPath));
+	mDOF.reset(ShaderFactory(BuildInEffect::DOF, shadersPath));
+	mDisplacement.reset(ShaderFactory(BuildInEffect::DISPLACEMENT, shadersPath));
+	mMotionBlur.reset(ShaderFactory(BuildInEffect::MOTIONBLUR, shadersPath));
 
 	// load shared shaders (blur, mix)
 
@@ -1398,8 +1392,15 @@ bool PostEffectChain::LoadShaders()
 		mShaderBlur.reset(pNewShader.release());
 
 		//
-		// IMAGE BLUR
+		// IMAGE BLUR, simple bilateral blur
 
+		mEffectBilateralBlur.reset(new PostEffectBilateralBlur());
+		if (!mEffectBilateralBlur->Load(shadersPath))
+		{
+			throw std::exception("failed to load and prepare image blur shader");
+		}
+
+		/*
 		pNewShader.reset(new GLSLShaderProgram);
 
 		vertex_path = FBString(shadersPath, SHADER_IMAGE_BLUR_VERTEX);
@@ -1422,7 +1423,7 @@ bool PostEffectChain::LoadShaders()
 		pNewShader->UnBind();
 
 		mShaderImageBlur.reset(pNewShader.release());
-
+		*/
 		//
 		// MIX
 

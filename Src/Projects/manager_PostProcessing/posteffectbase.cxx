@@ -11,6 +11,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectbase.h"
 #include "postpersistentdata.h"
+#include "posteffectbuffers.h"
 #include "mobu_logging.h"
 
 /////////////////////////////////////////////////////////////////////////
@@ -79,8 +80,7 @@ bool PostEffectBufferShader::Load(const int shaderIndex, const char* vname, cons
 		mShaders[shaderIndex].reset();
 	}
 
-	bool lSuccess = true;
-	GLSLShaderProgram* shader = new GLSLShaderProgram();
+	std::unique_ptr<GLSLShaderProgram> shader = std::make_unique<GLSLShaderProgram>();
 
 	try
 	{
@@ -98,23 +98,19 @@ bool PostEffectBufferShader::Load(const int shaderIndex, const char* vname, cons
 	catch (const std::exception& e)
 	{
 		LOGE("Post Effect Chain (%s, %s) ERROR: %s\n", vname, fname, e.what());
-
-		delete shader;
-		shader = nullptr;
-
-		lSuccess = false;
+		return false;
 	}
 
 	if (mShaders.size() > shaderIndex)
 	{
-		mShaders[shaderIndex].reset(shader);
+		mShaders[shaderIndex].swap(shader);
 	}
 	else
 	{
-		mShaders.push_back(std::make_unique<GLSLShaderProgram>(shader));
+		mShaders.push_back(std::move(shader));
 	}
 
-	return lSuccess;
+	return true;
 }
 
 bool PostEffectBufferShader::Load(const char* shadersLocation)
@@ -138,7 +134,7 @@ bool PostEffectBufferShader::PrepUniforms(const int)
 	return false;
 }
 
-bool PostEffectBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool PostEffectBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
 {
 	return false;
 }
@@ -147,7 +143,7 @@ const int PostEffectBufferShader::GetNumberOfPasses() const
 {
 	return 1;
 }
-bool PostEffectBufferShader::PrepPass(const int pass)
+bool PostEffectBufferShader::PrepPass(const int pass, int w, int h)
 {
 	return true;
 }
@@ -155,6 +151,65 @@ bool PostEffectBufferShader::PrepPass(const int pass)
 GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
 	assert(mCurrentShader >= 0 && mCurrentShader < mShaders.size());
 	return mShaders[mCurrentShader].get();
+}
+
+void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips)
+{
+	Bind();
+
+	PrepPass(passIndex, w, h);
+
+	// bind an input source image for processing by the effect
+
+	glBindTexture(GL_TEXTURE_2D, inputTextureId);
+
+	if (generateMips)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	}
+	else
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
+
+	// apply effect into dst buffer
+	dstBuffer->Bind();
+
+	drawOrthoQuad2d(w, h);
+	
+	UnBind();
+	dstBuffer->UnBind(generateMips);
+}
+
+void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips)
+{
+	if (GetNumberOfPasses() == 0)
+		return;
+
+	GLuint texId = inputTextureId;
+
+	// render all passes except last one
+	// we can't do intermediate passes without buffers
+	if (buffers)
+	{
+		for (int j = 0; j < GetNumberOfPasses() - 1; ++j)
+		{
+			RenderPass(j, buffers->GetDstBufferPtr(), texId, w, h, generateMips);
+
+			//
+			buffers->SwapBuffers();
+
+			// the input for the next pass
+			texId = buffers->GetSrcBufferPtr()->GetColorObject();
+		}
+	}
+	
+	// last one goes into dst buffer
+
+	const int finalPassIndex = GetNumberOfPasses() - 1;
+	RenderPass(finalPassIndex, dstBuffer, texId, w, h, generateMips);
 }
 
 void PostEffectBufferShader::Bind()
@@ -172,18 +227,20 @@ void PostEffectBufferShader::UnBind()
 	}
 }
 
+void PostEffectBufferShader::SetDownscaleMode(const bool value)
+{
+	isDownscale = value;
+	version += 1;
+}
 
 /////////////////////////////////////////////////////////////////////////
 // EffectBase
 
 PostEffectBase::PostEffectBase()
-{
-}
+{}
 
 PostEffectBase::~PostEffectBase()
-{
-	//mBufferShaders.clear();
-}
+{}
 
 bool PostEffectBase::Load(const char* shadersLocation)
 {
@@ -219,7 +276,7 @@ bool PostEffectBase::CollectUIValues(PostPersistentData* pData, PostEffectContex
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
-		if (!GetBufferShaderPtr(i)->CollectUIValues(pData, effectContext))
+		if (!GetBufferShaderPtr(i)->CollectUIValues(pData, effectContext, GetMaskIndex()))
 			return false;
 	}
 
@@ -229,20 +286,93 @@ bool PostEffectBase::CollectUIValues(PostPersistentData* pData, PostEffectContex
 
 void PostEffectBase::Process(const EffectContext& context)
 {
-	if (GetNumberOfBufferShaders() == 1)
+	if (GetNumberOfBufferShaders() == 0)
+		return;
+
+	// if buffer shader is original size, we can use chain intermediate buffers for processing
+	//  we also have to allocate the output of each buffer shader, so that we can use them as input textures for every next buffer shader
+	//  the order is  input->first buffer shader processing->second buffer shader could use result of first buffer shader
+	// ->main buffer shader mix initial input and result of second buffer shader
+
+	// get a framebuffer for every intermediate step
+	InitializeFrameBuffers(context.viewWidth, context.viewHeight);
+
+	const bool needBuffers = DoNeedIntermediateBuffers();
+
+	for (int i = 0; i < GetNumberOfBufferShaders() - 1; ++i)
 	{
-		PostEffectBufferShader* bufferShader = GetBufferShaderPtr(0);
+		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			FrameBuffer* bufferShaderFrameBuffer = GetFrameBufferForBufferShader(i);
+			bufferShader->Render(nullptr, bufferShaderFrameBuffer, context.srcTextureId, context.viewWidth, context.viewHeight, context.generateMips);
 
-		bufferShader->Bind();
-	
-		// process each buffer effect and write to dst framebuffer at the end
-		// apply effect into dst buffer
-		context.dstFrameBuffer->Bind();
+			// TODO: bind result of buffer shader for next buffer shaders !
+		}
+	}
 
-		drawOrthoQuad2d(context.viewWidth, context.viewHeight);
-
-		context.dstFrameBuffer->UnBind(context.generateMips);
-
-		bufferShader->UnBind();
+	// main buffer shader is a last shader in the list, it have to output directly to the chain effects
+	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
+	if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader))
+	{
+		bufferShader->Render(nullptr, context.dstFrameBuffer, context.srcTextureId, context.viewWidth, context.viewHeight, context.generateMips);
 	}	
+}
+
+void PostEffectBase::InitializeFrameBuffers(int w, int h)
+{
+	if (GetNumberOfBufferShaders() <= 1)
+	{
+		mFrameBuffers.clear();
+		return;
+	}
+
+	// we need framebuffer for all buffer shaders except the last one which goes into effect chain directly
+
+	const int count = GetNumberOfBufferShaders() - 1;
+	if (count != static_cast<int>(mFrameBuffers.size()))
+	{
+		mFrameBuffers.resize(count);
+		mBufferShaderVersions.resize(count, 0);
+	}
+
+	const int downscaleWidth = w / 4;
+	const int downscaleHeight = h / 4;
+
+	for (int i = 0; i < count; ++i)
+	{
+		PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i);
+
+		if (mBufferShaderVersions[i] != bufferShader->GetVersion())
+		{
+			mFrameBuffers[i].reset(!bufferShader->IsDownscaleMode()
+				? new FrameBuffer(w, h, 72, 1)
+				: new FrameBuffer(downscaleWidth, downscaleHeight, 72, 1)
+			);
+		}
+	}
+}
+
+FrameBuffer* PostEffectBase::GetFrameBufferForBufferShader(const int shaderIndex)
+{
+	return mFrameBuffers[shaderIndex].get();
+}
+
+bool PostEffectBase::DoNeedIntermediateBuffers()
+{
+	return false;
+}
+
+void PostEffectBase::BindFrameBuffer(int bufferIndex)
+{
+	mFrameBuffers[bufferIndex]->Bind();
+}
+
+void PostEffectBase::UnBindFrameBuffer(int bufferIndex, bool generateMips)
+{
+	mFrameBuffers[bufferIndex]->UnBind(generateMips);
+}
+
+GLuint PostEffectBase::GetTextureTextureId(int bufferIndex) const
+{
+	return mFrameBuffers[bufferIndex]->GetColorObject();
 }

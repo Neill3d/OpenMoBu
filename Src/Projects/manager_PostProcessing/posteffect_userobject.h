@@ -107,7 +107,7 @@ public:
 		return true;
 	}
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
+	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex) override;
 
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const override
@@ -115,7 +115,7 @@ public:
 		return 1;
 	}
 	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass) override
+	virtual bool PrepPass(const int pass, int w, int h) override
 	{
 		return true;
 	}
@@ -247,6 +247,8 @@ public:
 	{}
 	virtual ~UserEffect()
 	{}
+
+	virtual const char* GetName() const override;
 
 	virtual int GetNumberOfBufferShaders() const override;
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override;

@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectshader_bilateral_blur.h"
+#include "postpersistentdata.h"
 #include "mobu_logging.h"
 
 /////////////////////////////////////////////////////////////////////////
@@ -31,13 +32,13 @@ const char* PostEffectShaderBilateralBlur::GetName() const
 //! get a filename of vertex shader, for this effect. returns a relative filename
 const char* PostEffectShaderBilateralBlur::GetVertexFname(const int variationIndex) const
 {
-	return "\\GLSL\\simple.vsh";
+	return "/GLSL/simple.vsh";
 }
 
 //! get a filename of a fragment shader, for this effect, returns a relative filename
 const char* PostEffectShaderBilateralBlur::GetFragmentFname(const int variationIndex) const
 {
-	return "\\GLSL\\imageBlur.fsh";
+	return "/GLSL/imageBlur.fsh";
 }
 
 //! prepare uniforms for a given variation of the effect
@@ -61,8 +62,12 @@ bool PostEffectShaderBilateralBlur::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBilateralBlur::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool PostEffectShaderBilateralBlur::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
 {
+	if (pData)
+	{
+		mBlurMaskScale = pData->GetMaskScale(maskIndex);
+	}
 	return true;
 }
 
@@ -72,21 +77,16 @@ const int PostEffectShaderBilateralBlur::GetNumberOfPasses() const
 	return 1;
 }
 //! initialize a specific path for drawing
-bool PostEffectShaderBilateralBlur::PrepPass(const int pass)
+bool PostEffectShaderBilateralBlur::PrepPass(const int pass, int w, int h)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
 		return false;
 
-	const int w = buffers->GetWidth();
-	const int h = buffers->GetHeight();
-
-	const FBVector2d blurMaskScale = FBVector2d(1.0, 1.0); // TODO: //mSettings->GetMaskScale(maskIndex);
-
 	if (mLocImageBlurScale >= 0)
 		glUniform4f(mLocImageBlurScale,
-			blurMaskScale.mValue[0] / static_cast<float>(w),
-			blurMaskScale.mValue[1] / static_cast<float>(h),
+			static_cast<float>(mBlurMaskScale.mValue[0]) / static_cast<float>(w),
+			static_cast<float>(mBlurMaskScale.mValue[1]) / static_cast<float>(h),
 			1.0f / static_cast<float>(w),
 			1.0f / static_cast<float>(h));
 

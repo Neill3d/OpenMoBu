@@ -31,13 +31,13 @@ const char* PostEffectShaderDownscale::GetName() const
 //! get a filename of vertex shader, for this effect. returns a relative filename
 const char* PostEffectShaderDownscale::GetVertexFname(const int variationIndex) const
 {
-	return "\\GLSL\\downscale.vsh";
+	return "/GLSL/downscale.vsh";
 }
 
 //! get a filename of a fragment shader, for this effect, returns a relative filename
 const char* PostEffectShaderDownscale::GetFragmentFname(const int variationIndex) const
 {
-	return "\\GLSL\\downscale.fsh";
+	return "/GLSL/downscale.fsh";
 }
 
 //! prepare uniforms for a given variation of the effect
@@ -47,7 +47,7 @@ bool PostEffectShaderDownscale::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderDownscale::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool PostEffectShaderDownscale::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
 {
 	return true;
 }
@@ -58,7 +58,7 @@ const int PostEffectShaderDownscale::GetNumberOfPasses() const
 	return 1;
 }
 //! initialize a specific path for drawing
-bool PostEffectShaderDownscale::PrepPass(const int pass)
+bool PostEffectShaderDownscale::PrepPass(const int pass, int w, int h)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
@@ -69,7 +69,7 @@ bool PostEffectShaderDownscale::PrepPass(const int pass)
 
 	GLint loc = shader->findLocation("texelSize");
 	if (loc >= 0)
-		glUniform2f(loc, 1.0f / (float)buffers->GetWidth(), 1.0f / (float)buffers->GetHeight());
+		glUniform2f(loc, 1.0f / static_cast<float>(w), 1.0f / static_cast<float>(h));
 
 	// TODO: we probably could skip that, as we are going to render using the shader
 	shader->UnBind();

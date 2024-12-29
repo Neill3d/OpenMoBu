@@ -32,13 +32,13 @@ const char* PostEffectShaderBlurLinearDepth::GetName() const
 //! get a filename of vertex shader, for this effect. returns a relative filename
 const char* PostEffectShaderBlurLinearDepth::GetVertexFname(const int variationIndex) const
 {
-	return "\\GLSL\\simple.vsh";
+	return "/GLSL/simple.vsh";
 }
 
 //! get a filename of a fragment shader, for this effect, returns a relative filename
 const char* PostEffectShaderBlurLinearDepth::GetFragmentFname(const int variationIndex) const
 {
-	return "\\GLSL\\depthLinearize.fsh";
+	return "/GLSL/depthLinearize.fsh";
 }
 
 //! prepare uniforms for a given variation of the effect
@@ -86,20 +86,10 @@ const int PostEffectShaderBlurLinearDepth::GetNumberOfPasses() const
 //! initialize a specific path for drawing
 bool PostEffectShaderBlurLinearDepth::PrepPass(const int pass)
 {
-	GLSLShaderProgram* shader = GetShaderPtr();
-	if (!shader)
-		return false;
-
-	// TODO: are we assume that the pass is already binded ?!
-	shader->Bind();
-
 	if (mLocBlurSharpness >= 0)
 		glUniform1f(mLocBlurSharpness, blurSharpness);
 	if (mLocBlurRes >= 0)
 		glUniform2f(mLocBlurRes, invRes[0], invRes[1]);
-
-	// TODO: we probably could skip that, as we are going to render using the shader
-	shader->UnBind();
 
 	return true;
 }

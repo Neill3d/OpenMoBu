@@ -563,7 +563,7 @@ bool UserBufferShader::IsLinearDepthSamplerUsed() const
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool UserBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool UserBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 
@@ -658,6 +658,11 @@ bool UserBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectCont
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UserEffect
 
+const char* UserEffect::GetName() const
+{
+	return mUserObject->Name;
+}
+
 int UserEffect::GetNumberOfBufferShaders() const
 {
 	const int count = mUserObject->BufferShaders.GetCount();
@@ -695,7 +700,6 @@ const PostEffectBufferShader* UserEffect::GetBufferShaderPtr(const int bufferSha
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PostEffectUserObject
-
 
 
 /************************************************

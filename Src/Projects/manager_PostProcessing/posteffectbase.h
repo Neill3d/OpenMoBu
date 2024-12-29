@@ -31,18 +31,18 @@ namespace FBSDKNamespace
 
 //////////////////////////////
 
-enum
+enum class BuildInEffect
 {
-	SHADER_TYPE_FISHEYE,
-	SHADER_TYPE_COLOR,
-	SHADER_TYPE_VIGNETTE,
-	SHADER_TYPE_FILMGRAIN,
-	SHADER_TYPE_LENSFLARE,
-	SHADER_TYPE_SSAO,
-	SHADER_TYPE_DOF,
-	SHADER_TYPE_DISPLACEMENT,
-	SHADER_TYPE_MOTIONBLUR,
-	SHADER_TYPE_COUNT
+	FISHEYE,
+	COLOR,
+	VIGNETTE,
+	FILMGRAIN,
+	LENSFLARE,
+	SSAO,
+	DOF,
+	DISPLACEMENT,
+	MOTIONBLUR,
+	COUNT
 };
 
 enum class CompositionMask : uint32_t
@@ -55,7 +55,7 @@ enum class CompositionMask : uint32_t
 /// <summary>
 /// uniforms needed for a common effect functionality, masking, clipping, etc.
 /// </summary>
-struct CommonEffectUniforms
+class CommonEffectUniforms
 {
 public:
 
@@ -151,31 +151,45 @@ public:
 	//! prepare uniforms for a given variation of the effect
 	virtual bool PrepUniforms(const int variationIndex);
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);		//!< grab main UI values for the effect
+	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex);		//!< grab main UI values for the effect
 
 	//! upload collected data values into gpu shader
 	virtual void UploadUniforms() {};
 
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const;
-	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass);
-
+	
 	//! get a pointer to a current shader program
 	GLSLShaderProgram* GetShaderPtr();
+
+	/// <summary>
+	/// the given buffer shader will process the given inputTextureId and write result into dst frame buffer
+	/// </summary>
+	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips);
+
+	void SetDownscaleMode(const bool value);
+	bool IsDownscaleMode() const { return isDownscale; }
+	int GetVersion() const { return version; }
+
+protected:
+	bool isDownscale{ false };
+	int version; //!< keep track of resolution modifications, inc version everytime we change resolution
+	int mCurrentShader{ 0 };
+	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders;
+
+	
+	void SetCurrentShader(const int index) { mCurrentShader = index; }
+	void FreeShaders();
+
+	//! initialize a specific path for drawing
+	virtual bool PrepPass(const int pass, int w, int h);
 
 	//! bind effect shader program
 	virtual void Bind();
 	//! unbind effect shader program
 	virtual void UnBind();
 
-protected:
-
-	int mCurrentShader{ 0 };
-	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders;
-
-	void SetCurrentShader(const int index) { mCurrentShader = index; }
-	void FreeShaders();
+	void RenderPass(int passIndex, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips);
 };
 
 /// <summary>
@@ -189,6 +203,9 @@ public:
 	PostEffectBase();
 	//! a destructor
 	virtual ~PostEffectBase();
+
+	//! an effect public name
+	virtual const char* GetName() const abstract; // { return mName.c_str(); }
 
 	bool Load(const char* shaderLocation);
 
@@ -208,6 +225,8 @@ public:
 		GLuint srcTextureId;
 		GLuint depthTextureId;
 
+		PostEffectBuffers* buffers;
+
 		// write an effect composition to a given frame buffer
 		FrameBuffer* dstFrameBuffer;
 
@@ -217,7 +236,6 @@ public:
 		bool generateMips;
 	};
 
-	//! bind effect shader program
 	virtual void Process(const EffectContext& context);
 
 	virtual int GetNumberOfBufferShaders() const abstract;
@@ -226,11 +244,26 @@ public:
 
 protected:
 
-	//std::vector<std::unique_ptr<PostEffectBufferShader>>	mBufferShaders;
+	//std::string mName;
 
 	int mMaskIndex{ -1 }; //!< which mask channel the effect is use (-1 for a default, globally defined mask channel)
 
-	//friend class ScopedEffectBind;
+	std::vector<std::unique_ptr<FrameBuffer>>	mFrameBuffers; // in case buffer shader is used to render it into texture
+	std::vector<int> mBufferShaderVersions; // keep last processing buffer shader version, every resolution change is going to inc the version
+
+	// in case of render to texture
+	void InitializeFrameBuffers(int w, int h);
+
+	void BindFrameBuffer(int bufferIndex);
+
+	void UnBindFrameBuffer(int bufferIndex, bool generateMips);
+
+	GLuint GetTextureTextureId(int bufferIndex) const;
+
+	FrameBuffer* GetFrameBufferForBufferShader(const int shaderIndex);
+
+	bool DoNeedIntermediateBuffers();
+
 };
 
 /// <summary>
@@ -248,13 +281,18 @@ public:
 	virtual ~PostEffectSingleShader()
 	{}
 
+	virtual const char* GetName() const override
+	{
+		return mBufferShader->GetName();
+	}
+
 	virtual int GetNumberOfBufferShaders() const override { return 1; }
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override { return mBufferShader.get(); }
 	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override { return mBufferShader.get(); }
 
 protected:
 
-	std::unique_ptr<PostEffectBufferShader>		mBufferShader;
+	std::unique_ptr<T>		mBufferShader;
 };
 
 

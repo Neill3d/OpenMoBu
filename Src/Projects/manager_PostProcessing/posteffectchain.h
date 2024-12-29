@@ -17,6 +17,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postpersistentdata.h"
 #include "posteffectbase.h"
 
+#include "posteffectshader_bilateral_blur.h"
+
 #include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
@@ -25,6 +27,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward
 class PostEffectBuffers;
+//class PostEffectBilateralBlur;
 
 /// <summary>
 /// chain of post processing effects, apply effects in an order
@@ -85,7 +88,8 @@ protected:
 	
 	std::unique_ptr<GLSLShaderProgram>			mShaderDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
 	std::unique_ptr<GLSLShaderProgram>			mShaderBlur;		//!< bilateral blur effect, for SSAO
-	std::unique_ptr<GLSLShaderProgram>			mShaderImageBlur;	//!< for masking
+	//std::unique_ptr<GLSLShaderProgram>			mShaderImageBlur;	//!< for masking
+	std::unique_ptr<PostEffectBilateralBlur>	mEffectBilateralBlur; //!< for masking
 	std::unique_ptr<GLSLShaderProgram>			mShaderMix;			//!< multiplication result of two inputs, (for SSAO)
 	std::unique_ptr<GLSLShaderProgram>			mShaderDownscale;
 
@@ -103,7 +107,7 @@ protected:
 	bool							mIsCompressedDataReady{ false };
 	double							mLastCompressTime{ 0.0 };
 
-	PostEffectBase *ShaderFactory(const int type, const char *shadersLocation, bool immediatelyLoad=true);
+	PostEffectBase* ShaderFactory(const BuildInEffect effectType, const char *shadersLocation, bool immediatelyLoad=true);
 
 	bool LoadShaders();
 	void FreeShaders();
@@ -119,7 +123,7 @@ private:
 	/// <returns>true if chain of effects is not empty</returns>
 	bool PrepareChainOrder(std::vector<PostEffectBase*>& chain, int& blurAndMix, int& blurAndMix2);
 
-	void RenderEffectToBuffer(PostEffectBase* effect, const GLuint inputLayerSampler);
+	
 	void RenderEffectToChain(PostEffectBase* effect, PostEffectBuffers* chainBuffers, bool generateMips, int w, int h);
 
 	/// <summary>
