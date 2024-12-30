@@ -68,6 +68,8 @@ public:
 	const PostEffectBase* GetDisplacementEffect() const { return mDisplacement.get(); }
 	const PostEffectBase* GetMotionBlurEffect() const { return mMotionBlur.get(); }
 
+	PingPongData* GetPingPongDataPtr() { return &mDoubleBufferPingPongData; }
+
 protected:
 
 	FBSystem								mSystem;
@@ -98,6 +100,8 @@ protected:
 
 	// order execution chain
 	//std::vector<PostEffectBase*>		mChain;
+
+	PingPongData					mDoubleBufferPingPongData;
 
 	GLint							mLocDepthLinearizeClipInfo{ -1 };
 	GLint							mLocBlurSharpness{ -1 };
@@ -236,7 +240,7 @@ public:
 		, buffers(buffersIn)
 	{
 		doubleFB = effectChain->RequestDoubleFrameBuffer(buffers);
-		pingPongHelper = new FramebufferPingPongHelper(doubleFB);
+		pingPongHelper = new FramebufferPingPongHelper(doubleFB, effectChain->GetPingPongDataPtr());
 	}
 
 	FramebufferPingPongHelper* GetPtr() { return pingPongHelper; }

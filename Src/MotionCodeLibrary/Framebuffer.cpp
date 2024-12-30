@@ -460,7 +460,12 @@ bool FrameBuffer::Bind (const int customColorAttachmentIndex) const
 	{
 		glDrawBuffer(GL_NONE);
 	}
-	if (mNumberOfColorAttachments == 1)
+	else if (customColorAttachmentIndex >= 0)
+	{
+		const int indexOffset = (customColorAttachmentIndex >= 0) ? customColorAttachmentIndex : 0;
+		glDrawBuffer(GL_COLOR_ATTACHMENT0 + indexOffset);
+	}
+	else if (mNumberOfColorAttachments == 1)
 	{
 		glDrawBuffer( GL_COLOR_ATTACHMENT0 );
 	}
@@ -468,11 +473,6 @@ bool FrameBuffer::Bind (const int customColorAttachmentIndex) const
 	{
 		GLenum buffers [] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 		glDrawBuffers( 2, buffers );
-	}
-	else
-	{
-		const int indexOffset = (customColorAttachmentIndex >= 0) ? customColorAttachmentIndex : 0;
-		glDrawBuffer(GL_COLOR_ATTACHMENT0 + indexOffset);
 	}
 	
 	return true;
@@ -484,7 +484,6 @@ bool FrameBuffer::UnBind ( bool genMipmaps, [[maybe_unused]]GLenum target ) cons
 	if ( mFrameBuffer == 0 )
 		return false;
 
-	
 	glFlush ();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	

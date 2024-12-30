@@ -24,33 +24,49 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <string>
 
 
-// a framebuffer with 2 attachments, so that we could read from one attachment and write into another, then swap
-class FramebufferPingPongHelper
+class PingPongData
 {
 private:
-	FrameBuffer* framebuffer;
 	int readAttachment; //!< index of the current read attachment
 	int writeAttachment; //!< index of the current write attachment
 
 public:
-	FramebufferPingPongHelper(FrameBuffer* fb)
-		: framebuffer(fb), readAttachment(0), writeAttachment(1)
+	PingPongData()
+		: readAttachment(0), writeAttachment(1)
 	{}
 
 	int GetReadAttachment() const { return readAttachment; }
 	int GetWriteAttachment() const { return writeAttachment; }
 
-	FrameBuffer* GetPtr() { return framebuffer; }
-
 	void Swap() { std::swap(readAttachment, writeAttachment); }
+};
 
-	GLuint GetReadColorObject() const { return framebuffer->GetColorObject(readAttachment); }
+// a framebuffer with 2 attachments, so that we could read from one attachment and write into another, then swap
+class FramebufferPingPongHelper
+{
+private:
+	FrameBuffer* fb;
+	PingPongData* data;
+
+public:
+	FramebufferPingPongHelper(FrameBuffer* framebufferIn, PingPongData* dataIn)
+		: fb(framebufferIn), data(dataIn)
+	{}
+
+	int GetReadAttachment() const { return data->GetReadAttachment(); }
+	int GetWriteAttachment() const { return data->GetWriteAttachment(); }
+
+	FrameBuffer* GetPtr() { return fb; }
+
+	void Swap() { data->Swap(); }
+
+	GLuint GetReadColorObject() const { return fb->GetColorObject(data->GetReadAttachment()); }
 
 	void Bind() const {
-		framebuffer->Bind(writeAttachment);
+		fb->Bind(data->GetWriteAttachment());
 	}
 	void UnBind(bool generateMips=false) const {
-		framebuffer->UnBind(generateMips);
+		fb->UnBind(generateMips);
 	}
 };
 
