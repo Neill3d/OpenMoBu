@@ -60,7 +60,7 @@ bool PostEffectShaderLinearDepth::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderLinearDepth::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderLinearDepth::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	const float znear = static_cast<float>(effectContext.camera->NearPlaneDistance);
 	const float zfar = static_cast<float>(effectContext.camera->FarPlaneDistance);

@@ -35,7 +35,7 @@ public:
 	const char* GetFragmentFname(const int shaderIndex) const override;
 
 	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex) override;
+	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
 
 	virtual void UploadUniforms() override;
 

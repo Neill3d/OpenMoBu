@@ -62,7 +62,7 @@ bool PostEffectShaderBilateralBlur::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBilateralBlur::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderBilateralBlur::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	if (pData)
 	{

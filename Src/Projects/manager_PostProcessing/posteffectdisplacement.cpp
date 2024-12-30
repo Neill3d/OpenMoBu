@@ -74,7 +74,7 @@ bool EffectShaderDisplacement::PrepUniforms(const int shaderIndex)
 	return false;
 }
 
-bool EffectShaderDisplacement::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext, int maskIndex)
+bool EffectShaderDisplacement::CollectUIValues(PostPersistentData *pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	CollectCommonData(pData, ENABLE_MASKING_PROPERTY_NAME);
 

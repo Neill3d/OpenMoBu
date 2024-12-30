@@ -16,6 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "graphics_framebuffer.h"
 #include "postpersistentdata.h"
 #include "posteffectbase.h"
+#include "posteffectbuffers.h"
 
 #include "posteffectshader_bilateral_blur.h"
 
@@ -43,7 +44,7 @@ public:
 
 	void ChangeContext();
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
-	bool Prep(PostPersistentData *pData, PostEffectContext& effectContext);
+	bool Prep(PostPersistentData *pData, const PostEffectContext& effectContext);
 
 	bool BeginFrame(PostEffectBuffers* buffers);
 
@@ -123,8 +124,15 @@ private:
 	/// <returns>true if chain of effects is not empty</returns>
 	bool PrepareChainOrder(std::vector<PostEffectBase*>& chain, int& blurAndMix, int& blurAndMix2);
 
+	FrameBuffer* RequestMaskFrameBuffer(PostEffectBuffers* buffers);
+	void ReleaseMaskFrameBuffer(PostEffectBuffers* buffers);
 	
-	void RenderEffectToChain(PostEffectBase* effect, PostEffectBuffers* chainBuffers, bool generateMips, int w, int h);
+	friend class MaskFramebufferRequestScope;
+
+	FrameBuffer* RequestDoubleFrameBuffer(PostEffectBuffers* buffers);
+	void ReleaseDoubleFrameBuffer(PostEffectBuffers* buffers);
+
+	friend class DoubleFramebufferRequestScope;
 
 	/// <summary>
 	/// render a linear depth (for SSAO)
@@ -178,4 +186,80 @@ private:
 	bool IsAnyObjectMaskedByMaskId(const EMaskingChannel maskId) const;
 
 	void RenderSceneMaskToTexture(const int maskIndex, PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers);
+};
+
+
+/// <summary>
+/// a local scope of request / release of framebuffer with MAX_MASKS (4) color attachment for masking
+///  + 1 color attachment for intermediate processing
+/// </summary>
+class MaskFramebufferRequestScope
+{
+public:
+	MaskFramebufferRequestScope(PostEffectChain* effectChainIn, PostEffectBuffers* buffersIn)
+		: effectChain(effectChainIn)
+		, buffers(buffersIn)
+	{
+		maskFB = effectChain->RequestMaskFrameBuffer(buffers);
+	}
+
+	FrameBuffer* GetFrameBufferPtr() { return maskFB; }
+
+	FrameBuffer* operator->() {
+		return maskFB;
+	}
+
+	FrameBuffer& operator*() {
+		return *maskFB;
+	}
+
+	virtual ~MaskFramebufferRequestScope()
+	{
+		effectChain->ReleaseMaskFrameBuffer(buffers);
+	}
+
+private:
+	PostEffectChain* effectChain;
+	PostEffectBuffers* buffers;
+
+	FrameBuffer* maskFB;
+};
+
+/// <summary>
+/// a local scope of request / release of framebuffer with 2 color attachments and FramebufferPingPongHelper
+/// </summary>
+class DoubleFramebufferRequestScope
+{
+public:
+	DoubleFramebufferRequestScope(PostEffectChain* effectChainIn, PostEffectBuffers* buffersIn)
+		: effectChain(effectChainIn)
+		, buffers(buffersIn)
+	{
+		doubleFB = effectChain->RequestDoubleFrameBuffer(buffers);
+		pingPongHelper = new FramebufferPingPongHelper(doubleFB);
+	}
+
+	FramebufferPingPongHelper* GetPtr() { return pingPongHelper; }
+
+	FramebufferPingPongHelper* operator->() {
+		return pingPongHelper;
+	}
+
+	FramebufferPingPongHelper& operator*() {
+		return *pingPongHelper;
+	}
+
+	virtual ~DoubleFramebufferRequestScope()
+	{
+		delete pingPongHelper;
+		pingPongHelper = nullptr;
+		effectChain->ReleaseDoubleFrameBuffer(buffers);
+	}
+
+private:
+	PostEffectChain* effectChain;
+	PostEffectBuffers* buffers;
+
+	FrameBuffer* doubleFB;
+	FramebufferPingPongHelper* pingPongHelper;
 };

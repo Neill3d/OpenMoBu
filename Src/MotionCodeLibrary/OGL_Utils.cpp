@@ -501,8 +501,9 @@ bool BlitFBOToFBOCustomAttachment(const GLint inFBO, const int inWidth, const in
 	return true;
 }
 
-bool BlitFBOToFBOOffset(const GLint FBO, int x, int y, const int width, const int height, const GLint defaultFBO,
-	int defX, int defY, const int defWidth, const int defHeight, bool copyDepth, const bool copyColor1, const bool copyColor2, const bool copyColor3)
+bool BlitFBOToFBOOffset(const GLint FBO, int x, int y, const int width, const int height, const unsigned int inAttachmentIndex,
+	const GLint defaultFBO, int defX, int defY, const int defWidth, const int defHeight, const unsigned int outAttachmentIndex,
+	bool copyDepth, const bool copyColor1, const bool copyColor2, const bool copyColor3)
 {
 	CHECK_GL_ERROR();
 
@@ -559,9 +560,9 @@ bool BlitFBOToFBOOffset(const GLint FBO, int x, int y, const int width, const in
 	}
 
 	// color attachment0
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	GLenum buffers0[1] = { GL_COLOR_ATTACHMENT0 };
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + inAttachmentIndex);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + outAttachmentIndex);
+	GLenum buffers0[1] = { GL_COLOR_ATTACHMENT0 + outAttachmentIndex };
 	glDrawBuffers(1, &buffers0[0]);
 
 	GLbitfield mask = (copyDepth) ? (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) : GL_COLOR_BUFFER_BIT;

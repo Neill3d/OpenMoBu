@@ -46,14 +46,14 @@ public:
 	virtual const char* GetFragmentFname(const int variationIndex) const override;
 
 	//! prepare uniforms for a given variation of the effect
-	virtual bool PrepUniforms(const int variationIndex);
+	virtual bool PrepUniforms(const int variationIndex) override;
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);		//!< grab main UI values for the effect
+	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
 	/// new feature to have several passes for a specified effect
-	virtual const int GetNumberOfPasses() const;
+	virtual const int GetNumberOfPasses() const override;
 	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass);
+	virtual bool PrepPass(const int pass, int w, int h) override;
 
 private:
 	GLint							mLocBlurSharpness{ -1 };

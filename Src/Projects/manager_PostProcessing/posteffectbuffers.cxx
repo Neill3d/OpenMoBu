@@ -49,6 +49,8 @@ void PostEffectBuffers::ChangeContext()
 {
 	FreeBuffers();
 	FreeTextures();
+
+	OnContextChanged();
 }
 
 unsigned int nearestPowerOf2(unsigned int value)
@@ -66,6 +68,31 @@ unsigned int nearestPowerOf2(unsigned int value)
 	return v;
 }
 
+int PostEffectBuffers::GetFlagsForMainColorBuffer()
+{
+	return FrameBuffer::eCreateColorTexture | FrameBuffer::eCreateDepthTexture | FrameBuffer::eDeleteFramebufferOnCleanup;
+}
+void PostEffectBuffers::SetParametersForMainColorBuffer(FrameBuffer* buffer, bool filterMips)
+{
+	buffer->SetDepthFormat(GL_DEPTH_STENCIL);
+	buffer->SetDepthInternalFormat(GL_DEPTH24_STENCIL8);
+	buffer->SetDepthType(GL_UNSIGNED_INT_24_8);
+
+	for (int i = 0; i < buffer->GetMaxColorAttachemnts(); ++i)
+	{
+		buffer->SetClamp(i, GL_CLAMP_TO_EDGE);
+		buffer->SetFilter(i, (filterMips) ? FrameBuffer::filterMipmap : FrameBuffer::filterLinear);
+	}
+}
+void PostEffectBuffers::SetParametersForMainDepthBuffer(FrameBuffer* buffer)
+{
+	buffer->SetColorFormat(0, GL_RED);
+	buffer->SetColorInternalFormat(0, GL_R32F);
+	buffer->SetColorType(0, GL_FLOAT);
+	buffer->SetFilter(0, FrameBuffer::filterNearest);
+	buffer->SetClamp(0, GL_CLAMP_TO_EDGE);
+}
+
 bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double scaleFactor, bool filterMips)
 {
 	bool lSuccess = true;
@@ -73,6 +100,11 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 	mWidth = w;
 	mHeight = h;
 
+	for (const auto& framebufferEntry : framebufferPool)
+	{
+		framebufferEntry.second.framebuffer->ReSize(w, h);
+	}
+	/*
 	// resize fbos
 	const int flags = FrameBuffer::eCreateColorTexture | FrameBuffer::eCreateDepthTexture | FrameBuffer::eDeleteFramebufferOnCleanup;
 
@@ -161,7 +193,7 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 			AllocPreviewTexture(mPreviewWidth, mPreviewHeight);
 		}
 	}
-
+	*/
 	if (lSuccess)
 	{
 		if (mPBOs[0] > 0)
@@ -177,6 +209,7 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 
 bool PostEffectBuffers::Ok()
 {
+	/*
 	if (!mBufferPost0.get() || !mBufferPost1.get() || !mBufferDepth.get() || !mBufferBlur.get() || !mBufferMasking.get())
 	{
 		return false;
@@ -186,28 +219,29 @@ bool PostEffectBuffers::Ok()
 	{
 		return false;
 	}
-	
+	*/
 	return true;
 }
 
 void PostEffectBuffers::FreeBuffers()
 {
-	mBufferPost0.reset(nullptr);
-	mBufferPost1.reset(nullptr);
-	mBufferDepth.reset(nullptr);
-	mBufferBlur.reset(nullptr);
-	mBufferDownscale.reset(nullptr);
-	mBufferMasking.reset(nullptr);
+	//mBufferPost0.reset(nullptr);
+	//mBufferPost1.reset(nullptr);
+	//mBufferDepth.reset(nullptr);
+	//mBufferBlur.reset(nullptr);
+	//mBufferDownscale.reset(nullptr);
+	//mBufferMasking.reset(nullptr);
 }
-
+/*
 const GLuint PostEffectBuffers::PrepAndGetBufferObject()
 {
 	mSrc = 0;
 	mDst = 1;
 
-	return mBufferPost0->GetFrameBuffer();
+	return 0; // mBufferPost0->GetFrameBuffer();
 }
-
+*/
+/*
 FrameBuffer *PostEffectBuffers::GetSrcBufferPtr()
 {
 	return (0 == mSrc) ? mBufferPost0.get() : mBufferPost1.get();
@@ -242,7 +276,8 @@ void PostEffectBuffers::SwapBuffers()
 	mDst = mSrc;
 	mSrc = temp;
 }
-
+*/
+/*
 // get a result of effect computation
 const GLuint PostEffectBuffers::GetFinalColor()
 {
@@ -263,7 +298,7 @@ const GLuint PostEffectBuffers::GetPreviewFBO()
 {
 	return (mBufferDownscale.get()) ? mBufferDownscale->GetFrameBuffer() : 0;
 }
-
+*/
 const GLuint PostEffectBuffers::GetPreviewCompressedColor()
 {
 	//return mBufferDownscale->GetColorObject();
@@ -301,11 +336,11 @@ void PostEffectBuffers::FreeTextures()
 
 bool PostEffectBuffers::PreviewOpenGLCompress(EImageCompression	compressionType, GLint &compressionCode)
 {
-	if (nullptr == mBufferDownscale.get() || 0 == mBufferDownscale->GetColorObject())
-		return false;
+	//if (nullptr == mBufferDownscale.get() || 0 == mBufferDownscale->GetColorObject())
+//		return false;
 
-	if (0 == mBufferDownscale->GetColorObject())
-		return false;
+//	if (0 == mBufferDownscale->GetColorObject())
+	//	return false;
 
 	if (mPreviewWidth <= 1 || mPreviewHeight <= 1)
 		return false;
@@ -333,13 +368,13 @@ bool PostEffectBuffers::PreviewOpenGLCompress(EImageCompression	compressionType,
 	mCurPBO = 1 - mCurPBO;
 
 	// read pixels from framebuffer to PBO
-	mBufferDownscale->Bind();
+//	mBufferDownscale->Bind();
 
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBOs[mCurPBO]);
 	glReadPixels(0, 0, mPreviewWidth, mPreviewHeight, GL_RGB, GL_UNSIGNED_BYTE, 0);
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
-	mBufferDownscale->UnBind();
+//	mBufferDownscale->UnBind();
 	/*
 	const GLuint srcId = mBufferDownscale->GetColorObject();
 	glBindTexture(GL_TEXTURE_2D, srcId);

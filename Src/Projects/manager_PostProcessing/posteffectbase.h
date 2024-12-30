@@ -151,7 +151,7 @@ public:
 	//! prepare uniforms for a given variation of the effect
 	virtual bool PrepUniforms(const int variationIndex);
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex);		//!< grab main UI values for the effect
+	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex);		//!< grab main UI values for the effect
 
 	//! upload collected data values into gpu shader
 	virtual void UploadUniforms() {};
@@ -165,11 +165,17 @@ public:
 	/// <summary>
 	/// the given buffer shader will process the given inputTextureId and write result into dst frame buffer
 	/// </summary>
-	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips);
+	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 
 	void SetDownscaleMode(const bool value);
 	bool IsDownscaleMode() const { return isDownscale; }
 	int GetVersion() const { return version; }
+
+	void SetBufferA(PostEffectBufferShader* bufferShaderIn);
+
+	// binded textures for connected buffers starts from 5, then custom user textures will start from 10
+	static int GetBufferSamplerId() { return 5; }
+	static int GetUserSamplerId() { return 10; }
 
 protected:
 	bool isDownscale{ false };
@@ -177,6 +183,8 @@ protected:
 	int mCurrentShader{ 0 };
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders;
 
+	// siblings, should be evaluated and used as input buffers
+	PostEffectBufferShader* BufferAShader{ nullptr };
 	
 	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();
@@ -189,11 +197,17 @@ protected:
 	//! unbind effect shader program
 	virtual void UnBind();
 
-	void RenderPass(int passIndex, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips);
+	void RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 };
 
 /// <summary>
 /// a set of effect buffer shaders to process the input and write output to the effects chain
+///  chain processing is sequential, except scenarios
+///  - one buffer shader request outputs from several other buffer shaders
+///		- when buffer shader request one output from another buffer shader, that could be aligned in a sequntial order
+///  - when buffer shader request a downscale, that could be grouped with connected buffer shaders with downscale and processed as a separate sequence and then mix into main chain
+/// 
+/// that means - effects chain have to be effects tree instead
 /// </summary>
 class PostEffectBase
 {
@@ -209,7 +223,7 @@ public:
 
 	bool Load(const char* shaderLocation);
 
-	bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext);
+	bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext);
 
 	//! define internal mask channel index or -1 for default, it comes from a user input (UI)
 	void SetMaskIndex(const int maskIndex) { mMaskIndex = maskIndex; }
@@ -229,6 +243,7 @@ public:
 
 		// write an effect composition to a given frame buffer
 		FrameBuffer* dstFrameBuffer;
+		int colorAttachment; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
 
 		int viewWidth;
 		int viewHeight;

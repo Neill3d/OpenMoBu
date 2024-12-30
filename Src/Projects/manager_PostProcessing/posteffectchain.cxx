@@ -82,7 +82,7 @@ void PostEffectChain::ChangeContext()
 	mLastCompressTime = 0.0;
 }
 
-bool PostEffectChain::Prep(PostPersistentData *pData, PostEffectContext& effectContext)
+bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContext& effectContext)
 {
 	bool lSuccess = true;
 
@@ -252,7 +252,10 @@ void PostEffectChain::RenderSceneMaskToTexture(const int maskIndex, PostPersiste
 	if (mShaderSceneMasked.get() == nullptr)
 		return;
 
-	FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
+	// TODO: wrapper to have request and release with a method scope !
+	// TODO: request with default viewport width and height and default flags ?!
+
+	FrameBuffer* maskBuffer = buffers->RequestFramebuffer("mask"); //buffers->GetBufferMaskPtr();
 	maskBuffer->Bind(maskIndex);
 
 	glViewport(0, 0, maskBuffer->GetWidth(), maskBuffer->GetHeight());
@@ -409,57 +412,13 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 }
 
 
-void PostEffectChain::RenderEffectToChain(PostEffectBase* effect, PostEffectBuffers* chainBuffers, bool generateMips, int w, int h)
-{
-	const PostEffectBase::EffectContext context{
-		chainBuffers->GetSrcBufferPtr()->GetColorObject(), // src texture id
-		chainBuffers->GetBufferDepthPtr()->GetDepthObject(), // depth texture id
-		chainBuffers,
-		chainBuffers->GetDstBufferPtr(), // dst frame buffer
-		w,
-		h,
-		generateMips
-	};
-
-	effect->Process(context);
-
-
-	/*
-	for (int j = 0; j < effect->GetNumberOfPasses(); ++j)
-	{
-		effect->PrepPass(j);
-
-		// bind an input source image for processing by the effect
-		const GLuint texid = chainBuffers->GetSrcBufferPtr()->GetColorObject();
-		glBindTexture(GL_TEXTURE_2D, texid);
-
-		if (generateMips)
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		}
-		else
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		}
-
-		// apply effect into dst buffer
-		chainBuffers->GetDstBufferPtr()->Bind();
-
-		drawOrthoQuad2d(w, h);
-
-		chainBuffers->GetDstBufferPtr()->UnBind(generateMips);
-
-		//
-		chainBuffers->SwapBuffers();
-	}*/
-}
-
 void PostEffectChain::BilateralBlurPass(PostEffectBuffers* buffers)
 {
-	const int w = buffers->GetWidth();
-	const int h = buffers->GetHeight();
+	/*
+	FrameBuffer* blurfb = buffers->RequestFramebuffer("bilateral_blur");
+
+	const int w = blurfb->GetWidth();
+	const int h = blurfb->GetHeight();
 
 	const float blurSharpness = 0.1f * (float)mSettings->SSAO_BlurSharpness;
 	const float invRes[2] = { 1.0f / float(w), 1.0f / float(h) };
@@ -484,10 +443,12 @@ void PostEffectChain::BilateralBlurPass(PostEffectBuffers* buffers)
 
 	//
 	buffers->SwapBuffers();
+	*/
 }
 
 void PostEffectChain::BilateralBlurAndMixPass(PostEffectBuffers* buffers)
 {
+	/*
 	const int w = buffers->GetWidth();
 	const int h = buffers->GetHeight();
 
@@ -550,10 +511,12 @@ void PostEffectChain::BilateralBlurAndMixPass(PostEffectBuffers* buffers)
 
 	//
 	buffers->SwapBuffers();
+	*/
 }
 
 void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 {
+	/*
 	int updaterate = mSettings->OutputUpdateRate.AsInt();
 	if (updaterate <= 0 || updaterate > 30)
 		updaterate = 10;
@@ -611,10 +574,12 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 
 		mLastCompressTime = systime;
 	}
+	*/
 }
 
 void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
 {
+	/*
 	const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
 
 	// prep data
@@ -656,73 +621,111 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
 	glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetLinearDepthSamplerSlot());
 	glBindTexture(GL_TEXTURE_2D, linearDepthId);
 	glActiveTexture(GL_TEXTURE0);
+	*/
+}
+
+FrameBuffer* PostEffectChain::RequestMaskFrameBuffer(PostEffectBuffers* buffers)
+{
+	FrameBuffer* maskfb = buffers->RequestFramebuffer("mask", 
+		buffers->GetWidth(), buffers->GetHeight(), 
+		PostEffectBuffers::GetFlagsForMainColorBuffer(),
+		PostPersistentData::NUMBER_OF_MASKS + 1); // NOTE: 4 masks and 1 mask for processing
+
+	return maskfb;
+}
+
+void PostEffectChain::ReleaseMaskFrameBuffer(PostEffectBuffers* buffers)
+{
+	buffers->ReleaseFramebuffer("mask");
+}
+
+FrameBuffer* PostEffectChain::RequestDoubleFrameBuffer(PostEffectBuffers* buffers)
+{
+	FrameBuffer* buffer = buffers->RequestFramebuffer("doubleBuffer",
+		buffers->GetWidth(), buffers->GetHeight(),
+		PostEffectBuffers::GetFlagsForMainColorBuffer(),
+		2,
+		[](FrameBuffer* framebuffer) {
+			PostEffectBuffers::SetParametersForMainColorBuffer(framebuffer, false);
+		});
+
+	return buffer;
+}
+
+void PostEffectChain::ReleaseDoubleFrameBuffer(PostEffectBuffers* buffers)
+{
+	buffers->ReleaseFramebuffer("doubleBuffer");
 }
 
 void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers)
 {
 	assert(maskIndex < PostPersistentData::NUMBER_OF_MASKS);
+	if (!mEffectBilateralBlur.get())
+		return;
 
 	// Bilateral Blur Pass
 
-	
+	MaskFramebufferRequestScope maskRequest(this, buffers);
 
-	const FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
-	const GLuint texid = maskBuffer->GetColorObject(maskIndex);
-	const int w = buffers->GetWidth();
-	const int h = buffers->GetHeight();
+	const GLuint texid = maskRequest->GetColorObject(maskIndex);
+	const int w = maskRequest->GetWidth();
+	const int h = maskRequest->GetHeight();
 
-	PostEffectBase::EffectContext context
+	const PostEffectBase::EffectContext context
 	{
 		texid,
-		0,
-		nullptr,
-		buffers->GetBufferBlurPtr(),
+		0, // depth id
+		nullptr, // intermediate buffers
+		maskRequest.GetFrameBufferPtr(),
+		PostPersistentData::NUMBER_OF_MASKS, // last color attachment for processing
 		w,
 		h,
-		false
+		false // generate mips
 	};
 
 	mEffectBilateralBlur->SetMaskIndex(maskIndex);
 	mEffectBilateralBlur->Process(context);
 
-	BlitFBOToFBOCustomAttachment(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(), 0,
-		buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), maskIndex);
+	BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), w, h, PostPersistentData::NUMBER_OF_MASKS,
+		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
 void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers)
 {
-	const FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
-
+	MaskFramebufferRequestScope maskRequest(this, buffers);
+	
 	// Mix masks = Mask A * Mask B
 
-	const GLuint texid = maskBuffer->GetColorObject(maskIndex);
-	const GLuint texid2 = maskBuffer->GetColorObject(maskIndex2);
-	
+	const GLuint texid = maskRequest->GetColorObject(maskIndex);
+	const GLuint texid2 = maskRequest->GetColorObject(maskIndex2);
+	const int w = maskRequest->GetWidth();
+	const int h = maskRequest->GetHeight();
+
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, texid2);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texid);
 
-	buffers->GetBufferBlurPtr()->Bind();
+	maskRequest->Bind(PostPersistentData::NUMBER_OF_MASKS);
 	mShaderMix->Bind();
 
-	const int w = buffers->GetWidth();
-	const int h = buffers->GetHeight();
+	//const int w = buffers->GetWidth();
+	//const int h = buffers->GetHeight();
 
 	mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 1.0f, 0.0f);
 
 	drawOrthoQuad2d(w, h);
 
 	mShaderMix->UnBind();
-	buffers->GetBufferBlurPtr()->UnBind();
+	maskRequest->UnBind();
 
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	BlitFBOToFBOCustomAttachment(buffers->GetBufferBlurPtr()->GetFrameBuffer(), buffers->GetBufferBlurPtr()->GetWidth(), buffers->GetBufferBlurPtr()->GetHeight(), 0,
-		buffers->GetBufferMaskPtr()->GetFrameBuffer(), buffers->GetBufferMaskPtr()->GetWidth(), buffers->GetBufferMaskPtr()->GetHeight(), maskIndex);
+	BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), w, h, PostPersistentData::NUMBER_OF_MASKS,
+		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
 /*
@@ -1009,6 +1012,10 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 	if (!PrepareChainOrder(mChain, blurAndMix, blurAndMix2))
 		return false;
 
+	//
+	DoubleFramebufferRequestScope doubleBufferRequest(this, buffers);
+	MaskFramebufferRequestScope maskRequest(this, buffers);
+
 	// 2. prepare and render into masks
 
 	bool isMaskTextureBinded = false;
@@ -1095,10 +1102,11 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 
 	if (mSettings->DebugDisplyMasking)
 	{
-		FrameBuffer* maskBuffer = buffers->GetBufferMaskPtr();
-		BlitFBOToFBOCustomAttachment(maskBuffer->GetFrameBuffer(), maskBuffer->GetWidth(), maskBuffer->GetHeight(), globalMaskingIndex,
-			buffers->GetDstBufferPtr()->GetFrameBuffer(), buffers->GetDstBufferPtr()->GetWidth(), buffers->GetDstBufferPtr()->GetHeight(), 0u);
-		buffers->SwapBuffers();
+		FrameBuffer* doubleBuffer = doubleBufferRequest->GetPtr();
+
+		BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), maskRequest->GetWidth(), maskRequest->GetHeight(), globalMaskingIndex,
+			doubleBuffer->GetFrameBuffer(), doubleBuffer->GetWidth(), doubleBuffer->GetHeight(), doubleBufferRequest->GetWriteAttachment());
+		doubleBufferRequest->Swap();
 		return true;
 	}
 
@@ -1106,7 +1114,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 
 	if (isMaskTextureBinded)
 	{
-		const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject(globalMaskingIndex);
+		const GLuint maskTextureId = maskRequest->GetColorObject(globalMaskingIndex);
 		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, maskTextureId);
 		glActiveTexture(GL_TEXTURE0);
@@ -1119,7 +1127,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 
 	if (isDepthSamplerBinded)
 	{
-		const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
+		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
 
 		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetDepthSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, depthId);
@@ -1135,9 +1143,9 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 	if (!mChain.empty())
 	{
 		// optional. generate mipmaps for the first target
-		GLuint texid = buffers->GetSrcBufferPtr()->GetColorObject();
-		const int w = buffers->GetWidth();
-		const int h = buffers->GetHeight();
+		GLuint texid = doubleBufferRequest->GetPtr()->GetColorObject(doubleBufferRequest->GetReadAttachment());
+		const int w = doubleBufferRequest->GetPtr()->GetWidth();
+		const int h = doubleBufferRequest->GetPtr()->GetHeight();
 
 		if (generateMips)
 		{
@@ -1160,14 +1168,29 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 			const unsigned int effectMaskingIndex = (effect->GetMaskIndex() >= 0) ? static_cast<unsigned int>(effect->GetMaskIndex()) : globalMaskingIndex;
 			if (IsAnyObjectMaskedByMaskId(static_cast<EMaskingChannel>(effect->GetMaskIndex())) && effectMaskingIndex != globalMaskingIndex)
 			{
-				const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject(effectMaskingIndex);
+				const GLuint maskTextureId = maskRequest->GetColorObject(effectMaskingIndex);
 				glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
 				glBindTexture(GL_TEXTURE_2D, maskTextureId);
 				glActiveTexture(GL_TEXTURE0);
 			}
 
-			RenderEffectToChain(effect, buffers, generateMips, w, h);
+			//RenderEffectToChain(effect, buffers, generateMips, w, h);
 			
+			doubleBufferRequest->Swap(); // current written goes to read and we are ready to write from a shader
+
+			const PostEffectBase::EffectContext context{
+				doubleBufferRequest->GetPtr()->GetColorObject(doubleBufferRequest->GetReadAttachment()), // src texture id
+				doubleBufferRequest->GetPtr()->GetDepthObject(), // depth texture id
+				buffers,
+				doubleBufferRequest->GetPtr(), // dst frame buffer
+				doubleBufferRequest->GetWriteAttachment(),
+				w,
+				h,
+				generateMips
+			};
+
+			effect->Process(context);
+
 			// 7. blur effect if applied
 			/*
 			// if we need more passes, blur and mix for SSAO or Bloom (Color Correction)
@@ -1186,7 +1209,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 			// if local masking index was used, switch back to global mask for next effect
 			if (effectMaskingIndex != globalMaskingIndex)
 			{
-				const GLuint maskTextureId = buffers->GetBufferMaskPtr()->GetColorObject(globalMaskingIndex);
+				const GLuint maskTextureId = maskRequest->GetColorObject(globalMaskingIndex);
 				glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
 				glBindTexture(GL_TEXTURE_2D, maskTextureId);
 				glActiveTexture(GL_TEXTURE0);

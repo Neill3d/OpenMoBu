@@ -21,11 +21,72 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <memory>
 #include <bitset>
+#include <string>
+
+
+// a framebuffer with 2 attachments, so that we could read from one attachment and write into another, then swap
+class FramebufferPingPongHelper
+{
+private:
+	FrameBuffer* framebuffer;
+	int readAttachment; //!< index of the current read attachment
+	int writeAttachment; //!< index of the current write attachment
+
+public:
+	FramebufferPingPongHelper(FrameBuffer* fb)
+		: framebuffer(fb), readAttachment(0), writeAttachment(1)
+	{}
+
+	int GetReadAttachment() const { return readAttachment; }
+	int GetWriteAttachment() const { return writeAttachment; }
+
+	FrameBuffer* GetPtr() { return framebuffer; }
+
+	void Swap() { std::swap(readAttachment, writeAttachment); }
+
+	GLuint GetReadColorObject() const { return framebuffer->GetColorObject(readAttachment); }
+
+	void Bind() const {
+		framebuffer->Bind(writeAttachment);
+	}
+	void UnBind(bool generateMips=false) const {
+		framebuffer->UnBind(generateMips);
+	}
+};
+
+class IFramebufferProvider {
+public:
+	virtual ~IFramebufferProvider() = default;
+
+	virtual FrameBuffer* RequestFramebuffer(const std::string& name) = 0;
+
+	// Request a framebuffer with specific dimensions or properties
+	virtual FrameBuffer* RequestFramebuffer(
+		const std::string& name, 
+		int width, 
+		int height, 
+		int flags, 
+		int numColorAttachments,
+		const std::function<void(FrameBuffer*)>& onInit=nullptr) = 0;
+
+	virtual void OnFrameRendered() = 0;
+
+	// Notify context change
+	virtual void OnContextChanged() = 0;
+};
 
 ///////////////////////////
 // double buffer for effect chain
 
-class PostEffectBuffers
+
+
+/// <summary>
+/// manage framebuffer resources for a given context
+///  also provide
+///  - double buffers for effect chain
+///  - framebuffer provider
+/// </summary>
+class PostEffectBuffers : public IFramebufferProvider
 {
 public:
 
@@ -40,19 +101,21 @@ public:
 
 	bool Ok();
 
-	const GLuint PrepAndGetBufferObject();
+	//const GLuint PrepAndGetBufferObject();
 
-	FrameBuffer *GetSrcBufferPtr();
-	FrameBuffer *GetDstBufferPtr();
+	//FrameBuffer* GetSrcBufferPtr();
+	//FrameBuffer* GetDstBufferPtr();
 
-	FrameBuffer *GetBufferDepthPtr();
-	FrameBuffer *GetBufferBlurPtr();
-	FrameBuffer* GetBufferMaskPtr();
+	//FrameBuffer* GetBufferDepthPtr();
+	//FrameBuffer* GetBufferBlurPtr();
+	//FrameBuffer* GetBufferMaskPtr();
 
-	FrameBuffer *GetBufferDownscalePtr();
+	// TODO: request a framebuffer ?!
 
-	void SwapBuffers();
+	//FrameBuffer *GetBufferDownscalePtr();
 
+	//void SwapBuffers();
+	
 	const int GetWidth() const {
 		return mWidth;
 	}
@@ -66,11 +129,11 @@ public:
 		return mPreviewHeight;
 	}
 	// get a result of effect computation
-	const GLuint GetFinalColor();
-	const GLuint GetFinalFBO();
+	//const GLuint GetFinalColor();
+	//const GLuint GetFinalFBO();
 
-	const GLuint GetPreviewColor();
-	const GLuint GetPreviewFBO();
+	//const GLuint GetPreviewColor();
+	//const GLuint GetPreviewFBO();
 
 	void		PreviewSignal() {
 		mPreviewSignal = true;
@@ -92,18 +155,135 @@ public:
 	const size_t GetUnCompressedSize() const {
 		return mUnCompressSize;
 	}
+
+	static int GetFlagsForMainColorBuffer();
+	static void SetParametersForMainColorBuffer(FrameBuffer* buffer, bool filterMips);
+	static void SetParametersForMainDepthBuffer(FrameBuffer* buffer);
+
+	FrameBuffer* RequestFramebuffer(const std::string& name) override
+	{
+		const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+
+		auto it = framebufferPool.find(key);
+		if (it == end(framebufferPool))
+		{
+			auto framebuffer = std::make_unique<FrameBuffer>(mWidth, mHeight);
+			framebufferPool[key] = { std::move(framebuffer), name };
+			it = framebufferPool.find(key);
+		}
+
+		// increment reference count and return framebuffer
+		it->second.AddReference();
+		return it->second.framebuffer.get();
+	}
+
+	FrameBuffer* RequestFramebuffer(
+		const std::string& name, 
+		int width, 
+		int height, 
+		int flags, 
+		int numColorAttachments,
+		const std::function<void(FrameBuffer*)>& onInit=nullptr) override
+	{
+		const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+
+		auto it = framebufferPool.find(key);
+		if (it == end(framebufferPool))
+		{
+			auto framebuffer = std::make_unique<FrameBuffer>(width, height, flags, numColorAttachments);
+			if (onInit)
+			{
+				onInit(framebuffer.get());
+			}
+			framebufferPool[key] = { std::move(framebuffer), name };
+			it = framebufferPool.find(key);
+		}
+
+		// increment reference count and return framebuffer
+		it->second.AddReference();
+		return it->second.framebuffer.get();
+	}
+
+	void ReleaseFramebuffer(const std::string& name)
+	{
+		const std::string key = name; // GenerateKey(...)
+
+		auto it = framebufferPool.find(key);
+		if (it != end(framebufferPool))
+		{
+			// Decrement reference count
+			it->second.RemoveReference();
+
+			if (it->second.GetReferenceCount() == 0) {
+				// delay for n-frame with removal, lazy erase
+				//framebufferPool.erase(it);
+			}
+		}
+	}
+
+	void OnFrameRendered() override {
+		std::vector<std::string> listToErase;
+		for (auto& entry : framebufferPool)
+		{
+			if (entry.second.GetReferenceCount() == 0)
+			{
+				if (entry.second.ReadyToErase())
+				{
+					listToErase.push_back(entry.first);
+				}
+			}
+		}
+		if (!listToErase.empty())
+		{
+			for (const auto& key : listToErase)
+			{
+				auto it = framebufferPool.find(key);
+				if (it != end(framebufferPool))
+				{
+					framebufferPool.erase(it);
+				}
+			}
+		}
+	}
+
+	void OnContextChanged() override {
+		// clear all framebuffers
+		framebufferPool.clear();
+	}
+
+private:
+
+	struct FramebufferEntry {
+		std::unique_ptr<FrameBuffer> framebuffer;
+		std::string name;
+		int referenceCount;
+		int lazyEraseCounter{ 15 };
+
+		void AddReference() { ++referenceCount; lazyEraseCounter = 15; }
+		void RemoveReference() { if (referenceCount > 0) --referenceCount; }
+		int GetReferenceCount() const { return referenceCount; }
+
+		bool ReadyToErase() { --lazyEraseCounter; return lazyEraseCounter <= 0; }
+	};
+
+	std::unordered_map<std::string, FramebufferEntry> framebufferPool;
+	
+	std::string GenerateKey(const std::string& name, int width, int height, int flags, int numAttachments) {
+		return name + "(" + std::to_string(flags) + "):" + std::to_string(numAttachments) + "x" + std::to_string(width) + "x" + std::to_string(height);
+	}
+
 protected:
 
 	// DONE: double local buffer
-	std::unique_ptr<FrameBuffer>			mBufferPost0;
-	std::unique_ptr<FrameBuffer>			mBufferPost1;
+	//std::unique_ptr<FrameBuffer>			mBufferPost0;
+	//std::unique_ptr<FrameBuffer>			mBufferPost1;
 
-	std::unique_ptr<FrameBuffer>			mBufferDepth;		//!< buffer to store a linearize depth
-	std::unique_ptr<FrameBuffer>			mBufferBlur;
+	//std::unique_ptr<FrameBuffer>			mBufferDepth;		//!< buffer to store a linearize depth
+	//std::unique_ptr<FrameBuffer>			mBufferBlur;
 
-	std::unique_ptr<FrameBuffer>			mBufferDownscale;	//!< output for a preview
+	//std::unique_ptr<FrameBuffer>			mBufferDownscale;	//!< output for a preview
 
-	std::unique_ptr<FrameBuffer>			mBufferMasking;		//!< render models into mask texture
+	//std::unique_ptr<FrameBuffer>			mBufferMasking;		//!< render models into mask texture
 
 	// last local buffers resize
 	int								mWidth;

@@ -66,7 +66,7 @@ bool PostEffectShaderBlurLinearDepth::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBlurLinearDepth::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool PostEffectShaderBlurLinearDepth::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	const int w = effectContext.w; // buffers->GetWidth();
 	const int h = effectContext.h; // buffers->GetHeight();
@@ -84,7 +84,7 @@ const int PostEffectShaderBlurLinearDepth::GetNumberOfPasses() const
 	return 1;
 }
 //! initialize a specific path for drawing
-bool PostEffectShaderBlurLinearDepth::PrepPass(const int pass)
+bool PostEffectShaderBlurLinearDepth::PrepPass(const int pass, int w, int h)
 {
 	if (mLocBlurSharpness >= 0)
 		glUniform1f(mLocBlurSharpness, blurSharpness);

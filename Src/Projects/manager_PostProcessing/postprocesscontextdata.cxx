@@ -192,41 +192,50 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
                 && localViewport[2] == currBuffers->GetWidth()
                 && nullptr != mPaneSettings[nPane])
             {
+                // TODO: let's pass input framebuffer to effect chain ?!
                 // 1. blit part of a main screen
-                const GLuint postBufferObj = currBuffers->PrepAndGetBufferObject();
+
+                DoubleFramebufferRequestScope doubleFramebufferRequest(&mEffectChain, currBuffers);
+
+                //doubleFramebufferRequest->GetWriteAttachment
+                //const GLuint postBufferObj = currBuffers->PrepAndGetBufferObject();
 
                 if (!mMainFrameBuffer.isFboAttached())
                 {
-                    BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
-                        postBufferObj, 0, 0, localViewport[2], localViewport[3], true, false, false, false);
+                    BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
+                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
+                        true, false, false, false); // copy depth and no any other attachments
                 }
                 else
                 {
-                    BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
-                        postBufferObj, 0, 0, localViewport[2], localViewport[3], true, false, false, false);
+                    BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
+                        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
+                        true, false, false, false); // copy depth and no any other attachments
                 }
 
 
                 // 2. process it
 
-                PostEffectContext effectContext;
-                effectContext.camera = pCamera;
-                effectContext.w = localViewport[2];
-                effectContext.h = localViewport[3];
-                effectContext.sysTime = sysTimeSecs;
-                effectContext.localTime = localTimeSecs;
-                effectContext.sysTimeDT = systemTimeDT;
-                effectContext.localTimeDT = localTimeDT;
-                effectContext.localFrame = localTime.GetFrame();
-
+                const PostEffectContext effectContext
+                {
+                    pCamera,
+                    localViewport[2], // w
+                    localViewport[3], // h
+                    static_cast<int>(localTime.GetFrame()), // local frame
+                    sysTimeSecs,
+                    systemTimeDT,
+                    localTimeSecs,
+                    localTimeDT
+                };
+                
                 mEffectChain.Prep(mPaneSettings[nPane], effectContext);
 
-                if (mEffectChain.Process(currBuffers, sysTimeSecs)
-                    && nullptr != mShaderSimple.get())
+                if (mEffectChain.Process(currBuffers, sysTimeSecs))
                 {
                     CHECK_GL_ERROR();
 
-                    const GLuint finalFBO = currBuffers->GetFinalFBO();
+                    // TODO: get from effects chain
+                    //const GLuint finalFBO = currBuffers->GetFinalFBO();
 
                     // special test for an android device, send preview image by udp
 #if BROADCAST_PREVIEW == 1
@@ -247,30 +256,38 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
                     if (true == mPaneSettings[nPane]->DrawHUDLayer)
                     {
-                        glBindFramebuffer(GL_FRAMEBUFFER, finalFBO);
+                        // effect should be ended up with writing into target
+                        doubleFramebufferRequest->Bind();
+                        //glBindFramebuffer(GL_FRAMEBUFFER, finalFBO);
 
                         DrawHUD(0, 0, localViewport[2], localViewport[3], mMainFrameBuffer.GetWidth(), mMainFrameBuffer.GetHeight());
 
-                        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                        doubleFramebufferRequest->UnBind();
+                        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
                     }
 
                     // 3. blit back a part of a screen
 
-                    if (false == mMainFrameBuffer.isFboAttached())
+                    if (!mMainFrameBuffer.isFboAttached())
                     {
-                        BlitFBOToFBOOffset(finalFBO, 0, 0, localViewport[2], localViewport[3],
-                            mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
-                            false, false, false, false);
+                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
+                            mMainFrameBuffer.GetFinalFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
+                            false, false, false, false); // don't copy depth or any other color attachment
                     }
                     else
                     {
-                        BlitFBOToFBOOffset(finalFBO, 0, 0, localViewport[2], localViewport[3],
-                            mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3],
-                            false, false, false, false);
+                        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, localViewport[2], localViewport[3], doubleFramebufferRequest->GetWriteAttachment(),
+                            mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
+                            false, false, false, false); // don't copy depth or any other color attachment
                     }
 
                 }
 
+            }
+
+            if (currBuffers)
+            {
+                currBuffers->OnFrameRendered();
             }
         }
 
@@ -471,7 +488,7 @@ void PostProcessContextData::PreRenderFirstEntry()
         case 3:
             mEffectBuffers3->ReSize(w, h, usePreview, scaleF);
             break;
-        }
+        }    
     }
 
     //

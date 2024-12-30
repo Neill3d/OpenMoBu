@@ -47,7 +47,7 @@ bool PostEffectShaderDownscale::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderDownscale::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderDownscale::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	return true;
 }

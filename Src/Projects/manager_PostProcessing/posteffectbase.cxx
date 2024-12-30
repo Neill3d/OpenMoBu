@@ -134,7 +134,7 @@ bool PostEffectBufferShader::PrepUniforms(const int)
 	return false;
 }
 
-bool PostEffectBufferShader::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext, int maskIndex)
+bool PostEffectBufferShader::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	return false;
 }
@@ -153,7 +153,7 @@ GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
 	return mShaders[mCurrentShader].get();
 }
 
-void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips)
+void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 {
 	Bind();
 
@@ -175,7 +175,7 @@ void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, c
 	}
 
 	// apply effect into dst buffer
-	dstBuffer->Bind();
+	dstBuffer->Bind(colorAttachment);
 
 	drawOrthoQuad2d(w, h);
 	
@@ -183,15 +183,38 @@ void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, c
 	dstBuffer->UnBind(generateMips);
 }
 
-void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, const GLuint inputTextureId, int w, int h, bool generateMips)
+// dstBuffer - main effects chain target and it's current target colorAttachment
+void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 {
 	if (GetNumberOfPasses() == 0)
 		return;
+
+	// render dependent buffer shaders ?!
+	if (BufferAShader)
+	{
+		const std::string bufferAName = std::string(GetName()) + "_bufferA";
+
+		// dst should be buffer textures ?!
+
+		FrameBuffer* bufferA = buffers->RequestFramebuffer(bufferAName);
+
+		BufferAShader->Render(buffers, bufferA, 0, inputTextureId, w, h, generateMips);
+
+		const GLuint bufferATextureId = bufferA->GetColorObject();
+		buffers->ReleaseFramebuffer(bufferAName);
+
+		// TODO: bind input buffers
+		glActiveTexture(GL_TEXTURE0 + GetBufferSamplerId());
+		glBindTexture(GL_TEXTURE_2D, bufferATextureId);
+		glActiveTexture(GL_TEXTURE0);
+	}
 
 	GLuint texId = inputTextureId;
 
 	// render all passes except last one
 	// we can't do intermediate passes without buffers
+	// TODO:
+	/*
 	if (buffers)
 	{
 		for (int j = 0; j < GetNumberOfPasses() - 1; ++j)
@@ -205,11 +228,11 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 			texId = buffers->GetSrcBufferPtr()->GetColorObject();
 		}
 	}
-	
+	*/
 	// last one goes into dst buffer
 
 	const int finalPassIndex = GetNumberOfPasses() - 1;
-	RenderPass(finalPassIndex, dstBuffer, texId, w, h, generateMips);
+	RenderPass(finalPassIndex, dstBuffer, colorAttachment, texId, w, h, generateMips);
 }
 
 void PostEffectBufferShader::Bind()
@@ -231,6 +254,11 @@ void PostEffectBufferShader::SetDownscaleMode(const bool value)
 {
 	isDownscale = value;
 	version += 1;
+}
+
+void PostEffectBufferShader::SetBufferA(PostEffectBufferShader* bufferShaderIn)
+{
+	BufferAShader = bufferShaderIn;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -272,7 +300,7 @@ bool PostEffectBase::IsLinearDepthSamplerUsed() const
 	return false;
 }
 
-bool PostEffectBase::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+bool PostEffectBase::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext)
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
@@ -304,7 +332,7 @@ void PostEffectBase::Process(const EffectContext& context)
 		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
 		{
 			FrameBuffer* bufferShaderFrameBuffer = GetFrameBufferForBufferShader(i);
-			bufferShader->Render(nullptr, bufferShaderFrameBuffer, context.srcTextureId, context.viewWidth, context.viewHeight, context.generateMips);
+			bufferShader->Render(context.buffers, bufferShaderFrameBuffer, 0, context.srcTextureId, context.viewWidth, context.viewHeight, context.generateMips);
 
 			// TODO: bind result of buffer shader for next buffer shaders !
 		}
@@ -314,7 +342,7 @@ void PostEffectBase::Process(const EffectContext& context)
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader))
 	{
-		bufferShader->Render(nullptr, context.dstFrameBuffer, context.srcTextureId, context.viewWidth, context.viewHeight, context.generateMips);
+		bufferShader->Render(context.buffers, context.dstFrameBuffer, context.colorAttachment, context.srcTextureId, context.viewWidth, context.viewHeight, context.generateMips);
 	}	
 }
 
