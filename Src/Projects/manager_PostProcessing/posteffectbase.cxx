@@ -155,8 +155,6 @@ GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
 
 void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 {
-	Bind();
-
 	PrepPass(passIndex, w, h);
 
 	// bind an input source image for processing by the effect
@@ -179,7 +177,6 @@ void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, i
 
 	drawOrthoQuad2d(w, h);
 	
-	UnBind();
 	dstBuffer->UnBind(generateMips);
 }
 
@@ -211,6 +208,9 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 
 	GLuint texId = inputTextureId;
 
+	Bind();
+	UploadUniforms();
+
 	// render all passes except last one
 	// we can't do intermediate passes without buffers
 	// TODO:
@@ -233,6 +233,8 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 
 	const int finalPassIndex = GetNumberOfPasses() - 1;
 	RenderPass(finalPassIndex, dstBuffer, colorAttachment, texId, w, h, generateMips);
+
+	UnBind();
 }
 
 void PostEffectBufferShader::Bind()
@@ -321,7 +323,12 @@ void PostEffectBase::Process(const EffectContext& context)
 	//  we also have to allocate the output of each buffer shader, so that we can use them as input textures for every next buffer shader
 	//  the order is  input->first buffer shader processing->second buffer shader could use result of first buffer shader
 	// ->main buffer shader mix initial input and result of second buffer shader
-
+	/*
+	* TODO: we have a scheme that post effect has one main buffer shader
+	*  main buffer shader could contain passes
+	*  but it also could contain connected bufferA, bufferB, etc.
+	*  each buffer is a separate buffer shader, that is going to be evaluated and passed as additional sampler
+	* 
 	// get a framebuffer for every intermediate step
 	InitializeFrameBuffers(context.viewWidth, context.viewHeight);
 
@@ -337,7 +344,7 @@ void PostEffectBase::Process(const EffectContext& context)
 			// TODO: bind result of buffer shader for next buffer shaders !
 		}
 	}
-
+	*/
 	// main buffer shader is a last shader in the list, it have to output directly to the chain effects
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader))

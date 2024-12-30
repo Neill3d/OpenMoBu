@@ -41,6 +41,9 @@ FBLibraryDeclare( manager_postprocessing )
 	FBLibraryRegister(PostEffectUserObject);
 	FBLibraryRegisterElement(PostEffectUserObject);
 
+	FBLibraryRegister(EffectShaderUserObject);
+	FBLibraryRegisterElement(EffectShaderUserObject);
+
 	FBLibraryRegister(ORManip_Template);
 	//FBLibraryRegisterStorable(ORHUDElementCustom);
 

@@ -1283,7 +1283,7 @@ PostEffectBase* PostEffectChain::ShaderFactory(const BuildInEffect effectType, c
 	//	break;
 	}
 
-	if (immediatelyLoad)
+	if (immediatelyLoad && newEffect)
 	{
 		if (!newEffect->Load(shadersLocation))
 		{

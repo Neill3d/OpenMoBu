@@ -106,9 +106,12 @@ public: // PROPERTIES
 	{
 		assert(maskIndex < NUMBER_OF_MASKS);
 
-		FBVector3d v;
-		Masks[maskIndex].BlurMaskScale->GetData(v, sizeof(FBVector3d));
-
+		FBVector3d v(1.0, 1.0, 1.0);
+		if (maskIndex >= 0 && maskIndex < NUMBER_OF_MASKS)
+		{
+			Masks[maskIndex].BlurMaskScale->GetData(v, sizeof(FBVector3d));
+		}
+		
 		return FBVector2d(v[0], v[1]);
 	}
 
