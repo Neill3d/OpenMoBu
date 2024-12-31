@@ -104,10 +104,14 @@ bool PostEffectBufferShader::Load(const int shaderIndex, const char* vname, cons
 	if (mShaders.size() > shaderIndex)
 	{
 		mShaders[shaderIndex].swap(shader);
+		// samplers and locations
+		PrepUniforms(shaderIndex);
 	}
 	else
 	{
 		mShaders.push_back(std::move(shader));
+		// samplers and locations
+		PrepUniforms(mShaders.size()-1);
 	}
 
 	return true;
@@ -122,9 +126,6 @@ bool PostEffectBufferShader::Load(const char* shadersLocation)
 
 		if (!Load(i, vertex_path, fragment_path))
 			return false;
-		
-		// samplers and locations
-		PrepUniforms(i);
 	}
 	return true;
 }

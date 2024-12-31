@@ -52,7 +52,7 @@ PostEffectFBElementClassImplementation(EffectShaderUserObject, "Effect Shader", 
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-const char* EffectShaderUserObject::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
+const char* UserBufferShader::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
 {
 	"inputSampler", //!< this is an input image that we read from
 	"iChannel0", //!< this is an input image, compatible with shadertoy
@@ -77,6 +77,32 @@ const char* EffectShaderUserObject::gSystemUniformNames[static_cast<int>(ShaderS
 	"modelViewProj" //!< current camera modelview-projection matrix
 };
 
+// use uniformName to track down some type casts
+FBPropertyType UniformTypeToFBPropertyType(GLenum type, const char* uniformName)
+{
+	switch (type)
+	{
+	case GL_FLOAT:
+		return (strstr(uniformName, "_flag") != nullptr) ? FBPropertyType::kFBPT_bool : FBPropertyType::kFBPT_double;
+	case GL_INT:
+		return FBPropertyType::kFBPT_int;
+	case GL_BOOL:
+		return FBPropertyType::kFBPT_bool;
+	case GL_FLOAT_VEC2:
+		return FBPropertyType::kFBPT_Vector2D;
+	case GL_FLOAT_VEC3:
+		return (strstr(uniformName, "_color") != nullptr) ? FBPropertyType::kFBPT_ColorRGB : FBPropertyType::kFBPT_Vector3D;
+	case GL_FLOAT_VEC4:
+		return (strstr(uniformName, "_color") != nullptr) ? FBPropertyType::kFBPT_ColorRGBA : FBPropertyType::kFBPT_Vector4D;
+	case GL_FLOAT_MAT4:
+		return FBPropertyType::kFBPT_Vector4D; // TODO:
+	case GL_SAMPLER_2D:
+		return FBPropertyType::kFBPT_object; // reference to a texture object that we could bind to a property
+	default:
+		return FBPropertyType::kFBPT_double;
+	}
+}
+
 /************************************************
  *  Constructor.
  ************************************************/
@@ -87,11 +113,6 @@ EffectShaderUserObject::EffectShaderUserObject(const char* pName, HIObject pObje
     FBClassInit;
 
 	mReloadShaders = false;
-
-	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
-	{
-		mSystemUniformLocations[i] = -1;
-	}
 }
 
 void EffectShaderUserObject::ActionReloadShaders(HIObject pObject, bool value)
@@ -163,56 +184,65 @@ bool EffectShaderUserObject::FBCreate()
 void EffectShaderUserObject::FBDestroy()
 {
 	mUserShader.reset(nullptr);
-	/*
-	if (mUserEffect)
-	{
-		delete mUserEffect;
-		mUserEffect = nullptr;
-	}
-	*/
 }
 
-void EffectShaderUserObject::RemoveShaderProperties()
+bool EffectShaderUserObject::DoReloadShaders()
 {
-	for (auto& shaderProperty : mShaderProperties)
+	// reload connected input buffers
+
+	if (EffectShaderUserObject* bufferObject = GetBufferAUserObject())
 	{
-		if (shaderProperty.second.property != nullptr)
-		{
-			PropertyRemove(shaderProperty.second.property);
-			shaderProperty.second.property = nullptr;
-		}
+		if (!bufferObject->DoReloadShaders())
+			return false;
 	}
 
-	mShaderProperties.clear();
-}
 
-// use uniformName to track down some type casts
-FBPropertyType UniformTypeToFBPropertyType(GLenum type, const char* uniformName)
-{
-	switch (type)
+	// load a fragment shader from a given path and try to validate the shader and the program
+
+	const char* fragment_shader_rpath = ShaderFile;
+	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
 	{
-	case GL_FLOAT:
-		return (strstr(uniformName, "_flag") != nullptr) ? FBPropertyType::kFBPT_bool : FBPropertyType::kFBPT_double;
-	case GL_INT:
-		return FBPropertyType::kFBPT_int;
-	case GL_BOOL:
-		return FBPropertyType::kFBPT_bool;
-	case GL_FLOAT_VEC2:
-		return FBPropertyType::kFBPT_Vector2D;
-	case GL_FLOAT_VEC3:
-		return (strstr(uniformName, "_color") != nullptr) ? FBPropertyType::kFBPT_ColorRGB : FBPropertyType::kFBPT_Vector3D;
-	case GL_FLOAT_VEC4:
-		return (strstr(uniformName, "_color") != nullptr) ? FBPropertyType::kFBPT_ColorRGBA : FBPropertyType::kFBPT_Vector4D;
-	case GL_FLOAT_MAT4:
-		return FBPropertyType::kFBPT_Vector4D; // TODO:
-	case GL_SAMPLER_2D:
-		return FBPropertyType::kFBPT_object; // reference to a texture object that we could bind to a property
-	default:
-		return FBPropertyType::kFBPT_double;
+		LOGE("[PostEffectUserObject] Fragment shader relative path is not defined!\n");
+		return false;
 	}
+
+	mUserShader.reset(new UserBufferShader(this));
+	
+	constexpr const char* vertex_shader_rpath = "/GLSL/simple.vsh";
+
+	char vertex_abs_path_only[MAX_PATH];
+	char fragment_abs_path_only[MAX_PATH];
+	if (!FindEffectLocation(vertex_shader_rpath, vertex_abs_path_only, MAX_PATH)
+		|| !FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
+	{
+		LOGE("[PostEffectUserObject] Failed to find shaders location!\n");
+		return false;
+	}
+
+	LOGI("[PostEffectUserObject] Vertex shader Location - %s\n", vertex_abs_path_only);
+	LOGI("[PostEffectUserObject] Fragment shader Location - %s\n", fragment_abs_path_only);
+
+	FBString vertex_path(vertex_abs_path_only, vertex_shader_rpath);
+	FBString fragment_path(fragment_abs_path_only, fragment_shader_rpath);
+
+	// NOTE: prep uniforms when load is succesfull
+	if (!mUserShader->Load(0, vertex_path, fragment_path))
+	{
+		LOGE("[PostEffectUserObject] Failed to load shaders!\n");
+		
+		mUserShader.reset(nullptr);
+		return false;
+	}
+
+	return true;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyFloat(const ShaderProperty& prop)
+
+void EffectShaderUserObject::DefaultValues()
+{}
+
+
+FBProperty* EffectShaderUserObject::MakePropertyFloat(const UserBufferShader::ShaderProperty& prop)
 {
 	FBProperty* newProp = nullptr;
 
@@ -229,19 +259,19 @@ FBProperty* EffectShaderUserObject::MakePropertyFloat(const ShaderProperty& prop
 			newProp->SetMinMax(0.0, 100.0);
 		}
 	}
-	
+
 	PropertyAdd(newProp);
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyVec2(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec2(const UserBufferShader::ShaderProperty& prop)
 {
 	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	PropertyAdd(newProp);
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyVec3(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec3(const UserBufferShader::ShaderProperty& prop)
 {
 	FBProperty* newProp = nullptr;
 
@@ -258,7 +288,7 @@ FBProperty* EffectShaderUserObject::MakePropertyVec3(const ShaderProperty& prop)
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertyVec4(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::ShaderProperty& prop)
 {
 	FBProperty* newProp = nullptr;
 
@@ -275,7 +305,7 @@ FBProperty* EffectShaderUserObject::MakePropertyVec4(const ShaderProperty& prop)
 	return newProp;
 }
 
-FBProperty* EffectShaderUserObject::MakePropertySampler(const ShaderProperty& prop)
+FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::ShaderProperty& prop)
 {
 	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
 	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
@@ -289,7 +319,52 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const ShaderProperty& pr
 	return nullptr;
 }
 
-void EffectShaderUserObject::ResetSystemUniformLocations()
+FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop)
+{
+	FBProperty* fbProperty = PropertyList.Find(prop.uniformName);
+	const FBPropertyType fbPropertyType = UniformTypeToFBPropertyType(prop.type, prop.uniformName);
+
+	// NOTE: check not only user property, but also a property type !
+	if (fbProperty && fbProperty->IsUserProperty() && fbProperty->GetPropertyType() == fbPropertyType)
+	{
+		//return fbProperty;
+		//prop.property = fbProperty;
+	}
+	else
+	{
+		// base on type, make a custom property
+		fbProperty = nullptr;
+
+		switch (prop.type)
+		{
+		case GL_FLOAT:
+			fbProperty = MakePropertyFloat(prop);
+			break;
+		case GL_FLOAT_VEC2:
+			fbProperty = MakePropertyVec2(prop);
+			break;
+		case GL_FLOAT_VEC3:
+			fbProperty = MakePropertyVec3(prop);
+			break;
+		case GL_FLOAT_VEC4:
+			fbProperty = MakePropertyVec4(prop);
+			break;
+		case GL_SAMPLER_2D:
+			fbProperty = MakePropertySampler(prop);
+			break;
+		default:
+			LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.uniformName);
+		}
+	}
+	return fbProperty;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// UserBufferShader
+
+UserBufferShader::UserBufferShader(EffectShaderUserObject* UserObject)
+	: PostEffectBufferShader()
+	, mUserObject(UserObject)
 {
 	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
 	{
@@ -297,7 +372,53 @@ void EffectShaderUserObject::ResetSystemUniformLocations()
 	}
 }
 
-int EffectShaderUserObject::IsSystemUniform(const char* uniformName)
+bool UserBufferShader::IsDepthSamplerUsed() const 
+{ 
+	return mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0; 
+}
+bool UserBufferShader::IsLinearDepthSamplerUsed() const
+{ 
+	return mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)] >= 0; 
+}
+
+/// new feature to have several passes for a specified effect
+const int UserBufferShader::GetNumberOfPasses() const
+{
+	return mUserObject->NumberOfPasses;
+}
+//! initialize a specific path for drawing
+bool UserBufferShader::PrepPass(const int pass, int w, int h)
+{
+	// TODO: define iPass value for the shader
+	
+	return true;
+}
+
+
+void UserBufferShader::RemoveShaderProperties()
+{
+	for (auto& shaderProperty : mShaderProperties)
+	{
+		if (shaderProperty.second.property != nullptr)
+		{
+			mUserObject->PropertyRemove(shaderProperty.second.property);
+			shaderProperty.second.property = nullptr;
+		}
+	}
+
+	mShaderProperties.clear();
+}
+
+
+void UserBufferShader::ResetSystemUniformLocations()
+{
+	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
+	{
+		mSystemUniformLocations[i] = -1;
+	}
+}
+
+int UserBufferShader::IsSystemUniform(const char* uniformName)
 {
 	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
 	{
@@ -308,9 +429,10 @@ int EffectShaderUserObject::IsSystemUniform(const char* uniformName)
 }
 
 
-void EffectShaderUserObject::BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const
+void UserBufferShader::BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const
 {
 	const GLint* sysLocations = mSystemUniformLocations;
+	const bool useMasking = mUserObject->UseMasking;
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)] >= 0)
 	{
@@ -340,7 +462,7 @@ void EffectShaderUserObject::BindSystemUniforms(PostPersistentData* pData, const
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)] >= 0)
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)];
-		glUniform1f(loc, (UseMasking) ? 1.0f : 0.0f);
+		glUniform1f(loc, (useMasking) ? 1.0f : 0.0f);
 	}
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)] >= 0)
@@ -433,15 +555,15 @@ void EffectShaderUserObject::BindSystemUniforms(PostPersistentData* pData, const
 	}
 }
 
-void EffectShaderUserObject::CheckUniforms()
+bool UserBufferShader::PrepUniforms(const int variationIndex)
 {
 	RemoveShaderProperties();
 	ResetSystemUniformLocations();
 
-	if (!mUserShader.get() || !mUserShader->GetShaderPtr())
-		return;
+	if (!GetShaderPtr())
+		return false;
 
-	const GLuint programId = mUserShader->GetShaderPtr()->GetProgramObj();
+	const GLuint programId = GetShaderPtr()->GetProgramObj();
 
 	GLint numUniforms = 0;
 	glGetProgramiv(programId, GL_ACTIVE_UNIFORMS, &numUniforms);
@@ -450,7 +572,7 @@ void EffectShaderUserObject::CheckUniforms()
 	for (GLint i = 0; i < numUniforms; ++i)
 	{
 		ShaderProperty prop;
-		
+
 		glGetActiveUniform(programId, i, sizeof(prop.uniformName), &prop.length, &prop.size, &prop.type, prop.uniformName);
 		prop.location = glGetUniformLocation(programId, prop.uniformName);
 
@@ -461,156 +583,41 @@ void EffectShaderUserObject::CheckUniforms()
 			mSystemUniformLocations[systemUniformId] = prop.location;
 			continue;
 		}
-		
-		const FBPropertyType fbPropertyType = UniformTypeToFBPropertyType(prop.type, prop.uniformName);
 
-		FBProperty* fbProperty = PropertyList.Find(prop.uniformName);
-		// NOTE: check not only user property, but also a property type !
-		if (fbProperty && fbProperty->IsUserProperty() && fbProperty->GetPropertyType() == fbPropertyType)
-		{
-			prop.property = fbProperty;
-		}
-		else
-		{
-			// base on type, make a custom property
-			prop.property = nullptr;
-
-			switch (prop.type)
-			{
-			case GL_FLOAT:
-				prop.property = MakePropertyFloat(prop);
-				break;
-			case GL_FLOAT_VEC2:
-				prop.property = MakePropertyVec2(prop);
-				break;
-			case GL_FLOAT_VEC3:
-				prop.property = MakePropertyVec3(prop);
-				break;
-			case GL_FLOAT_VEC4:
-				prop.property = MakePropertyVec4(prop);
-				break;
-			case GL_SAMPLER_2D:
-				prop.property = MakePropertySampler(prop);
-				break;
-			default:
-				LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.uniformName);
-			}
-		}
+		prop.property = mUserObject->GetOrMakeProperty(prop);
 
 		if (prop.property != nullptr)
 		{
 			mShaderProperties.emplace(prop.uniformName, prop);
 		}
 	}
-}
 
-bool EffectShaderUserObject::DoReloadShaders()
-{
-	// load a fragment shader from a given path and try to validate the shader and the program
-
-	const char* fragment_shader_rpath = ShaderFile;
-	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
-	{
-		LOGE("[PostEffectUserObject] Fragment shader relative path is not defined!\n");
-		return false;
-	}
-
-	mUserShader.reset(new UserBufferShader(this));
-	/*
-	if (mUserEffect)
-	{
-		delete mUserEffect;
-		mUserEffect = nullptr;
-	}
-	
-	mUserShader = new PostUserEffect(this);
-	*/
-
-	constexpr const char* vertex_shader_rpath = "/GLSL/simple.vsh";
-
-	char vertex_abs_path_only[MAX_PATH];
-	char fragment_abs_path_only[MAX_PATH];
-	if (!FindEffectLocation(vertex_shader_rpath, vertex_abs_path_only, MAX_PATH)
-		|| !FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
-	{
-		LOGE("[PostEffectUserObject] Failed to find shaders location!\n");
-		return false;
-	}
-
-	LOGI("[PostEffectUserObject] Vertex shader Location - %s\n", vertex_abs_path_only);
-	LOGI("[PostEffectUserObject] Fragment shader Location - %s\n", fragment_abs_path_only);
-
-	FBString vertex_path(vertex_abs_path_only, vertex_shader_rpath);
-	FBString fragment_path(fragment_abs_path_only, fragment_shader_rpath);
-
-	if (!mUserShader->Load(0, vertex_path, fragment_path))
-	{
-		LOGE("[PostEffectUserObject] Failed to load shaders!\n");
-		//delete mUserEffect;
-		//mUserEffect = nullptr;
-		mUserShader.reset(nullptr);
-		return false;
-	}
-
-	//mShaderProgram->Bind();
-
-	CheckUniforms();
-
-	// TODO: setup default uniforms !
-	// TODO: extract uniforms to prepare a UI layout
-
-	//mShaderProgram->UnBind();
-	return true;
-}
-
-
-void EffectShaderUserObject::DefaultValues()
-{
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-
-
-bool UserBufferShader::IsDepthSamplerUsed() const
-{
-	return mUserObject->IsDepthSamplerUsed();
-}
-bool UserBufferShader::IsLinearDepthSamplerUsed() const
-{
-	return mUserObject->IsLinearDepthSamplerUsed();
-}
-
-/// new feature to have several passes for a specified effect
-const int UserBufferShader::GetNumberOfPasses() const
-{
-	return mUserObject->NumberOfPasses;
-}
-//! initialize a specific path for drawing
-bool UserBufferShader::PrepPass(const int pass, int w, int h)
-{
-	// TODO: define iPass value for the shader
-	
 	return true;
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 bool UserBufferShader::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
+	// update ui values for connected input buffers first
+	if (EffectShaderUserObject* bufferObject = mUserObject->GetBufferAUserObject())
+	{
+		if (!bufferObject->GetUserShaderPtr()->CollectUIValues(pData, effectContext, maskIndex))
+			return false;
+	}
+
 	GLSLShaderProgram* shader = GetShaderPtr();
 
 	FBVector4d v;
 
 	shader->Bind();
 
-	mUserObject->BindSystemUniforms(pData, effectContext);
+	BindSystemUniforms(pData, effectContext);
 
 	// setup user uniforms
 
 	GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
 
-	for (auto& prop : mUserObject->mShaderProperties)
+	for (auto& prop : mShaderProperties)
 	{
 		if (prop.second.type == GL_FLOAT)
 		{

@@ -86,10 +86,8 @@ class UserBufferShader : public PostEffectBufferShader
 {
 public:
 
-	UserBufferShader(EffectShaderUserObject* UserObject)
-		: PostEffectBufferShader()
-		, mUserObject(UserObject)
-	{}
+	UserBufferShader(EffectShaderUserObject* UserObject);
+	virtual ~UserBufferShader() {}
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
 	virtual int GetNumberOfVariations() const override
@@ -105,10 +103,8 @@ public:
 	virtual const char* GetFragmentFname(const int variationIndex) const override { return "test.glslf"; }
 
 	//! prepare uniforms for a given variation of the effect
-	virtual bool PrepUniforms(const int variationIndex) override
-	{
-		return true;
-	}
+	virtual bool PrepUniforms(const int variationIndex) override;
+
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
 
@@ -123,7 +119,35 @@ public:
 
 
 protected:
+	friend class EffectShaderUserObject;
+
+	//!< scene object, data container and interaction with the end user
 	EffectShaderUserObject* mUserObject;
+
+	struct ShaderProperty
+	{
+		GLchar uniformName[256]{ 0 };
+		GLsizei length{ 0 };
+		GLint size{ 0 };
+		GLenum type{ 0 };
+
+		GLint location{ -1 };
+		FBProperty* property{ nullptr }; //!< property associated with the given shader uniform
+	};
+
+	//!< list all shader uniforms and a connection with ui user property
+	std::unordered_map<std::string, ShaderProperty> mShaderProperties;
+
+	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
+	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
+
+
+	void	RemoveShaderProperties();
+	void	ResetSystemUniformLocations();
+
+	int IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
+
+	void BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +208,8 @@ public:
 
 	UserBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
 
+	EffectShaderUserObject* GetBufferAUserObject() { return (BufferA.GetCount() > 0 && FBIS(BufferA.GetAt(0), EffectShaderUserObject)) ? FBCast <EffectShaderUserObject>(BufferA.GetAt(0)) : nullptr; }
+
 protected:
 
 	friend class ToolPostProcessing;
@@ -195,46 +221,23 @@ protected:
 	bool				mReloadShaders{ false };
 	
 	std::unique_ptr<UserBufferShader>		mUserShader;
-	//GLSLShaderProgram* mShaderProgram{ nullptr };
-
-	struct ShaderProperty
-	{
-		GLchar uniformName[256]{ 0 };
-		GLsizei length{ 0 };
-		GLint size{ 0 };
-		GLenum type{ 0 };
-
-		GLint location{ -1 };
-		FBProperty* property{ nullptr }; //!< property associated with the given shader uniform
-	};
-
-	std::unordered_map<std::string, ShaderProperty> mShaderProperties;
-
-	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
-	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
+	
+	
 
 
-	void		DefaultValues();
-	void		LoadFromConfig(const char *sessionFilter=nullptr);
-	void		LoadFarValueFromConfig();
+	void	DefaultValues();
+	void	LoadFromConfig(const char *sessionFilter=nullptr);
+	void	LoadFarValueFromConfig();
 
-	void		RemoveShaderProperties();
+	//void	CheckUniforms();
 
-	void ResetSystemUniformLocations();
-	void		CheckUniforms();
+	FBProperty* MakePropertyFloat(const UserBufferShader::ShaderProperty& prop);
+	FBProperty* MakePropertyVec2(const UserBufferShader::ShaderProperty& prop);
+	FBProperty* MakePropertyVec3(const UserBufferShader::ShaderProperty& prop);
+	FBProperty* MakePropertyVec4(const UserBufferShader::ShaderProperty& prop);
+	FBProperty* MakePropertySampler(const UserBufferShader::ShaderProperty& prop);
 
-	int IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
-
-	bool IsDepthSamplerUsed() const { return mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0; }
-	bool IsLinearDepthSamplerUsed() const { return mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)] >= 0; }
-
-	void BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const;
-
-	FBProperty* MakePropertyFloat(const ShaderProperty& prop);
-	FBProperty* MakePropertyVec2(const ShaderProperty& prop);
-	FBProperty* MakePropertyVec3(const ShaderProperty& prop);
-	FBProperty* MakePropertyVec4(const ShaderProperty& prop);
-	FBProperty* MakePropertySampler(const ShaderProperty& prop);
+	FBProperty* GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop);
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
 
