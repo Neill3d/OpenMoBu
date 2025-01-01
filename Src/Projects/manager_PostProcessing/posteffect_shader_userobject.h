@@ -82,7 +82,7 @@ enum class ShaderSystemUniform
 /// internal buffer shader that is going to be conneced to an internal post effect 
 /// </summary>
 
-class UserBufferShader : public PostEffectBufferShader
+class UserBufferShader : public PostEffectBufferShader, public CommonEffectUniforms
 {
 public:
 
@@ -104,6 +104,8 @@ public:
 
 	//! prepare uniforms for a given variation of the effect
 	virtual bool PrepUniforms(const int variationIndex) override;
+
+	virtual void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
@@ -133,6 +135,11 @@ protected:
 
 		GLint location{ -1 };
 		FBProperty* property{ nullptr }; //!< property associated with the given shader uniform
+
+		// extracted connections from a property
+		FBTexture* texture{ nullptr };
+		EffectShaderUserObject* shaderUserObject{ nullptr };
+		float value[4];
 	};
 
 	//!< list all shader uniforms and a connection with ui user property
@@ -148,6 +155,9 @@ protected:
 	int IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
 
 	void BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const;
+
+	//virtual void OnPreRender(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
+	
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,10 +204,10 @@ public: // PROPERTIES
 	FBPropertyInt				NumberOfPasses; //!< define in how many passes the shader should be executed (global variable iPass)
 
 	// sibling buffer shaders (have to be evaluated before the given buffer shader)
-	FBPropertyListObject		BufferA;
-	FBPropertyListObject		BufferB;
-	FBPropertyListObject		BufferC;
-	FBPropertyListObject		BufferD;
+	//FBPropertyListObject		BufferA;
+	//FBPropertyListObject		BufferB;
+	//FBPropertyListObject		BufferC;
+	//FBPropertyListObject		BufferD;
 
 public:
 
@@ -208,7 +218,7 @@ public:
 
 	UserBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
 
-	EffectShaderUserObject* GetBufferAUserObject() { return (BufferA.GetCount() > 0 && FBIS(BufferA.GetAt(0), EffectShaderUserObject)) ? FBCast <EffectShaderUserObject>(BufferA.GetAt(0)) : nullptr; }
+	//EffectShaderUserObject* GetBufferAUserObject() { return (BufferA.GetCount() > 0 && FBIS(BufferA.GetAt(0), EffectShaderUserObject)) ? FBCast <EffectShaderUserObject>(BufferA.GetAt(0)) : nullptr; }
 
 protected:
 

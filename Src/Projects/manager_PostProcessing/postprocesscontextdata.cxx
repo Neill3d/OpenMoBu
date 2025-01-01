@@ -1036,7 +1036,7 @@ void PostProcessContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 
     }
 
-    const int numchars = strlen(buffer);
+    const int numchars = static_cast<int>(strlen(buffer));
 
     // draw a background
 

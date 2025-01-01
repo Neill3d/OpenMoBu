@@ -37,7 +37,7 @@ public:
 	virtual bool PrepUniforms(const int shaderIndex) override;
 	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
 
-	virtual void UploadUniforms() override;
+	virtual void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
 
 protected:
 

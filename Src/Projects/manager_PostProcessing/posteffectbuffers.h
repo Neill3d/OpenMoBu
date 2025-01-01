@@ -272,9 +272,14 @@ private:
 	struct FramebufferEntry {
 		std::unique_ptr<FrameBuffer> framebuffer;
 		std::string name;
-		int referenceCount;
+		int referenceCount{ 0 };
 		int lazyEraseCounter{ 15 };
-
+		/*
+		FramebufferEntry(std::unique_ptr<FrameBuffer>&& framebufferIn, const std::string& nameIn)
+			: framebuffer(std::move(framebufferIn))
+			, name(nameIn)
+		{}
+		*/
 		void AddReference() { ++referenceCount; lazyEraseCounter = 15; }
 		void RemoveReference() { if (referenceCount > 0) --referenceCount; }
 		int GetReferenceCount() const { return referenceCount; }

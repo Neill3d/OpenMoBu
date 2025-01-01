@@ -51,7 +51,7 @@ void CommonEffectUniforms::PrepareUniformLocations(GLSLShaderProgram* shader)
 
 void CommonEffectUniforms::CollectCommonData(PostPersistentData* data, const char* enableMaskingPropertyName)
 {
-	const bool isEnabledEffectMasking = data->PropertyList.Find(enableMaskingPropertyName)->AsInt() > 0;
+	const bool isEnabledEffectMasking = (enableMaskingPropertyName) ? data->PropertyList.Find(enableMaskingPropertyName)->AsInt() > 0 : false;
 	const bool useMasking = data->UseCompositeMasking && (data->EnableMaskingForAllEffects || isEnabledEffectMasking);
 	const double _upperClip = data->UpperClip;
 	const double _lowerClip = data->LowerClip;
@@ -111,7 +111,7 @@ bool PostEffectBufferShader::Load(const int shaderIndex, const char* vname, cons
 	{
 		mShaders.push_back(std::move(shader));
 		// samplers and locations
-		PrepUniforms(mShaders.size()-1);
+		PrepUniforms(static_cast<int>(mShaders.size())-1);
 	}
 
 	return true;
@@ -154,6 +154,11 @@ GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
 	return mShaders[mCurrentShader].get();
 }
 
+const GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() const {
+	assert(mCurrentShader >= 0 && mCurrentShader < mShaders.size());
+	return mShaders[mCurrentShader].get();
+}
+
 void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 {
 	PrepPass(passIndex, w, h);
@@ -187,6 +192,7 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 	if (GetNumberOfPasses() == 0)
 		return;
 
+	/*
 	// render dependent buffer shaders ?!
 	if (BufferAShader)
 	{
@@ -206,11 +212,13 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 		glBindTexture(GL_TEXTURE_2D, bufferATextureId);
 		glActiveTexture(GL_TEXTURE0);
 	}
-
+	*/
 	GLuint texId = inputTextureId;
 
 	Bind();
-	UploadUniforms();
+	UploadUniforms(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips);
+
+	//OnPreRender(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips);
 
 	// render all passes except last one
 	// we can't do intermediate passes without buffers
@@ -258,12 +266,12 @@ void PostEffectBufferShader::SetDownscaleMode(const bool value)
 	isDownscale = value;
 	version += 1;
 }
-
+/*
 void PostEffectBufferShader::SetBufferA(PostEffectBufferShader* bufferShaderIn)
 {
 	BufferAShader = bufferShaderIn;
 }
-
+*/
 /////////////////////////////////////////////////////////////////////////
 // EffectBase
 
@@ -277,8 +285,11 @@ bool PostEffectBase::Load(const char* shadersLocation)
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
-		if (!GetBufferShaderPtr(i)->Load(shadersLocation))
-			return false;
+		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (!bufferShader->Load(shadersLocation))
+				return false;
+		}
 	}
 
 	return true;
@@ -288,8 +299,11 @@ bool PostEffectBase::IsDepthSamplerUsed() const
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
-		if (GetBufferShaderPtr(i)->IsDepthSamplerUsed())
-			return true;
+		if (const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (bufferShader->IsDepthSamplerUsed())
+				return true;
+		}
 	}
 	return false;
 }
@@ -297,8 +311,11 @@ bool PostEffectBase::IsLinearDepthSamplerUsed() const
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
-		if (GetBufferShaderPtr(i)->IsLinearDepthSamplerUsed())
-			return true;
+		if (const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (bufferShader->IsLinearDepthSamplerUsed())
+				return true;
+		}
 	}
 	return false;
 }
@@ -307,8 +324,11 @@ bool PostEffectBase::CollectUIValues(PostPersistentData* pData, const PostEffect
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
-		if (!GetBufferShaderPtr(i)->CollectUIValues(pData, effectContext, GetMaskIndex()))
-			return false;
+		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (!bufferShader->CollectUIValues(pData, effectContext, GetMaskIndex()))
+				return false;
+		}
 	}
 
 	return true;
@@ -377,10 +397,15 @@ void PostEffectBase::InitializeFrameBuffers(int w, int h)
 	for (int i = 0; i < count; ++i)
 	{
 		PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i);
+		if (bufferShader == nullptr)
+			continue;
 
-		if (mBufferShaderVersions[i] != bufferShader->GetVersion())
+		const int version = bufferShader->GetVersion();
+		const bool isDownscaleMode = bufferShader->IsDownscaleMode();
+
+		if (mBufferShaderVersions[i] != version)
 		{
-			mFrameBuffers[i].reset(!bufferShader->IsDownscaleMode()
+			mFrameBuffers[i].reset(!isDownscaleMode
 				? new FrameBuffer(w, h, 72, 1)
 				: new FrameBuffer(downscaleWidth, downscaleHeight, 72, 1)
 			);

@@ -19,6 +19,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "mobu_logging.h"
 
 #include "postpersistentdata.h"
+#include "posteffectbuffers.h"
 
 // custom assets inserting
 
@@ -147,10 +148,10 @@ bool EffectShaderUserObject::FBCreate()
 	FBPropertyPublish(this, MaskingChannel, "Masking Channel", nullptr, nullptr);
 
 	// sibling buffer shaders
-	FBPropertyPublish(this, BufferA, "BufferA", nullptr, nullptr);
-	FBPropertyPublish(this, BufferB, "BufferB", nullptr, nullptr);
-	FBPropertyPublish(this, BufferC, "BufferC", nullptr, nullptr);
-	FBPropertyPublish(this, BufferD, "BufferD", nullptr, nullptr);
+	//FBPropertyPublish(this, BufferA, "BufferA", nullptr, nullptr);
+	//FBPropertyPublish(this, BufferB, "BufferB", nullptr, nullptr);
+	//FBPropertyPublish(this, BufferC, "BufferC", nullptr, nullptr);
+	//FBPropertyPublish(this, BufferD, "BufferD", nullptr, nullptr);
 
 	ShaderFile = "//GLSL//test.glslf";
 	NumberOfPasses = 1;
@@ -161,7 +162,7 @@ bool EffectShaderUserObject::FBCreate()
 	UniqueClassId.ModifyPropertyFlag(kFBPropertyFlagNotSavable, true);
 	UniqueClassId.ModifyPropertyFlag(kFBPropertyFlagReadOnly, true);
 	UniqueClassId = 57;
-
+	/*
 	//
 	BufferA.SetFilter(EffectShaderUserObject::GetInternalClassId());
 	BufferA.SetSingleConnect(true);
@@ -171,7 +172,7 @@ bool EffectShaderUserObject::FBCreate()
 	BufferC.SetSingleConnect(true);
 	BufferD.SetFilter(EffectShaderUserObject::GetInternalClassId());
 	BufferD.SetSingleConnect(true);
-
+	*/
 	// DONE: READ default values from config file !
 	DefaultValues();
 
@@ -188,15 +189,6 @@ void EffectShaderUserObject::FBDestroy()
 
 bool EffectShaderUserObject::DoReloadShaders()
 {
-	// reload connected input buffers
-
-	if (EffectShaderUserObject* bufferObject = GetBufferAUserObject())
-	{
-		if (!bufferObject->DoReloadShaders())
-			return false;
-	}
-
-
 	// load a fragment shader from a given path and try to validate the shader and the program
 
 	const char* fragment_shader_rpath = ShaderFile;
@@ -207,7 +199,7 @@ bool EffectShaderUserObject::DoReloadShaders()
 	}
 
 	mUserShader.reset(new UserBufferShader(this));
-	
+
 	constexpr const char* vertex_shader_rpath = "/GLSL/simple.vsh";
 
 	char vertex_abs_path_only[MAX_PATH];
@@ -229,11 +221,24 @@ bool EffectShaderUserObject::DoReloadShaders()
 	if (!mUserShader->Load(0, vertex_path, fragment_path))
 	{
 		LOGE("[PostEffectUserObject] Failed to load shaders!\n");
-		
+
 		mUserShader.reset(nullptr);
 		return false;
 	}
 
+	// reload connected input buffers
+	if (GetUserShaderPtr())
+	{
+		for (auto& prop : GetUserShaderPtr()->mShaderProperties)
+		{
+			if (prop.second.shaderUserObject)
+			{
+				if (!prop.second.shaderUserObject->DoReloadShaders())
+					return false;
+			}
+		}
+	}
+	
 	return true;
 }
 
@@ -431,69 +436,70 @@ int UserBufferShader::IsSystemUniform(const char* uniformName)
 
 void UserBufferShader::BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const
 {
+	const GLuint programId = GetShaderPtr()->GetProgramObj();
 	const GLint* sysLocations = mSystemUniformLocations;
 	const bool useMasking = mUserObject->UseMasking;
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)] >= 0)
 	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)], 0);
+		glProgramUniform1f(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)], 0);
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)] >= 0)
 	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)], 0);
+		glProgramUniform1f(programId, sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)], 0);
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::BUFFERA_SAMPLER_2D)] >= 0)
 	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::BUFFERA_SAMPLER_2D)], PostEffectBufferShader::GetBufferSamplerId());
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::BUFFERA_SAMPLER_2D)], PostEffectBufferShader::GetBufferSamplerId());
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0)
 	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], 1);
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], 1);
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)] >= 0)
 	{
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)], 2);
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)], 2);
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)] >= 0)
 	{
 		const GLint maskSlot = CommonEffectUniforms::GetMaskSamplerSlot();
-		glUniform1i(sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], maskSlot);
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], maskSlot);
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)] >= 0)
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)];
-		glUniform1f(loc, (useMasking) ? 1.0f : 0.0f);
+		glProgramUniform1f(programId, loc, (useMasking) ? 1.0f : 0.0f);
 	}
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)] >= 0)
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)];
 		const double value = pData->UpperClip;
-		glUniform1f(loc, 0.01f * static_cast<float>(value));
+		glProgramUniform1f(programId, loc, 0.01f * static_cast<float>(value));
 	}
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)] >= 0)
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)];
 		const double value = pData->LowerClip;
-		glUniform1f(loc, 0.01f * static_cast<float>(value));
+		glProgramUniform1f(programId, loc, 0.01f * static_cast<float>(value));
 	}
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)] >= 0)
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)];
-		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
+		glProgramUniform2f(programId, loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)] >= 0)
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)];
-		glUniform2f(loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
+		glProgramUniform2f(programId, loc, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
 	}
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::iTIME)] >= 0)
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iTIME)];
-		glUniform1f(loc, static_cast<float>(effectContext.sysTime));
+		glProgramUniform1f(programId, loc, static_cast<float>(effectContext.sysTime));
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::iDATE)] >= 0)
 	{
@@ -511,7 +517,7 @@ void UserBufferShader::BindSystemUniforms(PostPersistentData* pData, const PostE
 		float secondsSinceMidnight = static_cast<float>(localTime->tm_hour * 3600 + localTime->tm_min * 60 + localTime->tm_sec);
 		dateTimeArray[3] = secondsSinceMidnight;
 
-		glUniform4fv(loc, 1, dateTimeArray);
+		glProgramUniform4fv(programId, loc, 1, dateTimeArray);
 	}
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEW)] >= 0)
@@ -525,7 +531,7 @@ void UserBufferShader::BindSystemUniforms(PostPersistentData* pData, const PostE
 		{
 			fModelView[i] = static_cast<float>(tm[i]);
 		}
-		glUniformMatrix4fv(loc, 1, GL_FALSE, fModelView);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, fModelView);
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::PROJ)] >= 0)
 	{
@@ -538,7 +544,7 @@ void UserBufferShader::BindSystemUniforms(PostPersistentData* pData, const PostE
 		{
 			fMatrix[i] = static_cast<float>(tm[i]);
 		}
-		glUniformMatrix4fv(loc, 1, GL_FALSE, fMatrix);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, fMatrix);
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEWPROJ)] >= 0)
 	{
@@ -551,7 +557,7 @@ void UserBufferShader::BindSystemUniforms(PostPersistentData* pData, const PostE
 		{
 			fMatrix[i] = static_cast<float>(tm[i]);
 		}
-		glUniformMatrix4fv(loc, 1, GL_FALSE, fMatrix);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, fMatrix);
 	}
 }
 
@@ -598,18 +604,10 @@ bool UserBufferShader::PrepUniforms(const int variationIndex)
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 bool UserBufferShader::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
-	// update ui values for connected input buffers first
-	if (EffectShaderUserObject* bufferObject = mUserObject->GetBufferAUserObject())
-	{
-		if (!bufferObject->GetUserShaderPtr()->CollectUIValues(pData, effectContext, maskIndex))
-			return false;
-	}
+	CollectCommonData(pData, nullptr);
 
 	GLSLShaderProgram* shader = GetShaderPtr();
-
 	FBVector4d v;
-
-	shader->Bind();
 
 	BindSystemUniforms(pData, effectContext);
 
@@ -622,17 +620,18 @@ bool UserBufferShader::CollectUIValues(PostPersistentData* pData, const PostEffe
 		if (prop.second.type == GL_FLOAT)
 		{
 			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+			prop.second.location = loc;
 
 			if (strstr(prop.first.c_str(), "_flag") != nullptr)
 			{
 				bool bvalue = false;
-				prop.second.property->GetData(&bvalue, sizeof(bool));
-				glUniform1f(loc, bvalue ? 1.0f : 0.0f);
+				prop.second.property->GetData(&bvalue, sizeof(bool));	
+				prop.second.value[0] = bvalue ? 1.0f : 0.0f;
 			}
 			else
 			{
 				prop.second.property->GetData(v, sizeof(double));
-				glUniform1f(loc, static_cast<float>(v[0]));
+				prop.second.value[0] = static_cast<float>(v[0]);
 			}
 		}
 		else if (prop.second.type == GL_FLOAT_VEC2)
@@ -640,55 +639,205 @@ bool UserBufferShader::CollectUIValues(PostPersistentData* pData, const PostEffe
 			prop.second.property->GetData(v, sizeof(double) * 2);
 
 			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
-			const float fValues[2] = { static_cast<float>(v[0]), static_cast<float>(v[1]) };
-			glUniform2fv(loc, 1, fValues);
+			prop.second.location = loc;
+			prop.second.value[0] = static_cast<float>(v[0]);
+			prop.second.value[1] = static_cast<float>(v[1]);
 		}
 		else if (prop.second.type == GL_FLOAT_VEC3)
 		{
 			prop.second.property->GetData(v, sizeof(double) * 3);
 
 			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
-			const float fValues[3] = { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]) };
-			glUniform3fv(loc, 1, fValues);
+			prop.second.location = loc;
+			prop.second.value[0] = static_cast<float>(v[0]);
+			prop.second.value[1] = static_cast<float>(v[1]);
+			prop.second.value[2] = static_cast<float>(v[2]);
 		}
 		else if (prop.second.type == GL_FLOAT_VEC4)
 		{
 			prop.second.property->GetData(v, sizeof(double) * 4);
 
 			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
-			const float fValues[4] = { static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]) };
-			glUniform4fv(loc, 1, fValues);
+			prop.second.location = loc;
+			prop.second.value[0] = static_cast<float>(v[0]);
+			prop.second.value[1] = static_cast<float>(v[1]);
+			prop.second.value[2] = static_cast<float>(v[2]);
+			prop.second.value[3] = static_cast<float>(v[3]);
 		}
 		else if (prop.second.type == GL_SAMPLER_2D)
 		{
+			prop.second.texture = nullptr;
+			prop.second.shaderUserObject = nullptr;
+
 			if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(prop.second.property))
 			{
-				FBTexture* texture = (listObjProp->GetCount() > 0 && FBIS(listObjProp->GetAt(0), FBTexture)) ? FBCast<FBTexture>(listObjProp->GetAt(0)) : nullptr;
-
-				if (texture)
+				if (listObjProp->GetCount() > 0)
 				{
-					int textureId = texture->TextureOGLId;
-					if (textureId == 0)
+					if (FBIS(listObjProp->GetAt(0), FBTexture))
 					{
-						texture->OGLInit();
-						textureId = texture->TextureOGLId;
+						FBTexture* texture = FBCast<FBTexture>(listObjProp->GetAt(0));
+						assert(texture != nullptr);
+					
+						prop.second.texture = texture;
 					}
-
-					if (textureId > 0)
+					else if (FBIS(listObjProp->GetAt(0), EffectShaderUserObject))
 					{
-						const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
-						glUniform1i(loc, userTextureSlot);
+						EffectShaderUserObject* shaderObject = FBCast<EffectShaderUserObject>(listObjProp->GetAt(0));
+						assert(shaderObject != nullptr);
 
-						glActiveTexture(GL_TEXTURE0 + userTextureSlot);
-						glBindTexture(GL_TEXTURE_2D, textureId);
-						glActiveTexture(GL_TEXTURE0);
+						prop.second.shaderUserObject = shaderObject;
+						shaderObject->GetUserShaderPtr()->CollectUIValues(pData, effectContext, maskIndex);
 					}
 				}
 			}
 		}
 	}
 
-	shader->UnBind();
-
 	return true;
 }
+
+void UserBufferShader::UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+{
+	UploadCommonData();
+
+	GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
+	GLSLShaderProgram* shader = GetShaderPtr();
+
+	for (auto& prop : mShaderProperties)
+	{
+		if (prop.second.type == GL_FLOAT)
+		{
+			glUniform1f(prop.second.location, prop.second.value[0]);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC2)
+		{
+			glUniform2fv(prop.second.location, 1, prop.second.value);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC3)
+		{
+			glUniform3fv(prop.second.location, 1, prop.second.value);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC4)
+		{
+			glUniform4fv(prop.second.location, 1, prop.second.value);
+		}
+		else if (FBTexture* texture = prop.second.texture)
+		{
+			// bind sampler from a media resource texture
+
+			int textureId = texture->TextureOGLId;
+			if (textureId == 0)
+			{
+				texture->OGLInit();
+				textureId = texture->TextureOGLId;
+			}
+
+			if (textureId > 0)
+			{
+				const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+				glUniform1i(loc, userTextureSlot);
+
+				glActiveTexture(GL_TEXTURE0 + userTextureSlot);
+				glBindTexture(GL_TEXTURE_2D, textureId);
+				glActiveTexture(GL_TEXTURE0);
+
+				userTextureSlot += 1;
+			}
+		}
+		else if (prop.second.shaderUserObject)
+		{
+			UserBufferShader* bufferShader = prop.second.shaderUserObject->GetUserShaderPtr();
+
+			// bind sampler from another rendered buffer shader
+			const std::string bufferName = std::string(GetName()) + "_" + std::string(prop.second.shaderUserObject->Name);
+
+			// dst should be buffer textures ?!
+
+			FrameBuffer* buffer = buffers->RequestFramebuffer(bufferName);
+
+			bufferShader->Render(buffers, buffer, 0, inputTextureId, w, h, generateMips);
+
+			const GLuint bufferTextureId = buffer->GetColorObject();
+			buffers->ReleaseFramebuffer(bufferName);
+
+			// TODO: bind input buffers
+			glActiveTexture(GL_TEXTURE0 + userTextureSlot);
+			glBindTexture(GL_TEXTURE_2D, bufferTextureId);
+			glActiveTexture(GL_TEXTURE0);
+
+			userTextureSlot += 1;
+		}
+	}
+}
+/*
+void UserBufferShader::OnPreRender(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+{
+	GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
+	GLSLShaderProgram* shader = GetShaderPtr();
+
+	for (auto& prop : mShaderProperties)
+	{
+		if (prop.second.type == GL_FLOAT)
+		{
+			glUniform1f(prop.second.location, prop.second.value[0]);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC2)
+		{
+			glUniform2fv(prop.second.location, 1, prop.second.value);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC3)
+		{
+			glUniform3fv(prop.second.location, 1, prop.second.value);
+		}
+		else if (prop.second.type == GL_FLOAT_VEC4)
+		{
+			glUniform4fv(prop.second.location, 1, prop.second.value);
+		}
+		else if (FBTexture* texture = prop.second.texture)
+		{
+			// bind sampler from a media resource texture
+			
+			int textureId = texture->TextureOGLId;
+			if (textureId == 0)
+			{
+				texture->OGLInit();
+				textureId = texture->TextureOGLId;
+			}
+
+			if (textureId > 0)
+			{
+				const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+				glUniform1i(loc, userTextureSlot);
+
+				glActiveTexture(GL_TEXTURE0 + userTextureSlot);
+				glBindTexture(GL_TEXTURE_2D, textureId);
+				glActiveTexture(GL_TEXTURE0);
+
+				userTextureSlot += 1;
+			}
+		}
+		else if (prop.second.shaderUserObject)
+		{
+			UserBufferShader* bufferShader = prop.second.shaderUserObject->GetUserShaderPtr();
+
+			// bind sampler from another rendered buffer shader
+			const std::string bufferName = std::string(GetName()) + "_" + std::string(prop.second.shaderUserObject->Name);
+
+			// dst should be buffer textures ?!
+
+			FrameBuffer* buffer = buffers->RequestFramebuffer(bufferName);
+
+			bufferShader->Render(buffers, buffer, 0, inputTextureId, w, h, generateMips);
+
+			const GLuint bufferTextureId = buffer->GetColorObject();
+			buffers->ReleaseFramebuffer(bufferName);
+
+			// TODO: bind input buffers
+			glActiveTexture(GL_TEXTURE0 + userTextureSlot);
+			glBindTexture(GL_TEXTURE_2D, bufferTextureId);
+			glActiveTexture(GL_TEXTURE0);
+
+			userTextureSlot += 1;
+		}
+	}
+}*/

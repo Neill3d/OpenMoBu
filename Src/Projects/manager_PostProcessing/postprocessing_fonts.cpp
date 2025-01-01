@@ -224,8 +224,8 @@ void CFont::TextAdd(float x, float y, float _size, float rectw, float recth, con
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, font_manager->atlas->width,
-			font_manager->atlas->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, static_cast<GLsizei>(font_manager->atlas->width),
+			static_cast<GLsizei>(font_manager->atlas->height), 0, GL_RGB, GL_UNSIGNED_BYTE,
 			font_manager->atlas->data);
 
 		vec4 bounds = text_buffer_get_bounds(buffer, &pen);

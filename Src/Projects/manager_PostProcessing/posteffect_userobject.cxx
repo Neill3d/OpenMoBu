@@ -74,10 +74,9 @@ PostEffectBufferShader* UserEffect::GetBufferShaderPtr(const int bufferShaderInd
 	FBComponent* component = mUserObject->BufferShaders[bufferShaderIndex];
 	if (FBIS(component, EffectShaderUserObject))
 	{
-		EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component);
-		if (shaderUserObject)
+		if (EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component))
 		{
-			shaderUserObject->GetUserShaderPtr();
+			return shaderUserObject->GetUserShaderPtr();
 		}
 	}
 	return nullptr;
@@ -88,10 +87,9 @@ const PostEffectBufferShader* UserEffect::GetBufferShaderPtr(const int bufferSha
 	FBComponent* component = mUserObject->BufferShaders[bufferShaderIndex];
 	if (FBIS(component, EffectShaderUserObject))
 	{
-		EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component);
-		if (shaderUserObject)
+		if (EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component))
 		{
-			shaderUserObject->GetUserShaderPtr();
+			return shaderUserObject->GetUserShaderPtr();
 		}
 	}
 	return nullptr;

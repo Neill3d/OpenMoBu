@@ -100,7 +100,7 @@ bool EffectShaderDisplacement::CollectUIValues(PostPersistentData *pData, const 
 	return true;
 }
 
-void EffectShaderDisplacement::UploadUniforms()
+void EffectShaderDisplacement::UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 {
 	UploadCommonData();
 

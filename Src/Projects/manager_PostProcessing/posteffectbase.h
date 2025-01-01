@@ -154,13 +154,16 @@ public:
 	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex);		//!< grab main UI values for the effect
 
 	//! upload collected data values into gpu shader
-	virtual void UploadUniforms() {};
+	//! TODO: have to call UploadCommonData();
+	virtual void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) 
+	{};
 
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const;
 	
 	//! get a pointer to a current shader program
 	GLSLShaderProgram* GetShaderPtr();
+	const GLSLShaderProgram* GetShaderPtr() const;
 
 	/// <summary>
 	/// the given buffer shader will process the given inputTextureId and write result into dst frame buffer
@@ -171,7 +174,7 @@ public:
 	bool IsDownscaleMode() const { return isDownscale; }
 	int GetVersion() const { return version; }
 
-	void SetBufferA(PostEffectBufferShader* bufferShaderIn);
+	//void SetBufferA(PostEffectBufferShader* bufferShaderIn);
 
 	// binded textures for connected buffers starts from 5, then custom user textures will start from 10
 	static int GetBufferSamplerId() { return 5; }
@@ -184,10 +187,13 @@ protected:
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders;
 
 	// siblings, should be evaluated and used as input buffers
-	PostEffectBufferShader* BufferAShader{ nullptr };
+	//PostEffectBufferShader* BufferAShader{ nullptr };
 	
 	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();
+
+	//virtual void OnPreRender(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+	//{}
 
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h);
