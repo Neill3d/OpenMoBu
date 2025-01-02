@@ -41,7 +41,7 @@ const char* PostEffectShaderLinearDepth::GetFragmentFname(const int variationInd
 }
 
 //! prepare uniforms for a given variation of the effect
-bool PostEffectShaderLinearDepth::PrepUniforms(const int variationIndex)
+bool PostEffectShaderLinearDepth::OnPrepareUniforms(const int variationIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
@@ -60,7 +60,7 @@ bool PostEffectShaderLinearDepth::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderLinearDepth::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderLinearDepth::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	const float znear = static_cast<float>(effectContext.camera->NearPlaneDistance);
 	const float zfar = static_cast<float>(effectContext.camera->FarPlaneDistance);

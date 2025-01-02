@@ -61,6 +61,8 @@ public:
 	virtual ~UserEffect()
 	{}
 
+	virtual bool IsActive() const override;
+
 	virtual const char* GetName() const override;
 
 	virtual int GetNumberOfBufferShaders() const override;
@@ -116,6 +118,8 @@ public: // PROPERTIES
 	FBPropertyBaseEnum<EMaskingChannel>	MaskingChannel;
 
 public:
+
+	bool IsReadyAndActive() const;
 
 	void DoReloadShaders();
 

@@ -92,7 +92,7 @@ bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 	if (loc >= 0)
 		glUniform1i(loc, GetRandomSamplerSlot());
 
-	PrepareUniformLocations(mShader);
+	PrepareCommonLocations(mShader);
 
 	mLoc.clipInfo = mShader->findLocation("gClipInfo");
 

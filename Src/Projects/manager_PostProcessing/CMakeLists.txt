@@ -62,6 +62,7 @@ set (SHADERS
     GLSL/scene_masked.glslv
     GLSL/simple.fsh
     GLSL/simple.vsh
+    GLSL/simple130.glslv
     GLSL/ssao.fsh
     GLSL/ssao_linearize.fsh
     GLSL/text.frag

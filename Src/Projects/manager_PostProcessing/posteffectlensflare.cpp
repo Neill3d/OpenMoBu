@@ -85,7 +85,7 @@ bool PostEffectLensFlare::SubShader::PrepUniforms(GLSLShaderProgram* mShader)
 		if (loc >= 0)
 			glUniform1i(loc, 0);
 		
-		PrepareUniformLocations(mShader);
+		PrepareCommonLocations(mShader);
 
 		//Louis
 		seed = mShader->findLocation("flareSeed");

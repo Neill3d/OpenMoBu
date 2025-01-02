@@ -54,11 +54,7 @@ enum class ShaderSystemUniform
 	INPUT_DEPTH_SAMPLER_2D, //!< this is a scene depth texture sampler in case shader will need it for processing
 	LINEAR_DEPTH_SAMPLER_2D, //!< a depth texture converted into linear space (used in SSAO)
 	INPUT_MASK_SAMPLER_2D, //!< binded mask for a shader processing
-
-	BUFFERA_SAMPLER_2D, //!< input buffer from a connected and rendered buffer shader 
-	//BUFFERB_SAMPLER_2D,
-	//BUFFERC_SAMPLER_2D,
-	//BUFFERD_SAMPLER_2D,
+	WORLD_NORMAL_SAMPLER_2D,
 
 	USE_MASKING, //!< float uniform [0; 1] to define if the mask have to be used
 	UPPER_CLIP, //!< this is an upper clip image level. defined in a texture coord space to skip processing
@@ -70,6 +66,7 @@ enum class ShaderSystemUniform
 	iTIME, //!< compatible with shadertoy, float, shader playback time (in seconds)
 	iDATE, //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
 
+	CAMERA_POSITION, //!< world space camera position
 	MODELVIEW,	//!< current camera modelview matrix
 	PROJ,		//!< current camera projection matrix
 	MODELVIEWPROJ,	//!< current camera modelview-projection matrix
@@ -82,7 +79,7 @@ enum class ShaderSystemUniform
 /// internal buffer shader that is going to be conneced to an internal post effect 
 /// </summary>
 
-class UserBufferShader : public PostEffectBufferShader, public CommonEffectUniforms
+class UserBufferShader : public PostEffectBufferShader
 {
 public:
 
@@ -102,14 +99,6 @@ public:
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
 	virtual const char* GetFragmentFname(const int variationIndex) const override { return "test.glslf"; }
 
-	//! prepare uniforms for a given variation of the effect
-	virtual bool PrepUniforms(const int variationIndex) override;
-
-	virtual void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
-
-	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
-
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const override;
 
@@ -118,7 +107,8 @@ public:
 
 	virtual bool IsDepthSamplerUsed() const override;
 	virtual bool IsLinearDepthSamplerUsed() const override;
-
+	virtual bool IsMaskSamplerUsed() const override;
+	virtual bool IsWorldNormalSamplerUsed() const override;
 
 protected:
 	friend class EffectShaderUserObject;
@@ -148,6 +138,7 @@ protected:
 	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
 	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
 
+	virtual const char* GetUseMaskingPropertyName() const override { return "Use Masking"; }
 
 	void	RemoveShaderProperties();
 	void	ResetSystemUniformLocations();
@@ -156,8 +147,13 @@ protected:
 
 	void BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const;
 
-	//virtual void OnPreRender(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
-	
+	//! prepare uniforms for a given variation of the effect
+	virtual bool OnPrepareUniforms(const int variationIndex) override;
+
+	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
+	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
+
+	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,14 +229,13 @@ protected:
 	std::unique_ptr<UserBufferShader>		mUserShader;
 	
 	
-
-
 	void	DefaultValues();
 	void	LoadFromConfig(const char *sessionFilter=nullptr);
 	void	LoadFarValueFromConfig();
 
 	//void	CheckUniforms();
 
+	FBProperty* MakePropertyInt(const UserBufferShader::ShaderProperty& prop);
 	FBProperty* MakePropertyFloat(const UserBufferShader::ShaderProperty& prop);
 	FBProperty* MakePropertyVec2(const UserBufferShader::ShaderProperty& prop);
 	FBProperty* MakePropertyVec3(const UserBufferShader::ShaderProperty& prop);

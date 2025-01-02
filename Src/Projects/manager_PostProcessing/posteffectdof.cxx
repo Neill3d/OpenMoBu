@@ -61,7 +61,7 @@ bool PostEffectDOF::PrepUniforms(const int shaderIndex)
 	if (loc >= 0)
 		glUniform1i(loc, 1);
 
-	PrepareUniformLocations(mShader);
+	PrepareCommonLocations(mShader);
 
 	focalDistance = mShader->findLocation("focalDistance");
 	focalRange = mShader->findLocation("focalRange");

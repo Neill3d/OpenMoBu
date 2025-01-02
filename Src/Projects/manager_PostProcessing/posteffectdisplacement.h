@@ -15,7 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 // forward
 class PostPersistentData;
 
-class EffectShaderDisplacement : public PostEffectBufferShader, public CommonEffectUniforms
+class EffectShaderDisplacement : public PostEffectBufferShader
 {
 private:
 	static constexpr const char* SHADER_NAME = "Displacement";
@@ -33,11 +33,6 @@ public:
 	const char* GetName() const override;
 	const char* GetVertexFname(const int shaderIndex) const override;
 	const char* GetFragmentFname(const int shaderIndex) const override;
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
-
-	virtual void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
 
 protected:
 
@@ -74,6 +69,16 @@ protected:
 		float xSineCycles;
 		float ySineCycles;
 	} mData;
+
+	virtual const char* GetUseMaskingPropertyName() const override {
+		return ENABLE_MASKING_PROPERTY_NAME;
+	}
+
+	virtual bool OnPrepareUniforms(const int shaderIndex) override;
+	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
+
+	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
+
 };
 
 /// <summary>

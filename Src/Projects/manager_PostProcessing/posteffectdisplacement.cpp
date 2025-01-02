@@ -45,7 +45,7 @@ const char * EffectShaderDisplacement::GetFragmentFname(const int shaderIndex) c
 	return SHADER_FRAGMENT;
 }
 
-bool EffectShaderDisplacement::PrepUniforms(const int shaderIndex)
+bool EffectShaderDisplacement::OnPrepareUniforms(const int shaderIndex)
 {
 	if (GLSLShaderProgram* shader = mShaders[shaderIndex].get())
 	{
@@ -55,7 +55,7 @@ bool EffectShaderDisplacement::PrepUniforms(const int shaderIndex)
 		if (loc >= 0)
 			glUniform1i(loc, CommonEffectUniforms::GetColorSamplerSlot());
 		
-		PrepareUniformLocations(shader);
+		PrepareCommonLocations(shader);
 
 		mLoc.iTime = shader->findLocation("iTime");
 		mLoc.iSpeed = shader->findLocation("iSpeed");
@@ -74,7 +74,7 @@ bool EffectShaderDisplacement::PrepUniforms(const int shaderIndex)
 	return false;
 }
 
-bool EffectShaderDisplacement::CollectUIValues(PostPersistentData *pData, const PostEffectContext& effectContext, int maskIndex)
+bool EffectShaderDisplacement::OnCollectUI(PostPersistentData *pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	CollectCommonData(pData, ENABLE_MASKING_PROPERTY_NAME);
 
@@ -100,7 +100,7 @@ bool EffectShaderDisplacement::CollectUIValues(PostPersistentData *pData, const 
 	return true;
 }
 
-void EffectShaderDisplacement::UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+void EffectShaderDisplacement::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 {
 	UploadCommonData();
 

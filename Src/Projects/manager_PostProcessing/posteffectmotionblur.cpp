@@ -62,7 +62,7 @@ bool PostEffectMotionBlur::PrepUniforms(const int shaderIndex)
 		if (loc >= 0)
 			glUniform1i(loc, 2);
 		
-		PrepareUniformLocations(mShader);
+		PrepareCommonLocations(mShader);
 
 		mLoc.zNear = mShader->findLocation("zNear");
 		mLoc.zFar = mShader->findLocation("zFar");

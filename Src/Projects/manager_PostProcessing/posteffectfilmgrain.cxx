@@ -58,7 +58,7 @@ bool PostEffectFilmGrain::PrepUniforms(const int shaderIndex)
 	if (loc >= 0)
 		glUniform1i(loc, 0);
 
-	PrepareUniformLocations(mShader);
+	PrepareCommonLocations(mShader);
 
 	textureWidth = mShader->findLocation("textureWidth");
 	textureHeight = mShader->findLocation("textureHeight");

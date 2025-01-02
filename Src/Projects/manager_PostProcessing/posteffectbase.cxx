@@ -38,7 +38,7 @@ void PostEffectBufferShader::FreeShaders()
 	mShaders.clear();
 }
 
-void CommonEffectUniforms::PrepareUniformLocations(GLSLShaderProgram* shader)
+void CommonEffectUniforms::PrepareCommonLocations(GLSLShaderProgram* shader)
 {
 	const GLint loc = shader->findLocation("maskSampler");
 	if (loc >= 0)
@@ -130,14 +130,22 @@ bool PostEffectBufferShader::Load(const char* shadersLocation)
 	return true;
 }
 
-bool PostEffectBufferShader::PrepUniforms(const int)
+bool PostEffectBufferShader::PrepUniforms(const int varianceIndex)
 {
-	return false;
+	PrepareCommonLocations(GetShaderPtr());
+	return OnPrepareUniforms(varianceIndex);
 }
 
 bool PostEffectBufferShader::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
-	return false;
+	CollectCommonData(pData, GetUseMaskingPropertyName());
+	return OnCollectUI(pData, effectContext, maskIndex);
+}
+
+void PostEffectBufferShader::UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+{
+	UploadCommonData();
+	OnUploadUniforms(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips);
 }
 
 const int PostEffectBufferShader::GetNumberOfPasses() const
@@ -192,27 +200,6 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 	if (GetNumberOfPasses() == 0)
 		return;
 
-	/*
-	// render dependent buffer shaders ?!
-	if (BufferAShader)
-	{
-		const std::string bufferAName = std::string(GetName()) + "_bufferA";
-
-		// dst should be buffer textures ?!
-
-		FrameBuffer* bufferA = buffers->RequestFramebuffer(bufferAName);
-
-		BufferAShader->Render(buffers, bufferA, 0, inputTextureId, w, h, generateMips);
-
-		const GLuint bufferATextureId = bufferA->GetColorObject();
-		buffers->ReleaseFramebuffer(bufferAName);
-
-		// TODO: bind input buffers
-		glActiveTexture(GL_TEXTURE0 + GetBufferSamplerId());
-		glBindTexture(GL_TEXTURE_2D, bufferATextureId);
-		glActiveTexture(GL_TEXTURE0);
-	}
-	*/
 	GLuint texId = inputTextureId;
 
 	Bind();
@@ -266,12 +253,7 @@ void PostEffectBufferShader::SetDownscaleMode(const bool value)
 	isDownscale = value;
 	version += 1;
 }
-/*
-void PostEffectBufferShader::SetBufferA(PostEffectBufferShader* bufferShaderIn)
-{
-	BufferAShader = bufferShaderIn;
-}
-*/
+
 /////////////////////////////////////////////////////////////////////////
 // EffectBase
 
@@ -295,6 +277,11 @@ bool PostEffectBase::Load(const char* shadersLocation)
 	return true;
 }
 
+bool PostEffectBase::IsReadyAndActive() const
+{
+	return true;
+}
+
 bool PostEffectBase::IsDepthSamplerUsed() const
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
@@ -314,6 +301,31 @@ bool PostEffectBase::IsLinearDepthSamplerUsed() const
 		if (const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
 		{
 			if (bufferShader->IsLinearDepthSamplerUsed())
+				return true;
+		}
+	}
+	return false;
+}
+
+bool PostEffectBase::IsMaskSamplerUsed() const
+{
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (bufferShader->IsMaskSamplerUsed())
+				return true;
+		}
+	}
+	return false;
+}
+bool PostEffectBase::IsWorldNormalSamplerUsed() const
+{
+	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
+	{
+		if (const PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
+		{
+			if (bufferShader->IsWorldNormalSamplerUsed())
 				return true;
 		}
 	}

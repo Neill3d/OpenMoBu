@@ -42,7 +42,7 @@ const char* PostEffectShaderBilateralBlur::GetFragmentFname(const int variationI
 }
 
 //! prepare uniforms for a given variation of the effect
-bool PostEffectShaderBilateralBlur::PrepUniforms(const int variationIndex)
+bool PostEffectShaderBilateralBlur::OnPrepareUniforms(const int variationIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
@@ -62,7 +62,7 @@ bool PostEffectShaderBilateralBlur::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBilateralBlur::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderBilateralBlur::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	if (pData)
 	{

@@ -60,7 +60,7 @@ bool PostEffectFishEye::PrepUniforms(const int shaderIndex)
 	GLint loc = shader->findLocation("sampler0");
 	if (loc >= 0)
 		glUniform1i(loc, 0);
-	PrepareUniformLocations(shader);
+	PrepareCommonLocations(shader);
 
 	mLocAmount = shader->findLocation("amount");
 	mLocLensRadius = shader->findLocation("lensradius");

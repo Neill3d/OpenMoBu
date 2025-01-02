@@ -59,7 +59,23 @@ class CommonEffectUniforms
 {
 public:
 
-	void PrepareUniformLocations(GLSLShaderProgram* shader);
+	static GLint GetColorSamplerSlot() { return 0; }
+
+	static GLint GetDepthSamplerSlot() { return 1; }
+
+	static GLint GetLinearDepthSamplerSlot() { return 2; }
+
+	/// <summary>
+	/// glsl sampler slot binded for a mask texture
+	/// </summary>
+	static GLint GetMaskSamplerSlot() { return 4; }
+
+
+	static GLint GetWorldNormalSamplerSlot() { return 3; }
+
+protected:
+
+	void PrepareCommonLocations(GLSLShaderProgram* shader);
 
 	/// <summary>
 	/// collect common data values into a buffer, /see UploadCommonData to upload values into gpu shader
@@ -76,18 +92,6 @@ public:
 	///  the property will be used to update useMasking glsl uniform value
 	/// </summary>
 	//virtual const char* GetEnableMaskPropertyName() const = 0;
-
-
-	static GLint GetColorSamplerSlot() { return 0; }
-
-	static GLint GetDepthSamplerSlot() { return 1; }
-
-	static GLint GetLinearDepthSamplerSlot() { return 2; }
-
-	/// <summary>
-	/// glsl sampler slot binded for a mask texture
-	/// </summary>
-	static GLint GetMaskSamplerSlot() { return 4; }
 
 protected:
 	// common functionality of effects needs common uniforms
@@ -121,7 +125,7 @@ struct PostEffectContext
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input
 /// </summary>
-class PostEffectBufferShader
+class PostEffectBufferShader : public CommonEffectUniforms
 {
 public:
 
@@ -143,20 +147,21 @@ public:
 	// does shader uses the scene linear depth sampler (part of a system input)
 	virtual bool IsLinearDepthSamplerUsed() const { return false; }
 
+	virtual bool IsMaskSamplerUsed() const { return false; }
+	virtual bool IsWorldNormalSamplerUsed() const { return false; }
+
 	/// load and initialize shader from a specified location, vname and fname are computed absolute path
 	bool Load(const int variationIndex, const char* vname, const char* fname);
 
 	bool Load(const char* shaderLocation);
 
 	//! prepare uniforms for a given variation of the effect
-	virtual bool PrepUniforms(const int variationIndex);
+	bool PrepUniforms(const int variationIndex);
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex);		//!< grab main UI values for the effect
+	bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex);		//!< grab main UI values for the effect
 
 	//! upload collected data values into gpu shader
-	//! TODO: have to call UploadCommonData();
-	virtual void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) 
-	{};
+	void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const;
@@ -174,11 +179,8 @@ public:
 	bool IsDownscaleMode() const { return isDownscale; }
 	int GetVersion() const { return version; }
 
-	//void SetBufferA(PostEffectBufferShader* bufferShaderIn);
-
 	// binded textures for connected buffers starts from 5, then custom user textures will start from 10
-	static int GetBufferSamplerId() { return 5; }
-	static int GetUserSamplerId() { return 10; }
+	static int GetUserSamplerId() { return 5; }
 
 protected:
 	bool isDownscale{ false };
@@ -186,22 +188,25 @@ protected:
 	int mCurrentShader{ 0 };
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders;
 
-	// siblings, should be evaluated and used as input buffers
-	//PostEffectBufferShader* BufferAShader{ nullptr };
-	
 	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();
 
-	//virtual void OnPreRender(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
-	//{}
+	virtual const char* GetUseMaskingPropertyName() const {
+		return nullptr;
+	}
 
-	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass, int w, int h);
+	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
+	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) { return true; }
+	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+	{}
 
 	//! bind effect shader program
 	virtual void Bind();
 	//! unbind effect shader program
 	virtual void UnBind();
+
+	//! initialize a specific path for drawing
+	virtual bool PrepPass(const int pass, int w, int h);
 
 	void RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 };
@@ -224,10 +229,14 @@ public:
 	//! a destructor
 	virtual ~PostEffectBase();
 
+	virtual bool IsActive() const abstract;
+
 	//! an effect public name
 	virtual const char* GetName() const abstract; // { return mName.c_str(); }
 
 	bool Load(const char* shaderLocation);
+
+	virtual bool IsReadyAndActive() const;
 
 	bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext);
 
@@ -238,6 +247,8 @@ public:
 
 	virtual bool IsDepthSamplerUsed() const;
 	virtual bool IsLinearDepthSamplerUsed() const;
+	virtual bool IsMaskSamplerUsed() const;
+	virtual bool IsWorldNormalSamplerUsed() const;
 
 	struct EffectContext
 	{
@@ -301,6 +312,11 @@ public:
 	{}
 	virtual ~PostEffectSingleShader()
 	{}
+
+	virtual bool IsActive() const override
+	{
+		return true;
+	}
 
 	virtual const char* GetName() const override
 	{

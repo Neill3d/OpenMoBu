@@ -58,7 +58,7 @@ bool PostEffectVignetting::PrepUniforms(const int shaderIndex)
 	if (loc >= 0)
 		glUniform1i(loc, 0);
 
-	PrepareUniformLocations(mShader);
+	PrepareCommonLocations(mShader);
 
 	mLocAmount = mShader->findLocation("amount");
 	mLocVignOut = mShader->findLocation("vignout");

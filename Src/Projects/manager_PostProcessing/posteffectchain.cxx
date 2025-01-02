@@ -624,6 +624,11 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
 	*/
 }
 
+void PostEffectChain::RenderWorldNormals(PostEffectBuffers* buffers)
+{
+	//TODO:
+}
+
 FrameBuffer* PostEffectChain::RequestMaskFrameBuffer(PostEffectBuffers* buffers)
 {
 	FrameBuffer* maskfb = buffers->RequestFramebuffer("mask", 
@@ -1068,6 +1073,16 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 		RenderLinearDepth(buffers);
 	}
 
+	const bool isWorldNormalSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
+		{
+			return effect->IsWorldNormalSamplerUsed();
+		}) != end(mChain);
+
+	if (isWorldNormalSamplerBinded)
+	{
+		RenderWorldNormals(buffers);
+	}
+
 	// 4a. blur masks (if applied)
 
 	if (isMaskBlurRequested)
@@ -1235,6 +1250,11 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 	if (isLinearDepthSamplerBinded)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetLinearDepthSamplerSlot());
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	if (isWorldNormalSamplerBinded)
+	{
+		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetWorldNormalSamplerSlot());
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	if (isMaskTextureBinded)

@@ -21,10 +21,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <memory>
 #include <bitset>
 
-
-//////////////////////////////
-
-
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input
 /// </summary>
@@ -45,15 +41,16 @@ public:
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
 	virtual const char* GetFragmentFname(const int variationIndex) const override;
 
-	//! prepare uniforms for a given variation of the effect
-	virtual bool PrepUniforms(const int variationIndex) override;
-	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;		//!< grab main UI values for the effect
-
 	/// new feature to have several passes for a specified effect
 	virtual const int GetNumberOfPasses() const override;
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h) override;
+
+protected:
+	//! prepare uniforms for a given variation of the effect
+	virtual bool OnPrepareUniforms(const int variationIndex) override;
+	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
+	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
 private:
 	GLint		mLocImageBlurScale{ -1 };

@@ -58,6 +58,11 @@ PostEffectFBElementClassImplementation(PostEffectUserObject, "Post Effect", "cam
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UserEffect
 
+bool UserEffect::IsActive() const
+{
+	return mUserObject->Active;
+}
+
 const char* UserEffect::GetName() const
 {
 	return mUserObject->Name;
@@ -157,13 +162,20 @@ bool PostEffectUserObject::FBCreate()
 void PostEffectUserObject::FBDestroy()
 {
 	mUserEffect.reset(nullptr);
-	/*
-	if (mUserEffect)
-	{
-		delete mUserEffect;
-		mUserEffect = nullptr;
-	}
-	*/
+}
+
+bool PostEffectUserObject::IsReadyAndActive() const
+{
+	if (!Active)
+		return false;
+
+	if (!GetUserEffectPtr())
+		return false;
+
+	if (!GetUserEffectPtr()->IsActive())
+		return false;
+
+	return true;
 }
 
 void PostEffectUserObject::DoReloadShaders()

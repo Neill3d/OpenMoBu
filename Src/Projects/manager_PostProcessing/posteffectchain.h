@@ -143,6 +143,8 @@ private:
 	/// </summary>
 	void RenderLinearDepth(PostEffectBuffers* buffers);
 
+	void RenderWorldNormals(PostEffectBuffers* buffers);
+
 	/// <summary>
 	/// this is a pass of bluring the image for SSAO
 	/// </summary>

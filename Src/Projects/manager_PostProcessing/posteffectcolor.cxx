@@ -63,7 +63,7 @@ bool PostEffectColor::PrepUniforms(const int shaderIndex)
 	mResolution = shader->findLocation("gResolution");
 	mChromaticAberration = shader->findLocation("gCA");
 
-	PrepareUniformLocations(shader);
+	PrepareCommonLocations(shader);
 
 	mLocCSB = shader->findLocation("gCSB");
 	mLocHue = shader->findLocation("gHue");

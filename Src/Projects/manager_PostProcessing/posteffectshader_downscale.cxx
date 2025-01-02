@@ -41,13 +41,13 @@ const char* PostEffectShaderDownscale::GetFragmentFname(const int variationIndex
 }
 
 //! prepare uniforms for a given variation of the effect
-bool PostEffectShaderDownscale::PrepUniforms(const int variationIndex)
+bool PostEffectShaderDownscale::OnPrepareUniforms(const int variationIndex)
 {
 	return true;
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderDownscale::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderDownscale::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	return true;
 }

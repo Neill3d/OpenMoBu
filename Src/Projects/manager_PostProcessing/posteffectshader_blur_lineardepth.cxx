@@ -42,7 +42,7 @@ const char* PostEffectShaderBlurLinearDepth::GetFragmentFname(const int variatio
 }
 
 //! prepare uniforms for a given variation of the effect
-bool PostEffectShaderBlurLinearDepth::PrepUniforms(const int variationIndex)
+bool PostEffectShaderBlurLinearDepth::OnPrepareUniforms(const int variationIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
@@ -66,7 +66,7 @@ bool PostEffectShaderBlurLinearDepth::PrepUniforms(const int variationIndex)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBlurLinearDepth::CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderBlurLinearDepth::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	const int w = effectContext.w; // buffers->GetWidth();
 	const int h = effectContext.h; // buffers->GetHeight();
