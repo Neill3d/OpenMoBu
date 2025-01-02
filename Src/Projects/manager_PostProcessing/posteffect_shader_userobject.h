@@ -32,6 +32,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
  _slider - double value with a range [0; 100]
  _flag - bool checkbox casted to float [0; 1]
 
+ vec2
+ _wstoss - convert vec3 property in world space into vec2 uniform in screen space
+
  vec3
  _color - color RGB picker
 
@@ -199,12 +202,6 @@ public: // PROPERTIES
 	
 	FBPropertyInt				NumberOfPasses; //!< define in how many passes the shader should be executed (global variable iPass)
 
-	// sibling buffer shaders (have to be evaluated before the given buffer shader)
-	//FBPropertyListObject		BufferA;
-	//FBPropertyListObject		BufferB;
-	//FBPropertyListObject		BufferC;
-	//FBPropertyListObject		BufferD;
-
 public:
 
 	bool DoReloadShaders();
@@ -213,8 +210,6 @@ public:
 	void SetReloadShadersState(bool state);
 
 	UserBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
-
-	//EffectShaderUserObject* GetBufferAUserObject() { return (BufferA.GetCount() > 0 && FBIS(BufferA.GetAt(0), EffectShaderUserObject)) ? FBCast <EffectShaderUserObject>(BufferA.GetAt(0)) : nullptr; }
 
 protected:
 

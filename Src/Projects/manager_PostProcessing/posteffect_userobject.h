@@ -32,6 +32,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
  _slider - double value with a range [0; 100]
  _flag - bool checkbox casted to float [0; 1]
 
+ vec2
+ _wstoss - convert world space vec3 property into vec2 uniform in screen space
+
  vec3
  _color - color RGB picker
 
@@ -57,6 +60,7 @@ public:
 	UserEffect(PostEffectUserObject* UserObjectIn)
 		: PostEffectBase()
 		, mUserObject(UserObjectIn)
+		, mBufferShader(nullptr)
 	{}
 	virtual ~UserEffect()
 	{}
@@ -69,8 +73,11 @@ public:
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override;
 	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override;
 
+	void SetBufferShader(PostEffectBufferShader* bufferShader);
+
 private:
 	PostEffectUserObject* mUserObject;
+	PostEffectBufferShader* mBufferShader;
 };
 
 
@@ -94,6 +101,10 @@ public:
 	virtual bool FBCreate() override;        //!< FiLMBOX Creation function.
 	virtual void FBDestroy() override;       //!< FiLMBOX Destruction function.
 
+	virtual bool FbxStore(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat) override;
+	virtual bool FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat) override;
+
+	virtual bool PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug) override;
 
 	void CopyValues(EffectShaderUserObject* pOther);
 
@@ -140,6 +151,8 @@ protected:
 	
 	bool IsDepthSamplerUsed() const;
 	bool IsLinearDepthSamplerUsed() const;
+
+	void RefreshEffectConnections();
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
 

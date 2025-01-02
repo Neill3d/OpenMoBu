@@ -70,34 +70,22 @@ const char* UserEffect::GetName() const
 
 int UserEffect::GetNumberOfBufferShaders() const
 {
-	const int count = mUserObject->BufferShaders.GetCount();
-	return count;
+	return (mBufferShader) ? 1 : 0;
 }
 
 PostEffectBufferShader* UserEffect::GetBufferShaderPtr(const int bufferShaderIndex)
 {
-	FBComponent* component = mUserObject->BufferShaders[bufferShaderIndex];
-	if (FBIS(component, EffectShaderUserObject))
-	{
-		if (EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component))
-		{
-			return shaderUserObject->GetUserShaderPtr();
-		}
-	}
-	return nullptr;
+	return mBufferShader;
 }
 
 const PostEffectBufferShader* UserEffect::GetBufferShaderPtr(const int bufferShaderIndex) const
 {
-	FBComponent* component = mUserObject->BufferShaders[bufferShaderIndex];
-	if (FBIS(component, EffectShaderUserObject))
-	{
-		if (EffectShaderUserObject* shaderUserObject = FBCast<EffectShaderUserObject>(component))
-		{
-			return shaderUserObject->GetUserShaderPtr();
-		}
-	}
-	return nullptr;
+	return mBufferShader;
+}
+
+void UserEffect::SetBufferShader(PostEffectBufferShader* bufferShader)
+{
+	mBufferShader = bufferShader;
 }
 
 
@@ -162,6 +150,56 @@ bool PostEffectUserObject::FBCreate()
 void PostEffectUserObject::FBDestroy()
 {
 	mUserEffect.reset(nullptr);
+}
+
+bool PostEffectUserObject::FbxStore(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
+{
+	return ParentClass::FbxStore(pFbxObject, pStoreWhat);
+}
+bool PostEffectUserObject::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
+{
+	if (pStoreWhat == kFbxObjectStore::kCleanup)
+	{
+		RefreshEffectConnections();
+	}
+
+	return ParentClass::FbxRetrieve(pFbxObject, pStoreWhat);
+}
+
+bool PostEffectUserObject::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug)
+{
+	if (pThis == &BufferShaders)
+	{
+		if (pAction == kFBConnectedSrc)
+		{
+			ConnectSrc(pPlug);
+			RefreshEffectConnections();
+		}
+		else if (pAction == kFBDisconnectedSrc)
+		{
+			DisconnectSrc(pPlug);
+			RefreshEffectConnections();
+		}
+	}
+	
+	return ParentClass::PlugNotify(pAction, pThis, pIndex, pPlug, pConnectionType, pNewPlug);
+}
+
+void PostEffectUserObject::RefreshEffectConnections()
+{
+	PostEffectBufferShader* bufferShader = nullptr;
+	for (int i = 0; i < BufferShaders.GetCount(); ++i)
+	{
+		if (FBIS(BufferShaders[i], EffectShaderUserObject))
+		{
+			if (EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(BufferShaders[i]))
+			{
+				bufferShader = UserObject->GetUserShaderPtr();
+				break;
+			}
+		}
+	}
+	mUserEffect->SetBufferShader(bufferShader);
 }
 
 bool PostEffectUserObject::IsReadyAndActive() const

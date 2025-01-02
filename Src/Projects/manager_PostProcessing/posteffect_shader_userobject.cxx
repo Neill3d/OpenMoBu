@@ -130,6 +130,8 @@ void EffectShaderUserObject::ActionReloadShaders(HIObject pObject, bool value)
  ************************************************/
 bool EffectShaderUserObject::FBCreate()
 {
+	mUserShader.reset(new UserBufferShader(this));
+
 	// modify system behavoiur
 	DisableObjectFlags(kFBFlagClonable);
 
@@ -182,7 +184,7 @@ bool EffectShaderUserObject::DoReloadShaders()
 		return false;
 	}
 
-	mUserShader.reset(new UserBufferShader(this));
+	
 
 	constexpr const char* vertex_shader_rpath = "/GLSL/simple130.glslv";
 
@@ -206,7 +208,7 @@ bool EffectShaderUserObject::DoReloadShaders()
 	{
 		LOGE("[PostEffectUserObject] Failed to load shaders!\n");
 
-		mUserShader.reset(nullptr);
+		//mUserShader.reset(nullptr);
 		return false;
 	}
 
@@ -619,6 +621,9 @@ bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
 bool UserBufferShader::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
+	if (shader == nullptr)
+		return false;
+
 	FBVector4d v;
 
 	BindSystemUniforms(pData, effectContext);

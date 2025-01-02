@@ -158,13 +158,15 @@ bool PostEffectBufferShader::PrepPass(const int pass, int w, int h)
 }
 
 GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
-	assert(mCurrentShader >= 0 && mCurrentShader < mShaders.size());
-	return mShaders[mCurrentShader].get();
+	if (mCurrentShader >= 0 && mCurrentShader < mShaders.size())
+		return mShaders[mCurrentShader].get();
+	return nullptr;
 }
 
 const GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() const {
-	assert(mCurrentShader >= 0 && mCurrentShader < mShaders.size());
-	return mShaders[mCurrentShader].get();
+	if(mCurrentShader >= 0 && mCurrentShader < mShaders.size())
+		return mShaders[mCurrentShader].get();
+	return nullptr;
 }
 
 void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
