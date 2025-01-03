@@ -17,6 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "Framebuffer.h"
 
 #include "posteffectbase.h"
+#include "posteffect_shader_userobject.h"
 
 #include <memory>
 #include <bitset>
@@ -28,7 +29,7 @@ class PostEffectShaderBilateralBlur : public PostEffectBufferShader
 {
 public:
 
-	PostEffectShaderBilateralBlur();
+	PostEffectShaderBilateralBlur(FBComponent* uiComponent=nullptr);
 	virtual ~PostEffectShaderBilateralBlur();
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
@@ -46,6 +47,9 @@ public:
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h) override;
 
+	void SetTextureId(GLint textureId);
+	void SetScale(const FBVector2d& scale);
+
 protected:
 	//! prepare uniforms for a given variation of the effect
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
@@ -53,12 +57,48 @@ protected:
 	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
 private:
+	GLint		mColorSamplerLoc{ -1 };
 	GLint		mLocImageBlurScale{ -1 };
 
 	FBVector2d	mBlurMaskScale;
+	GLint		mTextureId; //!< a binded texture, that we are going to blur
+
+	FBComponent* mUIComponent{ nullptr };
 };
 
 /// <summary>
 /// effect with once shader - bilateral blur
 /// </summary>
 typedef PostEffectSingleShader<PostEffectShaderBilateralBlur> PostEffectBilateralBlur;
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// <summary>
+/// A user object for one shader user object
+///  that is designed to be connected to post processing effect
+/// </summary>
+class EffectShaderBilateralBlurUserObject : public EffectShaderUserObject
+{
+	//--- FiLMBOX declaration.
+	FBClassDeclare(EffectShaderBilateralBlurUserObject, EffectShaderUserObject)
+		FBDeclareUserObject(EffectShaderBilateralBlurUserObject)
+
+public:
+	//! a constructor
+	EffectShaderBilateralBlurUserObject(const char* pName = nullptr, HIObject pObject = nullptr);
+
+	//--- FiLMBOX Construction/Destruction,
+	virtual bool FBCreate() override;        //!< FiLMBOX Creation function.
+	
+public: // PROPERTIES
+
+	FBPropertyVector2d		BlurScale;
+
+protected:
+
+	virtual PostEffectBufferShader* MakeANewClassInstance() override {
+		return new PostEffectShaderBilateralBlur(this);
+	}
+
+};

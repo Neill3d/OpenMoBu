@@ -18,6 +18,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "glslShaderProgram.h"
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 /*
 * Render to texture or render to effects chain
@@ -47,6 +48,26 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #define EFFECTSHADER_USEROBJECT__CLASSSTR	"EffectShaderUserObject"
 
+/** Element Class implementation. (Asset system)
+*	This should be placed in the source code file for a class.
+*/
+#define PostEffectFBElementClassImplementation(ClassName,AssetName,IconFileName)\
+	HIObject RegisterElement##ClassName##Create(HIObject /*pOwner*/, const char* pName, void* /*pData*/){\
+	ClassName* Class = new ClassName(pName); \
+	Class->mAllocated = true; \
+if (Class->FBCreate()){\
+	__FBRemoveModelFromScene(Class->GetHIObject()); /* Hack in MoBu2013, we shouldn't add object to the scene/entity automatically*/\
+	return Class->GetHIObject(); \
+}\
+else {\
+	delete Class; \
+	return NULL;\
+}\
+	}\
+		FBLibraryModule(ClassName##Element){\
+		FBRegisterObject(ClassName##R2, "Browsing/Templates/Shading Elements", AssetName, "", RegisterElement##ClassName##Create, true, IconFileName); \
+		}
+
 // forward
 class EffectShaderUserObject;
 
@@ -75,6 +96,13 @@ enum class ShaderSystemUniform
 	MODELVIEWPROJ,	//!< current camera modelview-projection matrix
 
 	COUNT
+};
+
+enum EEffectResolution
+{
+	eEffectResolutionOriginal,
+	eEffectResolutionDownscale2x,
+	eEffectResolutionDownscale4x
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -157,6 +185,11 @@ protected:
 	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
 
 	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
+
+private:
+
+	std::vector<PostEffectBufferShader*> GetConnectedShaders();
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,6 +222,8 @@ public: // PROPERTIES
 	// texture is going to use the source chain size
 	// TODO: customize the size, to have a downsample option, upsample option and custom defined size option
 	
+	FBPropertyBaseEnum<EEffectResolution> Resolution;
+
 	FBPropertyListObject		OutputVideo; //!< in case of render to texture, let's expose it in the FBVideoMemory
 
 	FBPropertyString			ShaderFile; //!< fragment shader file to evaluate
@@ -209,7 +244,10 @@ public:
 	bool IsNeedToReloadShaders();
 	void SetReloadShadersState(bool state);
 
-	UserBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
+	PostEffectBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
+
+	// recalculate width and height based on shader resolution option
+	void RecalculateWidthAndHeight(int& w, int& h);
 
 protected:
 
@@ -221,9 +259,10 @@ protected:
     FBString			mText;
 	bool				mReloadShaders{ false };
 	
-	std::unique_ptr<UserBufferShader>		mUserShader;
+	std::unique_ptr<PostEffectBufferShader>		mUserShader;
 	
-	
+	virtual PostEffectBufferShader* MakeANewClassInstance();
+
 	void	DefaultValues();
 	void	LoadFromConfig(const char *sessionFilter=nullptr);
 	void	LoadFarValueFromConfig();

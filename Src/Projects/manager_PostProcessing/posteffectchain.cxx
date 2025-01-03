@@ -634,7 +634,8 @@ FrameBuffer* PostEffectChain::RequestMaskFrameBuffer(PostEffectBuffers* buffers)
 	FrameBuffer* maskfb = buffers->RequestFramebuffer("mask", 
 		buffers->GetWidth(), buffers->GetHeight(), 
 		PostEffectBuffers::GetFlagsForMainColorBuffer(),
-		PostPersistentData::NUMBER_OF_MASKS + 1); // NOTE: 4 masks and 1 mask for processing
+		PostPersistentData::NUMBER_OF_MASKS + 1,
+		false); // NOTE: 4 masks and 1 mask for processing
 
 	return maskfb;
 }
@@ -650,6 +651,7 @@ FrameBuffer* PostEffectChain::RequestDoubleFrameBuffer(PostEffectBuffers* buffer
 		buffers->GetWidth(), buffers->GetHeight(),
 		PostEffectBuffers::GetFlagsForMainColorBuffer(),
 		2,
+		true, // is auto resize
 		[](FrameBuffer* framebuffer) {
 			PostEffectBuffers::SetParametersForMainColorBuffer(framebuffer, false);
 		});

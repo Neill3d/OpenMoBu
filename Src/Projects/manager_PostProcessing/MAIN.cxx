@@ -44,9 +44,11 @@ FBLibraryDeclare( manager_postprocessing )
 	FBLibraryRegister(EffectShaderUserObject);
 	FBLibraryRegisterElement(EffectShaderUserObject);
 
-	FBLibraryRegister(ORManip_Template);
-	//FBLibraryRegisterStorable(ORHUDElementCustom);
+	FBLibraryRegister(EffectShaderBilateralBlurUserObject);
+	FBLibraryRegisterElement(EffectShaderBilateralBlurUserObject);
 
+	FBLibraryRegister(Manip_PostProcessing);
+	
 	FBLibraryRegister(FXMaskingShader);
 }
 FBLibraryDeclareEnd;

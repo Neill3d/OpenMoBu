@@ -23,25 +23,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // custom assets inserting
 
-/** Element Class implementation. (Asset system)
-*	This should be placed in the source code file for a class.
-*/
-#define PostEffectFBElementClassImplementation(ClassName,AssetName,IconFileName)\
-	HIObject RegisterElement##ClassName##Create(HIObject /*pOwner*/, const char* pName, void* /*pData*/){\
-	ClassName* Class = new ClassName(pName); \
-	Class->mAllocated = true; \
-if (Class->FBCreate()){\
-	__FBRemoveModelFromScene(Class->GetHIObject()); /* Hack in MoBu2013, we shouldn't add object to the scene/entity automatically*/\
-	return Class->GetHIObject(); \
-}\
-else {\
-	delete Class; \
-	return NULL;\
-}\
-	}\
-		FBLibraryModule(ClassName##Element){\
-		FBRegisterObject(ClassName##R2, "Browsing/Templates/Shading Elements", AssetName, "", RegisterElement##ClassName##Create, true, IconFileName); \
-		}
+
 
 //--- FiLMBOX Registration & Implementation.
 FBClassImplementation(EffectShaderUserObject);
@@ -76,6 +58,13 @@ const char* UserBufferShader::gSystemUniformNames[static_cast<int>(ShaderSystemU
 	"modelView", //!< current camera modelview matrix
 	"projection", //!< current camera projection matrix
 	"modelViewProj" //!< current camera modelview-projection matrix
+};
+
+const char* FBPropertyBaseEnum<EEffectResolution>::mStrings[] = {
+	"Original",
+	"Downscale 1/2",
+	"Downscale 1/4",
+	0
 };
 
 // use uniformName to track down some type casts
@@ -125,12 +114,17 @@ void EffectShaderUserObject::ActionReloadShaders(HIObject pObject, bool value)
 	}
 }
 
+PostEffectBufferShader* EffectShaderUserObject::MakeANewClassInstance()
+{
+	return new UserBufferShader(this);
+}
+
 /************************************************
  *  FiLMBOX Constructor.
  ************************************************/
 bool EffectShaderUserObject::FBCreate()
 {
-	mUserShader.reset(new UserBufferShader(this));
+	mUserShader.reset(MakeANewClassInstance());
 
 	// modify system behavoiur
 	DisableObjectFlags(kFBFlagClonable);
@@ -138,6 +132,8 @@ bool EffectShaderUserObject::FBCreate()
 	FBPropertyPublish(this, UniqueClassId, "UniqueClassId", nullptr, nullptr);
 	FBPropertyPublish(this, Active, "Active", nullptr, nullptr);
 	
+	FBPropertyPublish(this, Resolution, "Resolution", nullptr, nullptr);
+
 	//FBPropertyPublish(this, RenderToTexture, "Render To Texture", nullptr, nullptr);
 	FBPropertyPublish(this, OutputVideo, "Output Video", nullptr, nullptr);
 
@@ -148,6 +144,8 @@ bool EffectShaderUserObject::FBCreate()
 
 	FBPropertyPublish(this, UseMasking, "Use Masking", nullptr, nullptr);
 	FBPropertyPublish(this, MaskingChannel, "Masking Channel", nullptr, nullptr);
+
+	Resolution = eEffectResolutionOriginal;
 
 	ShaderFile = "//GLSL//test.glslf";
 	NumberOfPasses = 1;
@@ -184,8 +182,6 @@ bool EffectShaderUserObject::DoReloadShaders()
 		return false;
 	}
 
-	
-
 	constexpr const char* vertex_shader_rpath = "/GLSL/simple130.glslv";
 
 	char vertex_abs_path_only[MAX_PATH];
@@ -211,16 +207,19 @@ bool EffectShaderUserObject::DoReloadShaders()
 		//mUserShader.reset(nullptr);
 		return false;
 	}
-
+	
 	// reload connected input buffers
-	if (GetUserShaderPtr())
+	if (UniqueClassId == 57)
 	{
-		for (auto& prop : GetUserShaderPtr()->mShaderProperties)
+		if (UserBufferShader* bufferShader = static_cast<UserBufferShader*>(GetUserShaderPtr()))
 		{
-			if (prop.second.shaderUserObject)
+			for (auto& prop : bufferShader->mShaderProperties)
 			{
-				if (!prop.second.shaderUserObject->DoReloadShaders())
-					return false;
+				if (prop.second.shaderUserObject)
+				{
+					if (!prop.second.shaderUserObject->DoReloadShaders())
+						return false;
+				}
 			}
 		}
 	}
@@ -318,7 +317,7 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::
 	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
 	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
 	{
-		listObjProp->SetFilter(FBTexture::GetInternalClassId());
+		//listObjProp->SetFilter(FBTexture::GetInternalClassId() | EffectShaderUserObject::GetInternalClassId());
 		listObjProp->SetSingleConnect(true);
 
 		PropertyAdd(newProp);
@@ -579,7 +578,7 @@ void UserBufferShader::BindSystemUniforms(PostPersistentData* pData, const PostE
 
 bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
 {
-	RemoveShaderProperties();
+	//RemoveShaderProperties();
 	ResetSystemUniformLocations();
 
 	if (!GetShaderPtr())
@@ -749,6 +748,8 @@ void UserBufferShader::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer*
 	GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
 	GLSLShaderProgram* shader = GetShaderPtr();
 
+	std::vector<EffectShaderUserObject*> shadersChain;
+
 	for (auto& prop : mShaderProperties)
 	{
 		if (prop.second.type == GL_INT)
@@ -796,14 +797,20 @@ void UserBufferShader::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer*
 		}
 		else if (prop.second.shaderUserObject)
 		{
-			UserBufferShader* bufferShader = prop.second.shaderUserObject->GetUserShaderPtr();
+			PostEffectBufferShader* bufferShader = prop.second.shaderUserObject->GetUserShaderPtr();
+
+			UnBind();
 
 			// bind sampler from another rendered buffer shader
 			const std::string bufferName = std::string(GetName()) + "_" + std::string(prop.second.shaderUserObject->Name);
 
-			FrameBuffer* buffer = buffers->RequestFramebuffer(bufferName);
+			int effectW = w;
+			int effectH = h;
+			prop.second.shaderUserObject->RecalculateWidthAndHeight(effectW, effectH);
+			
+			FrameBuffer* buffer = buffers->RequestFramebuffer(bufferName, effectW, effectH, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 1, false);
 
-			bufferShader->Render(buffers, buffer, 0, inputTextureId, w, h, generateMips);
+			bufferShader->Render(buffers, buffer, 0, inputTextureId, effectW, effectH, generateMips);
 
 			const GLuint bufferTextureId = buffer->GetColorObject();
 			buffers->ReleaseFramebuffer(bufferName);
@@ -813,7 +820,40 @@ void UserBufferShader::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer*
 			glBindTexture(GL_TEXTURE_2D, bufferTextureId);
 			glActiveTexture(GL_TEXTURE0);
 
+			Bind();
+
+			const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
+			glUniform1i(loc, userTextureSlot);
+
 			userTextureSlot += 1;
 		}
+	}
+}
+
+std::vector<PostEffectBufferShader*> UserBufferShader::GetConnectedShaders()
+{
+	std::vector<PostEffectBufferShader*> result;
+	for (auto& prop : mShaderProperties)
+	{
+		if (prop.second.shaderUserObject && prop.second.shaderUserObject->GetUserShaderPtr())
+		{
+			result.push_back(prop.second.shaderUserObject->GetUserShaderPtr());
+		}
+	}
+	return result;
+}
+
+void EffectShaderUserObject::RecalculateWidthAndHeight(int& w, int& h)
+{
+	switch (Resolution)
+	{
+	case eEffectResolutionDownscale2x:
+		w = w / 2;
+		h = h / 2;
+		break;
+	case eEffectResolutionDownscale4x:
+		w = w / 4;
+		h = h / 4;
+		break;
 	}
 }

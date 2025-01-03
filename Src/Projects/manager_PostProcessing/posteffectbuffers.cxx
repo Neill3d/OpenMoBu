@@ -72,6 +72,10 @@ int PostEffectBuffers::GetFlagsForMainColorBuffer()
 {
 	return FrameBuffer::eCreateColorTexture | FrameBuffer::eCreateDepthTexture | FrameBuffer::eDeleteFramebufferOnCleanup;
 }
+int PostEffectBuffers::GetFlagsForSingleColorBuffer()
+{
+	return FrameBuffer::eCreateColorTexture | FrameBuffer::eDeleteFramebufferOnCleanup;
+}
 void PostEffectBuffers::SetParametersForMainColorBuffer(FrameBuffer* buffer, bool filterMips)
 {
 	buffer->SetDepthFormat(GL_DEPTH_STENCIL);
@@ -102,7 +106,10 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 
 	for (const auto& framebufferEntry : framebufferPool)
 	{
-		framebufferEntry.second.framebuffer->ReSize(w, h);
+		if (framebufferEntry.second.isAutoResize)
+		{
+			framebufferEntry.second.framebuffer->ReSize(w, h);
+		}
 	}
 	/*
 	// resize fbos

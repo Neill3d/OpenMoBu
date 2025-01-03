@@ -11,6 +11,11 @@
 //	Special for Les Androids Associes
 //
 
+#version 140
+
+in vec2 TexCoord;
+out vec4 FragColor;
+
 uniform sampler2D 	colorSampler;
 uniform vec4 	scale;
 
@@ -45,7 +50,7 @@ vec4 textureWithKernel(in sampler2D sampler, in vec2 tx)
 
 void main (void)
 {
-	vec2 texCoord = gl_TexCoord [0].st;
+	vec2 texCoord = TexCoord;
 
 	vec2 dx  = scale.xy;
 	vec2 sdx = dx;
@@ -68,5 +73,5 @@ void main (void)
 	sdx += dx;
 
 	//vec4 outColor = ApplyMask(texCoord, srccolor, sum);
-	gl_FragData [0] = sum;
+	FragColor = sum;
 }

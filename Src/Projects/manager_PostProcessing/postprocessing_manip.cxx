@@ -24,8 +24,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Registration defines
 #define ORMANIPTEMPLATE__CLASS	ORMANIPTEMPLATE__CLASSNAME
-#define ORMANIPTEMPLATE__LABEL	"OR - Manip Template"
-#define ORMANIPTEMPLATE__DESC	"OR - Manipulator Template Description"
+#define ORMANIPTEMPLATE__LABEL	"Post Processing Manip"
+#define ORMANIPTEMPLATE__DESC	"Manipulator for post processing effects"
 
 //--- FiLMBOX implementation and registration
 FBManipulatorImplementation	(	ORMANIPTEMPLATE__CLASS		);
@@ -42,7 +42,7 @@ extern PostProcessingManager* GetPostProcessingManager();
 /************************************************
  *	FiLMBOX Constructor.
  ************************************************/
-bool ORManip_Template::FBCreate()
+bool Manip_PostProcessing::FBCreate()
 {
 	if( FBManipulator::FBCreate() )
 	{
@@ -233,14 +233,14 @@ static PostGraph* g_graph = nullptr;
 /************************************************
  *	FiLMBOX Destructor.
  ************************************************/
-void ORManip_Template::FBDestroy()
+void Manip_PostProcessing::FBDestroy()
 {
 	FBManipulator::FBDestroy();
 
 	HideGraph();
 }
 
-void ORManip_Template::ShowGraph()
+void Manip_PostProcessing::ShowGraph()
 {
 	if (m_firstRun)
 	{
@@ -294,7 +294,7 @@ void ORManip_Template::ShowGraph()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ORManip_Template::HideGraph()
+void Manip_PostProcessing::HideGraph()
 {
 	if (g_graph)
 	{
@@ -314,7 +314,7 @@ void ORManip_Template::HideGraph()
 /************************************************
  *	Draw function for manipulator
  ************************************************/
-void ORManip_Template::ViewExpose()
+void Manip_PostProcessing::ViewExpose()
 {
 	glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
 
@@ -336,7 +336,7 @@ void ORManip_Template::ViewExpose()
 /************************************************
  *	Deal with maniplator input.
  ************************************************/
-bool ORManip_Template::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, int pButtonKey, int pModifier)
+bool Manip_PostProcessing::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, int pButtonKey, int pModifier)
 {
 	if (g_graph)
 	{

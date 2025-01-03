@@ -83,6 +83,7 @@ public:
 		int height, 
 		int flags, 
 		int numColorAttachments,
+		bool isAutoResize,
 		const std::function<void(FrameBuffer*)>& onInit=nullptr) = 0;
 
 	virtual void OnFrameRendered() = 0;
@@ -173,6 +174,7 @@ public:
 	}
 
 	static int GetFlagsForMainColorBuffer();
+	static int GetFlagsForSingleColorBuffer();
 	static void SetParametersForMainColorBuffer(FrameBuffer* buffer, bool filterMips);
 	static void SetParametersForMainDepthBuffer(FrameBuffer* buffer);
 
@@ -199,19 +201,37 @@ public:
 		int height, 
 		int flags, 
 		int numColorAttachments,
+		bool isAutoResize,
 		const std::function<void(FrameBuffer*)>& onInit=nullptr) override
 	{
 		const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
 
 		auto it = framebufferPool.find(key);
-		if (it == end(framebufferPool))
+		if (it == end(framebufferPool) || width != it->second.width || height != it->second.height)
 		{
-			auto framebuffer = std::make_unique<FrameBuffer>(width, height, flags, numColorAttachments);
-			if (onInit)
+			if (it == end(framebufferPool))
 			{
-				onInit(framebuffer.get());
+				auto framebuffer = std::make_unique<FrameBuffer>(width, height, flags, numColorAttachments);
+				if (onInit)
+				{
+					onInit(framebuffer.get());
+				}
+				framebuffer->ReSize(width, height);
+				framebufferPool[key] = { std::move(framebuffer), name, width, height, isAutoResize };
 			}
-			framebufferPool[key] = { std::move(framebuffer), name };
+			else
+			{
+				it->second.framebuffer.reset(new FrameBuffer(width, height, flags, numColorAttachments));
+				if (onInit)
+				{
+					onInit(it->second.framebuffer.get());
+				}
+				it->second.width = width;
+				it->second.height = height;
+				it->second.framebuffer->ReSize(width, height);
+				it->second.isAutoResize = isAutoResize;
+			}
+			
 			it = framebufferPool.find(key);
 		}
 
@@ -272,6 +292,9 @@ private:
 	struct FramebufferEntry {
 		std::unique_ptr<FrameBuffer> framebuffer;
 		std::string name;
+		int width{ 1 };
+		int height{ 1 };
+		bool isAutoResize{ true };
 		int referenceCount{ 0 };
 		int lazyEraseCounter{ 15 };
 		/*
