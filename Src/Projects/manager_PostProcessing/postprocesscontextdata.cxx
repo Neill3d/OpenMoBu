@@ -151,7 +151,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
         for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
         {
-            FBCamera *pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+            FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(nPane);
 
             int localViewport[4] = {
                 pCamera->CameraViewportX,
@@ -216,9 +216,8 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
                 // 2. process it
 
-                const PostEffectContext effectContext
+                const IPostEffectContext::Parameters contextParameters
                 {
-                    pCamera,
                     localViewport[2], // w
                     localViewport[3], // h
                     static_cast<int>(localTime.GetFrame()), // local frame
@@ -227,7 +226,9 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
                     localTimeSecs,
                     localTimeDT
                 };
-                
+
+                const PostEffectContextMoBu effectContext(pCamera, mPaneSettings[nPane], mPaneSettings[nPane], contextParameters);
+
                 mEffectChain.Prep(mPaneSettings[nPane], effectContext);
 
                 if (mEffectChain.Process(currBuffers, sysTimeSecs))

@@ -75,7 +75,7 @@ protected:
 	}
 
 	virtual bool OnPrepareUniforms(const int shaderIndex) override;
-	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
 	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
 

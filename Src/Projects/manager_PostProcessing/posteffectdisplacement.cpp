@@ -74,11 +74,11 @@ bool EffectShaderDisplacement::OnPrepareUniforms(const int shaderIndex)
 	return false;
 }
 
-bool EffectShaderDisplacement::OnCollectUI(PostPersistentData *pData, const PostEffectContext& effectContext, int maskIndex)
+bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	CollectCommonData(pData, ENABLE_MASKING_PROPERTY_NAME);
+	CollectCommonData(nullptr, ENABLE_MASKING_PROPERTY_NAME);
 
-	double time = (pData->Disp_UsePlayTime) ? effectContext.localTime : effectContext.sysTime;
+	double time = (pData->Disp_UsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 
 	const double timerMult = pData->Disp_Speed;
 	const double _timer = 0.01 * timerMult * time;

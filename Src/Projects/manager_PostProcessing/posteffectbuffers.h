@@ -86,6 +86,8 @@ public:
 		bool isAutoResize,
 		const std::function<void(FrameBuffer*)>& onInit=nullptr) = 0;
 
+	virtual void ReleaseFramebuffer(const std::string& name) = 0;
+
 	virtual void OnFrameRendered() = 0;
 
 	// Notify context change
@@ -118,43 +120,13 @@ public:
 
 	bool Ok();
 
-	//const GLuint PrepAndGetBufferObject();
-
-	//FrameBuffer* GetSrcBufferPtr();
-	//FrameBuffer* GetDstBufferPtr();
-
-	//FrameBuffer* GetBufferDepthPtr();
-	//FrameBuffer* GetBufferBlurPtr();
-	//FrameBuffer* GetBufferMaskPtr();
-
-	// TODO: request a framebuffer ?!
-
-	//FrameBuffer *GetBufferDownscalePtr();
-
-	//void SwapBuffers();
 	
-	const int GetWidth() const {
-		return mWidth;
-	}
-	const int GetHeight() const {
-		return mHeight;
-	}
-	const unsigned int GetPreviewWidth() const {
-		return mPreviewWidth;
-	}
-	const unsigned int GetPreviewHeight() const {
-		return mPreviewHeight;
-	}
-	// get a result of effect computation
-	//const GLuint GetFinalColor();
-	//const GLuint GetFinalFBO();
-
-	//const GLuint GetPreviewColor();
-	//const GLuint GetPreviewFBO();
-
-	void		PreviewSignal() {
-		mPreviewSignal = true;
-	}
+	const int GetWidth() const { return mWidth; }
+	const int GetHeight() const { return mHeight; }
+	const unsigned int GetPreviewWidth() const { return mPreviewWidth; }
+	const unsigned int GetPreviewHeight() const { return mPreviewHeight; }
+	
+	void		PreviewSignal() { mPreviewSignal = true; }
 
 	//bool		PreviewCompressBegin();
 	//bool		PreviewCompressEnd();
@@ -178,114 +150,25 @@ public:
 	static void SetParametersForMainColorBuffer(FrameBuffer* buffer, bool filterMips);
 	static void SetParametersForMainDepthBuffer(FrameBuffer* buffer);
 
-	FrameBuffer* RequestFramebuffer(const std::string& name) override
-	{
-		const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+	//
+	// IFramebufferProvider
 
-		auto it = framebufferPool.find(key);
-		if (it == end(framebufferPool))
-		{
-			auto framebuffer = std::make_unique<FrameBuffer>(mWidth, mHeight);
-			framebufferPool[key] = { std::move(framebuffer), name };
-			it = framebufferPool.find(key);
-		}
-
-		// increment reference count and return framebuffer
-		it->second.AddReference();
-		return it->second.framebuffer.get();
-	}
+	FrameBuffer* RequestFramebuffer(const std::string& name) override;
 
 	FrameBuffer* RequestFramebuffer(
-		const std::string& name, 
-		int width, 
-		int height, 
-		int flags, 
+		const std::string& name,
+		int width,
+		int height,
+		int flags,
 		int numColorAttachments,
 		bool isAutoResize,
-		const std::function<void(FrameBuffer*)>& onInit=nullptr) override
-	{
-		const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+		const std::function<void(FrameBuffer*)>& onInit = nullptr) override;
+	
+	void ReleaseFramebuffer(const std::string& name) override;
 
-		auto it = framebufferPool.find(key);
-		if (it == end(framebufferPool) || width != it->second.width || height != it->second.height)
-		{
-			if (it == end(framebufferPool))
-			{
-				auto framebuffer = std::make_unique<FrameBuffer>(width, height, flags, numColorAttachments);
-				if (onInit)
-				{
-					onInit(framebuffer.get());
-				}
-				framebuffer->ReSize(width, height);
-				framebufferPool[key] = { std::move(framebuffer), name, width, height, isAutoResize };
-			}
-			else
-			{
-				it->second.framebuffer.reset(new FrameBuffer(width, height, flags, numColorAttachments));
-				if (onInit)
-				{
-					onInit(it->second.framebuffer.get());
-				}
-				it->second.width = width;
-				it->second.height = height;
-				it->second.framebuffer->ReSize(width, height);
-				it->second.isAutoResize = isAutoResize;
-			}
-			
-			it = framebufferPool.find(key);
-		}
+	void OnFrameRendered() override;
 
-		// increment reference count and return framebuffer
-		it->second.AddReference();
-		return it->second.framebuffer.get();
-	}
-
-	void ReleaseFramebuffer(const std::string& name)
-	{
-		const std::string key = name; // GenerateKey(...)
-
-		auto it = framebufferPool.find(key);
-		if (it != end(framebufferPool))
-		{
-			// Decrement reference count
-			it->second.RemoveReference();
-
-			if (it->second.GetReferenceCount() == 0) {
-				// delay for n-frame with removal, lazy erase
-				//framebufferPool.erase(it);
-			}
-		}
-	}
-
-	void OnFrameRendered() override {
-		std::vector<std::string> listToErase;
-		for (auto& entry : framebufferPool)
-		{
-			if (entry.second.GetReferenceCount() == 0)
-			{
-				if (entry.second.ReadyToErase())
-				{
-					listToErase.push_back(entry.first);
-				}
-			}
-		}
-		if (!listToErase.empty())
-		{
-			for (const auto& key : listToErase)
-			{
-				auto it = framebufferPool.find(key);
-				if (it != end(framebufferPool))
-				{
-					framebufferPool.erase(it);
-				}
-			}
-		}
-	}
-
-	void OnContextChanged() override {
-		// clear all framebuffers
-		framebufferPool.clear();
-	}
+	void OnContextChanged() override;
 
 private:
 
@@ -297,12 +180,7 @@ private:
 		bool isAutoResize{ true };
 		int referenceCount{ 0 };
 		int lazyEraseCounter{ 15 };
-		/*
-		FramebufferEntry(std::unique_ptr<FrameBuffer>&& framebufferIn, const std::string& nameIn)
-			: framebuffer(std::move(framebufferIn))
-			, name(nameIn)
-		{}
-		*/
+		
 		void AddReference() { ++referenceCount; lazyEraseCounter = 15; }
 		void RemoveReference() { if (referenceCount > 0) --referenceCount; }
 		int GetReferenceCount() const { return referenceCount; }
@@ -317,17 +195,6 @@ private:
 	}
 
 protected:
-
-	// DONE: double local buffer
-	//std::unique_ptr<FrameBuffer>			mBufferPost0;
-	//std::unique_ptr<FrameBuffer>			mBufferPost1;
-
-	//std::unique_ptr<FrameBuffer>			mBufferDepth;		//!< buffer to store a linearize depth
-	//std::unique_ptr<FrameBuffer>			mBufferBlur;
-
-	//std::unique_ptr<FrameBuffer>			mBufferDownscale;	//!< output for a preview
-
-	//std::unique_ptr<FrameBuffer>			mBufferMasking;		//!< render models into mask texture
 
 	// last local buffers resize
 	int								mWidth;

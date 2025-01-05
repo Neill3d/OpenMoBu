@@ -259,15 +259,14 @@ void Manip_PostProcessing::ShowGraph()
 	}
 
 	if (!g_graph
-		&& GetPostProcessingManager()->GetCurrentEffectChain()
-		&& GetPostProcessingManager()->GetCurrentEffectChain()->GetSSAOEffect())
+		&& GetPostProcessingManager()->GetCurrentEffectChain())
 	{
 		g_graph = new PostGraph(GetPostProcessingManager()->GetCurrentEffectChain());
 	}
 
 	// Use ImGui functions between here and Render()
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2((float)GetPaneWidth(), (float)GetPaneHeight());
+	io.DisplaySize = ImVec2(static_cast<float>(GetPaneWidth()), static_cast<float>(GetPaneHeight()));
 
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();

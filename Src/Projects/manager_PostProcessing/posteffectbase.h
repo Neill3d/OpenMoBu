@@ -16,6 +16,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
+#include <variant>
+#include <array>
+#include <vector>
 #include <memory>
 #include <bitset>
 
@@ -23,6 +26,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 class PostEffectBuffers;
 class PostPersistentData;
 class ScopedEffectBind;
+class EffectShaderUserObject;
 
 namespace FBSDKNamespace
 {
@@ -80,7 +84,7 @@ protected:
 	/// <summary>
 	/// collect common data values into a buffer, /see UploadCommonData to upload values into gpu shader
 	/// </summary>
-	void CollectCommonData(PostPersistentData* data, const char* enableMaskingPropertyName);
+	void CollectCommonData(PostPersistentData* data, FBComponent* userObject, const char* enableMaskingPropertyName);
 
 	/// <summary>
 	/// glsl shader must be binded, upload uniforms from collected common data values
@@ -108,24 +112,252 @@ protected:
 	} mCommonShaderData;
 };
 
-struct PostEffectContext
-{
-	FBCamera* camera{ nullptr };
-	int w{ 1 }; //!< viewport width
-	int h{ 1 }; //!< viewport height
-	int localFrame{ 0 }; //!< playback frame number
-	
-	double sysTime{ 0.0 }; //!< system time (in seconds)
-	double sysTimeDT{ 0.0 };
 
-	double localTime{ 0.0 }; //!< playback time (in seconds)
-	double localTimeDT{ 0.0 };
+class IPostEffectContext
+{
+public:
+	virtual ~IPostEffectContext() = default;
+
+	struct Parameters
+	{
+		int w{ 1 }; //!< viewport width
+		int h{ 1 }; //!< viewport height
+		int localFrame{ 0 }; //!< playback frame number
+
+		double sysTime{ 0.0 }; //!< system time (in seconds)
+		double sysTimeDT{ 0.0 };
+
+		double localTime{ 0.0 }; //!< playback time (in seconds)
+		double localTimeDT{ 0.0 };
+	};
+	
+	// interface to query the needed data
+
+	int GetViewWidth() const { return mParameters.w; }
+	int GetViewHeight() const { return mParameters.h; }
+
+	int GetLocalFrame() const { return mParameters.localFrame; }
+	double GetSystemTime() const { return mParameters.sysTime; }
+	double GetLocalTime() const { return mParameters.localTime; }
+
+	virtual double* GetCameraPosition() const = 0;
+
+	virtual double* GetModelViewMatrix() const = 0;
+	virtual double* GetProjectionMatrix() const = 0;
+	virtual double* GetModelViewProjMatrix() const = 0;
+
+protected:
+	Parameters mParameters;
 };
+
+class PostEffectContextMoBu : public IPostEffectContext
+{
+public:
+
+	PostEffectContextMoBu(FBCamera* cameraIn, FBComponent* userObjectIn, PostPersistentData* postProcessDataIn, const Parameters& parametersIn)
+		: camera(cameraIn)
+		, userObject(userObjectIn)
+		, postProcessData(postProcessDataIn)
+	{
+		mParameters = parametersIn;
+		PrepareCache();
+	}
+
+	virtual double* GetCameraPosition() const override { return cameraPosition; }
+	
+	virtual double* GetModelViewMatrix() const override { return modelView; }
+	virtual double* GetProjectionMatrix() const override { return projection; }
+	virtual double* GetModelViewProjMatrix() const override { return modelViewProj; }
+	
+	FBCamera* GetCamera() const { return camera; }
+	FBComponent* GetComponent() const { return userObject; }
+	PostPersistentData* GetPostProcessData() const { return postProcessData; }
+
+private:
+
+	FBCamera* camera{ nullptr }; //!< current camera that we are drawing with
+	FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
+	PostPersistentData* postProcessData{ nullptr }; //!< this is a main post process object for common effects properties
+
+	// cache values
+
+	FBVector3d	cameraPosition;
+	FBMatrix	modelView;
+	FBMatrix	projection;
+	FBMatrix	modelViewProj;
+
+	void PrepareCache()
+	{
+		if (!camera)
+			return;
+		camera->GetVector(cameraPosition, kModelTranslation, true);
+		camera->GetCameraMatrix(modelView, FBCameraMatrixType::kFBModelView);
+		camera->GetCameraMatrix(projection, FBCameraMatrixType::kFBProjection);
+		camera->GetCameraMatrix(modelViewProj, FBCameraMatrixType::kFBModelViewProj);
+	}
+};
+
+enum class ShaderSystemUniform
+{
+	INPUT_COLOR_SAMPLER_2D, //!< this is an input image that we read from
+	iCHANNEL0, //!< this is an input image, compatible with shadertoy
+	INPUT_DEPTH_SAMPLER_2D, //!< this is a scene depth texture sampler in case shader will need it for processing
+	LINEAR_DEPTH_SAMPLER_2D, //!< a depth texture converted into linear space (used in SSAO)
+	INPUT_MASK_SAMPLER_2D, //!< binded mask for a shader processing
+	WORLD_NORMAL_SAMPLER_2D,
+
+	USE_MASKING, //!< float uniform [0; 1] to define if the mask have to be used
+	UPPER_CLIP, //!< this is an upper clip image level. defined in a texture coord space to skip processing
+	LOWER_CLIP, //!< this is a lower clip image level. defined in a texture coord space to skip processing
+
+	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
+	iRESOLUTION, //!< vec2 absolute resolution, compatible with shadertoy
+
+	iTIME, //!< compatible with shadertoy, float, shader playback time (in seconds)
+	iDATE, //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
+
+	CAMERA_POSITION, //!< world space camera position
+	MODELVIEW,	//!< current camera modelview matrix
+	PROJ,		//!< current camera projection matrix
+	MODELVIEWPROJ,	//!< current camera modelview-projection matrix
+
+	COUNT
+};
+
+constexpr size_t PROPERTY_BITSET_SIZE = 8;
+
+class IEffectShaderConnections
+{
+public:
+
+	enum class EPropertyType : uint8_t
+	{
+		INT,
+		BOOL,
+		FLOAT,
+		VEC2,
+		VEC3,
+		VEC4,
+		MAT4,
+		TEXTURE
+	};
+
+	enum class PropertyFlag
+	{
+		IsClamped100 = 1,
+		IsClamped1 = 2,
+		IsFlag = 3,
+		IsColor = 4,
+		ConvertWorldToScreenSpace = 5
+	};
+
+	class IUserData {
+	public:
+		virtual ~IUserData() = default;
+	};
+
+	class FBPropertyUserData : public IUserData {
+		FBProperty* property;
+
+		// extracted value from reference object property
+		FBTexture* texture;
+		EffectShaderUserObject* shaderUserObject;
+	};
+
+	
+
+	struct ShaderProperty
+	{
+		char name[64]{ 0 };
+		char uniformName[64]{ 0 };
+		int length{ 0 };
+
+		EPropertyType type{ EPropertyType::FLOAT };
+		
+		std::bitset<PROPERTY_BITSET_SIZE> flags;
+
+		GLint location{ -1 }; //!< GLSL shader location holder
+		
+		//std::unique_ptr<IUserData> userData;
+
+		FBProperty* fbProperty{ nullptr };
+
+		// extracted value from reference object property
+		FBTexture* texture{ nullptr };
+		EffectShaderUserObject* shaderUserObject{ nullptr };
+
+		// Type-safe dynamic storage for float values
+		std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value;
+
+		ShaderProperty() : value(std::array<float, 1>{ 0.0f }) {}
+
+		ShaderProperty(const char* nameIn, const char* uniformNameIn, IEffectShaderConnections::EPropertyType typeIn, FBProperty* fbPropertyIn)
+		{
+			strcpy_s(name, sizeof(char) * 64, nameIn);
+			strcpy_s(uniformName, sizeof(char)*64, uniformNameIn);
+			SetType(typeIn);
+			fbProperty = fbPropertyIn;
+		}
+
+		void SetType(IEffectShaderConnections::EPropertyType newType) {
+			type = newType;
+			switch (newType) {
+			case IEffectShaderConnections::EPropertyType::INT:
+			case IEffectShaderConnections::EPropertyType::FLOAT:
+			case IEffectShaderConnections::EPropertyType::TEXTURE:
+				value = std::array<float, 1>{ 0.0f };
+				break;
+			case IEffectShaderConnections::EPropertyType::VEC2:
+				value = std::array<float, 2>{0.0f, 0.0f};
+				break;
+			case IEffectShaderConnections::EPropertyType::VEC3:
+				value = std::array<float, 3>{0.0f, 0.0f, 0.0f};
+				break;
+			case IEffectShaderConnections::EPropertyType::VEC4:
+				value = std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f};
+				break;
+			case IEffectShaderConnections::EPropertyType::MAT4:
+				value = std::vector<float>(15, 0.0f);
+				break;
+			}
+		}
+
+		float* GetFloatData() {
+			return std::visit([](auto& data) -> float* {
+				return data.data();
+			}, value);
+		}
+
+		bool HasFlag(PropertyFlag testFlag) const {
+			return flags.test(static_cast<size_t>(testFlag));
+		}
+	};
+
+	virtual ~IEffectShaderConnections() = default;
+
+	virtual int AddProperty(const ShaderProperty& property) = 0;
+	virtual int AddProperty(ShaderProperty&& property) = 0;
+
+	virtual int GetNumberOfProperties() = 0;
+	virtual ShaderProperty& GetProperty(int index) = 0;
+
+	virtual ShaderProperty* FindProperty(const std::string& name) = 0;
+
+	//virtual int GetNumberOfOutputConnections() = 0;
+	//virtual void GetOutputConnectionType() = 0;
+	//virtual void GetOutputProperty(int index) = 0;
+
+	// look for a UI interface, and read properties and its values
+	// should it be a separate class
+	virtual bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) = 0;
+};
+
+
 
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input
 /// </summary>
-class PostEffectBufferShader : public CommonEffectUniforms
+class PostEffectBufferShader : public CommonEffectUniforms, public IEffectShaderConnections
 {
 public:
 
@@ -143,30 +375,34 @@ public:
 	virtual const char* GetFragmentFname(const int variationIndex) const abstract;
 
 	// does shader uses the scene depth sampler (part of a system input)
-	virtual bool IsDepthSamplerUsed() const { return false; }
+	virtual bool IsDepthSamplerUsed() const;
 	// does shader uses the scene linear depth sampler (part of a system input)
-	virtual bool IsLinearDepthSamplerUsed() const { return false; }
+	virtual bool IsLinearDepthSamplerUsed() const;
 
-	virtual bool IsMaskSamplerUsed() const { return false; }
-	virtual bool IsWorldNormalSamplerUsed() const { return false; }
+	virtual bool IsMaskSamplerUsed() const;
+	virtual bool IsWorldNormalSamplerUsed() const;
 
 	/// load and initialize shader from a specified location, vname and fname are computed absolute path
 	bool Load(const int variationIndex, const char* vname, const char* fname);
 
+	/// <summary>
+	/// use \ref GetVertexFname and \ref GetFragmentFname to load a shader variance
+	///  the given shaderLocation is used to make an absolute path
+	/// </summary>
 	bool Load(const char* shaderLocation);
 
-	//! prepare uniforms for a given variation of the effect
+	//! is being called after \ref Load is succeed
 	bool PrepUniforms(const int variationIndex);
-	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex);		//!< grab main UI values for the effect
 
-	//! upload collected data values into gpu shader
+	/// <summary>
+	/// is being called right before Render and when shader is binded
+	/// </summary>
 	void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 
-	/// new feature to have several passes for a specified effect
+	/// repeated call of the shader (define iPass uniform to distinguish)
 	virtual const int GetNumberOfPasses() const;
 	
-	//! get a pointer to a current shader program
+	//! get a pointer to a (current variance) shader program
 	GLSLShaderProgram* GetShaderPtr();
 	const GLSLShaderProgram* GetShaderPtr() const;
 
@@ -175,28 +411,74 @@ public:
 	/// </summary>
 	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 
+	// means that processing will use smaller size of a buffer
 	void SetDownscaleMode(const bool value);
 	bool IsDownscaleMode() const { return isDownscale; }
+
+	// shader version, increments on every shader reload
 	int GetVersion() const { return version; }
 
 	// binded textures for connected buffers starts from 5, then custom user textures will start from 10
 	static int GetUserSamplerId() { return 5; }
 
+public:
+	//
+	// IEffectShaderConnections
+	virtual int AddProperty(const ShaderProperty& property) override;
+	virtual int AddProperty(ShaderProperty&& property) override;
+
+	virtual int GetNumberOfProperties() override;
+	virtual ShaderProperty& GetProperty(int index) override;
+	virtual ShaderProperty* FindProperty(const std::string& name) override;
+
+	// TODO: search for locations
+
+	int PopulatePropertiesFromShaderUniforms();
+
+	// TODO: upload properties values into uniforms
+
+	void AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips);
+
+	// TODO: auto update values from fb properties
+
+	// TODO: let's move it for buildin shaders only ?!
+	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
+	bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
+
+
+protected:
+
+	std::unordered_map<std::string, ShaderProperty>		mProperties;
+
+	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
+	virtual void OnPropertyAdded(ShaderProperty& property) 
+	{}
+
+private:
+
+	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
+	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
+
+	void	ResetSystemUniformLocations();
+	int		IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
+	void	BindSystemUniforms(const IPostEffectContext* effectContext) const;
+
 protected:
 	bool isDownscale{ false };
 	int version; //!< keep track of resolution modifications, inc version everytime we change resolution
-	int mCurrentShader{ 0 };
-	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders;
+	int mCurrentShader{ 0 }; //!< current variance of a shader
+	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders; //!< store a list of all variances
 
 	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	void FreeShaders();
 
+	//!< TODO: masking property in the UI, should we move it into input connection ?!
 	virtual const char* GetUseMaskingPropertyName() const {
 		return nullptr;
 	}
 
 	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
-	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) { return true; }
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) { return true; }
 	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 	{}
 
@@ -238,8 +520,10 @@ public:
 
 	virtual bool IsReadyAndActive() const;
 
-	bool CollectUIValues(PostPersistentData* pData, const PostEffectContext& effectContext);
+	// TODO: should it be a general FBComponent instead of pre-defined PostPersistentData user object ?!
+	bool CollectUIValues(const IPostEffectContext* effectContext);
 
+	// TODO: mask index is like a pre-defined input connection
 	//! define internal mask channel index or -1 for default, it comes from a user input (UI)
 	void SetMaskIndex(const int maskIndex) { mMaskIndex = maskIndex; }
 	//! get defined mask channel index
@@ -250,7 +534,7 @@ public:
 	virtual bool IsMaskSamplerUsed() const;
 	virtual bool IsWorldNormalSamplerUsed() const;
 
-	struct EffectContext
+	struct RenderEffectContext
 	{
 		// input in the effects chain for this effect
 		GLuint srcTextureId;
@@ -268,7 +552,7 @@ public:
 		bool generateMips;
 	};
 
-	virtual void Process(const EffectContext& context);
+	virtual void Process(const RenderEffectContext& context);
 
 	virtual int GetNumberOfBufferShaders() const abstract;
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) abstract;

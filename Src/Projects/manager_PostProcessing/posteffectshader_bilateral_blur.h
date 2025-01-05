@@ -47,14 +47,17 @@ public:
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h) override;
 
+	
+
+	// could be input layer (slot 0), depth texture or user textures from connected texture of effect shader
 	void SetTextureId(GLint textureId);
 	void SetScale(const FBVector2d& scale);
 
 protected:
-	//! prepare uniforms for a given variation of the effect
+	//! is called once the shader is loaded
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;		//!< grab main UI values for the effect
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
 private:
 	GLint		mColorSamplerLoc{ -1 };
@@ -93,7 +96,14 @@ public:
 	
 public: // PROPERTIES
 
+	FBPropertyListObject	InputTexture;
+
+	// make properties associated with a shader input connections
+
 	FBPropertyVector2d		BlurScale;
+
+	// TODO: could be connected to buildin texture ids, scene texture or another rendered effect shader
+	//FBPropertyEnum<EShaderInputSampler2D> InputTexture;
 
 protected:
 

@@ -71,32 +71,7 @@ else {\
 // forward
 class EffectShaderUserObject;
 
-enum class ShaderSystemUniform
-{
-	INPUT_COLOR_SAMPLER_2D, //!< this is an input image that we read from
-	iCHANNEL0, //!< this is an input image, compatible with shadertoy
-	INPUT_DEPTH_SAMPLER_2D, //!< this is a scene depth texture sampler in case shader will need it for processing
-	LINEAR_DEPTH_SAMPLER_2D, //!< a depth texture converted into linear space (used in SSAO)
-	INPUT_MASK_SAMPLER_2D, //!< binded mask for a shader processing
-	WORLD_NORMAL_SAMPLER_2D,
 
-	USE_MASKING, //!< float uniform [0; 1] to define if the mask have to be used
-	UPPER_CLIP, //!< this is an upper clip image level. defined in a texture coord space to skip processing
-	LOWER_CLIP, //!< this is a lower clip image level. defined in a texture coord space to skip processing
-
-	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
-	iRESOLUTION, //!< vec2 absolute resolution, compatible with shadertoy
-
-	iTIME, //!< compatible with shadertoy, float, shader playback time (in seconds)
-	iDATE, //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
-
-	CAMERA_POSITION, //!< world space camera position
-	MODELVIEW,	//!< current camera modelview matrix
-	PROJ,		//!< current camera projection matrix
-	MODELVIEWPROJ,	//!< current camera modelview-projection matrix
-
-	COUNT
-};
 
 enum EEffectResolution
 {
@@ -136,17 +111,12 @@ public:
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h) override;
 
-	virtual bool IsDepthSamplerUsed() const override;
-	virtual bool IsLinearDepthSamplerUsed() const override;
-	virtual bool IsMaskSamplerUsed() const override;
-	virtual bool IsWorldNormalSamplerUsed() const override;
-
 protected:
 	friend class EffectShaderUserObject;
 
 	//!< scene object, data container and interaction with the end user
 	EffectShaderUserObject* mUserObject;
-
+	/*
 	struct ShaderProperty
 	{
 		GLchar uniformName[256]{ 0 };
@@ -165,26 +135,26 @@ protected:
 
 	//!< list all shader uniforms and a connection with ui user property
 	std::unordered_map<std::string, ShaderProperty> mShaderProperties;
-
-	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
-	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
+	*/
 
 	virtual const char* GetUseMaskingPropertyName() const override { return "Use Masking"; }
 
 	void	RemoveShaderProperties();
-	void	ResetSystemUniformLocations();
+	
 
-	int IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
-
-	void BindSystemUniforms(PostPersistentData* pData, const PostEffectContext& effectContext) const;
+	
+	void BindSystemUniforms(const IPostEffectContext* effectContext) const;
 
 	//! prepare uniforms for a given variation of the effect
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
 	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
+
+	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
+	virtual void OnPropertyAdded(ShaderProperty& property) override;
 
 private:
 
@@ -248,6 +218,8 @@ public:
 
 	// recalculate width and height based on shader resolution option
 	void RecalculateWidthAndHeight(int& w, int& h);
+
+	
 
 protected:
 

@@ -29,6 +29,17 @@ PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComp
 	, mUIComponent(uiComponent)
 {
 	mTextureId = CommonEffectUniforms::GetColorSamplerSlot();
+
+	if (FBIS(uiComponent, EffectShaderBilateralBlurUserObject))
+	{
+		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(uiComponent);
+
+		ShaderProperty textureProperty(userObject->InputTexture.GetName(), "colorSampler", EPropertyType::TEXTURE, &userObject->InputTexture);
+		AddProperty(std::move(textureProperty));
+
+		ShaderProperty blurScaleProperty(userObject->BlurScale.GetName(), "scale", EPropertyType::VEC2, &userObject->BlurScale);
+		AddProperty(std::move(blurScaleProperty));
+	}
 }
 
 PostEffectShaderBilateralBlur::~PostEffectShaderBilateralBlur()
@@ -66,6 +77,20 @@ bool PostEffectShaderBilateralBlur::OnPrepareUniforms(const int variationIndex)
 
 	shader->UnBind();
 
+	if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
+	{
+		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(mUIComponent);
+
+		if (ShaderProperty* textureProperty = FindProperty(userObject->InputTexture.GetName()))
+		{
+			textureProperty->location = mColorSamplerLoc;
+		}
+		if (ShaderProperty* scaleProperty = FindProperty(userObject->BlurScale.GetName()))
+		{
+			scaleProperty->location = mLocImageBlurScale;
+		}
+	}
+
 	return true;
 }
 
@@ -80,7 +105,7 @@ void PostEffectShaderBilateralBlur::SetScale(const FBVector2d& scale)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBilateralBlur::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderBilateralBlur::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	/*
 	if (pData)

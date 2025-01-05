@@ -1,7 +1,7 @@
 
 /**	\file	postprocessing_effect.cxx
 
-Sergei <Neill3d> Solokhin 2018-2019
+Sergei <Neill3d> Solokhin 2018-2024
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -111,96 +111,7 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 			framebufferEntry.second.framebuffer->ReSize(w, h);
 		}
 	}
-	/*
-	// resize fbos
-	const int flags = FrameBuffer::eCreateColorTexture | FrameBuffer::eCreateDepthTexture | FrameBuffer::eDeleteFramebufferOnCleanup;
-
-	if (!mBufferPost0.get())
-	{
-		mBufferPost0.reset(new FrameBuffer(1, 1, flags));
-		
-		//mBufferPost0->SetDepthFormat(GL_DEPTH);
-		//mBufferPost0->SetDepthInternalFormat(GL_DEPTH_COMPONENT32F);
-		//mBufferPost0->SetDepthType(GL_FLOAT);
-		
-		mBufferPost0->SetDepthFormat(GL_DEPTH_STENCIL);
-		mBufferPost0->SetDepthInternalFormat(GL_DEPTH24_STENCIL8);
-		mBufferPost0->SetDepthType(GL_UNSIGNED_INT_24_8);
-
-		mBufferPost0->SetClamp(0, GL_CLAMP_TO_EDGE);
-		mBufferPost0->SetFilter(0, (filterMips) ? FrameBuffer::filterMipmap : FrameBuffer::filterLinear);
-	}
-	if (!mBufferPost1.get())
-	{
-		mBufferPost1.reset(new FrameBuffer(1, 1, flags));
-		
-		//mBufferPost1->SetDepthFormat(GL_DEPTH);
-		//mBufferPost1->SetDepthInternalFormat(GL_DEPTH_COMPONENT32F);
-		//mBufferPost1->SetDepthType(GL_FLOAT);
-		
-		mBufferPost1->SetDepthFormat(GL_DEPTH_STENCIL);
-		mBufferPost1->SetDepthInternalFormat(GL_DEPTH24_STENCIL8);
-		mBufferPost1->SetDepthType(GL_UNSIGNED_INT_24_8);
-
-		mBufferPost1->SetClamp(0, GL_CLAMP_TO_EDGE);
-		mBufferPost1->SetFilter(0, (filterMips) ? FrameBuffer::filterMipmap : FrameBuffer::filterLinear);
-	}
-
-	if (!mBufferDepth.get())
-	{
-		mBufferDepth.reset(new FrameBuffer(1, 1));
-		mBufferDepth->SetColorFormat(0, GL_RED);
-		mBufferDepth->SetColorInternalFormat(0, GL_R32F);
-		mBufferDepth->SetColorType(0, GL_FLOAT);
-		mBufferDepth->SetFilter(0, FrameBuffer::filterNearest);
-		mBufferDepth->SetClamp(0, GL_CLAMP_TO_EDGE);
-	}
-
-	if (!mBufferBlur.get())
-	{
-		mBufferBlur.reset(new FrameBuffer(1, 1));
-	}
-
-	if (!mBufferDownscale.get())
-	{
-		mBufferDownscale.reset(new FrameBuffer(1, 1));
-	}
-
-	if (!mBufferMasking.get())
-	{
-		// prepare framebuffer with 4 color attachments as we have support for 4 masks
-		mBufferMasking.reset(new FrameBuffer(1, 1, FrameBuffer::eCreateColorTexture | FrameBuffer::eDeleteFramebufferOnCleanup, 4));
-	}
 	
-	if (!mBufferPost0->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferPost1->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferDepth->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferBlur->ReSize(w, h))
-		lSuccess = false;
-	if (!mBufferMasking->ReSize(w, h))
-		lSuccess = false;
-
-	if (useScale)
-	{
-		const double sw = 0.01 * static_cast<double>(w) * scaleFactor;
-		const double sh = 0.01 * static_cast<double>(h) * scaleFactor;
-
-		// find nearest power of two
-		mPreviewWidth = nearestPowerOf2(static_cast<unsigned int>(sw));
-		mPreviewHeight = nearestPowerOf2(static_cast<unsigned int>(sh));
-
-		//mPreviewWidth = 256;
-		//mPreviewHeight = 128;
-
-		if (mBufferDownscale->ReSize(mPreviewWidth, mPreviewHeight))
-		{
-			AllocPreviewTexture(mPreviewWidth, mPreviewHeight);
-		}
-	}
-	*/
 	if (lSuccess)
 	{
 		if (mPBOs[0] > 0)
@@ -216,96 +127,13 @@ bool PostEffectBuffers::ReSize(const int w, const int h, bool useScale, double s
 
 bool PostEffectBuffers::Ok()
 {
-	/*
-	if (!mBufferPost0.get() || !mBufferPost1.get() || !mBufferDepth.get() || !mBufferBlur.get() || !mBufferMasking.get())
-	{
-		return false;
-	}
-	if (!mBufferPost0->GetFrameBuffer() || !mBufferPost1->GetFrameBuffer() || !mBufferDepth->GetFrameBuffer()
-		|| !mBufferBlur->GetFrameBuffer() || !mBufferMasking->GetFrameBuffer())
-	{
-		return false;
-	}
-	*/
 	return true;
 }
 
 void PostEffectBuffers::FreeBuffers()
 {
-	//mBufferPost0.reset(nullptr);
-	//mBufferPost1.reset(nullptr);
-	//mBufferDepth.reset(nullptr);
-	//mBufferBlur.reset(nullptr);
-	//mBufferDownscale.reset(nullptr);
-	//mBufferMasking.reset(nullptr);
-}
-/*
-const GLuint PostEffectBuffers::PrepAndGetBufferObject()
-{
-	mSrc = 0;
-	mDst = 1;
-
-	return 0; // mBufferPost0->GetFrameBuffer();
-}
-*/
-/*
-FrameBuffer *PostEffectBuffers::GetSrcBufferPtr()
-{
-	return (0 == mSrc) ? mBufferPost0.get() : mBufferPost1.get();
-}
-FrameBuffer *PostEffectBuffers::GetDstBufferPtr()
-{
-	return (0 == mDst) ? mBufferPost0.get() : mBufferPost1.get();
-}
-FrameBuffer *PostEffectBuffers::GetBufferDepthPtr()
-{
-	return mBufferDepth.get();
-}
-FrameBuffer *PostEffectBuffers::GetBufferBlurPtr()
-{
-	return mBufferBlur.get();
 }
 
-FrameBuffer* PostEffectBuffers::GetBufferMaskPtr()
-{
-	return mBufferMasking.get();
-}
-
-FrameBuffer *PostEffectBuffers::GetBufferDownscalePtr()
-{
-	return mBufferDownscale.get();
-}
-
-void PostEffectBuffers::SwapBuffers()
-{
-	// swap buffers
-	int temp = mDst;
-	mDst = mSrc;
-	mSrc = temp;
-}
-*/
-/*
-// get a result of effect computation
-const GLuint PostEffectBuffers::GetFinalColor()
-{
-	return (0==mSrc) ? mBufferPost0->GetColorObject() : mBufferPost1->GetColorObject();
-}
-
-const GLuint PostEffectBuffers::GetFinalFBO()
-{
-	return (0 == mSrc) ? mBufferPost0->GetFrameBuffer() : mBufferPost1->GetFrameBuffer();
-}
-
-const GLuint PostEffectBuffers::GetPreviewColor()
-{
-	return (mBufferDownscale.get()) ? mBufferDownscale->GetColorObject() : 0;
-}
-
-const GLuint PostEffectBuffers::GetPreviewFBO()
-{
-	return (mBufferDownscale.get()) ? mBufferDownscale->GetFrameBuffer() : 0;
-}
-*/
 const GLuint PostEffectBuffers::GetPreviewCompressedColor()
 {
 	//return mBufferDownscale->GetColorObject();
@@ -585,3 +413,113 @@ bool PostEffectBuffers::PreviewCompressEnd()
 	return true;
 }
 */
+
+
+FrameBuffer* PostEffectBuffers::RequestFramebuffer(const std::string& name)
+{
+	const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+
+	auto it = framebufferPool.find(key);
+	if (it == end(framebufferPool))
+	{
+		auto framebuffer = std::make_unique<FrameBuffer>(mWidth, mHeight);
+		framebufferPool[key] = { std::move(framebuffer), name };
+		it = framebufferPool.find(key);
+	}
+
+	// increment reference count and return framebuffer
+	it->second.AddReference();
+	return it->second.framebuffer.get();
+}
+
+FrameBuffer* PostEffectBuffers::RequestFramebuffer(
+	const std::string& name,
+	int width,
+	int height,
+	int flags,
+	int numColorAttachments,
+	bool isAutoResize,
+	const std::function<void(FrameBuffer*)>& onInit)
+{
+	const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+
+	auto it = framebufferPool.find(key);
+	if (it == end(framebufferPool) || width != it->second.width || height != it->second.height)
+	{
+		if (it == end(framebufferPool))
+		{
+			auto framebuffer = std::make_unique<FrameBuffer>(width, height, flags, numColorAttachments);
+			if (onInit)
+			{
+				onInit(framebuffer.get());
+			}
+			framebuffer->ReSize(width, height);
+			framebufferPool[key] = { std::move(framebuffer), name, width, height, isAutoResize };
+		}
+		else
+		{
+			it->second.framebuffer.reset(new FrameBuffer(width, height, flags, numColorAttachments));
+			if (onInit)
+			{
+				onInit(it->second.framebuffer.get());
+			}
+			it->second.width = width;
+			it->second.height = height;
+			it->second.framebuffer->ReSize(width, height);
+			it->second.isAutoResize = isAutoResize;
+		}
+
+		it = framebufferPool.find(key);
+	}
+
+	// increment reference count and return framebuffer
+	it->second.AddReference();
+	return it->second.framebuffer.get();
+}
+
+void PostEffectBuffers::ReleaseFramebuffer(const std::string& name)
+{
+	const std::string key = name; // GenerateKey(...)
+
+	auto it = framebufferPool.find(key);
+	if (it != end(framebufferPool))
+	{
+		// Decrement reference count
+		it->second.RemoveReference();
+
+		if (it->second.GetReferenceCount() == 0) {
+			// delay for n-frame with removal, lazy erase
+			//framebufferPool.erase(it);
+		}
+	}
+}
+
+void PostEffectBuffers::OnFrameRendered() {
+	std::vector<std::string> listToErase;
+	for (auto& entry : framebufferPool)
+	{
+		if (entry.second.GetReferenceCount() == 0)
+		{
+			if (entry.second.ReadyToErase())
+			{
+				listToErase.push_back(entry.first);
+			}
+		}
+	}
+	if (!listToErase.empty())
+	{
+		for (const auto& key : listToErase)
+		{
+			auto it = framebufferPool.find(key);
+			if (it != end(framebufferPool))
+			{
+				framebufferPool.erase(it);
+			}
+		}
+	}
+}
+
+void PostEffectBuffers::OnContextChanged() {
+	// clear all framebuffers
+	framebufferPool.clear();
+}

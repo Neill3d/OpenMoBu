@@ -82,12 +82,12 @@ void PostEffectChain::ChangeContext()
 	mLastCompressTime = 0.0;
 }
 
-bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContext& effectContext)
+bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoBu& effectContext)
 {
 	bool lSuccess = true;
 
 	mSettings = pData;
-	mLastCamera = effectContext.camera;
+	mLastCamera = effectContext.GetCamera();
 
 	if (!mSettings.Ok())
 		return false;
@@ -141,16 +141,16 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContext& e
 		*/
 	
 	if (true == mSettings->Displacement && mDisplacement.get())
-		mDisplacement->CollectUIValues(mSettings, effectContext);
+		mDisplacement->CollectUIValues(&effectContext);
 
 	if (mEffectBilateralBlur.get())
-		mEffectBilateralBlur->CollectUIValues(pData, effectContext);
+		mEffectBilateralBlur->CollectUIValues(&effectContext);
 
 	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
 	{
 		if (PostEffectBase* postEffect = mSettings->GetActiveUserEffect(i))
 		{
-			postEffect->CollectUIValues(mSettings, effectContext);
+			postEffect->CollectUIValues(&effectContext);
 		}
 	}
 
@@ -678,7 +678,7 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 	const int w = maskRequest->GetWidth();
 	const int h = maskRequest->GetHeight();
 
-	const PostEffectBase::EffectContext context
+	const PostEffectBase::RenderEffectContext context
 	{
 		texid,
 		0, // depth id
@@ -1195,7 +1195,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime)
 			
 			doubleBufferRequest->Swap(); // current written goes to read and we are ready to write from a shader
 
-			const PostEffectBase::EffectContext context{
+			const PostEffectBase::RenderEffectContext context{
 				doubleBufferRequest->GetPtr()->GetColorObject(doubleBufferRequest->GetReadAttachment()), // src texture id
 				doubleBufferRequest->GetPtr()->GetDepthObject(), // depth texture id
 				buffers,
