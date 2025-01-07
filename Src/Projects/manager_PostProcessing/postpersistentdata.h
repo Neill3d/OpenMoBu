@@ -22,6 +22,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 // forward declaration
 class PostPersistentData;
 class PostEffectBase;
+class PostEffectUserObject;
 
 enum EBlurQuality
 {
@@ -420,6 +421,7 @@ public:
 
 	int GetNumberOfActiveUserEffects();
 	PostEffectBase* GetActiveUserEffect(const int index);
+	PostEffectUserObject* GetActiveUserEffectObject(const int index);
 
 protected:
 

@@ -23,7 +23,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
 #include "posteffectbuffers.h"
-
+#include "posteffect_userobject.h"
+#include "posteffectbase.h"
 #include "posteffectshader_bilateral_blur.h"
 
 // shared shaders
@@ -148,9 +149,11 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 
 	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
 	{
-		if (PostEffectBase* postEffect = mSettings->GetActiveUserEffect(i))
+		if (PostEffectUserObject* postEffectObject = mSettings->GetActiveUserEffectObject(i))
 		{
-			postEffect->CollectUIValues(&effectContext);
+			effectContext.OverrideComponent(postEffectObject);
+			postEffectObject->GetUserEffectPtr()->CollectUIValues(&effectContext);
+			effectContext.OverrideComponent(nullptr);
 		}
 	}
 
@@ -338,7 +341,7 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 
 	// ordering HERE
 
-	if (mSettings->SSAO)
+	if (mSettings->SSAO && mSSAO.get())
 	{
 		chain[count] = mSSAO.get();
 		chain[count]->SetMaskIndex((mSettings->SSAO_UseMasking) ? static_cast<int>(mSettings->SSAO_MaskingChannel) : -1);
@@ -348,19 +351,19 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 		}
 		count += 1;
 	}
-	if (mSettings->MotionBlur)
+	if (mSettings->MotionBlur && mMotionBlur.get())
 	{
 		chain[count] = mMotionBlur.get();
 		chain[count]->SetMaskIndex((mSettings->MotionBlur_UseMasking) ? static_cast<int>(mSettings->MotionBlur_MaskingChannel) : -1);
 		count += 1;
 	}
-	if (mSettings->DepthOfField)
+	if (mSettings->DepthOfField && mDOF.get())
 	{
 		chain[count] = mDOF.get();
 		chain[count]->SetMaskIndex((mSettings->DOF_UseMasking) ? static_cast<int>(mSettings->DOF_MaskingChannel) : -1);
 		count += 1;
 	}
-	if (mSettings->ColorCorrection)
+	if (mSettings->ColorCorrection && mColor.get())
 	{
 		chain[count] = mColor.get();
 		chain[count]->SetMaskIndex((mSettings->ColorCorrection_UseMasking) ? static_cast<int>(mSettings->ColorCorrection_MaskingChannel) : -1);
@@ -370,38 +373,37 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 		}
 		count += 1;
 	}
-	if (mSettings->LensFlare)
+	if (mSettings->LensFlare && mLensFlare.get())
 	{
 		chain[count] = mLensFlare.get();
 		chain[count]->SetMaskIndex((mSettings->LensFlare_UseMasking) ? static_cast<int>(mSettings->LensFlare_MaskingChannel) : -1);
 		count += 1;
 	}
-	if (mSettings->Displacement)
+	if (mSettings->Displacement && mDisplacement.get())
 	{
 		chain[count] = mDisplacement.get();
 		chain[count]->SetMaskIndex((mSettings->Disp_UseMasking) ? static_cast<int>(mSettings->Disp_MaskingChannel) : -1);
 		count += 1;
 	}
-	if (mSettings->FishEye)
+	if (mSettings->FishEye && mFishEye.get())
 	{
 		chain[count] = mFishEye.get();
 		chain[count]->SetMaskIndex((mSettings->FishEye_UseMasking) ? static_cast<int>(mSettings->FishEye_MaskingChannel) : -1);
 		count += 1;
 	}
-	if (mSettings->FilmGrain)
+	if (mSettings->FilmGrain && mFilmGrain.get())
 	{
 		chain[count] = mFilmGrain.get();
 		chain[count]->SetMaskIndex((mSettings->FilmGrain_UseMasking) ? static_cast<int>(mSettings->FilmGrain_MaskingChannel) : -1);
 		count += 1;
 	}
-	if (mSettings->Vignetting)
+	if (mSettings->Vignetting && mVignetting.get())
 	{
 		chain[count] = mVignetting.get();
 		chain[count]->SetMaskIndex((mSettings->Vign_UseMasking) ? static_cast<int>(mSettings->Vign_MaskingChannel) : -1);
 		count += 1;
 	}
 
-	// TODO: add user effects here !
 	for (int i = 0; i < mSettings->GetNumberOfActiveUserEffects(); ++i)
 	{
 		chain[count] = mSettings->GetActiveUserEffect(i);

@@ -227,7 +227,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
                     localTimeDT
                 };
 
-                const PostEffectContextMoBu effectContext(pCamera, mPaneSettings[nPane], mPaneSettings[nPane], contextParameters);
+                const PostEffectContextMoBu effectContext(pCamera, nullptr, mPaneSettings[nPane], contextParameters);
 
                 mEffectChain.Prep(mPaneSettings[nPane], effectContext);
 

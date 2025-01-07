@@ -25,7 +25,7 @@ PostEffectFBElementClassImplementation(EffectShaderBilateralBlurUserObject, "Blu
 // PostEffectShaderLinearDepth
 
 PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComponent)
-	: PostEffectBufferShader()
+	: PostEffectBufferShader(uiComponent)
 	, mUIComponent(uiComponent)
 {
 	//mTextureId = CommonEffectUniforms::GetColorSamplerSlot();

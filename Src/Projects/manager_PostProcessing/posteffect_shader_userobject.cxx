@@ -321,7 +321,7 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::Sh
 // UserBufferShader
 
 UserBufferShader::UserBufferShader(EffectShaderUserObject* UserObject)
-	: PostEffectBufferShader()
+	: PostEffectBufferShader(UserObject)
 	, mUserObject(UserObject)
 {
 }

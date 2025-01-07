@@ -22,10 +22,10 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 /////////////////////////////////////////////////////////////////////////
 // PostEffectBufferShader
 
-PostEffectBufferShader::PostEffectBufferShader()
+PostEffectBufferShader::PostEffectBufferShader(FBComponent* ownerIn)
+	: mOwner(ownerIn)
 {
 	ResetSystemUniformLocations();
-	//MakeCommonProperties();
 }
 
 PostEffectBufferShader::~PostEffectBufferShader()
@@ -38,7 +38,7 @@ void PostEffectBufferShader::MakeCommonProperties()
 	AddProperty(IEffectShaderConnections::ShaderProperty("Mask Texture", "maskSampler", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
 		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
-		.SetValue(GetMaskSamplerSlot());
+		.SetValue(CommonEffectUniforms::GetMaskSamplerSlot());
 
 	const char* maskingPropName = GetUseMaskingPropertyName();
 	assert(maskingPropName != nullptr);
@@ -46,10 +46,13 @@ void PostEffectBufferShader::MakeCommonProperties()
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true);
 
 	AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::UPPER_CLIP, "upperClip", nullptr))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true);
+		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
+		.SetScale(0.01f);
 
 	AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::LOWER_CLIP, "lowerClip", nullptr))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true);
+		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE, true)
+		.SetScale(0.01f);
 }
 
 const char* PostEffectBufferShader::GetName() const
@@ -64,55 +67,6 @@ void PostEffectBufferShader::FreeShaders()
 	mShaders.clear();
 }
 
-void CommonEffectUniforms::PrepareCommonLocations(GLSLShaderProgram* shader)
-{
-	/*
-	// TODO: move into shader properties ?!
-	const GLint loc = shader->findLocation("maskSampler");
-	if (loc >= 0)
-		glUniform1i(loc, GetMaskSamplerSlot());
-
-	useMaskLoc = shader->findLocation("useMasking");
-	upperClipLoc = shader->findLocation("upperClip");
-	lowerClipLoc = shader->findLocation("lowerClip");
-	*/
-}
-
-void CommonEffectUniforms::CollectCommonData(PostPersistentData* data, FBComponent* userObject, const char* enableMaskingPropertyName)
-{
-	/*
-	bool isEnabledEffectMasking = false;
-	if (enableMaskingPropertyName && userObject)
-	{
-		if (FBProperty* prop = userObject->PropertyList.Find(enableMaskingPropertyName))
-		{
-			isEnabledEffectMasking = prop->AsInt() > 0;
-		}
-	}
-	
-	const bool useMasking = data->UseCompositeMasking && (data->EnableMaskingForAllEffects || isEnabledEffectMasking);
-	const double _upperClip = data->UpperClip;
-	const double _lowerClip = data->LowerClip;
-
-	mCommonShaderData.useMasking = (useMasking) ? 1.0f : 0.0f;
-	mCommonShaderData.upperClip = 0.01f * static_cast<float>(_upperClip);
-	mCommonShaderData.lowerClip = 1.0f - 0.01f * static_cast<float>(_lowerClip);
-	*/
-}
-
-void CommonEffectUniforms::UploadCommonData()
-{
-	/*
-	if (useMaskLoc >= 0)
-		glUniform1f(useMaskLoc, mCommonShaderData.useMasking);
-
-	if (upperClipLoc >= 0)
-		glUniform1f(upperClipLoc, mCommonShaderData.upperClip);
-
-	if (lowerClipLoc >= 0)
-		glUniform1f(lowerClipLoc, mCommonShaderData.lowerClip);
-		*/
-}
 
 bool PostEffectBufferShader::Load(const int shaderIndex, const char* vname, const char* fname)
 {
@@ -176,17 +130,12 @@ bool PostEffectBufferShader::PrepUniforms(const int varianceIndex)
 	// existing registered properties got their shader uniform locations
 	MakePropertyLocationsFromShaderUniforms();
 
-	if (DoPopulatePropertiesFromUniforms())
-	{
-		//PopulatePropertiesFromShaderUniforms();
-	}
-	else
+	if (!DoPopulatePropertiesFromUniforms())
 	{
 		// have a look which system uniforms we are using in the shader
 		MakeSystemLocationsFromShaderUniforms();
 	}
 
-	//PrepareCommonLocations(GetShaderPtr());
 	return OnPrepareUniforms(varianceIndex);
 }
 
@@ -212,8 +161,6 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, const IPost
 
 bool PostEffectBufferShader::CollectUIValues(const IPostEffectContext* effectContext, int maskIndex)
 {
-	//const PostEffectContextMoBu* effectContext = static_cast<const PostEffectContextMoBu*>(effectContextIn);
-
 	if (effectContext->GetPostProcessData())
 	{
 		CollectUIValues(effectContext->GetPostProcessData(), effectContext, maskIndex);
@@ -223,8 +170,7 @@ bool PostEffectBufferShader::CollectUIValues(const IPostEffectContext* effectCon
 	{
 		CollectUIValues(effectContext->GetComponent(), effectContext, maskIndex);
 	}
-	 
-	//CollectCommonData(nullptr, nullptr, GetUseMaskingPropertyName());
+
 	return OnCollectUI(effectContext, maskIndex);
 }
 
@@ -232,8 +178,7 @@ void PostEffectBufferShader::UploadUniforms(PostEffectBuffers* buffers, FrameBuf
 {
 	// system uniforms
 	BindSystemUniforms(effectContext);
-	//UploadCommonData();
-
+	
 	AutoUploadUniforms(buffers, inputTextureId, w, h, generateMips, effectContext);
 
 	OnUploadUniforms(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips, effectContext);
@@ -560,7 +505,14 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 
 	case IEffectShaderConnections::EPropertyType::VEC2:
 	{
-		if (HasFlag(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace))
+		if (!HasFlag(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace))
+		{
+			fbProperty->GetData(v, sizeof(double) * 2);
+			float* value = GetFloatData();
+			value[0] = static_cast<float>(v[0]);
+			value[1] = static_cast<float>(v[1]);
+		}
+		else
 		{
 			// world space to screen space
 			fbProperty->GetData(v, sizeof(double) * 3);
@@ -578,13 +530,7 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 			value[1] = static_cast<float>(v4[1]) / static_cast<float>(effectContext->GetViewHeight());
 			//value[2] = static_cast<float>(v4[2]);
 		}
-		else
-		{
-			fbProperty->GetData(v, sizeof(double) * 2);
-			float* value = GetFloatData();
-			value[0] = static_cast<float>(v[0]);
-			value[1] = static_cast<float>(v[1]);
-		}
+		
 	} break;
 
 	case IEffectShaderConnections::EPropertyType::VEC3:
@@ -619,10 +565,10 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 			{
 				if (FBIS(listObjProp->GetAt(0), FBTexture))
 				{
-					FBTexture* texture = FBCast<FBTexture>(listObjProp->GetAt(0));
-					assert(texture != nullptr);
+					FBTexture* textureObj = FBCast<FBTexture>(listObjProp->GetAt(0));
+					assert(textureObj != nullptr);
 
-					texture = texture;
+					texture = textureObj;
 				}
 				else if (FBIS(listObjProp->GetAt(0), EffectShaderUserObject))
 				{
@@ -630,7 +576,10 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 					assert(shaderObject != nullptr);
 
 					shaderUserObject = shaderObject;
+					FBComponent* tempComponent = effectContext->GetComponent();
+					effectContext->OverrideComponent(shaderObject);
 					shaderObject->GetUserShaderPtr()->CollectUIValues(effectContext, maskIndex);
+					effectContext->OverrideComponent(tempComponent);
 				}
 			}
 		}
@@ -845,7 +794,14 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 			break;
 
 		case IEffectShaderConnections::EPropertyType::FLOAT:
-			glUniform1f(prop.second.location, prop.second.GetScale() * prop.second.GetFloatData()[0]);
+			if (!prop.second.HasFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE))
+			{
+				glUniform1f(prop.second.location, prop.second.GetScale() * prop.second.GetFloatData()[0]);
+			}
+			else
+			{
+				glUniform1f(prop.second.location, 1.0f - prop.second.GetScale() * prop.second.GetFloatData()[0]);
+			}
 			break;
 
 		case IEffectShaderConnections::EPropertyType::VEC2:
@@ -982,7 +938,8 @@ int PostEffectBufferShader::IsSystemUniform(const char* uniformName)
 
 void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effectContext) const
 {
-	//const PostEffectContextMoBu* effectContext = static_cast<const PostEffectContextMoBu*>(effectContextIn);
+	if (!GetShaderPtr())
+		return;
 
 	const GLuint programId = GetShaderPtr()->GetProgramObj();
 	const GLint* sysLocations = mSystemUniformLocations;
@@ -1007,19 +964,19 @@ void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effect
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0)
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], GetDepthSamplerSlot());
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], CommonEffectUniforms::GetDepthSamplerSlot());
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)] >= 0)
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)], GetLinearDepthSamplerSlot());
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)], CommonEffectUniforms::GetLinearDepthSamplerSlot());
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D)] >= 0)
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D)], GetWorldNormalSamplerSlot());
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D)], CommonEffectUniforms::GetWorldNormalSamplerSlot());
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)] >= 0)
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], GetMaskSamplerSlot());
+		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], CommonEffectUniforms::GetMaskSamplerSlot());
 	}
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)] >= 0)
 	{
@@ -1038,7 +995,7 @@ void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effect
 	{
 		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)];
 		const double value = effectContext->GetPostProcessData()->LowerClip;
-		glProgramUniform1f(programId, loc, 0.01f * static_cast<float>(value));
+		glProgramUniform1f(programId, loc, 1.0f - 0.01f * static_cast<float>(value));
 	}
 
 	if (sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)] >= 0)
@@ -1224,7 +1181,14 @@ bool PostEffectBase::CollectUIValues(const IPostEffectContext* effectContext)
 	{
 		if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(i))
 		{
-			if (!bufferShader->CollectUIValues(effectContext, GetMaskIndex()))
+			FBComponent* tempComponent = effectContext->GetComponent();
+			effectContext->OverrideComponent(bufferShader->GetOwner());
+
+			bool status = bufferShader->CollectUIValues(effectContext, GetMaskIndex());
+
+			effectContext->OverrideComponent(tempComponent);
+
+			if (!status)
 				return false;
 		}
 	}

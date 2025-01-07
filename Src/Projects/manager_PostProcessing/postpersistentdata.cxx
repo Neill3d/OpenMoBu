@@ -1764,3 +1764,24 @@ PostEffectBase* PostPersistentData::GetActiveUserEffect(const int index)
 	}
 	return nullptr;
 }
+
+PostEffectUserObject* PostPersistentData::GetActiveUserEffectObject(const int index)
+{
+	int count = 0;
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], PostEffectUserObject))
+		{
+			PostEffectUserObject* UserObject = FBCast<PostEffectUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active)
+			{
+				if (count == index)
+				{
+					return UserObject;
+				}
+				count += 1;
+			}
+		}
+	}
+	return nullptr;
+}

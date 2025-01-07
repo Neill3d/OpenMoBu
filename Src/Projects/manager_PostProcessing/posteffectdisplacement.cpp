@@ -17,8 +17,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 
 //! a constructor
-EffectShaderDisplacement::EffectShaderDisplacement()
-	: PostEffectBufferShader()
+EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 {
 	MakeCommonProperties();
 	// publish input connection of the effect

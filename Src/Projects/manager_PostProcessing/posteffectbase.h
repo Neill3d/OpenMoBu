@@ -74,44 +74,7 @@ public:
 	/// </summary>
 	static GLint GetMaskSamplerSlot() { return 4; }
 
-
 	static GLint GetWorldNormalSamplerSlot() { return 3; }
-
-protected:
-
-	void PrepareCommonLocations(GLSLShaderProgram* shader);
-
-	/// <summary>
-	/// collect common data values into a buffer, /see UploadCommonData to upload values into gpu shader
-	/// </summary>
-	void CollectCommonData(PostPersistentData* data, FBComponent* userObject, const char* enableMaskingPropertyName);
-
-	/// <summary>
-	/// glsl shader must be binded, upload uniforms from collected common data values
-	/// </summary>
-	void UploadCommonData();
-
-	/// <summary>
-	/// a property name in @sa PostPersistentData
-	///  the property will be used to update useMasking glsl uniform value
-	/// </summary>
-	//virtual const char* GetEnableMaskPropertyName() const = 0;
-
-protected:
-	/*
-	// common functionality of effects needs common uniforms
-	GLint lowerClipLoc{ -1 };
-	GLint upperClipLoc{ -1 };
-	GLint useMaskLoc{ -1 };
-
-	struct CommonShaderData
-	{
-		float useMasking{ 0.0f };
-		float lowerClip{ 0.0f };
-		float upperClip{ 0.0f };
-		float pad{ 0.0f };
-	} mCommonShaderData;
-	*/
 };
 
 
@@ -152,6 +115,8 @@ public:
 	virtual FBComponent* GetComponent() const = 0;
 	virtual PostPersistentData* GetPostProcessData() const = 0;
 
+	virtual void OverrideComponent(FBComponent* component) const = 0;
+
 protected:
 	Parameters mParameters;
 };
@@ -179,10 +144,12 @@ public:
 	FBComponent* GetComponent() const { return userObject; }
 	PostPersistentData* GetPostProcessData() const { return postProcessData; }
 
+	void OverrideComponent(FBComponent* component) const { userObject = component; }
+
 private:
 
 	FBCamera* camera{ nullptr }; //!< current camera that we are drawing with
-	FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
+	mutable FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
 	PostPersistentData* postProcessData{ nullptr }; //!< this is a main post process object for common effects properties
 
 	// cache values
@@ -259,7 +226,8 @@ public:
 		IsFlag = 3,
 		IsColor = 4,
 		ConvertWorldToScreenSpace = 5,
-		ShouldSkip = 6 //!< this is for manual processing of property (like manual reading and setting value)
+		ShouldSkip = 6, //!< this is for manual processing of property (like manual reading and setting value)
+		INVERT_VALUE = 7 //!< a given property value is going to be written as 1.0 - value to the uniform
 	};
 
 	class IUserData {
@@ -356,12 +324,14 @@ public:
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input
 /// </summary>
-class PostEffectBufferShader : public CommonEffectUniforms, public IEffectShaderConnections
+class PostEffectBufferShader : public IEffectShaderConnections
 {
 public:
 
-	PostEffectBufferShader();
+	PostEffectBufferShader(FBComponent* ownerComponent);
 	virtual ~PostEffectBufferShader();
+
+	FBComponent* GetOwner() const { return mOwner; }
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
 	virtual int GetNumberOfVariations() const abstract;
@@ -471,6 +441,9 @@ protected:
 	void	BindSystemUniforms(const IPostEffectContext* effectContext) const;
 
 protected:
+	
+	FBComponent* mOwner{ nullptr }; //!< scene component which used to communicate with a user and a scene
+	
 	bool isDownscale{ false };
 	int version; //!< keep track of resolution modifications, inc version everytime we change resolution
 	int mCurrentShader{ 0 }; //!< current variance of a shader
@@ -600,7 +573,7 @@ class PostEffectSingleShader : public PostEffectBase
 public:
 	PostEffectSingleShader()
 		: PostEffectBase()
-		, mBufferShader(std::make_unique<T>())
+		, mBufferShader(std::make_unique<T>(nullptr)) // making it without an owner component
 	{}
 	virtual ~PostEffectSingleShader()
 	{}

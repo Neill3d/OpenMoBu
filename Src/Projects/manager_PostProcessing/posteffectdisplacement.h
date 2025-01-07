@@ -26,7 +26,7 @@ private:
 
 public:
 
-	EffectShaderDisplacement();
+	EffectShaderDisplacement(FBComponent* ownerIn);
 	virtual ~EffectShaderDisplacement();
 
 	int GetNumberOfVariations() const override { return 1; }
