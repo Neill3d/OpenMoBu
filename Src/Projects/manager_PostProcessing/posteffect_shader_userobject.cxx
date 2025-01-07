@@ -44,31 +44,7 @@ const char* FBPropertyBaseEnum<EEffectResolution>::mStrings[] = {
 	0
 };
 
-// use uniformName to track down some type casts
-FBPropertyType ShaderPropertyToFBPropertyType(const IEffectShaderConnections::ShaderProperty& prop)
-{
-	switch (prop.type)
-	{
-	case IEffectShaderConnections::EPropertyType::FLOAT:
-		return (prop.HasFlag(IEffectShaderConnections::PropertyFlag::IsFlag)) ? FBPropertyType::kFBPT_bool : FBPropertyType::kFBPT_double;
-	case IEffectShaderConnections::EPropertyType::INT:
-		return FBPropertyType::kFBPT_int;
-	case IEffectShaderConnections::EPropertyType::BOOL:
-		return FBPropertyType::kFBPT_bool;
-	case IEffectShaderConnections::EPropertyType::VEC2:
-		return (prop.HasFlag(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace)) ? FBPropertyType::kFBPT_Vector3D : FBPropertyType::kFBPT_Vector2D;
-	case IEffectShaderConnections::EPropertyType::VEC3:
-		return (prop.HasFlag(IEffectShaderConnections::PropertyFlag::IsColor)) ? FBPropertyType::kFBPT_ColorRGB : FBPropertyType::kFBPT_Vector3D;
-	case IEffectShaderConnections::EPropertyType::VEC4:
-		return (prop.HasFlag(IEffectShaderConnections::PropertyFlag::IsColor)) ? FBPropertyType::kFBPT_ColorRGBA : FBPropertyType::kFBPT_Vector4D;
-	case IEffectShaderConnections::EPropertyType::MAT4:
-		return FBPropertyType::kFBPT_Vector4D; // TODO:
-	case IEffectShaderConnections::EPropertyType::TEXTURE:
-		return FBPropertyType::kFBPT_object; // reference to a texture object that we could bind to a property
-	default:
-		return FBPropertyType::kFBPT_double;
-	}
-}
+
 
 /************************************************
  *  Constructor.
@@ -306,7 +282,7 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::
 FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop)
 {
 	FBProperty* fbProperty = PropertyList.Find(prop.uniformName);
-	const FBPropertyType fbPropertyType = ShaderPropertyToFBPropertyType(prop);
+	const FBPropertyType fbPropertyType = IEffectShaderConnections::ShaderPropertyToFBPropertyType(prop);
 
 	// NOTE: check not only user property, but also a property type !
 	if (!fbProperty || fbProperty->GetPropertyType() != fbPropertyType)
@@ -400,7 +376,7 @@ bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int 
 
 	FBVector4d v;
 
-	BindSystemUniforms(pData, effectContext);
+	BindSystemUniforms(effectContext);
 
 	// setup user uniforms
 	const GLuint programId = shader->GetProgramObj();
@@ -515,7 +491,7 @@ bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int 
 	return true;
 }
 
-void UserBufferShader::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+void UserBufferShader::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext)
 {
 	
 }

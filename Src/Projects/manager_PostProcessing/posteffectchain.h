@@ -51,7 +51,7 @@ public:
 	/// <summary>
 	/// render each effect with a defined order
 	/// </summary>
-	bool Process(PostEffectBuffers* buffers, double time);
+	bool Process(PostEffectBuffers* buffers, double time, const PostEffectContextMoBu& effectContext);
 
 	bool IsCompressedDataReady() const
 	{

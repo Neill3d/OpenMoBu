@@ -22,6 +22,7 @@ private:
 	static constexpr const char* SHADER_VERTEX = "/GLSL/displacement.vsh";
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/displacement.fsh";
 	static constexpr const char* ENABLE_MASKING_PROPERTY_NAME = "Disp Use Masking";
+	static constexpr const char* MASKING_CHANNEL_PROPERTY_NAME = "Disp Masking Channel";
 
 public:
 
@@ -36,66 +37,31 @@ public:
 
 protected:
 
-	// shader locations
-	enum { LOCATIONS_COUNT = 7 };
-	union
-	{
-		struct
-		{
-			// locations
+	IEffectShaderConnections::ShaderProperty* mTime;
+	IEffectShaderConnections::ShaderProperty* mSpeed;
+	IEffectShaderConnections::ShaderProperty* mUseQuakeEffect;
+	IEffectShaderConnections::ShaderProperty* mXDistMag;
+	IEffectShaderConnections::ShaderProperty* mYDistMag;
+	IEffectShaderConnections::ShaderProperty* mXSineCycles;
+	IEffectShaderConnections::ShaderProperty* mYSineCycles;
 
-			GLint		iTime;
-			GLint		iSpeed;
-
-			GLint		useQuakeEffect;
-
-			GLint		xDistMag;
-			GLint		yDistMag;
-
-			GLint		xSineCycles;
-			GLint		ySineCycles;
-		};
-
-		GLint		arr[LOCATIONS_COUNT];
-	} mLoc;
-
-	struct ShaderData
-	{
-		float iTime;
-		float iSpeed;
-		float useQuakeEffect;
-		float xDistMag;
-		float yDistMag;
-		float xSineCycles;
-		float ySineCycles;
-	} mData;
-
+	
 	virtual const char* GetUseMaskingPropertyName() const override {
 		return ENABLE_MASKING_PROPERTY_NAME;
 	}
+	virtual const char* GetMaskingChannelPropertyName() const override {
+		return MASKING_CHANNEL_PROPERTY_NAME;
+	}
 
-	virtual bool OnPrepareUniforms(const int shaderIndex) override;
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
+
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
-
-	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
-
 };
 
 /// <summary>
 /// effect with once shader - displacement, output directly to effects chain dst buffer
 /// </summary>
 typedef PostEffectSingleShader<EffectShaderDisplacement> PostEffectDisplacement;
-
-/*
-struct PostEffectDisplacement : public PostEffectSingleShader
-{
-public:
-
-	//! a constructor
-	PostEffectDisplacement();
-
-	//! a destructor
-	virtual ~PostEffectDisplacement();
-
-	const char* GetEnableMaskPropertyName() const override { return "Disp Use Masking"; }
-};*/

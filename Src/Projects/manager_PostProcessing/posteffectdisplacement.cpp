@@ -20,17 +20,31 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 EffectShaderDisplacement::EffectShaderDisplacement()
 	: PostEffectBufferShader()
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLoc.arr[i] = -1;
+	MakeCommonProperties();
+	// publish input connection of the effect
+	//  input connections we can use to - look for locations, to read values from a given input data component, bind values from values into shader uniforms
 
-	memset(&mData, 0, sizeof(ShaderData));
+	AddProperty(IEffectShaderConnections::ShaderProperty("color", "colorSampler"))
+		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+		.SetValue(CommonEffectUniforms::GetColorSamplerSlot());
+	mTime = &AddProperty(IEffectShaderConnections::ShaderProperty("time", "iTime", nullptr))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mSpeed = &AddProperty(IEffectShaderConnections::ShaderProperty("speed", "iSpeed", nullptr))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
+	mUseQuakeEffect = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_USE_QUAKE_EFFECT, "useQuakeEffect", nullptr))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::IsFlag, true);
+
+	mXDistMag = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_MAGNITUDE_X, "xDistMag", nullptr))
+		.SetScale(0.0001f);
+	mYDistMag = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_MAGNITUDE_Y, "yDistMag", nullptr))
+		.SetScale(0.0001f);
+	mXSineCycles = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_X, "xSineCycles", nullptr));
+	mYSineCycles = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_Y, "ySineCycles", nullptr));
 }
 
 //! a destructor
 EffectShaderDisplacement::~EffectShaderDisplacement()
-{
-	
-}
+{}
 
 const char * EffectShaderDisplacement::GetName() const
 {
@@ -45,85 +59,18 @@ const char * EffectShaderDisplacement::GetFragmentFname(const int shaderIndex) c
 	return SHADER_FRAGMENT;
 }
 
-bool EffectShaderDisplacement::OnPrepareUniforms(const int shaderIndex)
-{
-	if (GLSLShaderProgram* shader = mShaders[shaderIndex].get())
-	{
-		shader->Bind();
-
-		const GLint loc = shader->findLocation("colorSampler");
-		if (loc >= 0)
-			glUniform1i(loc, CommonEffectUniforms::GetColorSamplerSlot());
-		
-		PrepareCommonLocations(shader);
-
-		mLoc.iTime = shader->findLocation("iTime");
-		mLoc.iSpeed = shader->findLocation("iSpeed");
-		mLoc.useQuakeEffect = shader->findLocation("useQuakeEffect");
-		mLoc.xDistMag = shader->findLocation("xDistMag");
-		mLoc.yDistMag = shader->findLocation("yDistMag");
-
-		mLoc.xSineCycles = shader->findLocation("xSineCycles");
-		mLoc.ySineCycles = shader->findLocation("ySineCycles");
-
-		shader->UnBind();
-
-		return true;
-	}
-
-	return false;
-}
-
 bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	CollectCommonData(nullptr, ENABLE_MASKING_PROPERTY_NAME);
+	auto postProcess = effectContext->GetPostProcessData();
 
-	double time = (pData->Disp_UsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
+	// this is a custom logic of updating uniform values
 
-	const double timerMult = pData->Disp_Speed;
+	double time = (postProcess->Disp_UsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
+	const double timerMult = postProcess->Disp_Speed;
 	const double _timer = 0.01 * timerMult * time;
 
-	const double xdist = pData->Disp_MagnitudeX;
-	const double ydist = pData->Disp_MagnitudeY;
-
-	const double xcycles = pData->Disp_SinCyclesX;
-	const double ycycles = pData->Disp_SinCyclesY;
-
-	mData.iTime = static_cast<float>(_timer);
-	mData.iSpeed = static_cast<float>(timerMult);
-	mData.useQuakeEffect = (pData->UseQuakeWaterEffect) ? 1.0f : 0.0f;
-	mData.xDistMag = 0.0001f * static_cast<float>(xdist);
-	mData.yDistMag = 0.0001f * static_cast<float>(ydist);
-	mData.xSineCycles = static_cast<float>(xcycles);
-	mData.ySineCycles = static_cast<float>(ycycles);
+	mTime->SetValue(static_cast<float>(_timer));
+	mSpeed->SetValue(static_cast<float>(timerMult));
 
 	return true;
 }
-
-void EffectShaderDisplacement::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
-{
-	UploadCommonData();
-
-	// iTime
-	if (mLoc.iTime >= 0)
-		glUniform1f(mLoc.iTime, mData.iTime);
-
-	if (mLoc.iSpeed >= 0)
-		glUniform1f(mLoc.iSpeed, mData.iSpeed);
-
-	if (mLoc.useQuakeEffect >= 0)
-		glUniform1f(mLoc.useQuakeEffect, mData.useQuakeEffect);
-
-	if (mLoc.xDistMag >= 0)
-		glUniform1f(mLoc.xDistMag, mData.xDistMag);
-
-	if (mLoc.yDistMag >= 0)
-		glUniform1f(mLoc.yDistMag, mData.yDistMag);
-
-	if (mLoc.xSineCycles >= 0)
-		glUniform1f(mLoc.xSineCycles, mData.xSineCycles);
-
-	if (mLoc.ySineCycles >= 0)
-		glUniform1f(mLoc.ySineCycles, mData.ySineCycles);
-}
-

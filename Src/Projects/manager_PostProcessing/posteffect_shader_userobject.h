@@ -138,12 +138,15 @@ protected:
 	*/
 
 	virtual const char* GetUseMaskingPropertyName() const override { return "Use Masking"; }
+	virtual const char* GetMaskingChannelPropertyName() const override { return "Masking Channel"; }
+	//!< if true, once shader is loaded, let's inspect all the uniforms and make properties from them
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return true; }
 
 	void	RemoveShaderProperties();
 	
 
 	
-	void BindSystemUniforms(const IPostEffectContext* effectContext) const;
+	//void BindSystemUniforms(const IPostEffectContext* effectContext) const;
 
 	//! prepare uniforms for a given variation of the effect
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
@@ -151,7 +154,7 @@ protected:
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
-	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips) override;
+	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext) override;
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertyAdded(ShaderProperty& property) override;

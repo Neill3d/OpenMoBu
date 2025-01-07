@@ -28,6 +28,11 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 class PostEffectShaderBilateralBlur : public PostEffectBufferShader
 {
 public:
+	static constexpr const char* SHADER_NAME = "Gaussian Blur";
+	static constexpr const char* VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
+	static constexpr const char* FRAGMENT_SHADER_FILE = "/GLSL/imageBlur.glslf";
+
+public:
 
 	PostEffectShaderBilateralBlur(FBComponent* uiComponent=nullptr);
 	virtual ~PostEffectShaderBilateralBlur();
@@ -47,24 +52,27 @@ public:
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h) override;
 
-	
-
-	// could be input layer (slot 0), depth texture or user textures from connected texture of effect shader
-	void SetTextureId(GLint textureId);
-	void SetScale(const FBVector2d& scale);
+public:
+	IEffectShaderConnections::ShaderProperty* ColorTexture{ nullptr };
+	IEffectShaderConnections::ShaderProperty* BlurScale{ nullptr };
 
 protected:
+
+	virtual const char* GetUseMaskingPropertyName() const override { return nullptr; }
+	virtual const char* GetMaskingChannelPropertyName() const override { return nullptr; }
+	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
+
 	//! is called once the shader is loaded
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
 private:
-	GLint		mColorSamplerLoc{ -1 };
-	GLint		mLocImageBlurScale{ -1 };
+	//GLint		mColorSamplerLoc{ -1 };
+	//GLint		mLocImageBlurScale{ -1 };
 
-	FBVector2d	mBlurMaskScale;
-	GLint		mTextureId; //!< a binded texture, that we are going to blur
+	//FBVector2d	mBlurMaskScale;
+	//GLint		mTextureId; //!< a binded texture, that we are going to blur
 
 	FBComponent* mUIComponent{ nullptr };
 };
@@ -87,6 +95,10 @@ class EffectShaderBilateralBlurUserObject : public EffectShaderUserObject
 	FBClassDeclare(EffectShaderBilateralBlurUserObject, EffectShaderUserObject)
 		FBDeclareUserObject(EffectShaderBilateralBlurUserObject)
 
+public:
+	static constexpr const char* INPUT_TEXTURE_LABEL = "Input Texture";
+	static constexpr const char* BLUR_SCALE_LABEL = "Blur Scale";
+	
 public:
 	//! a constructor
 	EffectShaderBilateralBlurUserObject(const char* pName = nullptr, HIObject pObject = nullptr);

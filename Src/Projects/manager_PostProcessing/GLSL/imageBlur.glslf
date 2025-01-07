@@ -17,15 +17,15 @@ in vec2 TexCoord;
 out vec4 FragColor;
 
 uniform sampler2D 	colorSampler;
-uniform vec4 	scale;
+uniform vec2 		scale;
+uniform vec2		iResolution; // system uniform, width and height of the processed image
+uniform vec2		texelSize; // system uniform 1/resolution
 
 //-------------------------------------------------------------------------
 
 
 vec4 textureWithKernel(in sampler2D sampler, in vec2 tx)
 {
-	vec2 texelSize = vec2(scale.z, scale.w); // outputSize;
-	
 	vec4 color, color2;
 	vec4 tap0 = texture2D(sampler, tx);
 	vec4 tap1 = texture2D(sampler, tx + texelSize * vec2( 0.4,  0.9));
@@ -52,7 +52,7 @@ void main (void)
 {
 	vec2 texCoord = TexCoord;
 
-	vec2 dx  = scale.xy;
+	vec2 dx  = scale / iResolution;
 	vec2 sdx = dx;
 	vec4 srccolor = textureWithKernel ( colorSampler, texCoord );
 	vec4 sum = srccolor * 0.134598;

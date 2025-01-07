@@ -50,6 +50,21 @@ class PostPersistentData : public FBUserObject
 	FBDeclareUserObject(PostPersistentData);
 
 public:
+	static constexpr const char* UPPER_CLIP = "Bottom Clip Percent";
+	static constexpr const char* LOWER_CLIP = "Top Clip Percent";
+
+	static constexpr const char* DISP_USE_MASKING = "Disp Use Masking";
+	static constexpr const char* DISP_MASKING_CHANNEL = "Disp Masking Channel";
+
+	static constexpr const char* DISP_USE_QUAKE_EFFECT = "Use Quake Water Effect";
+	static constexpr const char* DISP_USE_PLAY_TIME = "Disp Use Play Time";
+	static constexpr const char* DISP_SPEED = "Displacement Speed";
+	static constexpr const char* DISP_MAGNITUDE_X = "Disp Magnitude X";
+	static constexpr const char* DISP_MAGNITUDE_Y = "Disp Magnitude Y";
+	static constexpr const char* DISP_SIN_CYCLES_X = "Disp Sin Cycles X";
+	static constexpr const char* DISP_SIN_CYCLES_Y = "Disp Sin Cycles Y";
+
+public:
 	//! a constructor
 	PostPersistentData(const char *pName = NULL, HIObject pObject = NULL);
 

@@ -518,8 +518,8 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, UserEffects, "User Effects", nullptr, nullptr);
 
 	FBPropertyPublish(this, AutoClipFromHUD, "Auto Clip From HUD", nullptr, nullptr);
-	FBPropertyPublish(this, UpperClip, "Bottom Clip Percent", nullptr, nullptr);
-	FBPropertyPublish(this, LowerClip, "Top Clip Percent", nullptr, nullptr);
+	FBPropertyPublish(this, UpperClip, UPPER_CLIP, nullptr, nullptr);
+	FBPropertyPublish(this, LowerClip, LOWER_CLIP, nullptr, nullptr);
 
 	// global masking properties
 	FBPropertyPublish(this, UseCompositeMasking, "Use Masking", nullptr, nullptr);
@@ -694,18 +694,18 @@ bool PostPersistentData::FBCreate()
 	// Displacement
 
 	FBPropertyPublish(this, Displacement, "Displacement", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_UseMasking, "Disp Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_MaskingChannel, "Disp Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_UseMasking, DISP_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_MaskingChannel, DISP_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, UseQuakeWaterEffect, "Use Quake Water Effect", nullptr, nullptr);
+	FBPropertyPublish(this, UseQuakeWaterEffect, DISP_USE_QUAKE_EFFECT, nullptr, nullptr);
 
-	FBPropertyPublish(this, Disp_UsePlayTime, "Disp Use Play Time", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_Speed, "Displacement Speed", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_MagnitudeX, "Disp Magnitude X", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_MagnitudeY, "Disp Magnitude Y", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_UsePlayTime, DISP_USE_PLAY_TIME, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_Speed, DISP_SPEED, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_MagnitudeX, DISP_MAGNITUDE_X, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_MagnitudeY, DISP_MAGNITUDE_Y, nullptr, nullptr);
 
-	FBPropertyPublish(this, Disp_SinCyclesX, "Disp Sin Cycles X", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_SinCyclesY, "Disp Sin Cycles Y", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_SinCyclesX, DISP_SIN_CYCLES_X, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_SinCyclesY, DISP_SIN_CYCLES_Y, nullptr, nullptr);
 
 	// Fish Eye
 

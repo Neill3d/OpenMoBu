@@ -98,6 +98,7 @@ protected:
 	//virtual const char* GetEnableMaskPropertyName() const = 0;
 
 protected:
+	/*
 	// common functionality of effects needs common uniforms
 	GLint lowerClipLoc{ -1 };
 	GLint upperClipLoc{ -1 };
@@ -110,6 +111,7 @@ protected:
 		float upperClip{ 0.0f };
 		float pad{ 0.0f };
 	} mCommonShaderData;
+	*/
 };
 
 
@@ -145,6 +147,10 @@ public:
 	virtual double* GetModelViewMatrix() const = 0;
 	virtual double* GetProjectionMatrix() const = 0;
 	virtual double* GetModelViewProjMatrix() const = 0;
+
+	virtual FBCamera* GetCamera() const = 0;
+	virtual FBComponent* GetComponent() const = 0;
+	virtual PostPersistentData* GetPostProcessData() const = 0;
 
 protected:
 	Parameters mParameters;
@@ -197,6 +203,8 @@ private:
 	}
 };
 
+
+
 enum class ShaderSystemUniform
 {
 	INPUT_COLOR_SAMPLER_2D, //!< this is an input image that we read from
@@ -212,6 +220,7 @@ enum class ShaderSystemUniform
 
 	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
 	iRESOLUTION, //!< vec2 absolute resolution, compatible with shadertoy
+	TEXEL_SIZE, //!< vec2 of a texel size, computed as 1/resolution
 
 	iTIME, //!< compatible with shadertoy, float, shader playback time (in seconds)
 	iDATE, //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
@@ -244,11 +253,13 @@ public:
 
 	enum class PropertyFlag
 	{
+		SYSTEM = 1,	// flag that the property is a system one, like masking, upper/lower clip, etc.
 		IsClamped100 = 1,
 		IsClamped1 = 2,
 		IsFlag = 3,
 		IsColor = 4,
-		ConvertWorldToScreenSpace = 5
+		ConvertWorldToScreenSpace = 5,
+		ShouldSkip = 6 //!< this is for manual processing of property (like manual reading and setting value)
 	};
 
 	class IUserData {
@@ -289,54 +300,35 @@ public:
 		// Type-safe dynamic storage for float values
 		std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value;
 
+		float scale{ 1.0f };
+
 		ShaderProperty() : value(std::array<float, 1>{ 0.0f }) {}
 
-		ShaderProperty(const char* nameIn, const char* uniformNameIn, IEffectShaderConnections::EPropertyType typeIn, FBProperty* fbPropertyIn)
-		{
-			strcpy_s(name, sizeof(char) * 64, nameIn);
-			strcpy_s(uniformName, sizeof(char)*64, uniformNameIn);
-			SetType(typeIn);
-			fbProperty = fbPropertyIn;
-		}
+		// constructor to associate property with fbProperty, recognize the type
+		ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn = nullptr);
+		ShaderProperty(const char* nameIn, const char* uniformNameIn, IEffectShaderConnections::EPropertyType typeIn, FBProperty* fbPropertyIn = nullptr);
 
-		void SetType(IEffectShaderConnections::EPropertyType newType) {
-			type = newType;
-			switch (newType) {
-			case IEffectShaderConnections::EPropertyType::INT:
-			case IEffectShaderConnections::EPropertyType::FLOAT:
-			case IEffectShaderConnections::EPropertyType::TEXTURE:
-				value = std::array<float, 1>{ 0.0f };
-				break;
-			case IEffectShaderConnections::EPropertyType::VEC2:
-				value = std::array<float, 2>{0.0f, 0.0f};
-				break;
-			case IEffectShaderConnections::EPropertyType::VEC3:
-				value = std::array<float, 3>{0.0f, 0.0f, 0.0f};
-				break;
-			case IEffectShaderConnections::EPropertyType::VEC4:
-				value = std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f};
-				break;
-			case IEffectShaderConnections::EPropertyType::MAT4:
-				value = std::vector<float>(15, 0.0f);
-				break;
-			}
-		}
+		ShaderProperty& SetType(IEffectShaderConnections::EPropertyType newType);
+		ShaderProperty& SetFlag(PropertyFlag testFlag, bool setValue);
+		
+		ShaderProperty& SetScale(float scaleIn);
+		float GetScale() const;
 
-		float* GetFloatData() {
-			return std::visit([](auto& data) -> float* {
-				return data.data();
-			}, value);
-		}
+		ShaderProperty& SetValue(int valueIn);
+		ShaderProperty& SetValue(float valueIn);
+		ShaderProperty& SetValue(double valueIn);
 
-		bool HasFlag(PropertyFlag testFlag) const {
-			return flags.test(static_cast<size_t>(testFlag));
-		}
+		float* GetFloatData();
+
+		bool HasFlag(PropertyFlag testFlag) const;
+
+		void ReadFBPropertyValue(const IPostEffectContext* effectContext, int maskIndex);
 	};
 
 	virtual ~IEffectShaderConnections() = default;
 
-	virtual int AddProperty(const ShaderProperty& property) = 0;
-	virtual int AddProperty(ShaderProperty&& property) = 0;
+	virtual ShaderProperty& AddProperty(const ShaderProperty& property) = 0;
+	virtual ShaderProperty& AddProperty(ShaderProperty&& property) = 0;
 
 	virtual int GetNumberOfProperties() = 0;
 	virtual ShaderProperty& GetProperty(int index) = 0;
@@ -350,6 +342,13 @@ public:
 	// look for a UI interface, and read properties and its values
 	// should it be a separate class
 	virtual bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) = 0;
+
+	// use uniformName to track down some type casts
+	static FBPropertyType ShaderPropertyToFBPropertyType(const ShaderProperty& prop);
+
+	static EPropertyType FBPropertyToShaderPropertyType(const FBPropertyType& fbType);
+
+	static EPropertyType UniformTypeToShaderPropertyType(GLenum type);
 };
 
 
@@ -392,12 +391,13 @@ public:
 	bool Load(const char* shaderLocation);
 
 	//! is being called after \ref Load is succeed
+	//!  so we could initialized some property or system uniform locations
 	bool PrepUniforms(const int variationIndex);
 
 	/// <summary>
 	/// is being called right before Render and when shader is binded
 	/// </summary>
-	void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
+	void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
 
 	/// repeated call of the shader (define iPass uniform to distinguish)
 	virtual const int GetNumberOfPasses() const;
@@ -409,7 +409,7 @@ public:
 	/// <summary>
 	/// the given buffer shader will process the given inputTextureId and write result into dst frame buffer
 	/// </summary>
-	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
+	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
 
 	// means that processing will use smaller size of a buffer
 	void SetDownscaleMode(const bool value);
@@ -424,8 +424,8 @@ public:
 public:
 	//
 	// IEffectShaderConnections
-	virtual int AddProperty(const ShaderProperty& property) override;
-	virtual int AddProperty(ShaderProperty&& property) override;
+	virtual ShaderProperty& AddProperty(const ShaderProperty& property) override;
+	virtual ShaderProperty& AddProperty(ShaderProperty&& property) override;
 
 	virtual int GetNumberOfProperties() override;
 	virtual ShaderProperty& GetProperty(int index) override;
@@ -433,11 +433,16 @@ public:
 
 	// TODO: search for locations
 
+	void MakeCommonProperties();
+
+	int MakePropertyLocationsFromShaderUniforms();
+	int MakeSystemLocationsFromShaderUniforms();
+
 	int PopulatePropertiesFromShaderUniforms();
 
 	// TODO: upload properties values into uniforms
 
-	void AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips);
+	void AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
 
 	// TODO: auto update values from fb properties
 
@@ -445,6 +450,8 @@ public:
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
+
+	bool CollectUIValues(FBComponent* component, const IPostEffectContext* effectContext, int maskIndex);
 
 protected:
 
@@ -454,7 +461,7 @@ protected:
 	virtual void OnPropertyAdded(ShaderProperty& property) 
 	{}
 
-private:
+protected:
 
 	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
 	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
@@ -473,13 +480,14 @@ protected:
 	void FreeShaders();
 
 	//!< TODO: masking property in the UI, should we move it into input connection ?!
-	virtual const char* GetUseMaskingPropertyName() const {
-		return nullptr;
-	}
+	virtual const char* GetUseMaskingPropertyName() const = 0;
+	virtual const char* GetMaskingChannelPropertyName() const = 0;
+	//!< if true, once shader is loaded, let's inspect all the uniforms and make properties from them
+	virtual bool DoPopulatePropertiesFromUniforms() const = 0;
 
 	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) { return true; }
-	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
+	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext)
 	{}
 
 	//! bind effect shader program
@@ -536,23 +544,23 @@ public:
 
 	struct RenderEffectContext
 	{
-		// input in the effects chain for this effect
-		GLuint srcTextureId;
-		GLuint depthTextureId;
-
 		PostEffectBuffers* buffers;
 
-		// write an effect composition to a given frame buffer
-		FrameBuffer* dstFrameBuffer;
-		int colorAttachment; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
+		// INPUT: input in the effects chain for this effect
+		GLuint srcTextureId;
+		GLuint depthTextureId;
 
 		int viewWidth;
 		int viewHeight;
 
 		bool generateMips;
+
+		// OUTPUT: write an effect composition to a given frame buffer
+		FrameBuffer* dstFrameBuffer;
+		int colorAttachment; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
 	};
 
-	virtual void Process(const RenderEffectContext& context);
+	virtual void Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext);
 
 	virtual int GetNumberOfBufferShaders() const abstract;
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) abstract;

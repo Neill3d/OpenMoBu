@@ -231,7 +231,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
                 mEffectChain.Prep(mPaneSettings[nPane], effectContext);
 
-                if (mEffectChain.Process(currBuffers, sysTimeSecs))
+                if (mEffectChain.Process(currBuffers, sysTimeSecs, effectContext))
                 {
                     CHECK_GL_ERROR();
 

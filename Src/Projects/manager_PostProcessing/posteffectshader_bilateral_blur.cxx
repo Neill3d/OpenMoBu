@@ -28,16 +28,17 @@ PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComp
 	: PostEffectBufferShader()
 	, mUIComponent(uiComponent)
 {
-	mTextureId = CommonEffectUniforms::GetColorSamplerSlot();
+	//mTextureId = CommonEffectUniforms::GetColorSamplerSlot();
 
 	if (FBIS(uiComponent, EffectShaderBilateralBlurUserObject))
 	{
 		EffectShaderBilateralBlurUserObject* userObject = FBCast<EffectShaderBilateralBlurUserObject>(uiComponent);
 
-		ShaderProperty textureProperty(userObject->InputTexture.GetName(), "colorSampler", EPropertyType::TEXTURE, &userObject->InputTexture);
-		AddProperty(std::move(textureProperty));
+		ShaderProperty textureProperty(EffectShaderBilateralBlurUserObject::INPUT_TEXTURE_LABEL, "colorSampler", EPropertyType::TEXTURE, &userObject->InputTexture);
+		AddProperty(std::move(textureProperty))
+			.SetValue(CommonEffectUniforms::GetColorSamplerSlot());
 
-		ShaderProperty blurScaleProperty(userObject->BlurScale.GetName(), "scale", EPropertyType::VEC2, &userObject->BlurScale);
+		ShaderProperty blurScaleProperty(EffectShaderBilateralBlurUserObject::BLUR_SCALE_LABEL, "scale", EPropertyType::VEC2, &userObject->BlurScale);
 		AddProperty(std::move(blurScaleProperty));
 	}
 }
@@ -49,23 +50,24 @@ PostEffectShaderBilateralBlur::~PostEffectShaderBilateralBlur()
 //! an effect public name
 const char* PostEffectShaderBilateralBlur::GetName() const
 {
-	return "Guassian Blur";
+	return SHADER_NAME;
 }
 //! get a filename of vertex shader, for this effect. returns a relative filename
 const char* PostEffectShaderBilateralBlur::GetVertexFname(const int variationIndex) const
 {
-	return "/GLSL/simple130.glslv";
+	return VERTEX_SHADER_FILE;
 }
 
 //! get a filename of a fragment shader, for this effect, returns a relative filename
 const char* PostEffectShaderBilateralBlur::GetFragmentFname(const int variationIndex) const
 {
-	return "/GLSL/imageBlur.glslf";
+	return FRAGMENT_SHADER_FILE;
 }
 
 //! prepare uniforms for a given variation of the effect
 bool PostEffectShaderBilateralBlur::OnPrepareUniforms(const int variationIndex)
 {
+	/*
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
 		return false;
@@ -90,18 +92,8 @@ bool PostEffectShaderBilateralBlur::OnPrepareUniforms(const int variationIndex)
 			scaleProperty->location = mLocImageBlurScale;
 		}
 	}
-
+	*/
 	return true;
-}
-
-void PostEffectShaderBilateralBlur::SetTextureId(GLint textureId)
-{
-	mTextureId = textureId;
-}
-
-void PostEffectShaderBilateralBlur::SetScale(const FBVector2d& scale)
-{
-	mBlurMaskScale = scale;
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
@@ -113,7 +105,7 @@ bool PostEffectShaderBilateralBlur::OnCollectUI(const IPostEffectContext* effect
 		mBlurMaskScale = pData->GetMaskScale(maskIndex);
 	}
 	*/
-
+	/*
 	if (mUIComponent)
 	{
 		if (FBIS(mUIComponent, EffectShaderBilateralBlurUserObject))
@@ -127,7 +119,7 @@ bool PostEffectShaderBilateralBlur::OnCollectUI(const IPostEffectContext* effect
 			}
 		}
 	}
-
+	*/
 	return true;
 }
 
@@ -139,12 +131,24 @@ const int PostEffectShaderBilateralBlur::GetNumberOfPasses() const
 //! initialize a specific path for drawing
 bool PostEffectShaderBilateralBlur::PrepPass(const int pass, int w, int h)
 {
+	/*
 	GLSLShaderProgram* shader = GetShaderPtr();
 	if (!shader)
 		return false;
 
 	if (mColorSamplerLoc >= 0)
 		glUniform1i(mColorSamplerLoc, mTextureId);
+
+	if (BlurScale->location >= 0)
+	{
+		const float* value = BlurScale->GetFloatData();
+
+		glUniform4f(BlurScale->location,
+			static_cast<float>(value[0]) / static_cast<float>(w),
+			static_cast<float>(value[1]) / static_cast<float>(h),
+			1.0f / static_cast<float>(w),
+			1.0f / static_cast<float>(h));
+	}
 
 	if (mLocImageBlurScale >= 0)
 	{
@@ -154,7 +158,7 @@ bool PostEffectShaderBilateralBlur::PrepPass(const int pass, int w, int h)
 			1.0f / static_cast<float>(w),
 			1.0f / static_cast<float>(h));
 	}
-	
+	*/
 	return true;
 }
 
@@ -175,10 +179,11 @@ bool EffectShaderBilateralBlurUserObject::FBCreate()
 {
 	ParentClass::FBCreate();
 
-	FBPropertyPublish(this, BlurScale, "Blur Scale", nullptr, nullptr);
+	FBPropertyPublish(this, InputTexture, INPUT_TEXTURE_LABEL, nullptr, nullptr);
+	FBPropertyPublish(this, BlurScale, BLUR_SCALE_LABEL, nullptr, nullptr);
 
 	BlurScale = FBVector2d(1.0, 1.0);
-	ShaderFile = "/GLSL/imageBlur.glslf";
+	ShaderFile = PostEffectShaderBilateralBlur::FRAGMENT_SHADER_FILE;
 	ShaderFile.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
 	NumberOfPasses.ModifyPropertyFlag(FBPropertyFlag::kFBPropertyFlagReadOnly, true);
 	UniqueClassId = 63;
