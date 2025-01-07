@@ -34,11 +34,15 @@ Please post issues and feature requests to this [github repository issues sectio
 
 ## Supporters and Special Thanks
 
-A gold supporter for the repository and special thanks to Les Androids Associes!
+The biggest part of the project was developed during my work for [Les Androids Associes](https://www.androids.fr/).
+
+A huge thanks to them for making the project open source and for their support. They're also great guys!
 
 ## Contact
   
   Sergei Solokhin (Neill3d)
-  e-mail to: neill3d@gmail.com
+  e-mail to: neill 3 d at gmail.
 
-  https://www.facebook.com/Neill3D
+  [Discord Community Server](https://discord.gg/EU5E2p9VCf)
+
+  [Facebook Neill3d Page](https://www.facebook.com/Neill3D)
