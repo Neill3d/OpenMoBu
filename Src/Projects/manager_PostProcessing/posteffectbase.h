@@ -291,6 +291,7 @@ public:
 		bool HasFlag(PropertyFlag testFlag) const;
 
 		void ReadFBPropertyValue(const IPostEffectContext* effectContext, int maskIndex);
+		void ReadTextureConnections();
 	};
 
 	virtual ~IEffectShaderConnections() = default;
@@ -420,8 +421,9 @@ public:
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
-
 	bool CollectUIValues(FBComponent* component, const IPostEffectContext* effectContext, int maskIndex);
+
+	bool ReloadPropertyShaders();
 
 protected:
 

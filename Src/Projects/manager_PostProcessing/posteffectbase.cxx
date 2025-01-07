@@ -184,6 +184,22 @@ void PostEffectBufferShader::UploadUniforms(PostEffectBuffers* buffers, FrameBuf
 	OnUploadUniforms(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips, effectContext);
 }
 
+bool PostEffectBufferShader::ReloadPropertyShaders()
+{
+	for (auto& prop : mProperties)
+	{
+		if (prop.second.type == IEffectShaderConnections::EPropertyType::TEXTURE)
+			prop.second.ReadTextureConnections();
+
+		if (prop.second.shaderUserObject)
+		{
+			if (!prop.second.shaderUserObject->DoReloadShaders())
+				return false;
+		}
+	}
+	return true;
+}
+
 const int PostEffectBufferShader::GetNumberOfPasses() const
 {
 	return 1;
@@ -556,9 +572,26 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 	} break;
 
 	case IEffectShaderConnections::EPropertyType::TEXTURE:
-		texture = nullptr;
-		shaderUserObject = nullptr;
+		ReadTextureConnections();
+		
+		if (shaderUserObject)
+		{
+			FBComponent* tempComponent = effectContext->GetComponent();
+			effectContext->OverrideComponent(shaderUserObject);
+			shaderUserObject->GetUserShaderPtr()->CollectUIValues(effectContext, maskIndex);
+			effectContext->OverrideComponent(tempComponent);
+		}
+		break;
+	}
+}
 
+void IEffectShaderConnections::ShaderProperty::ReadTextureConnections()
+{
+	texture = nullptr;
+	shaderUserObject = nullptr;
+
+	if (FBIS(fbProperty, FBPropertyListObject))
+	{
 		if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(fbProperty))
 		{
 			if (listObjProp->GetCount() > 0)
@@ -576,14 +609,9 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 					assert(shaderObject != nullptr);
 
 					shaderUserObject = shaderObject;
-					FBComponent* tempComponent = effectContext->GetComponent();
-					effectContext->OverrideComponent(shaderObject);
-					shaderObject->GetUserShaderPtr()->CollectUIValues(effectContext, maskIndex);
-					effectContext->OverrideComponent(tempComponent);
 				}
 			}
 		}
-		break;
 	}
 }
 

@@ -156,25 +156,14 @@ bool EffectShaderUserObject::DoReloadShaders()
 	if (!mUserShader->Load(0, vertex_path, fragment_path))
 	{
 		LOGE("[PostEffectUserObject] Failed to load shaders!\n");
-
-		//mUserShader.reset(nullptr);
 		return false;
 	}
 	
 	// reload connected input buffers
-	if (UniqueClassId == 57)
+	if (PostEffectBufferShader* bufferShader = GetUserShaderPtr())
 	{
-		if (UserBufferShader* bufferShader = static_cast<UserBufferShader*>(GetUserShaderPtr()))
-		{
-			for (auto& prop : bufferShader->mProperties)
-			{
-				if (prop.second.shaderUserObject)
-				{
-					if (!prop.second.shaderUserObject->DoReloadShaders())
-						return false;
-				}
-			}
-		}
+		if (!bufferShader->ReloadPropertyShaders())
+			return false;
 	}
 	
 	return true;

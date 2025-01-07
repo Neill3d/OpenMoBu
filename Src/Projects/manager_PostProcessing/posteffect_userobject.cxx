@@ -161,6 +161,10 @@ bool PostEffectUserObject::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore 
 	if (pStoreWhat == kFbxObjectStore::kCleanup)
 	{
 		RefreshEffectConnections();
+		if (IsReadyAndActive())
+		{
+			DoReloadShaders();
+		}
 	}
 
 	return ParentClass::FbxRetrieve(pFbxObject, pStoreWhat);
