@@ -10,7 +10,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include "posteffectbase.h"
-#include <random>
 
 // forward
 class PostPersistentData;
@@ -27,13 +26,14 @@ private:
 public:
 
 	EffectShaderDisplacement(FBComponent* ownerIn);
-	virtual ~EffectShaderDisplacement();
+	virtual ~EffectShaderDisplacement()
+	{}
 
 	int GetNumberOfVariations() const override { return 1; }
 
-	const char* GetName() const override;
-	const char* GetVertexFname(const int shaderIndex) const override;
-	const char* GetFragmentFname(const int shaderIndex) const override;
+	const char* GetName() const override { return SHADER_NAME; }
+	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
+	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
 protected:
 

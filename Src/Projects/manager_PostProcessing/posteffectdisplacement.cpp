@@ -42,23 +42,6 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 	mYSineCycles = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_Y, "ySineCycles", nullptr));
 }
 
-//! a destructor
-EffectShaderDisplacement::~EffectShaderDisplacement()
-{}
-
-const char * EffectShaderDisplacement::GetName() const
-{
-	return SHADER_NAME;
-}
-const char * EffectShaderDisplacement::GetVertexFname(const int shaderIndex) const
-{
-	return SHADER_VERTEX;
-}
-const char * EffectShaderDisplacement::GetFragmentFname(const int shaderIndex) const
-{
-	return SHADER_FRAGMENT;
-}
-
 bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	auto postProcess = effectContext->GetPostProcessData();

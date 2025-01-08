@@ -35,16 +35,12 @@ PostEffectFBElementClassImplementation(EffectShaderUserObject, "Effect Shader", 
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-
-
 const char* FBPropertyBaseEnum<EEffectResolution>::mStrings[] = {
 	"Original",
 	"Downscale 1/2",
 	"Downscale 1/4",
 	0
 };
-
-
 
 /************************************************
  *  Constructor.
