@@ -18,6 +18,13 @@
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 
+static std::string g_currentOpenFile = "";
+
+void SetCurrentFileOpenPath(const char* filepath)
+{
+	g_currentOpenFile = filepath;
+}
+
 /////////////////////////////////////////////////////////////
 
 bool IsFileExists ( const char* filename ) 
@@ -88,6 +95,21 @@ bool FindEffectLocation(const char *effect, char* outPath, const int outPathLeng
 			return true;
 		}
 
+	}
+	
+	// look in fbx current work directory
+	{
+		std::filesystem::path path = g_currentOpenFile.c_str();
+		path.remove_filename();
+
+		const std::string strPath = path.generic_string();
+		const char* szPath = strPath.c_str();
+
+		if (fn_checkLocation(szPath, effect))
+		{
+			fn_copyLocation(szPath, outPath, outPathLength);
+			return true;
+		}
 	}
 	
 	// look in alternative plugin paths

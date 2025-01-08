@@ -16,6 +16,7 @@
 
 #include <functional>
 
+void SetCurrentFileOpenPath(const char* filepath);
 
 /// <summary>
 /// return true if a given filename could be found, otherwise false

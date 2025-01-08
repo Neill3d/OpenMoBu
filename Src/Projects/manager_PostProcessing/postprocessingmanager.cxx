@@ -139,6 +139,7 @@ bool PostProcessingManager::Open()
 	mApplication.OnFileNewCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileNew);
 	mApplication.OnFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpen);
 	mApplication.OnFileOpenCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
+	mApplication.OnOverrideFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
 
 	mSystem.Scene->OnChange.Add(this, (FBCallback)&PostProcessingManager::EventSceneChange);
 
@@ -309,6 +310,7 @@ bool PostProcessingManager::Close()
 	mApplication.OnFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpen);
 	mApplication.OnFileMerge.Remove(this, (FBCallback)&PostProcessingManager::EventFileMerge);
 	mApplication.OnFileOpenCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
+	mApplication.OnOverrideFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
 
 	mSystem.Scene->OnChange.Remove(this, (FBCallback)&PostProcessingManager::EventSceneChange);
 	mSystem.OnConnectionNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnNotify);
@@ -333,6 +335,12 @@ void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
 	//mSettings = nullptr;
 	skipRender = true;
+}
+
+void PostProcessingManager::EventFileOpenOverride(HISender pSender, HKEvent pEvent)
+{
+	FBEventOverrideFileOpen lEvent(pEvent);
+	SetCurrentFileOpenPath(lEvent.FilePath.AsString());
 }
 
 void PostProcessingManager::EventFileMerge(HISender pSender, HKEvent pEvent)

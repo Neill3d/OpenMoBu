@@ -62,6 +62,7 @@ public: // CALLBACKS
 	void EventFileOpen(HISender pSender, HKEvent pEvent);
 	void EventFileMerge(HISender pSender, HKEvent pEvent);
 	void EventFileOpenComplete(HISender pSender, HKEvent pEvent);
+	void EventFileOpenOverride(HISender pSender, HKEvent pEvent);
 
 	void OnPerFrameSynchronizationCallback(HISender pSender, HKEvent pEvent);
 	void OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent);
