@@ -52,7 +52,10 @@ set (SHADERS
     GLSL/filmGrain.fsh
     GLSL/fishEye.fsh
     GLSL/fishEye.vsh
-    GLSL/imageBlur.fsh
+    GLSL/imageBlur.glslf
+    GLSL/insert_header.glslf
+    GLSL/insert_image_crop.glslf
+    GLSL/insert_masking.glslf
     GLSL/lensFlare.fsh
     GLSL/lensFlareAnamorphic.fsh
     GLSL/lensFlareBubble.fsh

@@ -133,6 +133,8 @@ private:
 	void	PushUpperLowerClipForEffects();
 	void	PopUpperLowerClipForEffects();
 
+	void	LoadShaderTextInsertions();
+
 public:
 	bool			mLastProcessCompositions;
 

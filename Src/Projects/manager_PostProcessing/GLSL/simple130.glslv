@@ -13,13 +13,10 @@
 
 #version 120
 
-//layout(location = 0) in vec3 aPos;
-//layout(location = 1) in vec2 aTexCoord;
-
-varying vec2 TexCoord;
+varying vec2 texCoord;
 
 void main(void)
 {
 	gl_Position     = gl_ModelViewProjectionMatrix * gl_Vertex;
-	TexCoord = gl_MultiTexCoord0.st;
+	texCoord = gl_MultiTexCoord0.st;
 }

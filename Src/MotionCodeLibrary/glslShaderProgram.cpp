@@ -13,6 +13,11 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "CheckGLError.h"
 #include "FileUtils.h"
 
+#include <string>
+#include <string_view>
+#include <sstream>
+#include <iostream>
+
 //
 extern void LOGI(const char* pFormatString, ...);
 extern void LOGE(const char* pFormatString, ...);
@@ -22,9 +27,28 @@ extern void LOGE(const char* pFormatString, ...);
 
 bool GLSLShaderProgram::PRINT_WARNINGS = true;
 
+std::unordered_map<std::string, std::string, StringViewHash, StringViewEqual> GLSLShaderProgram::g_TextInsertions;
+
+
 GLSLShaderProgram::GLSLShaderProgram() 
 {}
 
+void GLSLShaderProgram::AddTextInsertion(const char* insertion_keyword, const char* insertion_data)
+{
+	g_TextInsertions.emplace(insertion_keyword, insertion_data);
+}
+
+bool GLSLShaderProgram::AddTextInsertionFromFile(const char* insertion_keyword, const char* file_name)
+{
+	FileReadScope insertionFile(file_name);
+
+	std::string insertionText;
+	insertionFile.ReadString(insertionText);
+
+	bool status = !insertionText.empty();
+	g_TextInsertions.emplace(insertion_keyword, std::move(insertionText));
+	return status;
+}
 
 bool GLSLShaderProgram::ReCompileShaders( const char* vertex_file, const char* fragment_file )
 {	
@@ -190,43 +214,122 @@ bool GLSLShaderProgram::LoadShaders( GLhandleARB	_vertex, const char* fragment_f
 	return false;
 }
 
+
+
+bool HasAnyInsertions(const std::string& inputText, const std::unordered_map<std::string, std::string, StringViewHash, StringViewEqual>& insertions)
+{
+	const std::string insertPrefix = "INSERT: ";
+
+	if (inputText.find(insertPrefix) == std::string::npos)
+		return false;
+
+	for (const auto& key : insertions)
+	{
+		if (inputText.find(key.first) != std::string::npos)
+			return true;
+	}
+
+	return false;
+}
+
+void ProcessTextWithInsertions(std::string& inputText, const std::unordered_map<std::string, std::string, StringViewHash, StringViewEqual>& insertions)
+{
+	std::istringstream inputStream(inputText);
+	std::ostringstream outputStream;
+	std::string line;
+
+	const std::string insertPrefix = "INSERT: ";
+
+	while (std::getline(inputStream, line))
+	{
+		size_t pos = line.rfind(insertPrefix);
+		if (pos != std::string::npos) {
+
+			size_t endPos = pos + insertPrefix.size() + 1;
+			const size_t lineLen = line.size();
+
+			while (endPos < lineLen && !std::isspace(line[endPos] && line[endPos] != '\n'))
+			{
+				++endPos;
+			}
+			
+			std::string_view keyword(line.c_str() + pos, endPos - pos);
+			auto it = insertions.find(keyword);
+			if (it != end(insertions)) {
+				outputStream << it->second << '\n';
+			} else {
+				outputStream << line << '\n';
+			}
+		}
+		else {
+			outputStream << line << '\n';
+		}
+	}
+	inputText = outputStream.str();
+}
+
 bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, const char* debugName )
 {
-	const size_t headerLen = strlen(mHeaderText); // number of bytes in header
+	if (!file)
+	{
+		LOGE("[GLSLShaderProgram::LoadShader] failed to read a file");
+		return false;
+	}
+	
+	const size_t headerLen = strnlen(mHeaderText, 256); // number of bytes in header
 
 	fseek(file, 0, SEEK_END);
 	const size_t fileLen = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
-	std::vector<char> buffer(headerLen + fileLen + 1);
-	const GLcharARB*  bufferARB = buffer.data();
-
-	GLint   len = static_cast<GLint>(fileLen);
-	GLint   compileStatus;
-
-	// read shader from file
-  
-	memset( buffer.data(), 0, sizeof(char) * (headerLen + len + 1));
-	if (headerLen)
+	if (fileLen == 0) //(readlen != len)
 	{
-		memcpy(buffer.data(), &mHeaderText[0], sizeof(char) * headerLen);
-	}
-	void *buf = (void*)&buffer[headerLen];
-  
-	const size_t readlen = fread(buf, sizeof(char), fileLen, file);
-  
-	// trick to zero all outside memory
-	memset( &buffer[readlen+headerLen], 0, sizeof(char)*(len + 1 - readlen) );
-
-	if (readlen == 0) //(readlen != len)
-	{
-		LOGE("[GLSLShader] glsl shader %s has empty file size", debugName );
+		LOGE("[GLSLShaderProgram::LoadShader] glsl shader %s has empty file size", debugName);
 		return false;
 	}
 
-	len = len + static_cast<GLint>(headerLen);
-	glShaderSourceARB( shader, 1, &bufferARB, &len );
+	// read shader from file
+  
+	const size_t expectedSize = (headerLen + fileLen + 1);
+
+	std::string textBuffer;
+	textBuffer.resize(expectedSize, 0);
+
+	if (headerLen > 0)
+	{
+		strcpy_s(&textBuffer[0], headerLen, mHeaderText);
+	}
+
+	const size_t readlen = fread(&textBuffer[headerLen], sizeof(char), fileLen, file);
+
+	if (readlen == 0) //(readlen != len)
+	{
+		LOGE("[GLSLShaderProgram::LoadShader] glsl shader %s has empty read size", debugName);
+		return false;
+	}
+
+	// trick to zero all outside memory
+	memset( &textBuffer[readlen+headerLen], 0, sizeof(char)*(fileLen + 1 - readlen) );
+
+	if (HasAnyInsertions(textBuffer, g_TextInsertions))
+	{
+
+		ProcessTextWithInsertions(textBuffer, g_TextInsertions);
+	}
+
+	//
+	// pass the code as the shader source
+
+	GLint   len = static_cast<GLint>(textBuffer.size());
+	GLint   compileStatus;
+
+	const GLcharARB* bufferARB = textBuffer.data();
+
+	glShaderSourceARB( shader, 1, &bufferARB, &len);
+
+	//
 	// compile shader
+
 	glCompileShaderARB( shader );
 
 	glGetObjectParameterivARB ( shader, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus );

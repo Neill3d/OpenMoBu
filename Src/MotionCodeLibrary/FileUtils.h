@@ -15,6 +15,7 @@
 
 
 #include <functional>
+#include <string>
 
 void SetCurrentFileOpenPath(const char* filepath);
 
@@ -64,6 +65,24 @@ public:
 		const size_t fileLen = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 		return fileLen;
+	}
+
+	bool ReadString(std::string& textBuffer)
+	{
+		if (!fp)
+			return false;
+
+		const size_t fileSize = GetFileSize();
+		if (fileSize == 0)
+			return false;
+
+		textBuffer.resize(fileSize, 0);
+		const size_t readSize = fread(&textBuffer[0], sizeof(char), fileSize, fp);
+
+		if (readSize < textBuffer.size())
+			textBuffer.resize(readSize);
+
+		return (readSize == fileSize);
 	}
 
 private:

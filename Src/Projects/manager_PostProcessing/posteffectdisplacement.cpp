@@ -24,7 +24,7 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 	// publish input connection of the effect
 	//  input connections we can use to - look for locations, to read values from a given input data component, bind values from values into shader uniforms
 
-	AddProperty(IEffectShaderConnections::ShaderProperty("color", "colorSampler"))
+	AddProperty(IEffectShaderConnections::ShaderProperty("color", "inputSampler"))
 		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
 		.SetValue(CommonEffectUniforms::GetColorSamplerSlot());
 	mTime = &AddProperty(IEffectShaderConnections::ShaderProperty("time", "iTime", nullptr))

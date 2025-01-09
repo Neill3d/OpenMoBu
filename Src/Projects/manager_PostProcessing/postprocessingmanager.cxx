@@ -10,6 +10,7 @@
 
 //--- Class declaration
 #include <Windows.h>
+#include <filesystem>
 #include "postprocessingmanager.h"
 
 #include "postprocessing_helper.h"
@@ -131,6 +132,7 @@ bool PostProcessingManager::Init()
 	glDebugMessageCallback(DebugOGL_Callback, nullptr);
 #endif
 
+	LoadShaderTextInsertions();
     return true;
 }
 
@@ -150,6 +152,36 @@ bool PostProcessingManager::Open()
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
     return true;
+}
+
+void PostProcessingManager::LoadShaderTextInsertions()
+{
+	constexpr const char* KEYWORD_HEADER{ "INSERT: HEADER" };
+	constexpr const char* KEYWORD_IMAGE_CROP{ "INSERT: APPLY_IMAGE_CROP" };
+	constexpr const char* KEYWORD_MASKING{ "INSERT: APPLY_MASKING" };
+
+	constexpr const char* INSERT_HEADER{ "/GLSL/insert_header.glslf" };
+	constexpr const char* INSERT_IMAGE_CROP{ "/GLSL/insert_image_crop.glslf" };
+	constexpr const char* INSERT_MASKING{ "/GLSL/insert_masking.glslf" };
+
+	char shadersPath[MAX_PATH];
+	if (FindEffectLocation(INSERT_HEADER, shadersPath, MAX_PATH))
+	{
+		std::string filePath = std::string(shadersPath) + INSERT_HEADER;
+		GLSLShaderProgram::AddTextInsertionFromFile(KEYWORD_HEADER, filePath.c_str());
+	}
+
+	if (FindEffectLocation(INSERT_IMAGE_CROP, shadersPath, MAX_PATH))
+	{
+		std::string filePath = std::string(shadersPath) + INSERT_IMAGE_CROP;
+		GLSLShaderProgram::AddTextInsertionFromFile(KEYWORD_IMAGE_CROP, filePath.c_str());
+	}
+
+	if (FindEffectLocation(INSERT_MASKING, shadersPath, MAX_PATH))
+	{
+		std::string filePath = std::string(shadersPath) + INSERT_MASKING;
+		GLSLShaderProgram::AddTextInsertionFromFile(KEYWORD_MASKING, filePath.c_str());
+	}
 }
 
 void PostProcessingManager::LoadConfig()

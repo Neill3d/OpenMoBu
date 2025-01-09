@@ -18,7 +18,7 @@ class EffectShaderDisplacement : public PostEffectBufferShader
 {
 private:
 	static constexpr const char* SHADER_NAME = "Displacement";
-	static constexpr const char* SHADER_VERTEX = "/GLSL/displacement.vsh";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/displacement.fsh";
 	static constexpr const char* ENABLE_MASKING_PROPERTY_NAME = "Disp Use Masking";
 	static constexpr const char* MASKING_CHANNEL_PROPERTY_NAME = "Disp Masking Channel";

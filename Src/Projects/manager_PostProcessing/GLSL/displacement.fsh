@@ -13,12 +13,7 @@
 // based on Quake2 water effect and Simplex Noise function
 // http://mines.lumpylumpy.com/Electronics/Computers/Software/Cpp/Graphics/Bitmap/Textures/Noise/Simplex.php#.U7FwI41dVhs
 
-uniform sampler2D colorSampler;
-uniform sampler2D maskSampler;
-
-uniform float	useMasking;
-uniform float	upperClip;
-uniform float	lowerClip;
+// INSERT: HEADER
 
 uniform float iTime;
 uniform float iSpeed;
@@ -148,16 +143,10 @@ void main (void)
 	// do the scaling.
     // After this, you should consider fragCoord = 0..1, usually,
     // aside from overflow for wide-screen.
-    vec2 fragCoord = gl_TexCoord [0].st;
+    vec2 fragCoord = texCoord;
 
-	if (fragCoord.y < upperClip || fragCoord.y > lowerClip)
-	{
-		vec4 fragColor = texture2D(colorSampler, fragCoord);
-		gl_FragColor =  fragColor;
-		return;
-	}
-	
-    
+	// INSERT: APPLY_IMAGE_CROP
+
     // the value for the sine has 2 inputs:
     // 1. the time, so that it animates.
     // 2. the y-row, so that ALL scanlines do not distort equally.
@@ -183,20 +172,7 @@ void main (void)
    
     // shear the coordinates
     fragCoord += distortOffset;    
-    
-    
-	vec4 fragColor = texture2D(colorSampler, fragCoord);
+	fragColor = texture(inputSampler, fragCoord);
 
-	//
-	// masking 
-
-	if (useMasking > 0.0)
-	{
-		vec4 mask = texture2D( maskSampler, gl_TexCoord [0].st );
-		vec4 inputColor = texture2D(colorSampler, gl_TexCoord [0].st);
-
-		fragColor.rgb = mix(fragColor.rgb, inputColor.rgb, mask.r * useMasking);
-	}
-	
-	gl_FragColor =  fragColor;
+	// INSERT: APPLY_MASKING
 }
