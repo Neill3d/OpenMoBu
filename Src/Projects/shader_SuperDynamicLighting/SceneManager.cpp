@@ -46,15 +46,19 @@ namespace Graphics
 		return true;
 	}
 
-	bool SceneManager::PrepCameraInfoCache(FBCamera *pCamera, CameraInfoCache& cache)
+	bool SceneManager::PrepCameraInfoCache(FBCamera *cameraIn, CameraInfoCache& cache)
 	{
-		if (!pCamera)
+		if (!cameraIn)
+			return false;
+
+		FBCamera* camera = FBIS(cameraIn, FBCameraSwitcher) ? FBCast<FBCameraSwitcher>(cameraIn)->CurrentCamera : cameraIn;
+		if (!camera)
 			return false;
 
 		FBMatrix mv, p, mvInv;
 
-		pCamera->GetCameraMatrix(mv, kFBModelView);
-		pCamera->GetCameraMatrix(p, kFBProjection);
+		camera->GetCameraMatrix(mv, kFBModelView);
+		camera->GetCameraMatrix(p, kFBProjection);
 
 		FBMatrixInverse(mvInv, mv);
 
@@ -65,15 +69,15 @@ namespace Graphics
 		memcpy(cache.mv, mv, sizeof(double) * 16);
 
 		FBVector3d v;
-		pCamera->GetVector(v);
+		camera->GetVector(v);
 		for (int i = 0; i<3; ++i)
 			cache.pos[i] = static_cast<float>(v[i]);
 		
-		cache.fov = pCamera->FieldOfView;
-		cache.width = pCamera->CameraViewportWidth;
-		cache.height = pCamera->CameraViewportHeight;
-		cache.nearPlane = pCamera->NearPlaneDistance;
-		cache.farPlane = pCamera->FarPlaneDistance;
+		cache.fov = camera->FieldOfView;
+		cache.width = camera->CameraViewportWidth;
+		cache.height = camera->CameraViewportHeight;
+		cache.nearPlane = camera->NearPlaneDistance;
+		cache.farPlane = camera->FarPlaneDistance;
 
 		return true;
 	}

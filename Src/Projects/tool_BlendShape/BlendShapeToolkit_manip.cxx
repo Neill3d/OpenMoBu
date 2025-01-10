@@ -800,12 +800,14 @@ bool ORManip_Sculpt::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, in
 	int realY = GetViewerHeight() - pMouseY;
 	realY = pMouseY;
 
-	FBCamera* lCamera = (FBCamera*)CurrentCamera;
-	if (lCamera == nullptr)
+	FBCamera* lCamera = CurrentCamera;
+	if (!lCamera)
 		return false;
+
 	if ( FBIS(lCamera, FBCameraSwitcher) )
-		lCamera = ((FBCameraSwitcher*) lCamera)->CurrentCamera;
-	if (lCamera == nullptr)
+		lCamera = FBCast<FBCameraSwitcher>(lCamera)->CurrentCamera;
+	
+	if (!lCamera)
 		return false;
 
 	if (pMouseX > paneX && pMouseX < (paneX+paneWidth) && realY > paneY && realY < (paneY+paneHeight) )

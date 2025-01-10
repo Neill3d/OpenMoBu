@@ -299,7 +299,7 @@ void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeigh
 
 	if (FBIS(pCamera, FBCamera))
 	{
-		((FBCamera*)pCamera)->GetCameraMatrix(modelview, kFBModelView);
+		FBCast<FBCamera>(pCamera)->GetCameraMatrix(modelview, kFBModelView);
 		FBMatrixInverse(invmodelview, modelview);
 	}
 	else

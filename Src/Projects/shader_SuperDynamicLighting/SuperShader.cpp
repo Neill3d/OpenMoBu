@@ -49,15 +49,21 @@ namespace Graphics {
 	void SuperShader::SetCameraTransform(TTransform &transform, FBRenderOptions* pRenderOptions)
 	{
 		FBCamera *pCamera = pRenderOptions->GetRenderingCamera();
+		if (!pCamera)
+			return;
+
+		if (FBIS(pCamera, FBCameraSwitcher))
+			pCamera = FBCast<FBCameraSwitcher>(pCamera)->CurrentCamera;
+		if (!pCamera)
+			return;
 
 		FBVector3d	eyePos;
 		FBMatrix lCameraMVMatrix, lCameraVPMatrix, lWorldMatrix;
-		if (nullptr != pCamera)
-		{
-			pCamera->GetVector(eyePos);
-			pCamera->GetCameraMatrix(lCameraMVMatrix, kFBModelView);
-			pCamera->GetCameraMatrix(lCameraVPMatrix, kFBProjection);
-		}
+		
+		pCamera->GetVector(eyePos);
+		pCamera->GetCameraMatrix(lCameraMVMatrix, kFBModelView);
+		pCamera->GetCameraMatrix(lCameraVPMatrix, kFBProjection);
+		
 		lWorldMatrix.Identity();
 
 		transform.eyePos = glm::vec4(static_cast<float>(eyePos[0]), static_cast<float>(eyePos[1]), static_cast<float>(eyePos[2]), 1.0f);

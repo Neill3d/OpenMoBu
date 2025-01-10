@@ -265,24 +265,18 @@ void ColorsRendererCallback::Render(FBRenderOptions* pRenderOptions)
 /////////////////////////
 void ColorsRendererCallback::RenderColorIds(FBRenderOptions *pRenderOptions)
 {
-
 	FBRenderer* lRenderer = FBSystem::TheOne().Renderer;
-
-#if(PRODUCT_VERSION >= 2023)
-    const int currentPane = lRenderer->GetSelectedPaneIndex();
-    FBCamera* lCamera = lRenderer->GetCameraInPane(currentPane);
-#else
-    FBCamera* lCamera = lRenderer->CurrentCamera;
-#endif
-
-    FBMatrix lCameraMVPMatrix;
-    lCamera->GetCameraMatrix( lCameraMVPMatrix, kFBModelViewProj );
+    FBCamera* lCamera = pRenderOptions->GetRenderingCamera();
+    if (!lCamera)
+        return;
 
 	if ( FBIS(lCamera, FBCameraSwitcher) )
-		lCamera = ( (FBCameraSwitcher*) lCamera )->CurrentCamera;
-
-	if (lCamera == nullptr)
+		lCamera = FBCast<FBCameraSwitcher>(lCamera)->CurrentCamera;
+	if (!lCamera)
 		return;
+
+    FBMatrix lCameraMVPMatrix;
+    lCamera->GetCameraMatrix(lCameraMVPMatrix, kFBModelViewProj);
 
     glDisable(GL_LIGHTING); 
        
