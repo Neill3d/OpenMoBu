@@ -481,10 +481,8 @@ void PostProcessContextData::PreRenderFirstEntry()
         mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
     else
         mMainFrameBuffer.DetachFBO();
-    /*
-    CHECK_GL_ERROR();
-
-    if (mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
+    
+    if (mAttachedFBO[mEnterId] == 0 && mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
     {
         mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
 
@@ -493,10 +491,7 @@ void PostProcessContextData::PreRenderFirstEntry()
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         mMainFrameBuffer.EndRender();
-
-        CHECK_GL_ERROR();
     }
-    */
 }
 
 const bool PostProcessContextData::CheckShadersPath(const char* path) const
