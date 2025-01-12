@@ -225,8 +225,6 @@ bool ORTextureParamBlend::EvaluateAnimationNodes( FBEvaluateInfo* pEvaluateInfo 
 	{
 		if (SpriteAnimation && CountU > 0 && CountV > 0)
 		{
-			const double paramOneFrame = 1.0 / (CountU * CountV);
-
 			FBTime currTime = (SpriteLocalPlay) ? pEvaluateInfo->GetLocalTime() : pEvaluateInfo->GetSystemTime();
 
 			if (mLastTime == FBTime::MinusInfinity)
