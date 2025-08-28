@@ -223,12 +223,8 @@ bool ORTextureParamBlend::EvaluateAnimationNodes( FBEvaluateInfo* pEvaluateInfo 
 
     if (CustomComposition)
 	{
-
 		if (SpriteAnimation && CountU > 0 && CountV > 0)
 		{
-			
-			const double paramOneFrame = 1.0 / (CountU * CountV);
-
 			FBTime currTime = (SpriteLocalPlay) ? pEvaluateInfo->GetLocalTime() : pEvaluateInfo->GetSystemTime();
 
 			if (mLastTime == FBTime::MinusInfinity)
@@ -237,7 +233,11 @@ bool ORTextureParamBlend::EvaluateAnimationNodes( FBEvaluateInfo* pEvaluateInfo 
 			const double timeElapsed = currTime.GetSecondDouble() - mLastTime.GetSecondDouble();
 			const double framesElapsed = timeElapsed * SpriteFPS;
 
-			mSpriteParamU += 100.0 * paramOneFrame * framesElapsed;
+			double framesLimit = CountU * CountV;
+			if (framesLimit > SpriteFramesLimit && SpriteFramesLimit > 0.0)
+				framesLimit = SpriteFramesLimit;
+
+			mSpriteParamU += 1.0f * framesElapsed;
 
 			if (SpriteLocalPlay && currTime < SpriteLocalStartTime)
 			{
@@ -245,19 +245,19 @@ bool ORTextureParamBlend::EvaluateAnimationNodes( FBEvaluateInfo* pEvaluateInfo 
 			}
 
 			if (mSpriteParamU < 0.0) mSpriteParamU = 0.0;
-			else if (mSpriteParamU > 2.0 * SpriteFramesLimit) mSpriteParamU = 2.0 * SpriteFramesLimit;
-
+			else if (mSpriteParamU > framesLimit) mSpriteParamU = framesLimit;
+			
 			if (SpriteLoopPlay)
 			{
-				while (mSpriteParamU > SpriteFramesLimit)
+				while (mSpriteParamU >= framesLimit)
 				{
-					mSpriteParamU -= SpriteFramesLimit;
+					mSpriteParamU -= framesLimit;
 				}
 			}
 			else
 			{
-				if (mSpriteParamU > SpriteFramesLimit) 
-					mSpriteParamU = SpriteFramesLimit;
+				if (mSpriteParamU > framesLimit)
+					mSpriteParamU = framesLimit;
 			}
 			
 			//
@@ -380,14 +380,12 @@ void ORTextureParamBlend::TextureLayerComposition(FBTime pTime,FBTime pTimeInCur
 
 			if (SpriteAnimation && CountU > 0 && CountV > 0)
 			{
-				const double maxParam = CountU * CountV;
-				const double localProgress = std::min(0.01 * mSpriteParamU * maxParam, maxParam);
 				const double maxInRow = CountU;
-				const double currentRow = std::min(floor(localProgress / maxInRow), maxInRow);
-				const double currentCol = std::min(localProgress - (currentRow * maxInRow), static_cast<double>(CountV.AsInt()));
+				const double currentRow = std::min(floor(mSpriteParamU / maxInRow), maxInRow);
+				const double currentCol = std::min(mSpriteParamU - (currentRow * maxInRow), static_cast<double>(CountU.AsInt()));
 
-				pShader->setUniformFloat(loc.paramV,  (float)(currentRow / CountU));
-				pShader->setUniformFloat(loc.paramU,  (float)(currentCol / CountV));
+				pShader->setUniformFloat(loc.paramV,  (float)(currentRow / CountV));
+				pShader->setUniformFloat(loc.paramU,  (float)(currentCol / CountU));
 
 				ParamV = 100.0 * currentRow / CountU;
 				ParamU = 100.0 * currentCol / CountV;
