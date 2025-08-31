@@ -51,7 +51,7 @@ bool PostEffectShaderLinearDepth::OnPrepareUniforms(const int variationIndex)
 
 	GLint loc = shader->findLocation("depthSampler");
 	if (loc >= 0)
-		glUniform1i(loc, CommonEffectUniforms::GetDepthSamplerSlot());
+		glUniform1i(loc, CommonEffect::DepthSamplerSlot);
 	mLocDepthLinearizeClipInfo = shader->findLocation("gClipInfo");
 
 	shader->UnBind();

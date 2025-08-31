@@ -12,106 +12,65 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectcolor.h"
 #include "postpersistentdata.h"
 
-#define SHADER_COLOR_NAME				"Color Correction"
-#define SHADER_COLOR_VERTEX				"\\GLSL\\simple.vsh"
-#define SHADER_COLOR_FRAGMENT			"\\GLSL\\color.fsh"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
-//
-extern void LOGE(const char* pFormatString, ...);
+#include "postprocessing_helper.h"
+
 
 //! a constructor
-PostEffectColor::PostEffectColor()
-	: PostEffectBase()
+EffectShaderColor::EffectShaderColor(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
-}
+	MakeCommonProperties();
 
-//! a destructor
-PostEffectColor::~PostEffectColor()
-{
+	AddProperty(IEffectShaderConnections::ShaderProperty("color", "sampler0"))
+		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::ColorSamplerSlot);
 
-}
+	mResolution = &AddProperty(IEffectShaderConnections::ShaderProperty("gResolution", "gResolution", IEffectShaderConnections::EPropertyType::VEC2))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
-const char* PostEffectColor::GetName() const
-{
-	return SHADER_COLOR_NAME;
-}
+	mChromaticAberration = &AddProperty(IEffectShaderConnections::ShaderProperty("gCA", "gCA", IEffectShaderConnections::EPropertyType::VEC4))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
-const char* PostEffectColor::GetVertexFname(const int) const
-{
-	return SHADER_COLOR_VERTEX;
-}
+	mCSB = &AddProperty(IEffectShaderConnections::ShaderProperty("gCSB", "gCSB", IEffectShaderConnections::EPropertyType::VEC4))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
-const char* PostEffectColor::GetFragmentFname(const int) const
-{
-	return SHADER_COLOR_FRAGMENT;
-}
-
-bool PostEffectColor::PrepUniforms(const int shaderIndex)
-{
-	GLSLShaderProgram* shader = mShaders[shaderIndex];
-	if (!shader)
-		return false;
-
-	shader->Bind();
-
-	GLint loc = shader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-
-	mResolution = shader->findLocation("gResolution");
-	mChromaticAberration = shader->findLocation("gCA");
-
-	PrepareCommonLocations(shader);
-
-	mLocCSB = shader->findLocation("gCSB");
-	mLocHue = shader->findLocation("gHue");
-
-	shader->UnBind();
-	return true;
+	mHue = &AddProperty(IEffectShaderConnections::ShaderProperty("gHue", "gHue", IEffectShaderConnections::EPropertyType::VEC4))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
 }
 
-bool PostEffectColor::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
+const char* EffectShaderColor::GetUseMaskingPropertyName() const noexcept
 {
+	return PostPersistentData::COLOR_USE_MASKING;
+}
+const char* EffectShaderColor::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::COLOR_MASKING_CHANNEL;
+}
+
+bool EffectShaderColor::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+{
+	const PostPersistentData* pData = effectContext->GetPostProcessData();
+
 	const float chromatic_aberration = (pData->ChromaticAberration) ? 1.0f : 0.0f;
 	const FBVector2d ca_dir = pData->ChromaticAberrationDirection;
 
-	double saturation = 1.0 + 0.01 * pData->Saturation;
-	double brightness = 1.0 + 0.01 * pData->Brightness;
-	double contrast = 1.0 + 0.01 * pData->Contrast;
-	double gamma = 0.01 * pData->Gamma;
+	const double saturation = 1.0 + 0.01 * pData->Saturation;
+	const double brightness = 1.0 + 0.01 * pData->Brightness;
+	const double contrast = 1.0 + 0.01 * pData->Contrast;
+	const double gamma = 0.01 * pData->Gamma;
 
 	const float inverse = (pData->Inverse) ? 1.0f : 0.0f;
-	double hue = 0.01 * pData->Hue;
-	double hueSat = 0.01 * pData->HueSaturation;
-	double lightness = 0.01 * pData->Lightness;
+	const double hue = 0.01 * pData->Hue;
+	const double hueSat = 0.01 * pData->HueSaturation;
+	const double lightness = 0.01 * pData->Lightness;
 
-	GLSLShaderProgram* mShader = GetShaderPtr();
-	if (!mShader)
-		return false;
-
-	mShader->Bind();
-
-	if (mResolution >= 0)
-	{
-		glUniform2f(mResolution, static_cast<float>(effectContext.w), static_cast<float>(effectContext.h));
-	}
-
-	if (mChromaticAberration >= 0)
-	{
-		glUniform4f(mChromaticAberration, static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
-	}
-
-	CollectCommonData(pData);
-
-	if (mLocCSB >= 0)
-		glUniform4f(mLocCSB, (float)contrast, (float)saturation, (float)brightness, (float)gamma);
-
-	if (mLocHue >= 0)
-		glUniform4f(mLocHue, (float)hue, (float)hueSat, (float)lightness, inverse);
-
-	mShader->UnBind();
+	mResolution->SetValue(static_cast<float>(effectContext->GetViewWidth()), static_cast<float>(effectContext->GetViewHeight()));
+	mChromaticAberration->SetValue(static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
+	mCSB->SetValue(static_cast<float>(contrast), static_cast<float>(saturation), static_cast<float>(brightness), static_cast<float>(gamma));
+	mHue->SetValue(static_cast<float>(hue), static_cast<float>(hueSat), static_cast<float>(lightness), inverse);
 	return true;
 }

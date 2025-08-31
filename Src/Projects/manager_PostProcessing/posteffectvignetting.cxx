@@ -1,7 +1,7 @@
 
 /**	\file	posteffectvignetting.cxx
 
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -12,87 +12,49 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectvignetting.h"
 #include "postpersistentdata.h"
 
-#define SHADER_VIGNETTE_NAME			"Vignetting"
-#define SHADER_VIGNETTE_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_VIGNETTE_FRAGMENT		"\\GLSL\\vignetting.fsh"
-
-//
-extern void LOGE(const char* pFormatString, ...);
+#include "postprocessing_helper.h"
 
 //! a constructor
-PostEffectVignetting::PostEffectVignetting()
-	: PostEffectBase()
+EffectShaderVignetting::EffectShaderVignetting(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
+	MakeCommonProperties();
+	
+	AddProperty(IEffectShaderConnections::ShaderProperty("color", "colorSampler"))
+		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::ColorSamplerSlot);
+	
+	mAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_AMOUNT, "amount", nullptr))
+		.SetScale(0.01f);
+	VignOut = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_OUT, "vignout", nullptr))
+		.SetScale(0.01f);
+	VignIn = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_IN, "vignin", nullptr))
+		.SetScale(0.01f);
+	VignFade = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_FADE, "vignfade", nullptr));
 }
 
-//! a destructor
-PostEffectVignetting::~PostEffectVignetting()
+const char* EffectShaderVignetting::GetUseMaskingPropertyName() const noexcept
 {
-
+	return PostPersistentData::VIGN_USE_MASKING;
+}
+const char* EffectShaderVignetting::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::VIGN_MASKING_CHANNEL;
 }
 
-const char* PostEffectVignetting::GetName() const
+bool EffectShaderVignetting::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	return SHADER_VIGNETTE_NAME;
-}
-const char* PostEffectVignetting::GetVertexFname(const int) const
-{
-	return SHADER_VIGNETTE_VERTEX;
-}
-const char* PostEffectVignetting::GetFragmentFname(const int) const
-{
-	return SHADER_VIGNETTE_FRAGMENT;
-}
+	const PostPersistentData* data = effectContext->GetPostProcessData();
 
-bool PostEffectVignetting::PrepUniforms(const int shaderIndex)
-{
-	GLSLShaderProgram* mShader = mShaders[shaderIndex];
-	if (!mShader)
-		return false;
+	const double amount = data->VignAmount;
+	const double vignout = data->VignOut;
+	const double vignin = data->VignIn;
+	const double vignfade = data->VignFade;
 
-	mShader->Bind();
+	mAmount->SetValue(static_cast<float>(amount));
+	VignOut->SetValue(static_cast<float>(vignout));
+	VignIn->SetValue(static_cast<float>(vignin));
+	VignFade->SetValue(static_cast<float>(vignfade));
 
-	GLint loc = mShader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-
-	PrepareCommonLocations(mShader);
-
-	mLocAmount = mShader->findLocation("amount");
-	mLocVignOut = mShader->findLocation("vignout");
-	mLocVignIn = mShader->findLocation("vignin");
-	mLocVignFade = mShader->findLocation("vignfade");
-
-	mShader->UnBind();
-	return true;
-}
-
-bool PostEffectVignetting::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
-{
-	const double amount = pData->VignAmount;
-	const double vignout = pData->VignOut;
-	const double vignin = pData->VignIn;
-	const double vignfade = pData->VignFade;
-
-	GLSLShaderProgram* mShader = GetShaderPtr();
-
-	if (!mShader)
-		return false;
-
-	mShader->Bind();
-	CollectCommonData(pData);
-
-	if (mLocAmount >= 0)
-		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));
-	if (mLocVignOut >= 0)
-		glUniform1f(mLocVignOut, 0.01f * static_cast<float>(vignout));
-	if (mLocVignIn >= 0)
-		glUniform1f(mLocVignIn, 0.01f * static_cast<float>(vignin));
-	if (mLocVignFade >= 0)
-		glUniform1f(mLocVignFade, static_cast<float>(vignfade));
-
-	mShader->UnBind();
 	return true;
 }

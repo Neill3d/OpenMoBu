@@ -16,6 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "graphics_framebuffer.h"
 #include "postpersistentdata.h"
 #include "posteffectbase.h"
+#include "posteffectcontextmobu.h"
 #include "posteffectbuffers.h"
 
 #include "posteffectshader_bilateral_blur.h"

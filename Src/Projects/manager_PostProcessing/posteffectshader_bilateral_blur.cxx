@@ -36,7 +36,7 @@ PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComp
 
 		ShaderProperty textureProperty(EffectShaderBilateralBlurUserObject::INPUT_TEXTURE_LABEL, "colorSampler", EPropertyType::TEXTURE, &userObject->InputTexture);
 		AddProperty(std::move(textureProperty))
-			.SetValue(CommonEffectUniforms::GetColorSamplerSlot());
+			.SetValue(CommonEffect::ColorSamplerSlot);
 
 		ShaderProperty blurScaleProperty(EffectShaderBilateralBlurUserObject::BLUR_SCALE_LABEL, "scale", EPropertyType::VEC2, &userObject->BlurScale);
 		AddProperty(std::move(blurScaleProperty));

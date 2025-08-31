@@ -1,7 +1,7 @@
 
 /**	\file	posteffectfilmgrain.cxx
 
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -12,71 +12,53 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectfilmgrain.h"
 #include "postpersistentdata.h"
 
-#define SHADER_FILMGRAIN_NAME			"Film Grain"
-#define SHADER_FILMGRAIN_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_FILMGRAIN_FRAGMENT		"\\GLSL\\filmGrain.fsh"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
-//
-extern void LOGE(const char* pFormatString, ...);
+#include "postprocessing_helper.h"
 
 //! a constructor
-PostEffectFilmGrain::PostEffectFilmGrain()
-	: PostEffectBase()
+EffectShaderFilmGrain::EffectShaderFilmGrain(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
+	MakeCommonProperties();
+
+	AddProperty(IEffectShaderConnections::ShaderProperty("color", "sampler0"))
+		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::ColorSamplerSlot);
+
+	mTextureWidth = &AddProperty(IEffectShaderConnections::ShaderProperty("textureWidth", "textureWidth", IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mTextureHeight = &AddProperty(IEffectShaderConnections::ShaderProperty("textureHeight", "textureHeight", IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mTimer = &AddProperty(IEffectShaderConnections::ShaderProperty("time", "iTime", IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+
+	mGrainAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_AMOUNT, "grainamount", nullptr))
+		.SetScale(0.01f);
+	mColored = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_COLORED, "colored", nullptr));
+	mColorAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_COLOR_AMOUNT, "coloramount", nullptr))
+		.SetScale(0.01f);
+	mGrainSize = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_SIZE, "grainsize", nullptr))
+		.SetScale(0.01f);
+	mLumAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_LUMAMOUNT, "lumamount", nullptr))
+		.SetScale(0.01f);
 }
 
-//! a destructor
-PostEffectFilmGrain::~PostEffectFilmGrain()
+const char* EffectShaderFilmGrain::GetUseMaskingPropertyName() const noexcept
 {
-
+	return PostPersistentData::GRAIN_USE_MASKING;
+}
+const char* EffectShaderFilmGrain::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::GRAIN_MASKING_CHANNEL;
 }
 
-const char* PostEffectFilmGrain::GetName() const
+bool EffectShaderFilmGrain::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	return SHADER_FILMGRAIN_NAME;
-}
-const char* PostEffectFilmGrain::GetVertexFname(const int) const
-{
-	return SHADER_FILMGRAIN_VERTEX;
-}
-const char* PostEffectFilmGrain::GetFragmentFname(const int) const
-{
-	return SHADER_FILMGRAIN_FRAGMENT;
-}
+	const PostPersistentData* pData = effectContext->GetPostProcessData();
 
-bool PostEffectFilmGrain::PrepUniforms(const int shaderIndex)
-{
-	GLSLShaderProgram* mShader = mShaders[shaderIndex];
-	if (!mShader)
-		return false;
-
-	mShader->Bind();
-
-	GLint loc = mShader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-
-	PrepareCommonLocations(mShader);
-
-	textureWidth = mShader->findLocation("textureWidth");
-	textureHeight = mShader->findLocation("textureHeight");
-
-	timer = mShader->findLocation("timer");
-	grainamount = mShader->findLocation("grainamount");
-	colored = mShader->findLocation("colored");
-	coloramount = mShader->findLocation("coloramount");
-	grainsize = mShader->findLocation("grainsize");
-	lumamount = mShader->findLocation("lumamount");
-
-	mShader->UnBind();
-	return true;
-}
-
-bool PostEffectFilmGrain::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
-{
-	const double time = (pData->FG_UsePlayTime) ? effectContext.localTime : effectContext.sysTime;
+	const double time = (pData->FG_UsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 
 	const double timerMult = pData->FG_TimeSpeed;
 	const double _timer = 0.01 * timerMult * time;
@@ -87,31 +69,14 @@ bool PostEffectFilmGrain::CollectUIValues(PostPersistentData* pData, PostEffectC
 	const double _grainsize = pData->FG_GrainSize;
 	const double _lumamount = pData->FG_LumAmount;
 
-	GLSLShaderProgram* mShader = GetShaderPtr();
-	if (!mShader)
-		return false;
+	mTextureWidth->SetValue(static_cast<float>(effectContext->GetViewWidth()));
+	mTextureHeight->SetValue(static_cast<float>(effectContext->GetViewHeight()));
 
-	mShader->Bind();
-	CollectCommonData(pData);
-
-	if (textureWidth >= 0)
-		glUniform1f(textureWidth, static_cast<float>(effectContext.w));
-	if (textureHeight >= 0)
-		glUniform1f(textureHeight, static_cast<float>(effectContext.h));
-
-	if (timer >= 0)
-		glUniform1f(timer, static_cast<float>(_timer));
-	if (grainamount >= 0)
-		glUniform1f(grainamount, 0.01f * static_cast<float>(_grainamount));
-	if (colored >= 0)
-		glUniform1f(colored, static_cast<float>(_colored));
-	if (coloramount >= 0)
-		glUniform1f(coloramount, 0.01f * static_cast<float>(_coloramount));
-	if (grainsize >= 0)
-		glUniform1f(grainsize, 0.01f * static_cast<float>(_grainsize));
-	if (lumamount >= 0)
-		glUniform1f(lumamount, 0.01f * static_cast<float>(_lumamount));
-
-	mShader->UnBind();
+	mTimer->SetValue(static_cast<float>(_timer));
+	mGrainAmount->SetValue(static_cast<float>(_grainamount));
+	mColored->SetValue(static_cast<float>(_colored));
+	mColorAmount->SetValue(static_cast<float>(_coloramount));
+	mGrainSize->SetValue(static_cast<float>(_grainsize));
+	mLumAmount->SetValue(static_cast<float>(_lumamount));
 	return true;
 }

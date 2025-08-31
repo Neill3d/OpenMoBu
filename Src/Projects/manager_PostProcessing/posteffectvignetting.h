@@ -2,59 +2,62 @@
 
 // posteffectvignetting
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
-#include "posteffectbase.h"
+#include "posteffectsingleshader.h"
 
-namespace FBSDKNamespace
-{
-	// forward
-	class FBCamera;
-}
+// forward
+class EffectShaderVignetting;
+
+/// <summary>
+/// effect with once shader - vignetting, output directly to effects chain dst buffer
+/// </summary>
+typedef PostEffectSingleShader<EffectShaderVignetting> PostEffectVignetting;
+
 
 /// <summary>
 /// vignetting post processing effect
 /// </summary>
-struct PostEffectVignetting : public PostEffectBase, public CommonEffectUniforms
+class EffectShaderVignetting : public PostEffectBufferShader
 {
+private:
+	static constexpr const char* SHADER_NAME = "Vignetting";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/vignetting.fsh";
+	static constexpr const char* ENABLE_MASKING_PROPERTY_NAME = "Vignetting Use Masking";
+	static constexpr const char* MASKING_CHANNEL_PROPERTY_NAME = "Vign Masking Channel";
+
 public:
 
 	//! a constructor
-	PostEffectVignetting();
+	EffectShaderVignetting(FBComponent* ownerIn);
+	virtual ~EffectShaderVignetting() = default;
 
-	//! a destructor
-	virtual ~PostEffectVignetting();
+	[[nodiscard]] int GetNumberOfVariations() const noexcept override { return 1; }
 
-	int GetNumberOfVariations() const override { return 1; }
-
-	virtual const char* GetName() const override;
-	virtual const char* GetVertexFname(const int shaderIndex) const override;
-	virtual const char* GetFragmentFname(const int shaderIndex) const override;
-
-	const char* GetEnableMaskPropertyName() const override { return "Vignetting Use Masking"; }
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
+	[[nodiscard]] const char* GetName() const noexcept override { return SHADER_NAME; }
+	[[nodiscard]] const char* GetVertexFname(const int shaderIndex) const noexcept override { return SHADER_VERTEX; }
+	[[nodiscard]] const char* GetFragmentFname(const int shaderIndex) const noexcept override { return SHADER_FRAGMENT; }
 
 protected:
 
-	// shader locations
-	enum { LOCATIONS_COUNT = 4 };
-	union
-	{
-		struct
-		{
-			GLint		mLocAmount;	//!< amount of an effect applied
-			GLint		mLocVignOut;
-			GLint		mLocVignIn;
-			GLint		mLocVignFade;
-		};
+	IEffectShaderConnections::ShaderProperty* mAmount;
+	IEffectShaderConnections::ShaderProperty* VignOut;
+	IEffectShaderConnections::ShaderProperty* VignIn;
+	IEffectShaderConnections::ShaderProperty* VignFade;
 
-		GLint		mLocations[LOCATIONS_COUNT];
-	};
+	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
+
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
+
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 };
+

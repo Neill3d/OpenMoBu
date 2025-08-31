@@ -52,10 +52,10 @@ bool PostEffectShaderBlurLinearDepth::OnPrepareUniforms(const int variationIndex
 
 	GLint loc = shader->findLocation("sampler0");
 	if (loc >= 0)
-		glUniform1i(loc, CommonEffectUniforms::GetColorSamplerSlot());
+		glUniform1i(loc, CommonEffect::ColorSamplerSlot);
 	loc = shader->findLocation("linearDepthSampler");
 	if (loc >= 0)
-		glUniform1i(loc, CommonEffectUniforms::GetLinearDepthSamplerSlot());
+		glUniform1i(loc, CommonEffect::LinearDepthSamplerSlot);
 
 	mLocBlurSharpness = shader->findLocation("g_Sharpness");
 	mLocBlurRes = shader->findLocation("g_InvResolutionDirection");

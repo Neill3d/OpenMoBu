@@ -74,9 +74,20 @@ set (SHADERS
 )
 source_group("Shaders" FILES ${SHADERS})
 
-set (POSTEFFECTS
+set (POSTEFFECTSCOMMON
     posteffectbase.h
     posteffectbase.cxx
+    posteffectcontext.h
+    posteffectcontextmobu.h
+    posteffectbuffershader.h
+    posteffectbuffershader.cxx
+    posteffectsingleshader.h
+    effectshaderconnections.h
+    effectshaderconnections.cxx
+)
+source_group("PostEffectsCommon" FILES ${POSTEFFECTSCOMMON})
+
+set (POSTEFFECTS
     posteffectcolor.h
     posteffectcolor.cxx
     posteffectdisplacement.h
@@ -110,7 +121,8 @@ set (POSTEFFECTSSHADERS
 )
 source_group("PostEffectsShaders" FILES ${POSTEFFECTSSHADERS})
 
-add_library(${PROJECT_NAME} SHARED ${SRCS} ${SHADERS} ${POSTEFFECTS} ${POSTEFFECTSSHADERS} ${IMGUI_CORE} ${IMGUI_NODES})
+# Build the shared library WITHOUT test sources
+add_library(${PROJECT_NAME} SHARED ${SRCS} ${SHADERS} ${POSTEFFECTSCOMMON} ${POSTEFFECTS} ${POSTEFFECTSSHADERS} ${IMGUI_CORE} ${IMGUI_NODES})
 
 # Read Product Version
 file(READ ${CMAKE_SOURCE_DIR}/PRODUCT_VERSION.txt productversion)
@@ -148,4 +160,32 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 )
 
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+set (POSTEFFECTSTESTS
+    tests/posteffectbase_shaderproperty_tests.cpp
+)
+source_group("Tests" FILES ${POSTEFFECTSTESTS})
+
+# Create test executable (tests are only compiled into the test binary)
+add_executable(manager_PostProcessing_tests ${POSTEFFECTSTESTS})
+target_include_directories(manager_PostProcessing_tests PRIVATE ${CMAKE_SOURCE_DIR}/Projects/manager_PostProcessing)
+target_include_directories(manager_PostProcessing_tests PRIVATE ${OPENREALITY_ROOT}/include ${CMAKE_SOURCE_DIR}/MotionCodeLibrary)
+target_link_libraries(manager_PostProcessing_tests PRIVATE fbsdk manager_PostProcessing gtest_main)
+target_compile_definitions(manager_PostProcessing_tests PRIVATE PRODUCT_VERSION=${productversion} GLEW_STATIC HUD_FONT NOMINMAX)
+target_compile_features(manager_PostProcessing_tests PRIVATE cxx_std_17)
+
+# Enable CTest and register the test
+enable_testing()
+add_test(NAME ShaderPropertyTests COMMAND manager_PostProcessing_tests)
+
+set_tests_properties(ShaderPropertyTests PROPERTIES
+    ENVIRONMENT "PATH=${ADSK_MOBU_2026_64}/bin/x64;$ENV{PATH}"
+)

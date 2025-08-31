@@ -9,10 +9,16 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "posteffectbase.h"
+#include "posteffectsingleshader.h"
 
 // forward
-class PostPersistentData;
+class EffectShaderDisplacement;
+
+/// <summary>
+/// effect with once shader - displacement, output directly to effects chain dst buffer
+/// </summary>
+typedef PostEffectSingleShader<EffectShaderDisplacement> PostEffectDisplacement;
+
 
 class EffectShaderDisplacement : public PostEffectBufferShader
 {
@@ -20,14 +26,11 @@ private:
 	static constexpr const char* SHADER_NAME = "Displacement";
 	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/displacement.fsh";
-	static constexpr const char* ENABLE_MASKING_PROPERTY_NAME = "Disp Use Masking";
-	static constexpr const char* MASKING_CHANNEL_PROPERTY_NAME = "Disp Masking Channel";
-
+	
 public:
 
 	EffectShaderDisplacement(FBComponent* ownerIn);
-	virtual ~EffectShaderDisplacement()
-	{}
+	virtual ~EffectShaderDisplacement() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
 
@@ -45,13 +48,8 @@ protected:
 	IEffectShaderConnections::ShaderProperty* mXSineCycles;
 	IEffectShaderConnections::ShaderProperty* mYSineCycles;
 
-	
-	virtual const char* GetUseMaskingPropertyName() const override {
-		return ENABLE_MASKING_PROPERTY_NAME;
-	}
-	virtual const char* GetMaskingChannelPropertyName() const override {
-		return MASKING_CHANNEL_PROPERTY_NAME;
-	}
+	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
 	virtual bool DoPopulatePropertiesFromUniforms() const override {
@@ -59,9 +57,6 @@ protected:
 	}
 
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
+
 };
 
-/// <summary>
-/// effect with once shader - displacement, output directly to effects chain dst buffer
-/// </summary>
-typedef PostEffectSingleShader<EffectShaderDisplacement> PostEffectDisplacement;

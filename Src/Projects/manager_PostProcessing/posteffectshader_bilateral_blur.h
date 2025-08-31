@@ -16,7 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
-#include "posteffectbase.h"
+#include "posteffectsingleshader.h"
 #include "posteffect_shader_userobject.h"
 
 #include <memory>

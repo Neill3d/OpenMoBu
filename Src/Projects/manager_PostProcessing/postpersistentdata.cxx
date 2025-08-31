@@ -558,44 +558,42 @@ bool PostPersistentData::FBCreate()
 
 	FBPropertyPublish(this, SSAO, "SSAO", nullptr, nullptr);
 
-	FBPropertyPublish(this, SSAO_UseMasking, "SSAO Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, SSAO_MaskingChannel, "SSAO Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_UseMasking, SSAO_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_MaskingChannel, SSAO_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, SSAO_Radius, "SSAO Radius", nullptr, nullptr);
-
-	FBPropertyPublish(this, SSAO_Intensity, "SSAO Intensity", nullptr, nullptr);
-	FBPropertyPublish(this, SSAO_Bias, "SSAO Bias", nullptr, nullptr);
-
-	FBPropertyPublish(this, OnlyAO, "Only AO", nullptr, nullptr);
-
-	FBPropertyPublish(this, SSAO_Blur, "SSAO Blur", nullptr, nullptr);
-	FBPropertyPublish(this, SSAO_BlurSharpness, "SSAO Blur Sharpness", nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Radius, SSAO_RADIUS, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Intensity, SSAO_INTENSITY, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Bias, SSAO_BIAS, nullptr, nullptr);
+	FBPropertyPublish(this, OnlyAO, SSAO_ONLY_AO, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Blur, SSAO_BLUR, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_BlurSharpness, SSAO_BLUR_SHARPNESS, nullptr, nullptr);
 
 	// Motion Blur
+	
 	FBPropertyPublish(this, MotionBlur, "Motion Blur", nullptr, nullptr);
-	FBPropertyPublish(this, MotionBlur_UseMasking, "Motion Blur Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, MotionBlur_MaskingChannel, "Motion Blur Masking Channel", nullptr, nullptr);
-	FBPropertyPublish(this, MotionBlurAmount, "Motion Blur Amount", nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlur_UseMasking, MOTIONBLUR_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlur_MaskingChannel, MOTIONBLUR_MASKING_CHANNEL, nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlurAmount, MOTIONBLUR_AMOUNT, nullptr, nullptr);
 	
 	// Depth Of Field
 
 	FBPropertyPublish(this, DepthOfField, "Depth Of Field", nullptr, nullptr);
 
-	FBPropertyPublish(this, DOF_UseMasking, "Depth Of Field Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, DOF_MaskingChannel, "Depth Of Field Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, DOF_UseMasking, DOF_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, DOF_MaskingChannel, DOF_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, UseCameraDOFProperties, "Use Camera DOF Properties", nullptr, nullptr);
-	FBPropertyPublish(this, ResetDOF, "Reset DOF", nullptr, ActionResetDOF);
-	FBPropertyPublish(this, DebugBlurValue, "Debug Blur Value", nullptr, nullptr);
-	FBPropertyPublish(this, DebugFarDistance, "Debug Camera Far Dist", nullptr, ActionDebugFarDist);
-	FBPropertyPublish(this, FixCameraSettings, "Fix Camera Settings", nullptr, ActionFixCameraSettings);
+	FBPropertyPublish(this, UseCameraDOFProperties, USE_CAMERA_DOF_PROPS, nullptr, nullptr);
+	FBPropertyPublish(this, ResetDOF, RESET_DOF, nullptr, ActionResetDOF);
+	FBPropertyPublish(this, DebugBlurValue, DOF_DEBUG_BLUR_VALUE, nullptr, nullptr);
+	FBPropertyPublish(this, DebugFarDistance, DOF_DEBUG_FAR_DIST, nullptr, ActionDebugFarDist);
+	FBPropertyPublish(this, FixCameraSettings, DOF_FIX_CAM_SETTINGS, nullptr, ActionFixCameraSettings);
 
-	FBPropertyPublish(this, FocalDistance, "Focal Distance", nullptr, nullptr);
-	FBPropertyPublish(this, FocalRange, "Focal Range", nullptr, nullptr);
-	FBPropertyPublish(this, FStop, "F-Stop", nullptr, nullptr);
+	FBPropertyPublish(this, FocalDistance, DOF_FOCAL_DISTANCE, nullptr, nullptr);
+	FBPropertyPublish(this, FocalRange, DOF_FOCAL_RANGE, nullptr, nullptr);
+	FBPropertyPublish(this, FStop, DOF_FSTOP, nullptr, nullptr);
 
-	FBPropertyPublish(this, AutoFocus, "Auto Focus", nullptr, nullptr);
-	FBPropertyPublish(this, FocusObject, "Focus Object", nullptr, nullptr);
+	FBPropertyPublish(this, AutoFocus, DOF_AUTO_FOCUS, nullptr, nullptr);
+	FBPropertyPublish(this, FocusObject, DOF_FOCUS_OBJECT, nullptr, nullptr);
 	FBPropertyPublish(this, FocusObjectCreate, "Create A Focus Object", nullptr, ActionFocusObjectCreate);
 	FBPropertyPublish(this, FocusObjectSelect, "Select A Focus Object", nullptr, ActionFocusObjectSelect);
 
@@ -603,7 +601,7 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, PreviewQuality, "Preview Quality", nullptr, nullptr);
 	FBPropertyPublish(this, PreviewBlurAmount, "Preview Blur Amount", nullptr, nullptr);
 
-	FBPropertyPublish(this, BlurForeground, "Blur Foreground", nullptr, nullptr);
+	FBPropertyPublish(this, BlurForeground, DOF_BLUR_FOREGROUND, nullptr, nullptr);
 	/*
 	FBPropertyPublish(this, ManualFocus, "Manual mode", nullptr, nullptr);
 	FBPropertyPublish(this, ManualNear, "Manual Near Distance", nullptr, nullptr);
@@ -612,84 +610,84 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, ManualFarFalloff, "Manual Far Falloff", nullptr, nullptr);
 	*/
 
-	FBPropertyPublish(this, UseFocusPoint, "Use Focus Point", nullptr, nullptr);
-	FBPropertyPublish(this, FocusPoint, "Focus Point", nullptr, nullptr);
+	FBPropertyPublish(this, UseFocusPoint, DOF_USE_FOCUS_POINT, nullptr, nullptr);
+	FBPropertyPublish(this, FocusPoint, DOF_FOCUS_POINT, nullptr, nullptr);
 
-	FBPropertyPublish(this, Samples, "Samples", nullptr, nullptr);
-	FBPropertyPublish(this, Rings, "Ring count", nullptr, nullptr);
+	FBPropertyPublish(this, Samples, DOF_SAMPLES, nullptr, nullptr);
+	FBPropertyPublish(this, Rings, DOF_RINGS, nullptr, nullptr);
 
-	FBPropertyPublish(this, CoC, "Circle of confusion", nullptr, nullptr);
+	FBPropertyPublish(this, CoC, DOF_COC, nullptr, nullptr);
 
-	FBPropertyPublish(this, Threshold, "Highlight Threshold", nullptr, nullptr);
-	FBPropertyPublish(this, Gain, "Highlight Gain", nullptr, nullptr);
+	FBPropertyPublish(this, Threshold, DOF_THRESHOLD, nullptr, nullptr);
+	FBPropertyPublish(this, Gain, DOF_GAIN, nullptr, nullptr);
 
-	FBPropertyPublish(this, Bias, "Bokeh Bias", nullptr, nullptr);
-	FBPropertyPublish(this, Fringe, "Bokeh Fringe", nullptr, nullptr);
+	FBPropertyPublish(this, Bias, DOF_BIAS, nullptr, nullptr);
+	FBPropertyPublish(this, Fringe, DOF_FRINGE, nullptr, nullptr);
 
-	FBPropertyPublish(this, Noise, "Noise", nullptr, nullptr);
+	FBPropertyPublish(this, Noise, DOF_NOISE, nullptr, nullptr);
 
-	FBPropertyPublish(this, Pentagon, "Pentagon", nullptr, nullptr);
-	FBPropertyPublish(this, PentagonFeather, "Pentagon feather", nullptr, nullptr);
+	FBPropertyPublish(this, Pentagon, DOF_PENTAGON, nullptr, nullptr);
+	FBPropertyPublish(this, PentagonFeather, DOF_PENTAGON_FEATHER, nullptr, nullptr);
 
 	// Color Correction
 
 	FBPropertyPublish(this, ColorCorrection, "Color Correction", nullptr, nullptr);
 
-	FBPropertyPublish(this, ColorCorrection_UseMasking, "Color Correction Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, ColorCorrection_MaskingChannel, "Color Correction Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, ColorCorrection_UseMasking, COLOR_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, ColorCorrection_MaskingChannel, COLOR_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, ChromaticAberration, "Chromatic Aberration", nullptr, nullptr);
-	FBPropertyPublish(this, ChromaticAberrationDirection, "Chromatic Aberration Direction", nullptr, nullptr);
+	FBPropertyPublish(this, ChromaticAberration, CHROMATIC_ABERRATION, nullptr, nullptr);
+	FBPropertyPublish(this, ChromaticAberrationDirection, CHROMATIC_ABERRATION_DIR, nullptr, nullptr);
 
-	FBPropertyPublish(this, Contrast, "Contrast", nullptr, nullptr);
-	FBPropertyPublish(this, Brightness, "Brightness", nullptr, nullptr);
-	FBPropertyPublish(this, Saturation, "Saturation", nullptr, nullptr);
+	FBPropertyPublish(this, Contrast, CONTRAST, nullptr, nullptr);
+	FBPropertyPublish(this, Brightness, BRIGHTNESS, nullptr, nullptr);
+	FBPropertyPublish(this, Saturation, SATURATION, nullptr, nullptr);
 
-	FBPropertyPublish(this, Gamma, "Gamma", nullptr, nullptr);
-	FBPropertyPublish(this, Inverse, "Inverse", nullptr, nullptr);
+	FBPropertyPublish(this, Gamma, COLOR_GAMMA, nullptr, nullptr);
+	FBPropertyPublish(this, Inverse, COLOR_INVERSE, nullptr, nullptr);
 
-	FBPropertyPublish(this, Bloom, "Bloom", nullptr, nullptr);
-	FBPropertyPublish(this, BloomMinBright, "Bloom Min Bright", nullptr, nullptr);
-	FBPropertyPublish(this, BloomTone, "Bloom Tone", nullptr, nullptr);
-	FBPropertyPublish(this, BloomStretch, "Bloom Stretch", nullptr, nullptr);
+	FBPropertyPublish(this, Bloom, BLOOM, nullptr, nullptr);
+	FBPropertyPublish(this, BloomMinBright, BLOOM_MIN_BRIGHT, nullptr, nullptr);
+	FBPropertyPublish(this, BloomTone, BLOOM_TONE, nullptr, nullptr);
+	FBPropertyPublish(this, BloomStretch, BLOOM_STRETCH, nullptr, nullptr);
 	
-	FBPropertyPublish(this, Hue, "Hue", nullptr, nullptr);
-	FBPropertyPublish(this, HueSaturation, "Hue Saturation", nullptr, nullptr);
-	FBPropertyPublish(this, Lightness, "Lightness", nullptr, nullptr);
+	FBPropertyPublish(this, Hue, COLOR_HUE, nullptr, nullptr);
+	FBPropertyPublish(this, HueSaturation, COLOR_HUE_SATURATION, nullptr, nullptr);
+	FBPropertyPublish(this, Lightness, COLOR_LIGHTNESS, nullptr, nullptr);
 
 	// Lens Flare
 
 	FBPropertyPublish(this, LensFlare, "Lens Flare", nullptr, nullptr);
-	FBPropertyPublish(this, LensFlare_UseMasking, "Flare Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, LensFlare_MaskingChannel, "Flare Masking Channel", nullptr, nullptr);
-	FBPropertyPublish(this, LensFlare_UseOcclusion, "Flare Use Occlusion", nullptr, nullptr);
-	FBPropertyPublish(this, FlareOcclusionSpeed, "Flare Occlusion Speed", nullptr, nullptr);
-	FBPropertyPublish(this, FlareOcclusionObjects, "Flare Occlusion Objects", nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_UseMasking, FLARE_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_MaskingChannel, FLARE_MASKING_CHANNEL, nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_UseOcclusion, FLARE_USE_OCCLUSION, nullptr, nullptr);
+	FBPropertyPublish(this, FlareOcclusionSpeed, FLARE_OCC_SPEED, nullptr, nullptr);
+	FBPropertyPublish(this, FlareOcclusionObjects, FLARE_OCC_OBJECTS, nullptr, nullptr);
 
 	//Louis 
-	FBPropertyPublish(this, FlareType, "Flare Type", nullptr, nullptr);
-	FBPropertyPublish(this, FlareSeed, "Flare Seed", nullptr, nullptr);
-	FBPropertyPublish(this, FlareUsePlayTime, "Flare Use Play Time", nullptr, nullptr);
-	FBPropertyPublish(this, FlareTimeSpeed, "Flare Time Speed", nullptr, nullptr);
+	FBPropertyPublish(this, FlareType, FLARE_TYPE, nullptr, nullptr);
+	FBPropertyPublish(this, FlareSeed, FLARE_SEED, nullptr, nullptr);
+	FBPropertyPublish(this, FlareUsePlayTime, FLARE_USE_PLAY_TIME, nullptr, nullptr);
+	FBPropertyPublish(this, FlareTimeSpeed, FLARE_TIME_SPEED, nullptr, nullptr);
 
-	FBPropertyPublish(this, UseFlareLightObject, "Use Flare Light Object", nullptr, nullptr);
-	FBPropertyPublish(this, FlareLight, "Flare Light", nullptr, nullptr);
+	FBPropertyPublish(this, UseFlareLightObject, FLARE_USE_LIGHT_OBJECT, nullptr, nullptr);
+	FBPropertyPublish(this, FlareLight, FLARE_LIGHT, nullptr, nullptr);
 
 	FBPropertyPublish(this, FlareLightCreate, "Create A Flare Light", nullptr, ActionFlareLightCreate);
 	FBPropertyPublish(this, FlareLightSelect, "Select A Flare Light", nullptr, ActionFlareLightSelect);
 
-	FBPropertyPublish(this, FlareAmount, "Lens Flare Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FlareDepthAttenuation, "Flare Depth Attenuation", nullptr, nullptr);
-	FBPropertyPublish(this, FlarePosX, "Lens Flare X", nullptr, nullptr);
-	FBPropertyPublish(this, FlarePosY, "Lens Flare Y", nullptr, nullptr);
+	FBPropertyPublish(this, FlareAmount, FLARE_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FlareDepthAttenuation, FLARE_DEPTH_ATT, nullptr, nullptr);
+	FBPropertyPublish(this, FlarePosX, FLARE_POSX, nullptr, nullptr);
+	FBPropertyPublish(this, FlarePosY, FLARE_POSY, nullptr, nullptr);
 
-	FBPropertyPublish(this, FlareTint, "Lens Flare Tint", nullptr, nullptr);
-	FBPropertyPublish(this, FlareInner, "Lens Flare Inner", nullptr, nullptr);
-	FBPropertyPublish(this, FlareOuter, "Lens Flare Outer", nullptr, nullptr);
+	FBPropertyPublish(this, FlareTint, FLARE_TINT, nullptr, nullptr);
+	FBPropertyPublish(this, FlareInner, FLARE_INNER, nullptr, nullptr);
+	FBPropertyPublish(this, FlareOuter, FLARE_OUTER, nullptr, nullptr);
 
-	FBPropertyPublish(this, FlareFadeToBorders, "Flare Fade To Borders", nullptr, nullptr);
-	FBPropertyPublish(this, FlareBorderWidth, "Flare Border Width", nullptr, nullptr);
-	FBPropertyPublish(this, FlareBorderFeather, "Flare Border Feather", nullptr, nullptr);
+	FBPropertyPublish(this, FlareFadeToBorders, FLARE_FADE_TO_BORDERS, nullptr, nullptr);
+	FBPropertyPublish(this, FlareBorderWidth, FLARE_BORDER_WIDTH, nullptr, nullptr);
+	FBPropertyPublish(this, FlareBorderFeather, FLARE_BORDER_FEATHER, nullptr, nullptr);
 
 	// Displacement
 
@@ -710,39 +708,40 @@ bool PostPersistentData::FBCreate()
 	// Fish Eye
 
 	FBPropertyPublish(this, FishEye, "Fish Eye", nullptr, nullptr);
-	FBPropertyPublish(this, FishEye_UseMasking, "Fish Eye Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, FishEye_MaskingChannel, "Fish Eye Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, FishEye_UseMasking, FISHEYE_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, FishEye_MaskingChannel, FISHEYE_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, FishEyeAmount, "Fish Eye Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FishEyeLensRadius, "Fish Eye Lens Radius", nullptr, nullptr);
-	FBPropertyPublish(this, FishEyeSignCurvature, "Fish Eye Sign Curvature", nullptr, nullptr);
-	FBPropertyPublish(this, FishEyeOrder, "Fish Eye Order", nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeAmount, FISHEYE_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeLensRadius, FISHEYE_LENS_RADIUS, nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeSignCurvature, FISHEYE_SIGN_CURV, nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeOrder, FISHEYE_ORDER, nullptr, nullptr);
 
 	// Film Grain
 
+	
 	FBPropertyPublish(this, FilmGrain, "Film Grain", nullptr, nullptr);
-	FBPropertyPublish(this, FilmGrain_UseMasking, "Grain Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, FilmGrain_MaskingChannel, "Grain Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, FilmGrain_UseMasking, GRAIN_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, FilmGrain_MaskingChannel, GRAIN_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, FG_UsePlayTime, "Grain Use Play Time", nullptr, nullptr);
-	FBPropertyPublish(this, FG_TimeSpeed, "Grain Time Speed", nullptr, nullptr);
+	FBPropertyPublish(this, FG_UsePlayTime, GRAIN_USE_PLAY_TIME, nullptr, nullptr);
+	FBPropertyPublish(this, FG_TimeSpeed, GRAIN_SPEED, nullptr, nullptr);
 
-	FBPropertyPublish(this, FG_GrainAmount, "Grain Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FG_Colored, "Grain Colored", nullptr, nullptr);
-	FBPropertyPublish(this, FG_ColorAmount, "Grain Color Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FG_GrainSize, "Grain Size", nullptr, nullptr);
-	FBPropertyPublish(this, FG_LumAmount, "Grain Lum Amount", nullptr, nullptr);
+	FBPropertyPublish(this, FG_GrainAmount, GRAIN_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FG_Colored, GRAIN_COLORED, nullptr, nullptr);
+	FBPropertyPublish(this, FG_ColorAmount, GRAIN_COLOR_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FG_GrainSize, GRAIN_SIZE, nullptr, nullptr);
+	FBPropertyPublish(this, FG_LumAmount, GRAIN_LUMAMOUNT, nullptr, nullptr);
 
 	// Vignetting 
 
 	FBPropertyPublish(this, Vignetting, "Vignetting", nullptr, nullptr);
-	FBPropertyPublish(this, Vign_UseMasking, "Vignetting Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, Vign_MaskingChannel, "Vignetting Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, Vign_UseMasking, VIGN_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, Vign_MaskingChannel, VIGN_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, VignAmount, "Vignetting Amount", nullptr, nullptr);
-	FBPropertyPublish(this, VignOut, "Vignetting Outer Border", nullptr, nullptr);
-	FBPropertyPublish(this, VignIn, "Vignetting Inner Border", nullptr, nullptr);
-	FBPropertyPublish(this, VignFade, "Vignetting Fade", nullptr, nullptr);
+	FBPropertyPublish(this, VignAmount, VIGN_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, VignOut, VIGN_OUT, nullptr, nullptr);
+	FBPropertyPublish(this, VignIn, VIGN_IN, nullptr, nullptr);
+	FBPropertyPublish(this, VignFade, VIGN_FADE, nullptr, nullptr);
 
 	// preview output
 	FBPropertyPublish(this, OutputPreview, "Output Preview", nullptr, nullptr);

@@ -26,7 +26,7 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 
 	AddProperty(IEffectShaderConnections::ShaderProperty("color", "inputSampler"))
 		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
-		.SetValue(CommonEffectUniforms::GetColorSamplerSlot());
+		.SetValue(CommonEffect::ColorSamplerSlot);
 	mTime = &AddProperty(IEffectShaderConnections::ShaderProperty("time", "iTime", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 	mSpeed = &AddProperty(IEffectShaderConnections::ShaderProperty("speed", "iSpeed", nullptr))
@@ -42,13 +42,22 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 	mYSineCycles = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_Y, "ySineCycles", nullptr));
 }
 
+const char* EffectShaderDisplacement::GetUseMaskingPropertyName() const noexcept
+{
+	return PostPersistentData::DISP_USE_MASKING;
+}
+const char* EffectShaderDisplacement::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::DISP_MASKING_CHANNEL;
+}
+
 bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	auto postProcess = effectContext->GetPostProcessData();
+	const PostPersistentData* postProcess = effectContext->GetPostProcessData();
 
 	// this is a custom logic of updating uniform values
 
-	double time = (postProcess->Disp_UsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
+	const double time = (postProcess->Disp_UsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 	const double timerMult = postProcess->Disp_Speed;
 	const double _timer = 0.01 * timerMult * time;
 

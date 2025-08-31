@@ -2,58 +2,58 @@
 
 // posteffectcolor
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
-#include "posteffectbase.h"
+#include "posteffectsingleshader.h"
 
-namespace FBSDKNamespace
-{
-	// forward
-	class FBCamera;
-}
+// forward
+class EffectShaderColor;
+
+/// <summary>
+/// effect with once shader - displacement, output directly to effects chain dst buffer
+/// </summary>
+typedef PostEffectSingleShader<EffectShaderColor> PostEffectColor;
+
 
 /// <summary>
 /// color correction post processing effect
 /// </summary>
-struct PostEffectColor : public PostEffectBase, public CommonEffectUniforms
+class EffectShaderColor : public PostEffectBufferShader
 {
+private:
+	static constexpr const char* SHADER_NAME = "Color Correction";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/color.fsh";
+	
 public:
-	//! a constructor
-	PostEffectColor();
-	//! a destructor
-	virtual ~PostEffectColor();
+	
+	EffectShaderColor(FBComponent* ownerIn);
+	virtual ~EffectShaderColor() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
 
-	virtual const char* GetName() const override;
-	virtual const char* GetVertexFname(const int shaderIndex) const override;
-	virtual const char* GetFragmentFname(const int shaderIndex) const override;
-
-	const char* GetEnableMaskPropertyName() const override { return "Color Correction Use Masking"; }
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
+	const char* GetName() const override { return SHADER_NAME; }
+	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
+	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
 protected:
 
-	// shader locations
-	enum { LOCATIONS_COUNT = 4 };
-	union
-	{
-		struct
-		{
-			GLint		mResolution;
-			GLint		mChromaticAberration;
+	IEffectShaderConnections::ShaderProperty* mResolution;
+	IEffectShaderConnections::ShaderProperty* mChromaticAberration;
+	IEffectShaderConnections::ShaderProperty* mCSB;
+	IEffectShaderConnections::ShaderProperty* mHue;
+	
+	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
-			GLint		mLocCSB;
-			GLint		mLocHue;
-		};
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
 
-		GLint		mLocations[LOCATIONS_COUNT];
-	};
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 };

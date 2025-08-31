@@ -14,11 +14,11 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectdisplacement.h"
 //#include "posteffectmotionblur.h"
 //#include "posteffectlensflare.h"
-//#include "posteffectcolor.h"
+#include "posteffectcolor.h"
 //#include "posteffectdof.h"
-//#include "posteffectfilmgrain.h"
+#include "posteffectfilmgrain.h"
 //#include "posteffectfisheye.h"
-//#include "posteffectvignetting.h"
+#include "posteffectvignetting.h"
 //#include "posteffectdof.h"
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
@@ -118,16 +118,16 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 	/*
 	if (true == mSettings->FishEye && mFishEye.get())
 		mFishEye->CollectUIValues(mSettings, effectContext);
-	
+	*/
 	if (true == mSettings->ColorCorrection && mColor.get())
-		mColor->CollectUIValues(mSettings, effectContext);
+		mColor->CollectUIValues(&effectContext);
 	
 	if (true == mSettings->Vignetting && mVignetting.get())
-		mVignetting->CollectUIValues(mSettings, effectContext);
+		mVignetting->CollectUIValues(&effectContext);
 	
 	if (true == mSettings->FilmGrain && mFilmGrain.get())
-		mFilmGrain->CollectUIValues(mSettings, effectContext);
-
+		mFilmGrain->CollectUIValues(&effectContext);
+	/*
 	if (true == mSettings->LensFlare && mLensFlare.get())
 		mLensFlare->CollectUIValues(mSettings, effectContext);
 
@@ -871,7 +871,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 	if (isMaskTextureBinded)
 	{
 		const GLuint maskTextureId = maskRequest->GetColorObject(globalMaskingIndex);
-		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, maskTextureId);
 		glActiveTexture(GL_TEXTURE0);
 	}
@@ -885,7 +885,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 	{
 		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
 
-		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetDepthSamplerSlot());
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::DepthSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, depthId);
 		glActiveTexture(GL_TEXTURE0);
 	}
@@ -925,7 +925,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 			if (IsAnyObjectMaskedByMaskId(static_cast<EMaskingChannel>(effect->GetMaskIndex())) && effectMaskingIndex != globalMaskingIndex)
 			{
 				const GLuint maskTextureId = maskRequest->GetColorObject(effectMaskingIndex);
-				glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+				glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
 				glBindTexture(GL_TEXTURE_2D, maskTextureId);
 				glActiveTexture(GL_TEXTURE0);
 			}
@@ -966,7 +966,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 			if (effectMaskingIndex != globalMaskingIndex)
 			{
 				const GLuint maskTextureId = maskRequest->GetColorObject(globalMaskingIndex);
-				glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+				glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
 				glBindTexture(GL_TEXTURE_2D, maskTextureId);
 				glActiveTexture(GL_TEXTURE0);
 			}
@@ -985,22 +985,22 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	if (isDepthSamplerBinded)
 	{
-		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetDepthSamplerSlot());
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::DepthSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	if (isLinearDepthSamplerBinded)
 	{
-		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetLinearDepthSamplerSlot());
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::LinearDepthSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	if (isWorldNormalSamplerBinded)
 	{
-		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetWorldNormalSamplerSlot());
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::WorldNormalSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	if (isMaskTextureBinded)
 	{
-		glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetMaskSamplerSlot());
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
@@ -1018,15 +1018,15 @@ PostEffectBase* PostEffectChain::ShaderFactory(const BuildInEffect effectType, c
 	//case SHADER_TYPE_FISHEYE:
 	//	newEffect = new PostEffectFishEye();
 	//	break;
-	//case SHADER_TYPE_COLOR:
-	//	newEffect = new PostEffectColor();
-	//	break;
-	//case SHADER_TYPE_VIGNETTE:
-	//	newEffect = new PostEffectVignetting();
-	//	break;
-	//case SHADER_TYPE_FILMGRAIN:
-	//	newEffect = new PostEffectFilmGrain();
-	//	break;
+	case BuildInEffect::COLOR:
+		newEffect = new PostEffectColor();
+		break;
+	case BuildInEffect::VIGNETTE:
+		newEffect = new PostEffectVignetting();
+		break;
+	case BuildInEffect::FILMGRAIN:
+		newEffect = new PostEffectFilmGrain();
+		break;
 	//case SHADER_TYPE_LENSFLARE:
 	//	newEffect = new PostEffectLensFlare();
 	//	break;

@@ -364,8 +364,8 @@ bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int 
 	BindSystemUniforms(effectContext);
 
 	// setup user uniforms
-	const GLuint programId = shader->GetProgramObj();
-	GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
+	//const GLuint programId = shader->GetProgramObj();
+	//GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
 
 	for (auto& prop : mProperties)
 	{

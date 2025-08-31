@@ -2,67 +2,62 @@
 
 // posteffectfilmgrain
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
-#include "posteffectbase.h"
+#include "posteffectsingleshader.h"
 
-namespace FBSDKNamespace
-{
-	// forward
-	class FBCamera;
-}
+// forward
+class EffectShaderFilmGrain;
+
+/// <summary>
+/// effect with once shader - displacement, output directly to effects chain dst buffer
+/// </summary>
+typedef PostEffectSingleShader<EffectShaderFilmGrain> PostEffectFilmGrain;
 
 
 /// <summary>
 /// film grain post processign effect
 /// </summary>
-struct PostEffectFilmGrain : public PostEffectBase, public CommonEffectUniforms
+class EffectShaderFilmGrain : public PostEffectBufferShader
 {
+private:
+	static constexpr const char* SHADER_NAME = "Film Grain";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/filmGrain.fsh";
+
 public:
 
-	//! a constructor
-	PostEffectFilmGrain();
-
-	//! a destructor
-	virtual ~PostEffectFilmGrain();
+	EffectShaderFilmGrain(FBComponent* ownerIn);
+	virtual ~EffectShaderFilmGrain() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
 
-	virtual const char* GetName() const override;
-	virtual const char* GetVertexFname(const int shaderIndex) const override;
-	virtual const char* GetFragmentFname(const int shaderIndex) const override;
-
-	const char* GetEnableMaskPropertyName() const override { return "Grain Use Masking"; }
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
+	const char* GetName() const override { return SHADER_NAME; }
+	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
+	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
 protected:
 
-	// shader locations
-	enum { LOCATIONS_COUNT = 8 };
-	union
-	{
-		struct
-		{
-			// locations
-			GLint		textureWidth;
-			GLint		textureHeight;
+	IEffectShaderConnections::ShaderProperty* mTextureWidth;
+	IEffectShaderConnections::ShaderProperty* mTextureHeight;
+	IEffectShaderConnections::ShaderProperty* mTimer;
+	IEffectShaderConnections::ShaderProperty* mGrainAmount; //!< = 0.05; //grain amount
+	IEffectShaderConnections::ShaderProperty* mColored; //!< = false; //colored noise?
+	IEffectShaderConnections::ShaderProperty* mColorAmount; // = 0.6;
+	IEffectShaderConnections::ShaderProperty* mGrainSize; // = 1.6; //grain particle size (1.5 - 2.5)
+	IEffectShaderConnections::ShaderProperty* mLumAmount; // = 1.0; //
 
-			GLint		timer;
+	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
-			GLint		grainamount; //!< = 0.05; //grain amount
-			GLint		colored; //!< = false; //colored noise?
-			GLint		coloramount; // = 0.6;
-			GLint		grainsize; // = 1.6; //grain particle size (1.5 - 2.5)
-			GLint		lumamount; // = 1.0; //
-		};
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
 
-		GLint		mLocations[LOCATIONS_COUNT];
-	};
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 };
