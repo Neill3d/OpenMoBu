@@ -1,7 +1,7 @@
 
 /**	\file	posteffectfisheye.cxx
 
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -12,84 +12,49 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectfisheye.h"
 #include "postpersistentdata.h"
 
-#define SHADER_FISH_EYE_NAME			"Fish Eye"
-#define SHADER_FISH_EYE_VERTEX			"\\GLSL\\fishEye.vsh"
-#define SHADER_FISH_EYE_FRAGMENT		"\\GLSL\\fishEye.fsh"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
-//
-extern void LOGE(const char* pFormatString, ...);
-
+#include "postprocessing_helper.h"
 
 //! a constructor
-PostEffectFishEye::PostEffectFishEye()
-	: PostEffectBase()
+EffectShaderFishEye::EffectShaderFishEye(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
+	MakeCommonProperties();
+
+	AddProperty(ShaderProperty("color", "sampler0"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::ColorSamplerSlot);
+
+	mAmount = &AddProperty(ShaderProperty(PostPersistentData::FISHEYE_AMOUNT, "amount", nullptr))
+		.SetScale(0.01f);
+	mLensRadius = &AddProperty(ShaderProperty(PostPersistentData::FISHEYE_LENS_RADIUS, "lensradius", nullptr))
+		.SetScale(1.0f);
+	mSignCurvature = &AddProperty(ShaderProperty(PostPersistentData::FISHEYE_SIGN_CURV, "signcurvature", nullptr))
+		.SetScale(1.0f);
 }
 
-//! a destructor
-PostEffectFishEye::~PostEffectFishEye()
+const char* EffectShaderFishEye::GetUseMaskingPropertyName() const noexcept
 {
-
+	return PostPersistentData::FISHEYE_USE_MASKING;
+}
+const char* EffectShaderFishEye::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::FISHEYE_MASKING_CHANNEL;
 }
 
-const char* PostEffectFishEye::GetName() const
+bool EffectShaderFishEye::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	return SHADER_FISH_EYE_NAME;
-}
+	const PostPersistentData* pData = effectContext->GetPostProcessData();
 
-const char* PostEffectFishEye::GetVertexFname(const int shaderIndex) const
-{
-	return SHADER_FISH_EYE_VERTEX;
-}
-
-const char* PostEffectFishEye::GetFragmentFname(const int shaderIndex) const
-{
-	return SHADER_FISH_EYE_FRAGMENT;
-}
-
-bool PostEffectFishEye::PrepUniforms(const int shaderIndex)
-{
-	GLSLShaderProgram* shader = mShaders[shaderIndex];
-	if (!shader)
-		return false;
-
-	shader->Bind();
-
-	GLint loc = shader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-	PrepareCommonLocations(shader);
-
-	mLocAmount = shader->findLocation("amount");
-	mLocLensRadius = shader->findLocation("lensradius");
-	mLocSignCurvature = shader->findLocation("signcurvature");
-
-	shader->UnBind();
-	return true;
-}
-
-bool PostEffectFishEye::CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext)
-{
 	const double amount = pData->FishEyeAmount;
 	const double lensradius = pData->FishEyeLensRadius;
 	const double signcurvature = pData->FishEyeSignCurvature;
 
-	GLSLShaderProgram* shader = GetShaderPtr();
-	if (!shader)
-		return false;
-
-	shader->Bind();
-	CollectCommonData(pData);
-
-	if (mLocAmount >= 0)
-		glUniform1f(mLocAmount, 0.01f * static_cast<float>(amount));
-	if (mLocLensRadius >= 0)
-		glUniform1f(mLocLensRadius, static_cast<float>(lensradius));
-	if (mLocSignCurvature >= 0)
-		glUniform1f(mLocSignCurvature, static_cast<float>(signcurvature));
-
-	shader->UnBind();
+	mAmount->SetValue(static_cast<float>(amount));
+	mLensRadius->SetValue(static_cast<float>(lensradius));
+	mSignCurvature->SetValue(static_cast<float>(signcurvature));
+	
 	return true;
 }

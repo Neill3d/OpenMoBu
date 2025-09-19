@@ -16,7 +16,7 @@ class EffectShaderVignetting;
 /// <summary>
 /// effect with once shader - vignetting, output directly to effects chain dst buffer
 /// </summary>
-typedef PostEffectSingleShader<EffectShaderVignetting> PostEffectVignetting;
+using PostEffectVignetting = PostEffectSingleShader<EffectShaderVignetting>;
 
 
 /// <summary>
@@ -45,10 +45,10 @@ public:
 
 protected:
 
-	IEffectShaderConnections::ShaderProperty* mAmount;
-	IEffectShaderConnections::ShaderProperty* VignOut;
-	IEffectShaderConnections::ShaderProperty* VignIn;
-	IEffectShaderConnections::ShaderProperty* VignFade;
+	ShaderProperty* mAmount;
+	ShaderProperty* VignOut;
+	ShaderProperty* VignIn;
+	ShaderProperty* VignFade;
 
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;

@@ -137,6 +137,7 @@ protected:
 
 	void	ResetSystemUniformLocations();
 	int		IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
+	bool	IsInternalGLSLUniform(const char* uniformName);
 	void	BindSystemUniforms(const IPostEffectContext* effectContext) const;
 
 protected:

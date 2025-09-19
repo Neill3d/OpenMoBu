@@ -16,7 +16,7 @@ class EffectShaderColor;
 /// <summary>
 /// effect with once shader - displacement, output directly to effects chain dst buffer
 /// </summary>
-typedef PostEffectSingleShader<EffectShaderColor> PostEffectColor;
+using PostEffectColor = PostEffectSingleShader<EffectShaderColor>;
 
 
 /// <summary>
@@ -42,10 +42,9 @@ public:
 
 protected:
 
-	IEffectShaderConnections::ShaderProperty* mResolution;
-	IEffectShaderConnections::ShaderProperty* mChromaticAberration;
-	IEffectShaderConnections::ShaderProperty* mCSB;
-	IEffectShaderConnections::ShaderProperty* mHue;
+	ShaderProperty* mChromaticAberration;
+	ShaderProperty* mCSB;
+	ShaderProperty* mHue;
 	
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;

@@ -17,7 +17,7 @@ class EffectShaderDisplacement;
 /// <summary>
 /// effect with once shader - displacement, output directly to effects chain dst buffer
 /// </summary>
-typedef PostEffectSingleShader<EffectShaderDisplacement> PostEffectDisplacement;
+using PostEffectDisplacement = PostEffectSingleShader<EffectShaderDisplacement>;
 
 
 class EffectShaderDisplacement : public PostEffectBufferShader
@@ -40,13 +40,13 @@ public:
 
 protected:
 
-	IEffectShaderConnections::ShaderProperty* mTime;
-	IEffectShaderConnections::ShaderProperty* mSpeed;
-	IEffectShaderConnections::ShaderProperty* mUseQuakeEffect;
-	IEffectShaderConnections::ShaderProperty* mXDistMag;
-	IEffectShaderConnections::ShaderProperty* mYDistMag;
-	IEffectShaderConnections::ShaderProperty* mXSineCycles;
-	IEffectShaderConnections::ShaderProperty* mYSineCycles;
+	ShaderProperty* mTime;
+	ShaderProperty* mSpeed;
+	ShaderProperty* mUseQuakeEffect;
+	ShaderProperty* mXDistMag;
+	ShaderProperty* mYDistMag;
+	ShaderProperty* mXSineCycles;
+	ShaderProperty* mYSineCycles;
 
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;

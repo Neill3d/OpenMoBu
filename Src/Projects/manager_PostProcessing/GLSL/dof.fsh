@@ -25,15 +25,15 @@ uniform float	upperClip;
 uniform float	lowerClip;
 
 uniform float		focalDistance, focalRange;
-uniform float		textureWidth, textureHeight;
+uniform vec2		gResolution; //viewport resolution
 
 uniform float 		zNear;
 uniform float 		zFar;
 
 #define PI  3.14159265
 
-float width = textureWidth; //texture width
-float height = textureHeight; //texture height
+float width = gResolution.x; //texture width
+float height = gResolution.y; //texture height
 
 vec2 texel = vec2(1.0/width,1.0/height);
 

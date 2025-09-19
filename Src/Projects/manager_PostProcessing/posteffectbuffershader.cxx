@@ -16,9 +16,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "posteffect_shader_userobject.h"
 
-#include <limits>
-#include <ctime>
-
 /////////////////////////////////////////////////////////////////////////
 // PostEffectBufferShader
 
@@ -53,6 +50,7 @@ void PostEffectBufferShader::MakeCommonProperties()
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
 		.SetFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE, true)
 		.SetScale(0.01f);
+
 }
 
 const char* PostEffectBufferShader::GetName() const
@@ -480,6 +478,12 @@ int PostEffectBufferShader::PopulatePropertiesFromShaderUniforms()
 			continue;
 		}
 
+		// skip GLSL internal uniforms
+		if (IsInternalGLSLUniform(prop.uniformName))
+		{
+			continue;
+		}
+
 		auto shaderType = UniformTypeToShaderPropertyType(type);
 		prop.SetType(shaderType);
 
@@ -636,7 +640,12 @@ const char* PostEffectBufferShader::gSystemUniformNames[static_cast<int>(ShaderS
 	"cameraPosition", //!< world space camera position
 	"modelView", //!< current camera modelview matrix
 	"projection", //!< current camera projection matrix
-	"modelViewProj" //!< current camera modelview-projection matrix
+	"modelViewProj", //!< current camera modelview-projection matrix
+	"invModelViewProj", 
+	"prevModelViewProj",
+
+	"zNear", //!< camera near plane
+	"zFar"	//!< camera far plane
 };
 
 void PostEffectBufferShader::ResetSystemUniformLocations()
@@ -657,6 +666,13 @@ int PostEffectBufferShader::IsSystemUniform(const char* uniformName)
 	return -1;
 }
 
+bool PostEffectBufferShader::IsInternalGLSLUniform(const char* uniformName)
+{
+	if (strncmp(uniformName, "gl_ModelViewProjectionMatrix", 64) == 0)
+		return true;
+
+	return false;
+}
 
 void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effectContext) const
 {
@@ -666,6 +682,7 @@ void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effect
 	const GLuint programId = GetShaderPtr()->GetProgramObj();
 	const GLint* sysLocations = mSystemUniformLocations;
 	bool useMasking = false;
+
 	if (effectContext->GetComponent())
 	{
 		if (FBProperty* prop = effectContext->GetComponent()->PropertyList.Find(GetUseMaskingPropertyName()))
@@ -676,128 +693,122 @@ void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effect
 		}
 	}
 
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)] >= 0)
+	auto IsUniformBound = [sysLocations](ShaderSystemUniform systemUniform) {
+		return sysLocations[static_cast<int>(systemUniform)] >= 0;
+		};
+	auto GetUniformLocation = [sysLocations](ShaderSystemUniform systemUniform) {
+		return sysLocations[static_cast<int>(systemUniform)];
+		};
+
+	if (IsUniformBound(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D))
 	{
-		glProgramUniform1f(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D)], 0);
+		glProgramUniform1f(programId, GetUniformLocation(ShaderSystemUniform::INPUT_COLOR_SAMPLER_2D), 0);
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::iCHANNEL0))
 	{
-		glProgramUniform1f(programId, sysLocations[static_cast<int>(ShaderSystemUniform::iCHANNEL0)], 0);
+		glProgramUniform1f(programId, GetUniformLocation(ShaderSystemUniform::iCHANNEL0), 0);
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D))
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D)], CommonEffect::DepthSamplerSlot);
+		glProgramUniform1i(programId, GetUniformLocation(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D), CommonEffect::DepthSamplerSlot);
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D))
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D)], CommonEffect::LinearDepthSamplerSlot);
+		glProgramUniform1i(programId, GetUniformLocation(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D), CommonEffect::LinearDepthSamplerSlot);
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D))
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D)], CommonEffect::WorldNormalSamplerSlot);
+		glProgramUniform1i(programId, GetUniformLocation(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D), CommonEffect::WorldNormalSamplerSlot);
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D))
 	{
-		glProgramUniform1i(programId, sysLocations[static_cast<int>(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D)], CommonEffect::MaskSamplerSlot);
+		glProgramUniform1i(programId, GetUniformLocation(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D), CommonEffect::MaskSamplerSlot);
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::USE_MASKING))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::USE_MASKING)];
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::USE_MASKING);
 		glProgramUniform1f(programId, loc, (useMasking) ? 1.0f : 0.0f);
 	}
 
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::UPPER_CLIP))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::UPPER_CLIP)];
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::UPPER_CLIP);
 		const double value = effectContext->GetPostProcessData()->UpperClip;
 		glProgramUniform1f(programId, loc, 0.01f * static_cast<float>(value));
 	}
 
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::LOWER_CLIP))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::LOWER_CLIP)];
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::LOWER_CLIP);
 		const double value = effectContext->GetPostProcessData()->LowerClip;
 		glProgramUniform1f(programId, loc, 1.0f - 0.01f * static_cast<float>(value));
 	}
 
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::RESOLUTION))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::RESOLUTION)];
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::RESOLUTION);
 		glProgramUniform2f(programId, loc, static_cast<float>(effectContext->GetViewWidth()), static_cast<float>(effectContext->GetViewHeight()));
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::iRESOLUTION))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iRESOLUTION)];
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::iRESOLUTION);
 		glProgramUniform2f(programId, loc, static_cast<float>(effectContext->GetViewWidth()), static_cast<float>(effectContext->GetViewHeight()));
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::TEXEL_SIZE)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::TEXEL_SIZE))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::TEXEL_SIZE)];
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::TEXEL_SIZE);
 		glProgramUniform2f(programId, loc, 1.0f/static_cast<float>(effectContext->GetViewWidth()), 1.0f/static_cast<float>(effectContext->GetViewHeight()));
 	}
 
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::iTIME)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::iTIME))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iTIME)];
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::iTIME);
 		glProgramUniform1f(programId, loc, static_cast<float>(effectContext->GetSystemTime()));
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::iDATE)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::iDATE))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::iDATE)];
-
-		std::time_t now = std::time(nullptr);
-		std::tm localTime;
-		localtime_s(&localTime, &now);  // now should be of type std::time_t
-		
-		const float secondsSinceMidnight = static_cast<float>(localTime.tm_hour * 3600 + localTime.tm_min * 60 + localTime.tm_sec);
-		const float dateTimeArray[4]{
-			static_cast<float>(localTime.tm_year + 1900),
-			static_cast<float>(localTime.tm_mon + 1),
-			static_cast<float>(localTime.tm_mday),
-			secondsSinceMidnight
-		};
-
-		glProgramUniform4fv(programId, loc, 1, dateTimeArray);
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::iDATE);
+		glProgramUniform4fv(programId, loc, 1, effectContext->GetIDate());
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::CAMERA_POSITION)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::CAMERA_POSITION))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::CAMERA_POSITION)];
-		const double* pos = effectContext->GetCameraPosition();
-		const float fpos[3]{ static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]) };
-		glProgramUniform3fv(programId, loc, 1, fpos);
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::CAMERA_POSITION);
+		glProgramUniform3fv(programId, loc, 1, effectContext->GetCameraPositionF());
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEW)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::MODELVIEW))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEW)];
-		const double* tm = effectContext->GetModelViewMatrix();
-		float fModelView[16];
-		for (int i = 0; i < 16; ++i)
-		{
-			fModelView[i] = static_cast<float>(tm[i]);
-		}
-		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, fModelView);
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::MODELVIEW);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, effectContext->GetModelViewMatrixF());
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::PROJ)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::PROJ))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::PROJ)];
-		const double* tm = effectContext->GetProjectionMatrix();
-		float fMatrix[16];
-		for (int i = 0; i < 16; ++i)
-		{
-			fMatrix[i] = static_cast<float>(tm[i]);
-		}
-		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, fMatrix);
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::PROJ);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, effectContext->GetProjectionMatrixF());
 	}
-	if (sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEWPROJ)] >= 0)
+	if (IsUniformBound(ShaderSystemUniform::MODELVIEWPROJ))
 	{
-		const GLint loc = sysLocations[static_cast<int>(ShaderSystemUniform::MODELVIEWPROJ)];
-		const double* tm = effectContext->GetModelViewProjMatrix();
-		float fMatrix[16];
-		for (int i = 0; i < 16; ++i)
-		{
-			fMatrix[i] = static_cast<float>(tm[i]);
-		}
-		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, fMatrix);
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::MODELVIEWPROJ);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, effectContext->GetModelViewProjMatrixF());
+	}
+	if (IsUniformBound(ShaderSystemUniform::INV_MODELVIEWPROJ))
+	{
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::INV_MODELVIEWPROJ);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, effectContext->GetInvModelViewProjMatrixF());
+	}
+	if (IsUniformBound(ShaderSystemUniform::PREV_MODELVIEWPROJ))
+	{
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::PREV_MODELVIEWPROJ);
+		glProgramUniformMatrix4fv(programId, loc, 1, GL_FALSE, effectContext->GetPrevModelViewProjMatrixF());
+	}
+	if (IsUniformBound(ShaderSystemUniform::ZNEAR))
+	{
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::ZNEAR);
+		glProgramUniform1f(programId, loc, effectContext->GetCameraNearDistance());
+	}
+	if (IsUniformBound(ShaderSystemUniform::ZFAR))
+	{
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::ZFAR);
+		glProgramUniform1f(programId, loc, effectContext->GetCameraFarDistance());
 	}
 }
 

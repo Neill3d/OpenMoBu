@@ -1,7 +1,7 @@
 
 // posteffectmotionblur.cpp
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -15,159 +15,100 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "postprocessing_helper.h"
 
-#define SHADER_MOTIONBLUR_NAME				"MotionBlur"
-#define SHADER_MOTIONBLUR_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_MOTIONBLUR_FRAGMENT			"\\GLSL\\motionblur.fsh"
-
-
 //! a constructor
-PostEffectMotionBlur::PostEffectMotionBlur()
-	: PostEffectBase()
+EffectShaderMotionBlur::EffectShaderMotionBlur(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLoc.arr[i] = -1;
+	MakeCommonProperties();
+
+	mDt = &AddProperty(ShaderProperty("dt", "dt", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mProjInfo = &AddProperty(ShaderProperty("projInfo", "projInfo", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mProjOrtho = &AddProperty(ShaderProperty("projOrtho", "projOrtho", EPropertyType::INT))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading
+	mInvQuarterResolution = &AddProperty(ShaderProperty("InvQuarterResolution", "InvQuarterResolution", EPropertyType::VEC2))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading
+	mInvFullResolution = &AddProperty(ShaderProperty("InvFullResolution", "InvFullResolution", EPropertyType::VEC2))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading
 }
 
-//! a destructor
-PostEffectMotionBlur::~PostEffectMotionBlur()
+const char* EffectShaderMotionBlur::GetUseMaskingPropertyName() const noexcept
 {
+	return PostPersistentData::MOTIONBLUR_USE_MASKING;
+}
+const char* EffectShaderMotionBlur::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::MOTIONBLUR_MASKING_CHANNEL;
 }
 
-const char *PostEffectMotionBlur::GetName() const
+bool EffectShaderMotionBlur::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	return SHADER_MOTIONBLUR_NAME;
-}
-const char *PostEffectMotionBlur::GetVertexFname(const int) const
-{
-	return SHADER_MOTIONBLUR_VERTEX;
-}
-const char *PostEffectMotionBlur::GetFragmentFname(const int) const
-{
-	return SHADER_MOTIONBLUR_FRAGMENT;
-}
+	if (!effectContext->GetCamera())
+		return false;
 
-bool PostEffectMotionBlur::PrepUniforms(const int shaderIndex)
-{
-	bool lSuccess = false;
+	const float znear = effectContext->GetCameraNearDistance();
+	const float zfar = effectContext->GetCameraFarDistance();
 
-	GLSLShaderProgram* mShader = mShaders[shaderIndex];
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
-
-		GLint loc = mShader->findLocation("colorSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		loc = mShader->findLocation("depthSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 2);
-		
-		PrepareCommonLocations(mShader);
-
-		mLoc.zNear = mShader->findLocation("zNear");
-		mLoc.zFar = mShader->findLocation("zFar");
-
-		mLoc.dt = mShader->findLocation("dt");
-		mLoc.clipInfo = mShader->findLocation("gClipInfo");
-
-		mLoc.projInfo = mShader->findLocation("projInfo");
-		mLoc.projOrtho = mShader->findLocation("projOrtho");
-		mLoc.InvQuarterResolution= mShader->findLocation("InvQuarterResolution");
-		mLoc.InvFullResolution= mShader->findLocation("InvFullResolution");
-
-		mLoc.uInverseModelViewMat = mShader->findLocation("uInverseModelViewMat");
-		mLoc.uPrevModelViewProj = mShader->findLocation("uPrevModelViewProj");
-
-		mShader->UnBind();
-
-		//
-		
-		lSuccess = true;
-	}
-
-	return lSuccess;
-}
-
-bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
-{
-	bool lSuccess = false;
-
-	const double _amount = pData->MotionBlurAmount;
-
-	float znear = (float) effectContext.camera->NearPlaneDistance;
-	float zfar = (float) effectContext.camera->FarPlaneDistance;
 	FBCameraType cameraType;
-	effectContext.camera->Type.GetData(&cameraType, sizeof(FBCameraType));
-	bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
+	effectContext->GetCamera()->Type.GetData(&cameraType, sizeof(FBCameraType));
+	const bool isPerspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
 	
 	// calculate a diagonal fov
 
 	// convert to mm
-	double filmWidth = 25.4 * effectContext.camera->FilmSizeWidth;
-	double filmHeight = 25.4 * effectContext.camera->FilmSizeHeight;
+	const double filmWidth = 25.4 * effectContext->GetCamera()->FilmSizeWidth;
+	const double filmHeight = 25.4 * effectContext->GetCamera()->FilmSizeHeight;
 
-	double diag = sqrt(filmWidth*filmWidth + filmHeight*filmHeight);
-	double focallen = effectContext.camera->FocalLength;
+	const double diag = sqrt(filmWidth*filmWidth + filmHeight*filmHeight);
+	const double focallen = effectContext->GetCamera()->FocalLength;
 
-	float fov = 2.0 * atan(diag / (focallen * 2.0));
+	const float fov = 2.0 * atan(diag / (focallen * 2.0));
 
-	float clipInfo[4];
-
-	clipInfo[0] = znear * zfar;
-	clipInfo[1] = znear - zfar;
-	clipInfo[2] = zfar;
-	clipInfo[3] = (perspective) ? 1.0f : 0.0f;
-
-
-	FBMatrix dproj, dinvProj, dinvModelview;
-	effectContext.camera->GetCameraMatrix(dproj, kFBProjection);
-	effectContext.camera->GetCameraMatrix(dinvProj, kFBProjInverse);
-
-	effectContext.camera->GetCameraMatrix(dinvModelview, kFBModelViewProj);
-	FBMatrixInverse(dinvModelview, dinvModelview);
-
-	//
-	float fInvModelView[16];
-	float fprevModelViewProj[16];
-
-	for (int i = 0; i < 16; ++i)
+	float clipInfo[4]
 	{
-		fInvModelView[i] = (float)dinvModelview[i];
-		fprevModelViewProj[i] = (float)mLastModelViewProj[i];
-	}
+		znear * zfar,
+		znear - zfar,
+		zfar,
+		(isPerspective) ? 1.0f : 0.0f
+	};
 
 	//
 
 	float P[16];
+	const float* dproj = effectContext->GetProjectionMatrixF();
+
 	for (int i = 0; i < 16; ++i)
 	{
-		P[i] = (float)dproj[i];
+		P[i] = dproj[i];
 	}
 
-	float projInfoPerspective[] = {
+	const float projInfoPerspective[] = {
 		2.0f / (P[4 * 0 + 0]),       // (x) * (R - L)/N
 		2.0f / (P[4 * 1 + 1]),       // (y) * (T - B)/N
 		-(1.0f - P[4 * 2 + 0]) / P[4 * 0 + 0], // L/N
 		-(1.0f + P[4 * 2 + 1]) / P[4 * 1 + 1], // B/N
 	};
 
-	float projInfoOrtho[] = {
+	const float projInfoOrtho[] = {
 		2.0f / (P[4 * 0 + 0]),      // ((x) * R - L)
 		2.0f / (P[4 * 1 + 1]),      // ((y) * T - B)
 		-(1.0f + P[4 * 3 + 0]) / P[4 * 0 + 0], // L
 		-(1.0f - P[4 * 3 + 1]) / P[4 * 1 + 1], // B
 	};
 
-	int useOrtho = (false == perspective) ? 1 : 0;
+	const int useOrtho = (false == isPerspective) ? 1 : 0;
 	int projOrtho = useOrtho;
-	float *projInfo = useOrtho ? projInfoOrtho : projInfoPerspective;
+	const float *projInfo = useOrtho ? projInfoOrtho : projInfoPerspective;
 
 	float projScale;
 	if (useOrtho){
-		projScale = float(effectContext.h) / (projInfoOrtho[1]);
+		projScale = float(effectContext->GetViewHeight()) / (projInfoOrtho[1]);
 	}
 	else {
-		projScale = float(effectContext.h) / (tanf(fov * 0.5f) * 2.0f);
+		projScale = float(effectContext->GetViewHeight()) / (tanf(fov * 0.5f) * 2.0f);
 	}
 
 	// radius
@@ -179,76 +120,22 @@ bool PostEffectMotionBlur::CollectUIValues(PostPersistentData *pData, PostEffect
 //	float RadiusToScreen = R * 0.5f * projScale;
 
 	// resolution
-	int quarterWidth = ((effectContext.w + 3) / 4);
-	int quarterHeight = ((effectContext.h + 3) / 4);
+	const int quarterWidth = ((effectContext->GetViewWidth() + 3) / 4);
+	const int quarterHeight = ((effectContext->GetViewHeight() + 3) / 4);
 
-	GLSLShaderProgram* mShader = GetShaderPtr();
-	if (nullptr != mShader)
-	{
-		mShader->Bind();
+	mClipInfo->SetValue(clipInfo[0], clipInfo[1], clipInfo[2], clipInfo[3]);
+	mProjInfo->SetValue(projInfo[0], projInfo[1], projInfo[2], projInfo[3]);
+	mProjOrtho->SetValue(projOrtho);
+	mInvQuarterResolution->SetValue(1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
+	mInvFullResolution->SetValue(1.0f / float(effectContext->GetViewWidth()), 1.0f / float(effectContext->GetViewHeight()));
 
-		if (mLoc.zNear >= 0)
-			glUniform1f(mLoc.zNear, znear);
-		if (mLoc.zFar >= 0)
-			glUniform1f(mLoc.zFar, zfar);
-
-		CollectCommonData(pData);
-
-		if (mLoc.clipInfo >= 0)
-			glUniform4fv(mLoc.clipInfo, 1, clipInfo);
-
-		// proj
-		if (mLoc.projInfo >= 0)
-			glUniform4fv(mLoc.projInfo, 1, projInfo);
-		if (mLoc.projOrtho >= 0)
-			glUniform1i(mLoc.projOrtho, projOrtho);
-
-		// matrices
-		if (mLoc.uInverseModelViewMat >= 0)
-			glUniformMatrix4fv(mLoc.uInverseModelViewMat, 1, GL_FALSE, fInvModelView);
-		if (mLoc.uPrevModelViewProj >= 0)
-			glUniformMatrix4fv(mLoc.uPrevModelViewProj, 1, GL_FALSE, fprevModelViewProj);
-
-		// resolution
-		if (mLoc.InvQuarterResolution >= 0)
-			glUniform2f(mLoc.InvQuarterResolution, 1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
-		if (mLoc.InvFullResolution >= 0)
-			glUniform2f(mLoc.InvFullResolution, 1.0f / float(effectContext.w), 1.0f / float(effectContext.h));
-
-		int localFrame = effectContext.localFrame; 
+	const int localFrame = effectContext->GetLocalFrame(); 
 		
-		if (0 == localFrame || (localFrame != mLastLocalFrame))
-		{
-			// store modelview proj for the next frame
-			effectContext.camera->GetCameraMatrix(mLastModelViewProj, kFBModelViewProj);
-
-			if (mLoc.dt >= 0)
-			{
-				float dt = static_cast<float>(effectContext.localTimeDT);
-				dt *= 0.01f * (float)_amount;
-				glUniform1f(mLoc.dt, dt);
-			}
-
-			mLastLocalFrame = effectContext.localFrame;
-		}
-
-		mShader->UnBind();
-		lSuccess = true;
+	if (0 == localFrame || (localFrame != mLastLocalFrame))
+	{
+		mDt->SetValue(static_cast<float>(effectContext->GetLocalTimeDT()));
+		mLastLocalFrame = effectContext->GetLocalFrame();
 	}
 
-	return lSuccess;
-}
-
-void PostEffectMotionBlur::Bind()
-{
-	// bind a random texture
-	
-	PostEffectBase::Bind();
-}
-
-void PostEffectMotionBlur::UnBind()
-{
-	// bind a random texture
-	
-	PostEffectBase::UnBind();
+	return true;
 }

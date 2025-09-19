@@ -16,7 +16,7 @@ class EffectShaderFilmGrain;
 /// <summary>
 /// effect with once shader - displacement, output directly to effects chain dst buffer
 /// </summary>
-typedef PostEffectSingleShader<EffectShaderFilmGrain> PostEffectFilmGrain;
+using PostEffectFilmGrain = PostEffectSingleShader<EffectShaderFilmGrain>;
 
 
 /// <summary>
@@ -24,11 +24,6 @@ typedef PostEffectSingleShader<EffectShaderFilmGrain> PostEffectFilmGrain;
 /// </summary>
 class EffectShaderFilmGrain : public PostEffectBufferShader
 {
-private:
-	static constexpr const char* SHADER_NAME = "Film Grain";
-	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
-	static constexpr const char* SHADER_FRAGMENT = "/GLSL/filmGrain.fsh";
-
 public:
 
 	EffectShaderFilmGrain(FBComponent* ownerIn);
@@ -40,16 +35,19 @@ public:
 	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
 	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
-protected:
+private:
+	static constexpr const char* SHADER_NAME = "Film Grain";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/filmGrain.fsh";
 
-	IEffectShaderConnections::ShaderProperty* mTextureWidth;
-	IEffectShaderConnections::ShaderProperty* mTextureHeight;
-	IEffectShaderConnections::ShaderProperty* mTimer;
-	IEffectShaderConnections::ShaderProperty* mGrainAmount; //!< = 0.05; //grain amount
-	IEffectShaderConnections::ShaderProperty* mColored; //!< = false; //colored noise?
-	IEffectShaderConnections::ShaderProperty* mColorAmount; // = 0.6;
-	IEffectShaderConnections::ShaderProperty* mGrainSize; // = 1.6; //grain particle size (1.5 - 2.5)
-	IEffectShaderConnections::ShaderProperty* mLumAmount; // = 1.0; //
+private:
+
+	ShaderProperty* mTimer;
+	ShaderProperty* mGrainAmount; //!< = 0.05; //grain amount
+	ShaderProperty* mColored; //!< = false; //colored noise?
+	ShaderProperty* mColorAmount; // = 0.6;
+	ShaderProperty* mGrainSize; // = 1.6; //grain particle size (1.5 - 2.5)
+	ShaderProperty* mLumAmount; // = 1.0; //
 
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;

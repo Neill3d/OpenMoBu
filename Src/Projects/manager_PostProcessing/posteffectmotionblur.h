@@ -3,72 +3,65 @@
 
 // posteffectmotionblur
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "posteffectbase.h"
-#include <random>
+#include "posteffectsingleshader.h"
+
+// forward
+class EffectShaderMotionBlur;
+
+/// <summary>
+/// effect with once shader - displacement, output directly to effects chain dst buffer
+/// </summary>
+using PostEffectMotionBlur = PostEffectSingleShader<EffectShaderMotionBlur>;
 
 /// <summary>
 /// camera motion blur post processing effect
 /// </summary>
-struct PostEffectMotionBlur : public PostEffectBase, public CommonEffectUniforms
+class EffectShaderMotionBlur : public PostEffectBufferShader
 {
 public:
 
-	//! a constructor
-	PostEffectMotionBlur();
-
-	//! a destructor
-	virtual ~PostEffectMotionBlur();
+	EffectShaderMotionBlur(FBComponent* ownerIn);
+	virtual ~EffectShaderMotionBlur() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
 
-	virtual const char *GetName() const override;
-	virtual const char *GetVertexFname(const int shaderIndex) const override;
-	virtual const char *GetFragmentFname(const int shaderIndex) const override;
+	const char* GetName() const override { return SHADER_NAME; }
+	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
+	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
-	const char* GetEnableMaskPropertyName() const override { return "Motion Blur Use Masking"; }
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
-
-	virtual void Bind() override;
-	virtual void UnBind() override;
+private:
+	static constexpr const char* SHADER_NAME = "MotionBlur";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/motionblur.fsh";
 
 protected:
 
-	// shader locations
-	enum { LOCATIONS_COUNT = 10 };
-	union 
-	{
-		struct
-		{
-			// locations
-			GLint		zNear;
-			GLint		zFar;
+	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
-			GLint		dt;
-			
-			GLint		clipInfo;
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
 
-			GLint		projInfo;
-			GLint		projOrtho;
-			GLint		InvQuarterResolution;
-			GLint		InvFullResolution;
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
-			GLint		uInverseModelViewMat;
-			GLint		uPrevModelViewProj;
-		};
-
-		GLint		arr[LOCATIONS_COUNT];
-	} mLoc;
+private:
+	
+	ShaderProperty* mDt;
+	ShaderProperty* mClipInfo;
+	ShaderProperty* mProjInfo;
+	ShaderProperty* mProjOrtho;
+	ShaderProperty* mInvQuarterResolution;
+	ShaderProperty* mInvFullResolution;
 
 	FBMatrix			mLastModelViewProj;
-	float				mLastProj[16] = { 0.0f };
-
-	int					mLastLocalFrame;
+	
+	int					mLastLocalFrame{ -1 };
 };

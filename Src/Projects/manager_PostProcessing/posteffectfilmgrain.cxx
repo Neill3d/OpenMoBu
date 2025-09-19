@@ -23,25 +23,21 @@ EffectShaderFilmGrain::EffectShaderFilmGrain(FBComponent* ownerIn)
 {
 	MakeCommonProperties();
 
-	AddProperty(IEffectShaderConnections::ShaderProperty("color", "sampler0"))
-		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+	AddProperty(ShaderProperty("color", "sampler0"))
+		.SetType(EPropertyType::TEXTURE)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
-	mTextureWidth = &AddProperty(IEffectShaderConnections::ShaderProperty("textureWidth", "textureWidth", IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-	mTextureHeight = &AddProperty(IEffectShaderConnections::ShaderProperty("textureHeight", "textureHeight", IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-	mTimer = &AddProperty(IEffectShaderConnections::ShaderProperty("time", "iTime", IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mTimer = &AddProperty(ShaderProperty("time", "timer", EPropertyType::FLOAT))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
-	mGrainAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_AMOUNT, "grainamount", nullptr))
+	mGrainAmount = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_AMOUNT, "grainamount", nullptr))
 		.SetScale(0.01f);
-	mColored = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_COLORED, "colored", nullptr));
-	mColorAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_COLOR_AMOUNT, "coloramount", nullptr))
+	mColored = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_COLORED, "colored", nullptr));
+	mColorAmount = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_COLOR_AMOUNT, "coloramount", nullptr))
 		.SetScale(0.01f);
-	mGrainSize = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_SIZE, "grainsize", nullptr))
+	mGrainSize = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_SIZE, "grainsize", nullptr))
 		.SetScale(0.01f);
-	mLumAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::GRAIN_LUMAMOUNT, "lumamount", nullptr))
+	mLumAmount = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_LUMAMOUNT, "lumamount", nullptr))
 		.SetScale(0.01f);
 }
 
@@ -68,9 +64,6 @@ bool EffectShaderFilmGrain::OnCollectUI(const IPostEffectContext* effectContext,
 	const double _coloramount = pData->FG_ColorAmount;
 	const double _grainsize = pData->FG_GrainSize;
 	const double _lumamount = pData->FG_LumAmount;
-
-	mTextureWidth->SetValue(static_cast<float>(effectContext->GetViewWidth()));
-	mTextureHeight->SetValue(static_cast<float>(effectContext->GetViewHeight()));
 
 	mTimer->SetValue(static_cast<float>(_timer));
 	mGrainAmount->SetValue(static_cast<float>(_grainamount));

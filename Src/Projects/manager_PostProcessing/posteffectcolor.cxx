@@ -24,21 +24,18 @@ EffectShaderColor::EffectShaderColor(FBComponent* ownerIn)
 {
 	MakeCommonProperties();
 
-	AddProperty(IEffectShaderConnections::ShaderProperty("color", "sampler0"))
-		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+	AddProperty(ShaderProperty("color", "sampler0"))
+		.SetType(EPropertyType::TEXTURE)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
-	mResolution = &AddProperty(IEffectShaderConnections::ShaderProperty("gResolution", "gResolution", IEffectShaderConnections::EPropertyType::VEC2))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mChromaticAberration = &AddProperty(ShaderProperty("gCA", "gCA", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
-	mChromaticAberration = &AddProperty(IEffectShaderConnections::ShaderProperty("gCA", "gCA", IEffectShaderConnections::EPropertyType::VEC4))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mCSB = &AddProperty(ShaderProperty("gCSB", "gCSB", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
-	mCSB = &AddProperty(IEffectShaderConnections::ShaderProperty("gCSB", "gCSB", IEffectShaderConnections::EPropertyType::VEC4))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-
-	mHue = &AddProperty(IEffectShaderConnections::ShaderProperty("gHue", "gHue", IEffectShaderConnections::EPropertyType::VEC4))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mHue = &AddProperty(ShaderProperty("gHue", "gHue", EPropertyType::VEC4))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
 }
 
@@ -68,7 +65,6 @@ bool EffectShaderColor::OnCollectUI(const IPostEffectContext* effectContext, int
 	const double hueSat = 0.01 * pData->HueSaturation;
 	const double lightness = 0.01 * pData->Lightness;
 
-	mResolution->SetValue(static_cast<float>(effectContext->GetViewWidth()), static_cast<float>(effectContext->GetViewHeight()));
 	mChromaticAberration->SetValue(static_cast<float>(ca_dir[0]), static_cast<float>(ca_dir[1]), 0.0f, chromatic_aberration);
 	mCSB->SetValue(static_cast<float>(contrast), static_cast<float>(saturation), static_cast<float>(brightness), static_cast<float>(gamma));
 	mHue->SetValue(static_cast<float>(hue), static_cast<float>(hueSat), static_cast<float>(lightness), inverse);

@@ -49,6 +49,12 @@ enum class ShaderSystemUniform : uint8_t
 	PROJ,		//!< current camera projection matrix
 	MODELVIEWPROJ,	//!< current camera modelview-projection matrix
 
+	INV_MODELVIEWPROJ, // inverse of modelview-projection matrix
+	PREV_MODELVIEWPROJ, // modelview-projection matrix from a previous frame
+
+	ZNEAR, //!< camera near plane
+	ZFAR,	//!< camera far plane
+
 	COUNT
 };
 

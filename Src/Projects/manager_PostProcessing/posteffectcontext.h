@@ -23,6 +23,8 @@ public:
 
 		double localTime{ 0.0 }; //!< playback time (in seconds)
 		double localTimeDT{ 0.0 };
+
+		FBMatrix prevModelViewProjMatrix; //!< modelview-projection matrix of the previous frame
 	};
 
 	// interface to query the needed data
@@ -34,11 +36,28 @@ public:
 	[[nodiscard]] double GetSystemTime() const noexcept { return parameters.sysTime; }
 	[[nodiscard]] double GetLocalTime() const noexcept { return parameters.localTime; }
 
+	[[nodiscard]] double GetLocalTimeDT() const noexcept { return parameters.localTimeDT; }
+	[[nodiscard]] double GetSystemTimeDT() const noexcept { return parameters.sysTimeDT; }
+
 	[[nodiscard]] virtual double* GetCameraPosition() const noexcept = 0;
+	[[nodiscard]] virtual const float* GetCameraPositionF() const noexcept = 0;
+
+	[[nodiscard]] virtual float GetCameraNearDistance() const noexcept = 0;
+	[[nodiscard]] virtual float GetCameraFarDistance() const noexcept = 0;
 
 	[[nodiscard]] virtual double* GetModelViewMatrix() const noexcept = 0;
+	[[nodiscard]] virtual const float* GetModelViewMatrixF() const noexcept = 0;
 	[[nodiscard]] virtual double* GetProjectionMatrix() const noexcept = 0;
+	[[nodiscard]] virtual const float* GetProjectionMatrixF() const noexcept = 0;
 	[[nodiscard]] virtual double* GetModelViewProjMatrix() const noexcept = 0;
+	[[nodiscard]] virtual const float* GetModelViewProjMatrixF() const noexcept = 0;
+	// returns the modelview-projection matrix of the previous frame
+	[[nodiscard]] virtual const float* GetPrevModelViewProjMatrixF() const noexcept = 0;
+	// returns the inverse of the modelview-projection matrix
+	[[nodiscard]] virtual const float* GetInvModelViewProjMatrixF() const noexcept = 0;
+
+	// 4 floats in format - year + 1900, month + 1, day, seconds since midnight
+	[[nodiscard]] virtual const float* GetIDate() const noexcept = 0;
 
 	[[nodiscard]] virtual FBCamera* GetCamera() const = 0;
 	[[nodiscard]] virtual FBComponent* GetComponent() const = 0;

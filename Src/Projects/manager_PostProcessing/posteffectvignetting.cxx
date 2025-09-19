@@ -20,17 +20,17 @@ EffectShaderVignetting::EffectShaderVignetting(FBComponent* ownerIn)
 {
 	MakeCommonProperties();
 	
-	AddProperty(IEffectShaderConnections::ShaderProperty("color", "colorSampler"))
-		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+	AddProperty(ShaderProperty("color", "colorSampler"))
+		.SetType(EPropertyType::TEXTURE)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 	
-	mAmount = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_AMOUNT, "amount", nullptr))
+	mAmount = &AddProperty(ShaderProperty(PostPersistentData::VIGN_AMOUNT, "amount", nullptr))
 		.SetScale(0.01f);
-	VignOut = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_OUT, "vignout", nullptr))
+	VignOut = &AddProperty(ShaderProperty(PostPersistentData::VIGN_OUT, "vignout", nullptr))
 		.SetScale(0.01f);
-	VignIn = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_IN, "vignin", nullptr))
+	VignIn = &AddProperty(ShaderProperty(PostPersistentData::VIGN_IN, "vignin", nullptr))
 		.SetScale(0.01f);
-	VignFade = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::VIGN_FADE, "vignfade", nullptr));
+	VignFade = &AddProperty(ShaderProperty(PostPersistentData::VIGN_FADE, "vignfade", nullptr));
 }
 
 const char* EffectShaderVignetting::GetUseMaskingPropertyName() const noexcept

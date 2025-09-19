@@ -24,22 +24,22 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 	// publish input connection of the effect
 	//  input connections we can use to - look for locations, to read values from a given input data component, bind values from values into shader uniforms
 
-	AddProperty(IEffectShaderConnections::ShaderProperty("color", "inputSampler"))
-		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+	AddProperty(ShaderProperty("color", "inputSampler"))
+		.SetType(EPropertyType::TEXTURE)
 		.SetValue(CommonEffect::ColorSamplerSlot);
-	mTime = &AddProperty(IEffectShaderConnections::ShaderProperty("time", "iTime", nullptr))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-	mSpeed = &AddProperty(IEffectShaderConnections::ShaderProperty("speed", "iSpeed", nullptr))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
-	mUseQuakeEffect = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_USE_QUAKE_EFFECT, "useQuakeEffect", nullptr))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::IsFlag, true);
+	mTime = &AddProperty(ShaderProperty("time", "iTime", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+	mSpeed = &AddProperty(ShaderProperty("speed", "iSpeed", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+	mUseQuakeEffect = &AddProperty(ShaderProperty(PostPersistentData::DISP_USE_QUAKE_EFFECT, "useQuakeEffect", nullptr))
+		.SetFlag(PropertyFlag::IsFlag, true);
 
-	mXDistMag = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_MAGNITUDE_X, "xDistMag", nullptr))
+	mXDistMag = &AddProperty(ShaderProperty(PostPersistentData::DISP_MAGNITUDE_X, "xDistMag", nullptr))
 		.SetScale(0.0001f);
-	mYDistMag = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_MAGNITUDE_Y, "yDistMag", nullptr))
+	mYDistMag = &AddProperty(ShaderProperty(PostPersistentData::DISP_MAGNITUDE_Y, "yDistMag", nullptr))
 		.SetScale(0.0001f);
-	mXSineCycles = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_X, "xSineCycles", nullptr));
-	mYSineCycles = &AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_Y, "ySineCycles", nullptr));
+	mXSineCycles = &AddProperty(ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_X, "xSineCycles", nullptr));
+	mYSineCycles = &AddProperty(ShaderProperty(PostPersistentData::DISP_SIN_CYCLES_Y, "ySineCycles", nullptr));
 }
 
 const char* EffectShaderDisplacement::GetUseMaskingPropertyName() const noexcept

@@ -2,105 +2,91 @@
 
 // posteffectdof
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
-#include "posteffectbase.h"
+#include "posteffectsingleshader.h"
 
-namespace FBSDKNamespace
-{
-	// forward
-	class FBCamera;
-}
+// forward
+class EffectShaderDOF;
 
 /// <summary>
-/// depth of field post processing effect
+/// Depth of field post-processing effect with single shader pipeline
+/// Outputs directly to effects chain destination buffer
 /// </summary>
-struct PostEffectDOF : public PostEffectBase, public CommonEffectUniforms
+using PostEffectDOF = PostEffectSingleShader<EffectShaderDOF>;
+
+
+/// <summary>
+/// Depth of field post-processing shader effect implementation
+/// Provides realistic camera depth of field simulation with configurable parameters
+/// </summary>
+class EffectShaderDOF : public PostEffectBufferShader
 {
 public:
 
-	//! a constructor
-	PostEffectDOF();
-
-	//! a destructor
-	virtual ~PostEffectDOF();
+	explicit EffectShaderDOF(FBComponent* ownerIn);
+	virtual ~EffectShaderDOF() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
 
-	virtual const char *GetName() const override;
-	virtual const char *GetVertexFname(const int shaderIndex) const override;
-	virtual const char *GetFragmentFname(const int shaderIndex) const override;
-
-	const char* GetEnableMaskPropertyName() const override { return "Depth Of Field Use Masking"; }
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext) override;
+	const char* GetName() const override { return SHADER_NAME; }
+	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
+	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
 protected:
 
-	// shader locations
-	enum { LOCATIONS_COUNT = 27 };
-	union
-	{
-		struct
-		{
-			// locations
-			GLint		focalDistance;
-			GLint		focalRange;
+    [[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+    [[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
+    // This is a predefined effect shader, properties are defined manually
+    virtual bool DoPopulatePropertiesFromUniforms() const override {
+        return false;
+    }
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
-			GLint		textureWidth;
-			GLint		textureHeight;
+private:
+	static constexpr const char* SHADER_NAME = "Depth Of Field";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/dof.fsh";
 
-			GLint		zNear;
-			GLint		zFar;
+    // Core depth of field parameters
+    ShaderProperty* mFocalDistance;
+    ShaderProperty* mFocalRange;
+    ShaderProperty* mFStop;
+    ShaderProperty* mCoC;  // Circle of confusion size in mm (35mm film = 0.03mm)
 
-			GLint		fstop;
+    // Rendering parameters
+    ShaderProperty* mSamples;
+    ShaderProperty* mRings;
 
-			GLint		samples;
-			GLint		rings;
+    // Focus control
+    ShaderProperty* mAutoFocus;    // Use autofocus in shader
+    ShaderProperty* mFocus;        // Autofocus point on screen (0.0,0.0 - bottom-left, 1.0,1.0 - top-right)
+    ShaderProperty* mFocusPoint;
+    ShaderProperty* mManualDOF;    // Manual DOF calculation toggle
 
-			GLint		blurForeground;
+    // Near and far DOF blur parameters
+    ShaderProperty* mNDOFStart;    // Near DOF blur start distance
+    ShaderProperty* mNDOFDist;     // Near DOF blur falloff distance
+    ShaderProperty* mFDOFStart;    // Far DOF blur start distance  
+    ShaderProperty* mFDOFDist;     // Far DOF blur falloff distance
 
-			GLint		manualdof; // = false; //manual dof calculation
-			GLint		ndofstart; // = 1.0; //near dof blur start
-			GLint		ndofdist; // = 2.0; //near dof blur falloff distance
-			GLint		fdofstart; // = 1.0; //far dof blur start
-			GLint		fdofdist; // = 3.0; //far dof blur falloff distance
+    // Visual enhancement parameters
+    ShaderProperty* mBlurForeground;
+    ShaderProperty* mThreshold;    // Highlight threshold
+    ShaderProperty* mGain;         // Highlight gain
+    ShaderProperty* mBias;         // Bokeh edge bias
+    ShaderProperty* mFringe;       // Bokeh chromatic aberration/fringing
+    ShaderProperty* mNoise;        // Use noise instead of pattern for sample dithering
 
-			GLint		focusPoint;
+    // Experimental bokeh shape parameters
+    // Note: Requires samples >= 4, rings >= 4 for good visual quality
+    ShaderProperty* mPentagon;     // Use pentagon as bokeh shape
+    ShaderProperty* mFeather;      // Pentagon shape feather amount
 
-			GLint		CoC; // = 0.03;//circle of confusion size in mm (35mm film = 0.03mm)
-
-			GLint		autofocus; // = false; //use autofocus in shader? disable if you use external focalDepth value
-			GLint		focus; // = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-			
-
-			GLint		threshold; // = 0.5; //highlight threshold;
-			GLint		gain; // = 2.0; //highlight gain;
-
-			GLint		bias; // = 0.5; //bokeh edge bias
-			GLint		fringe; // = 0.7; //bokeh chromatic aberration/fringing
-
-			GLint		noise; // = true; //use noise instead of pattern for sample dithering
-			
-			/*
-			next part is experimental
-			not looking good with small sample and ring count
-			looks okay starting from samples = 4, rings = 4
-			*/
-
-			GLint		pentagon; // = false; //use pentagon as bokeh shape?
-			GLint		feather; // = 0.4; //pentagon shape feather
-
-			GLint		debugBlurValue;
-		};
-
-		GLint		mLocations[LOCATIONS_COUNT];
-	};
-
+    // Debug utilities
+    ShaderProperty* mDebugBlurValue;
 };

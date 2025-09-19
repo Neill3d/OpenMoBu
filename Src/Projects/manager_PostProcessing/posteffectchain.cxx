@@ -27,6 +27,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectbase.h"
 #include "posteffectshader_bilateral_blur.h"
 
+#include "mobu_logging.h"
+
 // shared shaders
 
 #define SHADER_DEPTH_LINEARIZE_VERTEX		"\\GLSL\\simple.vsh"
@@ -38,7 +40,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // this is a simple gaussian image blur
 #define SHADER_IMAGE_BLUR_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_IMAGE_BLUR_FRAGMENT			"\\GLSL\\imageBlur.fsh"
+#define SHADER_IMAGE_BLUR_FRAGMENT			"\\GLSL\\imageBlur.glslf"
 
 #define SHADER_MIX_VERTEX					"\\GLSL\\simple.vsh"
 #define SHADER_MIX_FRAGMENT					"\\GLSL\\mix.fsh"
@@ -48,9 +50,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #define SHADER_SCENE_MASKED_VERTEX			"\\GLSL\\scene_masked.glslv"
 #define SHADER_SCENE_MASKED_FRAGMENT		"\\GLSL\\scene_masked.glslf"
-
-//
-extern void LOGE(const char* pFormatString, ...);
 
 // define new task cycle index
 FBProfiler_CreateTaskCycle(PostEffectChain, 0.5f, 0.1f, 0.1f);
@@ -115,10 +114,10 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 	}
 
 	// update UI values
-	/*
+	
 	if (true == mSettings->FishEye && mFishEye.get())
-		mFishEye->CollectUIValues(mSettings, effectContext);
-	*/
+		mFishEye->CollectUIValues(&effectContext);
+	
 	if (true == mSettings->ColorCorrection && mColor.get())
 		mColor->CollectUIValues(&effectContext);
 	
@@ -806,7 +805,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 	// 3. in case of SSAO active, render a linear depth texture
 	const bool isLinearDepthSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase * effect) 
 		{
-			return effect->IsLinearDepthSamplerUsed();
+			return (effect) ? effect->IsLinearDepthSamplerUsed() : false;
 		}) != end(mChain);
 	
 	if (isLinearDepthSamplerBinded)
@@ -816,7 +815,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	const bool isWorldNormalSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
 		{
-			return effect->IsWorldNormalSamplerUsed();
+			return (effect) ? effect->IsWorldNormalSamplerUsed() : false;
 		}) != end(mChain);
 
 	if (isWorldNormalSamplerBinded)
@@ -878,7 +877,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	const bool isDepthSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
 		{
-			return effect->IsDepthSamplerUsed();
+			return (effect) ? effect->IsDepthSamplerUsed() : false;
 		}) != end(mChain);
 
 	if (isDepthSamplerBinded)
@@ -1077,13 +1076,14 @@ bool PostEffectChain::CheckShadersPath(const char* path)
 		SHADER_SCENE_MASKED_VERTEX,
 		SHADER_SCENE_MASKED_FRAGMENT
 	};
-
+	LOGV("[CheckShadersPath] testing path %s\n", path);
 	for (const char* shader_path : test_shaders)
 	{
 		FBString full_path(path, shader_path);
 
 		if (!IsFileExists(full_path))
 		{
+			LOGV("[CheckShadersPath] %s is not found\n", shader_path);
 			return false;
 		}
 	}
@@ -1098,11 +1098,11 @@ bool PostEffectChain::LoadShaders()
 	char shadersPath[MAX_PATH];
 	if (!FindEffectLocation(CheckShadersPath, shadersPath, MAX_PATH))
 	{
-		FBTrace("[PostProcessing] Failed to find shaders location!\n");
+		LOGE("[PostProcessing] Failed to find shaders location!\n");
 		return false;
 	}
 
-	FBTrace("[PostProcessing] Shaders Location - %s\n", shadersPath);
+	LOGE("[PostProcessing] Shaders Location - %s\n", shadersPath);
 
 	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, shadersPath));
 	mColor.reset(ShaderFactory(BuildInEffect::COLOR, shadersPath));

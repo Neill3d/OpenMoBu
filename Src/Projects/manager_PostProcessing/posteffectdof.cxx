@@ -12,109 +12,141 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectdof.h"
 #include "postpersistentdata.h"
 
-#define SHADER_DOF_NAME					"Depth Of Field"
-#define SHADER_DOF_VERTEX				"\\GLSL\\simple.vsh"
-#define SHADER_DOF_FRAGMENT				"\\GLSL\\dof.fsh"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
-//
-extern void LOGE(const char* pFormatString, ...);
+#include "postprocessing_helper.h"
 
 //! a constructor
-PostEffectDOF::PostEffectDOF()
-: PostEffectBase()
+EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLocations[i] = -1;
+	MakeCommonProperties();
+
+	// Sample slots
+
+	AddProperty(ShaderProperty("color", "colorSampler"))
+		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::ColorSamplerSlot);
+
+	// Core depth of field parameters
+	mFocalDistance = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_DISTANCE,
+		"focalDistance",
+		IEffectShaderConnections::EPropertyType::FLOAT));
+
+	mFocalRange = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_RANGE,
+		"focalRange",
+		IEffectShaderConnections::EPropertyType::FLOAT));
+
+	mFStop = &AddProperty(ShaderProperty(PostPersistentData::DOF_FSTOP,
+		"fStop",
+		IEffectShaderConnections::EPropertyType::FLOAT));
+
+	mCoC = &AddProperty(ShaderProperty(PostPersistentData::DOF_COC,
+		"CoC",
+		IEffectShaderConnections::EPropertyType::FLOAT));
+
+	// Rendering parameters
+	
+	mSamples = &AddProperty(ShaderProperty(PostPersistentData::DOF_SAMPLES,
+		"samples",
+		IEffectShaderConnections::EPropertyType::INT));
+
+	mRings = &AddProperty(ShaderProperty(PostPersistentData::DOF_RINGS,
+		"rings",
+		IEffectShaderConnections::EPropertyType::INT));
+
+	// Focus control
+	mAutoFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_AUTO_FOCUS,
+		"autoFocus",
+		IEffectShaderConnections::EPropertyType::BOOL));
+
+	mFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_USE_FOCUS_POINT,
+		"focus",
+		IEffectShaderConnections::EPropertyType::BOOL));
+
+	mFocusPoint = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCUS_POINT,
+		"focusPoint",
+		IEffectShaderConnections::EPropertyType::VEC4));
+
+	mManualDOF = &AddProperty(ShaderProperty("manualdof", "manualdof",
+		IEffectShaderConnections::EPropertyType::BOOL))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+
+	// Near and far DOF blur parameters
+	mNDOFStart = &AddProperty(ShaderProperty("ndofstart", "ndofstart",
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+
+	mNDOFDist = &AddProperty(ShaderProperty("ndofdist", "ndofdist",
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+
+	mFDOFStart = &AddProperty(ShaderProperty("fdofstart", "fdofstart",
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually;
+
+	mFDOFDist = &AddProperty(ShaderProperty("fdofdist", "fdofdist",
+		IEffectShaderConnections::EPropertyType::FLOAT));
+
+	// Visual enhancement parameters
+	mBlurForeground = &AddProperty(ShaderProperty(PostPersistentData::DOF_BLUR_FOREGROUND,
+		"blurForeground",
+		IEffectShaderConnections::EPropertyType::BOOL));
+
+	mThreshold = &AddProperty(ShaderProperty(PostPersistentData::DOF_THRESHOLD,
+		"threshold",
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetScale(0.01f);
+
+	mGain = &AddProperty(ShaderProperty(PostPersistentData::DOF_GAIN,
+		"gain",
+		IEffectShaderConnections::EPropertyType::FLOAT));
+
+	mBias = &AddProperty(ShaderProperty(PostPersistentData::DOF_BIAS,
+		"bias",
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetScale(0.01f);
+
+	mFringe = &AddProperty(ShaderProperty(PostPersistentData::DOF_FRINGE,
+		"fringe",
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetScale(0.01f);
+
+	mNoise = &AddProperty(ShaderProperty(PostPersistentData::DOF_NOISE,
+		"noise",
+		IEffectShaderConnections::EPropertyType::BOOL));
+
+	// Experimental bokeh shape parameters
+	mPentagon = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON,
+		"pentagon",
+		IEffectShaderConnections::EPropertyType::BOOL));
+
+	mFeather = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON_FEATHER,
+		"feather",
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetScale(0.01f);
+
+	// Debug utilities
+	mDebugBlurValue = &AddProperty(ShaderProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE,
+		"debugBlurValue",
+		IEffectShaderConnections::EPropertyType::FLOAT));
 }
 
-//! a destructor
-PostEffectDOF::~PostEffectDOF()
+const char* EffectShaderDOF::GetUseMaskingPropertyName() const noexcept
 {
-
+	return PostPersistentData::DOF_USE_MASKING;
+}
+const char* EffectShaderDOF::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::DOF_MASKING_CHANNEL;
 }
 
-const char *PostEffectDOF::GetName() const
+bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	return SHADER_DOF_NAME;
-}
-const char *PostEffectDOF::GetVertexFname(const int) const
-{
-	return SHADER_DOF_VERTEX;
-}
-const char *PostEffectDOF::GetFragmentFname(const int) const
-{
-	return SHADER_DOF_FRAGMENT;
-}
+	PostPersistentData* pData = effectContext->GetPostProcessData();
 
-bool PostEffectDOF::PrepUniforms(const int shaderIndex)
-{
-	GLSLShaderProgram* mShader = mShaders[shaderIndex];
-	if (!mShader)
-		return false;
-
-	mShader->Bind();
-
-	GLint loc = mShader->findLocation("colorSampler");
-	if (loc >= 0)
-		glUniform1i(loc, 0);
-	loc = mShader->findLocation("depthSampler");
-	if (loc >= 0)
-		glUniform1i(loc, 1);
-
-	PrepareCommonLocations(mShader);
-
-	focalDistance = mShader->findLocation("focalDistance");
-	focalRange = mShader->findLocation("focalRange");
-
-	textureWidth = mShader->findLocation("textureWidth");
-	textureHeight = mShader->findLocation("textureHeight");
-
-	zNear = mShader->findLocation("zNear");
-	zFar = mShader->findLocation("zFar");
-
-	fstop = mShader->findLocation("fstop");
-
-	samples = mShader->findLocation("samples");
-	rings = mShader->findLocation("rings");
-
-	blurForeground = mShader->findLocation("blurForeground");
-
-	manualdof = mShader->findLocation("manualdof");
-	ndofstart = mShader->findLocation("ndofstart");
-	ndofdist = mShader->findLocation("ndofdist");
-	fdofstart = mShader->findLocation("fdofstart");
-	fdofdist = mShader->findLocation("fdofdist");
-
-	focusPoint = mShader->findLocation("focusPoint");
-
-	CoC = mShader->findLocation("CoC");
-
-	autofocus = mShader->findLocation("autofocus");
-	focus = mShader->findLocation("focus");
-
-	threshold = mShader->findLocation("threshold");
-	gain = mShader->findLocation("gain");
-
-	bias = mShader->findLocation("bias");
-	fringe = mShader->findLocation("fringe");
-
-	noise = mShader->findLocation("noise");
-
-	pentagon = mShader->findLocation("pentagon");
-	feather = mShader->findLocation("feather");
-
-	debugBlurValue = mShader->findLocation("debugBlurValue");
-
-	mShader->UnBind();
-	return true;
-}
-
-bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
-{
-	FBCamera* camera = effectContext.camera;
-
-	double _znear = camera->NearPlaneDistance;
-	double _zfar = camera->FarPlaneDistance;
+	FBCamera* camera = effectContext->GetCamera();
 
 	double _focalDistance = pData->FocalDistance;
 	double _focalRange = pData->FocalRange;
@@ -190,61 +222,33 @@ bool PostEffectDOF::CollectUIValues(PostPersistentData *pData, PostEffectContext
 		_focalDistance = dist;
 	}
 
-	GLSLShaderProgram* mShader = GetShaderPtr();
-	if (!mShader)
-		return false;
+	mFocalDistance->SetValue(static_cast<float>(_focalDistance));
+	mFocalRange->SetValue(static_cast<float>(_focalRange));
+
+	mFStop->SetValue(static_cast<float>(_fstop));
+
+	mManualDOF->SetValue(false);
+	mNDOFStart->SetValue(1.0f);
+	mNDOFDist->SetValue(2.0f);
+	mFDOFStart->SetValue(1.0f);
+	mFDOFDist->SetValue(3.0f);
+
+	mSamples->SetValue(_samples);
+	mRings->SetValue(_rings);
 	
-	mShader->Bind();
+	mBlurForeground->SetValue(static_cast<float>(_blurForeground));
 
-	CollectCommonData(pData);
+	mCoC->SetValue(static_cast<float>(_CoC));
 
-	if (textureWidth >= 0)
-		glUniform1f(textureWidth, (float)effectContext.w);
-	if (textureHeight >= 0)
-		glUniform1f(textureHeight, (float)effectContext.h);
+	mBlurForeground->SetValue(static_cast<float>(_blurForeground));
 
-	if (focalDistance >= 0)
-		glUniform1f(focalDistance, (float)_focalDistance);
-	if (focalRange >= 0)
-		glUniform1f(focalRange, (float)_focalRange);
-	if (fstop >= 0)
-		glUniform1f(fstop, (float)_fstop);
+	mThreshold->SetValue(static_cast<float>(_threshold));
+	mBias->SetValue(static_cast<float>(_bias));
+	mFringe->SetValue(static_cast<float>(_fringe));
+	mFeather->SetValue(static_cast<float>(_feather));
+	mDebugBlurValue->SetValue(static_cast<float>(_debugBlurValue));
+	
+	mFocusPoint->SetValue(0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
 
-	if (zNear>= 0)
-		glUniform1f(zNear, (float)_znear);
-	if (zFar >= 0)
-		glUniform1f(zFar, (float)_zfar);
-
-	if (samples >= 0)
-		glUniform1i(samples, _samples);
-	if (rings >= 0)
-		glUniform1i(rings, _rings);
-
-	if (blurForeground >= 0)
-		glUniform1f(blurForeground, (float)_blurForeground);
-
-	if (CoC >= 0)
-		glUniform1f(CoC, 0.01f * (float)_CoC);
-
-	if (blurForeground >= 0)
-		glUniform1f(blurForeground, (float)_blurForeground);
-
-	if (threshold >= 0)
-		glUniform1f(threshold, 0.01f * (float)_threshold);
-	if (bias >= 0)
-		glUniform1f(bias, 0.01f * (float)_bias);
-
-	if (fringe>= 0)
-		glUniform1f(fringe, 0.01f * (float)_fringe);
-	if (feather>= 0)
-		glUniform1f(feather, 0.01f * (float)_feather);
-
-	if (debugBlurValue >= 0)
-		glUniform1f(debugBlurValue, (float)_debugBlurValue);
-
-	if (focusPoint >= 0)
-		glUniform4f(focusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
-
-	mShader->UnBind();
 	return true;
 }

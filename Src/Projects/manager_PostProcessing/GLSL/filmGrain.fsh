@@ -19,15 +19,14 @@ uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
-uniform float 		textureWidth; //scene sampler width
-uniform float 		textureHeight; //scene sampler height
+uniform vec2		gResolution; //viewport resolution
 uniform float 		timer;
 
 const float permTexUnit = 1.0/256.0;		// Perm texture texel-size
 const float permTexUnitHalf = 0.5/256.0;	// Half perm texture texel-size
 
-float width = textureWidth;
-float height = textureHeight;
+float width = gResolution.x;
+float height = gResolution.y;
 
 uniform float grainamount; // = 0.05; //grain amount
 uniform float colored; // = false; //colored noise?

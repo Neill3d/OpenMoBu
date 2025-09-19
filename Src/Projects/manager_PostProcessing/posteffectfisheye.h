@@ -2,59 +2,60 @@
 
 // posteffectfisheye
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
-#include "posteffectbase.h"
+#include "posteffectsingleshader.h"
 
-namespace FBSDKNamespace
-{
-	// forward
-	class FBCamera;
-}
+// forward
+
+class EffectShaderFishEye;
+
+/// <summary>
+/// effect with once shader - fish eye
+/// </summary>
+using PostEffectFishEye = PostEffectSingleShader<EffectShaderFishEye>;
 
 /// <summary>
 /// fish eye post processing effect
 /// </summary>
-struct PostEffectFishEye : public PostEffectBase, public CommonEffectUniforms
+class EffectShaderFishEye : public PostEffectBufferShader
 {
+private:
+	static constexpr const char* SHADER_NAME = "Fish Eye";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/fishEye.vsh";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/fishEye.fsh";
+
 public:
 
 	//! a constructor
-	PostEffectFishEye();
-
-	//! a destructor
-	virtual ~PostEffectFishEye();
+	EffectShaderFishEye(FBComponent* ownerIn);
+	virtual ~EffectShaderFishEye() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
 
-	virtual const char* GetName() const override;
-	virtual const char* GetVertexFname(const int shaderIndex) const override;
-	virtual const char* GetFragmentFname(const int shaderIndex) const override;
-
-	const char* GetEnableMaskPropertyName() const override { return "Fish Eye Use Masking"; }
-
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
+	const char* GetName() const override { return SHADER_NAME; }
+	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
+	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
 protected:
 
-	enum { LOCATIONS_COUNT = 3 };
-	union
-	{
-		struct
-		{
-			GLint		mLocAmount;
-			GLint		mLocLensRadius;
-			GLint		mLocSignCurvature;
-		};
+	ShaderProperty* mAmount;
+	ShaderProperty* mLensRadius;
+	ShaderProperty* mSignCurvature;
 
-		GLint		mLocations[LOCATIONS_COUNT];
-	};
+	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
+
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
+
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 };
 
 
