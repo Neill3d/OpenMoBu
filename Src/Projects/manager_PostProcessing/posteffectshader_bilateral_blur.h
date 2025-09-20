@@ -39,6 +39,8 @@ public:
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
 	virtual int GetNumberOfVariations() const override { return 1; }
+	/// new feature to have several passes for a specified effect
+	virtual int GetNumberOfPasses() const override { return 1; }
 
 	//! an effect public name
 	virtual const char* GetName() const override;
@@ -47,8 +49,6 @@ public:
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
 	virtual const char* GetFragmentFname(const int variationIndex) const override;
 
-	/// new feature to have several passes for a specified effect
-	virtual const int GetNumberOfPasses() const override;
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h) override;
 

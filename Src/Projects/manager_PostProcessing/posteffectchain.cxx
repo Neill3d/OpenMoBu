@@ -1,7 +1,7 @@
 
 /**	\file	postprocessing_effect.cxx
 
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -10,16 +10,15 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectchain.h"
-//#include "posteffectssao.h"
+#include "posteffectssao.h"
 #include "posteffectdisplacement.h"
-//#include "posteffectmotionblur.h"
-//#include "posteffectlensflare.h"
+#include "posteffectmotionblur.h"
+#include "posteffectlensflare.h"
 #include "posteffectcolor.h"
-//#include "posteffectdof.h"
+#include "posteffectdof.h"
 #include "posteffectfilmgrain.h"
-//#include "posteffectfisheye.h"
+#include "posteffectfisheye.h"
 #include "posteffectvignetting.h"
-//#include "posteffectdof.h"
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
 #include "posteffectbuffers.h"
@@ -126,19 +125,18 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 	
 	if (true == mSettings->FilmGrain && mFilmGrain.get())
 		mFilmGrain->CollectUIValues(&effectContext);
-	/*
+	
 	if (true == mSettings->LensFlare && mLensFlare.get())
-		mLensFlare->CollectUIValues(mSettings, effectContext);
+		mLensFlare->CollectUIValues(&effectContext);
 
 	if (true == mSettings->SSAO && mSSAO.get())
-		mSSAO->CollectUIValues(mSettings, effectContext);
+		mSSAO->CollectUIValues(&effectContext);
 
 	if (true == mSettings->DepthOfField && mDOF.get())
-		mDOF->CollectUIValues(mSettings, effectContext);
+		mDOF->CollectUIValues(&effectContext);
 
 	if (true == mSettings->MotionBlur && mMotionBlur.get())
-		mMotionBlur->CollectUIValues(mSettings, effectContext);
-		*/
+		mMotionBlur->CollectUIValues(&effectContext);
 	
 	if (true == mSettings->Displacement && mDisplacement.get())
 		mDisplacement->CollectUIValues(&effectContext);

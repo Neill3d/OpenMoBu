@@ -106,7 +106,7 @@ public:
 	virtual const char* GetFragmentFname(const int variationIndex) const override { return "test.glslf"; }
 
 	/// new feature to have several passes for a specified effect
-	virtual const int GetNumberOfPasses() const override;
+	virtual int GetNumberOfPasses() const override;
 
 	//! initialize a specific path for drawing
 	virtual bool PrepPass(const int pass, int w, int h) override;

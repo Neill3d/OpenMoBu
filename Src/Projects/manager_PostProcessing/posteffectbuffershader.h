@@ -19,7 +19,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 class PostEffectBuffers;
 
 /// <summary>
-/// one single fragment shader that we do one number of passes to process the input
+/// effect with one or more gpu shaders (number of variations, mostly 1)
+/// to process the effects chain input image with a defined number of passes
 /// </summary>
 class PostEffectBufferShader : public IEffectShaderConnections
 {
@@ -32,6 +33,9 @@ public:
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
 	virtual int GetNumberOfVariations() const abstract;
+
+	/// repeated call of the shader (define iPass uniform to distinguish)
+	virtual int GetNumberOfPasses() const { return 1; }
 
 	//! an effect public name
 	virtual const char* GetName() const abstract;
@@ -65,9 +69,6 @@ public:
 	/// is being called right before Render and when shader is binded
 	/// </summary>
 	void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
-
-	/// repeated call of the shader (define iPass uniform to distinguish)
-	virtual const int GetNumberOfPasses() const;
 
 	//! get a pointer to a (current variance) shader program
 	GLSLShaderProgram* GetShaderPtr();
@@ -145,11 +146,12 @@ protected:
 	FBComponent* mOwner{ nullptr }; //!< scene component which used to communicate with a user and a scene
 
 	bool isDownscale{ false };
-	int version; //!< keep track of resolution modifications, inc version everytime we change resolution
+	int version{ 0 }; //!< keep track of resolution modifications, inc version everytime we change resolution
 	int mCurrentShader{ 0 }; //!< current variance of a shader
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders; //!< store a list of all variances
 
 	void SetCurrentShader(const int index) { mCurrentShader = index; }
+	int GetCurrentShader() const { return mCurrentShader; }
 	void FreeShaders();
 
 	//!< TODO: masking property in the UI, should we move it into input connection ?!
@@ -170,7 +172,7 @@ protected:
 	virtual void UnBind();
 
 	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass, int w, int h);
-
+	virtual bool PrepPass(int pass, int width, int height) { return true; }
+	
 	void RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 };

@@ -1,7 +1,7 @@
 
 // posteffectssao.cpp
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -14,10 +14,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <math.h>
 
 #include "postprocessing_helper.h"
-
-#define SHADER_SSAO_NAME				"SSAO"
-#define SHADER_SSAO_VERTEX				"\\GLSL\\simple.vsh"
-#define SHADER_SSAO_FRAGMENT			"\\GLSL\\ssao.fsh"
 
 #define AO_RANDOMTEX_SIZE 4
 
@@ -32,8 +28,8 @@ static const int        grid = 32;
 static const float      globalscale = 16.0f;
 
 //! a constructor
-PostEffectSSAO::PostEffectSSAO()
-	: PostEffectBase()
+EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
+	: PostEffectBufferShader(ownerIn)
 	, e2(rd())
 	, dist(0, 1.0)
 {
@@ -47,12 +43,21 @@ PostEffectSSAO::PostEffectSSAO()
 }
 
 //! a destructor
-PostEffectSSAO::~PostEffectSSAO()
+EffectShaderSSAO::~EffectShaderSSAO()
 {
 	DeleteTextures();
 }
 
-void PostEffectSSAO::DeleteTextures()
+const char* EffectShaderSSAO::GetUseMaskingPropertyName() const noexcept
+{
+	return PostPersistentData::SSAO_USE_MASKING;
+}
+const char* EffectShaderSSAO::GetMaskingChannelPropertyName() const noexcept
+{
+	return PostPersistentData::SSAO_MASKING_CHANNEL;
+}
+
+void EffectShaderSSAO::DeleteTextures()
 {
 	if (hbao_random > 0)
 	{
@@ -61,18 +66,6 @@ void PostEffectSSAO::DeleteTextures()
 	}
 }
 
-const char *PostEffectSSAO::GetName() const
-{
-	return SHADER_SSAO_NAME;
-}
-const char *PostEffectSSAO::GetVertexFname(const int) const
-{
-	return SHADER_SSAO_VERTEX;
-}
-const char *PostEffectSSAO::GetFragmentFname(const int) const
-{
-	return SHADER_SSAO_FRAGMENT;
-}
 
 bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
 {
@@ -261,7 +254,7 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContex
 	return true;
 }
 
-void PostEffectSSAO::Bind()
+void EffectShaderSSAO::Bind()
 {
 	// bind a random texture
 	glActiveTexture(GL_TEXTURE0 + GetRandomSamplerSlot());
@@ -271,7 +264,7 @@ void PostEffectSSAO::Bind()
 	PostEffectBase::Bind();
 }
 
-void PostEffectSSAO::UnBind()
+void EffectShaderSSAO::UnBind()
 {
 	// bind a random texture
 	glActiveTexture(GL_TEXTURE0 + GetRandomSamplerSlot());
@@ -281,7 +274,7 @@ void PostEffectSSAO::UnBind()
 	PostEffectBase::UnBind();
 }
 
-bool PostEffectSSAO::InitMisc()
+bool EffectShaderSSAO::InitMisc()
 {
 	float numDir = 8; // keep in sync to glsl
 
@@ -294,8 +287,6 @@ bool PostEffectSSAO::InitMisc()
 	mRandom[1] = sinf(Angle);
 	mRandom[2] = Rand2;
 	mRandom[3] = 0;
-
-	//signed short hbaoRandomShort[HBAO_RANDOM_ELEMENTS*MAX_SAMPLES * 4];
 
 	for (int i = 0; i < HBAO_RANDOM_SIZE; i++)
 	{
@@ -317,16 +308,10 @@ bool PostEffectSSAO::InitMisc()
 	DeleteTextures();
 	glGenTextures(1, &hbao_random);
 
-	//glPixelStorei(GL_PACK_ALIGNMENT, 4);
-	//glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-
 	glBindTexture(GL_TEXTURE_2D, hbao_random);
 	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	
-	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, HBAO_RANDOM_SIZE, HBAO_RANDOM_SIZE);
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, HBAO_RANDOM_SIZE, HBAO_RANDOM_SIZE, GL_RGBA, GL_FLOAT, hbaoRandom);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -334,16 +319,5 @@ bool PostEffectSSAO::InitMisc()
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-	/*
-	glBindTexture(GL_TEXTURE_2D, hbao_random);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16_SNORM, HBAO_RANDOM_SIZE, HBAO_RANDOM_SIZE);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, HBAO_RANDOM_SIZE, HBAO_RANDOM_SIZE, GL_RGBA, GL_SHORT, hbaoRandomShort);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	*/
 	return true;
 }

@@ -312,7 +312,7 @@ UserBufferShader::UserBufferShader(EffectShaderUserObject* UserObject)
 }
 
 /// new feature to have several passes for a specified effect
-const int UserBufferShader::GetNumberOfPasses() const
+int UserBufferShader::GetNumberOfPasses() const
 {
 	return mUserObject->NumberOfPasses;
 }

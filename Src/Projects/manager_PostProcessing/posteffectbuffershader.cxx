@@ -16,6 +16,88 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "posteffect_shader_userobject.h"
 
+namespace _PostEffectBufferShaderInternal
+{
+	std::string RemovePostfix(const std::string& uniformName, const std::string& postfix) {
+		const size_t pos = uniformName.rfind(postfix);
+		if (pos != std::string::npos && pos == uniformName.size() - postfix.size()) {
+			return uniformName.substr(0, pos);  // Remove postfix
+		}
+		return uniformName;
+	}
+
+	void ExtractNameAndFlagsFromUniformNameAndType(IEffectShaderConnections::ShaderProperty& prop, const char* uniformNameIn, GLenum type)
+	{
+		const std::string uniformName(uniformNameIn);
+
+		switch (type)
+		{
+		case GL_FLOAT:
+		{
+			const std::string name = RemovePostfix(uniformName, "_flag");
+			if (name.size() != uniformName.size())
+			{
+				prop.flags.set(static_cast<size_t>(IEffectShaderConnections::PropertyFlag::IsFlag), true);
+			}
+			strncpy_s(prop.name, name.c_str(), name.size());
+		} break;
+		case GL_FLOAT_VEC2:
+		{
+			const std::string name = RemovePostfix(uniformName, "_wstoss");
+			if (name.size() != uniformName.size())
+			{
+				prop.flags.set(static_cast<size_t>(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace), true);
+			}
+			strncpy_s(prop.name, name.c_str(), name.size());
+		} break;
+		case GL_FLOAT_VEC3:
+		case GL_FLOAT_VEC4:
+		{
+			const std::string name = RemovePostfix(uniformName, "_color");
+			if (name.size() != uniformName.size())
+			{
+				prop.flags.set(static_cast<size_t>(IEffectShaderConnections::PropertyFlag::IsColor), true);
+			}
+			strncpy_s(prop.name, name.c_str(), name.size());
+		} break;
+		default:
+			strncpy_s(prop.name, uniformName.c_str(), uniformName.size());
+		}
+	}
+};
+
+
+const char* PostEffectBufferShader::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
+{
+	"inputSampler", //!< this is an input image that we read from
+	"iChannel0", //!< this is an input image, compatible with shadertoy
+	"depthSampler", //!< this is a scene depth texture sampler in case shader will need it for processing
+	"linearDepthSampler",
+	"maskSampler", //!< binded mask for a shader processing (system run-time texture)
+	"normalSampler", //!< binded World-space normals texture (system run-time texture)
+
+	"useMasking", //!< float uniform [0; 1] to define if the mask have to be used
+	"upperClip", //!< this is an upper clip image level. defined in a texture coord space to skip processing
+	"lowerClip", //!< this is a lower clip image level. defined in a texture coord space to skip processing
+
+	"gResolution", //!< vec2 that contains processing absolute resolution, like 1920x1080
+	"iResolution", //!< vec2 image absolute resolution, compatible with shadertoy naming
+	"texelSize", //!< vec2 of a texel size, computed as 1/resolution
+
+	"iTime", //!< compatible with shadertoy, float, shader playback time (in seconds)
+	"iDate",  //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
+
+	"cameraPosition", //!< world space camera position
+	"modelView", //!< current camera modelview matrix
+	"projection", //!< current camera projection matrix
+	"modelViewProj", //!< current camera modelview-projection matrix
+	"invModelViewProj",
+	"prevModelViewProj",
+
+	"zNear", //!< camera near plane
+	"zFar"	//!< camera far plane
+};
+
 /////////////////////////////////////////////////////////////////////////
 // PostEffectBufferShader
 
@@ -198,15 +280,6 @@ bool PostEffectBufferShader::ReloadPropertyShaders()
 	return true;
 }
 
-const int PostEffectBufferShader::GetNumberOfPasses() const
-{
-	return 1;
-}
-bool PostEffectBufferShader::PrepPass(const int pass, int w, int h)
-{
-	return true;
-}
-
 GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
 	if (mCurrentShader >= 0 && mCurrentShader < mShaders.size())
 		return mShaders[mCurrentShader].get();
@@ -332,11 +405,8 @@ int PostEffectBufferShader::GetNumberOfProperties()
 
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::GetProperty(int index)
 {
-	auto it = begin(mProperties);
-	for (int i = 0; i < index; ++i)
-	{
-		++it;
-	}
+	assert(index < GetNumberOfProperties());
+	auto it = std::next(begin(mProperties), index);
 	return it->second;
 }
 
@@ -344,53 +414,6 @@ IEffectShaderConnections::ShaderProperty* PostEffectBufferShader::FindProperty(c
 {
 	auto it = mProperties.find(name);
 	return (it != end(mProperties)) ? &it->second : nullptr;
-}
-
-std::string RemovePostfix(const std::string& uniformName, const std::string& postfix) {
-	const size_t pos = uniformName.rfind(postfix);
-	if (pos != std::string::npos && pos == uniformName.size() - postfix.size()) {
-		return uniformName.substr(0, pos);  // Remove postfix
-	}
-	return uniformName;
-}
-
-void ExtractNameAndFlagsFromUniformNameAndType(IEffectShaderConnections::ShaderProperty& prop, const char* uniformNameIn, GLenum type)
-{
-	const std::string uniformName(uniformNameIn);
-
-	switch (type)
-	{
-	case GL_FLOAT:
-	{
-		const std::string name = RemovePostfix(uniformName, "_flag");
-		if (name.size() != uniformName.size())
-		{
-			prop.flags.set(static_cast<size_t>(IEffectShaderConnections::PropertyFlag::IsFlag), true);
-		}
-		memcpy(prop.name, name.c_str(), sizeof(char) * name.size());
-	} break;
-	case GL_FLOAT_VEC2:
-	{
-		const std::string name = RemovePostfix(uniformName, "_wstoss");
-		if (name.size() != uniformName.size())
-		{
-			prop.flags.set(static_cast<size_t>(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace), true);
-		}
-		memcpy(prop.name, name.c_str(), sizeof(char) * name.size());
-	} break;
-	case GL_FLOAT_VEC3:
-	case GL_FLOAT_VEC4:
-	{
-		const std::string name = RemovePostfix(uniformName, "_color");
-		if (name.size() != uniformName.size())
-		{
-			prop.flags.set(static_cast<size_t>(IEffectShaderConnections::PropertyFlag::IsColor), true);
-		}
-		memcpy(prop.name, name.c_str(), sizeof(char) * name.size());
-	} break;
-	default:
-		memcpy(prop.name, uniformName.c_str(), sizeof(char) * uniformName.size());
-	}
 }
 
 int PostEffectBufferShader::MakePropertyLocationsFromShaderUniforms()
@@ -450,6 +473,8 @@ int PostEffectBufferShader::MakeSystemLocationsFromShaderUniforms()
 
 int PostEffectBufferShader::PopulatePropertiesFromShaderUniforms()
 {
+	using namespace _PostEffectBufferShaderInternal;
+
 	ResetSystemUniformLocations();
 
 	if (!GetShaderPtr())
@@ -616,37 +641,6 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 
 ///////////////////////////////////////////////////////////////////////////
 // System Uniforms
-
-const char* PostEffectBufferShader::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
-{
-	"inputSampler", //!< this is an input image that we read from
-	"iChannel0", //!< this is an input image, compatible with shadertoy
-	"depthSampler", //!< this is a scene depth texture sampler in case shader will need it for processing
-	"linearDepthSampler",
-	"maskSampler", //!< binded mask for a shader processing (system run-time texture)
-	"normalSampler", //!< binded World-space normals texture (system run-time texture)
-
-	"useMasking", //!< float uniform [0; 1] to define if the mask have to be used
-	"upperClip", //!< this is an upper clip image level. defined in a texture coord space to skip processing
-	"lowerClip", //!< this is a lower clip image level. defined in a texture coord space to skip processing
-
-	"gResolution", //!< vec2 that contains processing absolute resolution, like 1920x1080
-	"iResolution", //!< vec2 image absolute resolution, compatible with shadertoy naming
-	"texelSize", //!< vec2 of a texel size, computed as 1/resolution
-
-	"iTime", //!< compatible with shadertoy, float, shader playback time (in seconds)
-	"iDate",  //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
-
-	"cameraPosition", //!< world space camera position
-	"modelView", //!< current camera modelview matrix
-	"projection", //!< current camera projection matrix
-	"modelViewProj", //!< current camera modelview-projection matrix
-	"invModelViewProj", 
-	"prevModelViewProj",
-
-	"zNear", //!< camera near plane
-	"zFar"	//!< camera far plane
-};
 
 void PostEffectBufferShader::ResetSystemUniformLocations()
 {

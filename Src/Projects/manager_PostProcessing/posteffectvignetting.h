@@ -28,9 +28,7 @@ private:
 	static constexpr const char* SHADER_NAME = "Vignetting";
 	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/vignetting.fsh";
-	static constexpr const char* ENABLE_MASKING_PROPERTY_NAME = "Vignetting Use Masking";
-	static constexpr const char* MASKING_CHANNEL_PROPERTY_NAME = "Vign Masking Channel";
-
+	
 public:
 
 	//! a constructor

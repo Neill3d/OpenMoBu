@@ -123,11 +123,6 @@ bool PostEffectShaderBilateralBlur::OnCollectUI(const IPostEffectContext* effect
 	return true;
 }
 
-/// new feature to have several passes for a specified effect
-const int PostEffectShaderBilateralBlur::GetNumberOfPasses() const
-{
-	return 1;
-}
 //! initialize a specific path for drawing
 bool PostEffectShaderBilateralBlur::PrepPass(const int pass, int w, int h)
 {

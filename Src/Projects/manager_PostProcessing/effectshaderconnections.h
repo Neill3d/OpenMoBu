@@ -105,8 +105,10 @@ public:
 
 	struct MANAGER_POSTPROCESSING_API ShaderProperty
 	{
-		char name[64]{ 0 };
-		char uniformName[64]{ 0 };
+		constexpr static int MAX_NAME_LENGTH{ 64 };
+		
+		char name[MAX_NAME_LENGTH]{ 0 };
+		char uniformName[MAX_NAME_LENGTH]{ 0 };
 		int length{ 0 };
 
 		EPropertyType type{ EPropertyType::FLOAT };

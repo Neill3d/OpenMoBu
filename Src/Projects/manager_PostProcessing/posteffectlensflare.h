@@ -3,88 +3,101 @@
 
 // posteffectlensflare
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "posteffectbase.h"
-#include "postprocessing_helper.h"
-#include <limits>
+#include "posteffectsingleshader.h"
 
 // forward
-class PostPersistentData;
+class EffectShaderLensFlare;
+
+/// <summary>
+/// effect with once shader - lens flare, output directly to effects chain dst buffer
+/// </summary>
+using PostEffectLensFlare = PostEffectSingleShader<EffectShaderLensFlare>;
 
 /// <summary>
 /// lens flare post processing effect
 /// </summary>
-struct PostEffectLensFlare : public PostEffectBase
+struct EffectShaderLensFlare : public PostEffectBufferShader
 {
-public:
+private:
 	static const int NUMBER_OF_SHADERS{ 3 };
+	static constexpr const char* SHADER_NAME = "Lens Flare";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/lensFlare.fsh";
+	static constexpr const char* SHADER_BUBBLE_FRAGMENT = "/GLSL/lensFlareBubble.fsh";
+	static constexpr const char* SHADER_ANAMORPHIC_FRAGMENT = "/GLSL/lensFlareAnamorphic.fsh";
 
-	//! a constructor
-	PostEffectLensFlare();
-
-	//! a destructor
-	virtual ~PostEffectLensFlare();
+public:
+	
+	EffectShaderLensFlare(FBComponent* ownerIn);
+	virtual ~EffectShaderLensFlare() = default;
 
 	int GetNumberOfVariations() const override { return NUMBER_OF_SHADERS; }
 
-	const char *GetName() const override;
-	const char *GetVertexFname(const int shaderIndex) const override;
-	const char *GetFragmentFname(const int shaderIndex) const override;
+	int GetNumberOfPasses() const override;
 
-	virtual bool PrepUniforms(const int shaderIndex) override;
-	virtual bool CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext) override;
+	[[nodiscard]] const char* GetName() const noexcept override { return SHADER_NAME; }
+	[[nodiscard]] const char* GetVertexFname(const int shaderIndex) const noexcept override { return SHADER_VERTEX; }
+	[[nodiscard]] const char* GetFragmentFname(const int shaderIndex) const noexcept override 
+	{
+		switch (shaderIndex)
+		{
+		case 1: return SHADER_BUBBLE_FRAGMENT;
+		case 2: return SHADER_ANAMORPHIC_FRAGMENT;
+		default: return SHADER_FRAGMENT;
+		}
+	}
 
-	virtual const int GetNumberOfPasses() const override;
-	virtual bool PrepPass(const int pass) override;
+	//virtual bool PrepUniforms(const int shaderIndex) override;
+	//virtual bool CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext) override;
+
+	//virtual const int GetNumberOfPasses() const override;
+	bool PrepPass(int pass, int width, int height) override;
 
 protected:
 
+	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
+	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
+
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
+
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
+
+
+private:
+
+	ShaderProperty*		mFlareSeed;
+	ShaderProperty*		mAmount;
+	ShaderProperty*		mTime;
+	ShaderProperty* mLightPos; // vec3 array
+
+	ShaderProperty* mTint;	
+	ShaderProperty* mInner;
+	ShaderProperty* mOuter;
+	ShaderProperty* mFadeToBorders;
+	ShaderProperty* mBorderWidth;
+	ShaderProperty* mFeather;
+
+
 	//Louis
-	EFlareType		FlareType{ EFlareType::flare1 };
+	//EFlareType		FlareType{ EFlareType::flare1 };
 	
 	// shader locations
 
-	struct SubShader : public CommonEffectUniforms
+	struct SubShader //: public CommonEffectUniforms
 	{
 	public:
 
 		SubShader() = default;
-		virtual ~SubShader()
-		{}
-
-		enum { LOCATIONS_COUNT = 12 };
-		union
-		{
-			struct
-			{
-				//Louis
-				GLint		seed;
-
-				GLint		amount;
-
-				GLint		textureWidth;
-				GLint		textureHeight;
-
-				GLint		timer;
-
-				GLint		light_pos;
-
-				GLint		tint;
-				GLint		inner;
-				GLint		outer;
-
-				GLint		fadeToBorders;
-				GLint		borderWidth;
-				GLint		feather;
-			};
-
-			GLint		mLocations[LOCATIONS_COUNT];
-		};
+		virtual ~SubShader() = default;
 
 		int				m_NumberOfPasses{ 1 };
 		float			m_DepthAttenuation{ 1.0f };
@@ -93,22 +106,12 @@ protected:
 		std::vector<FBColor>	m_LightColors;
 		std::vector<float>		m_LightAlpha;
 
-		const char* GetEnableMaskPropertyName() const override { return "Flare Use Masking"; }
-
 		void Init();
-		bool PrepUniforms(GLSLShaderProgram* mShader);
-		bool CollectUIValues(const int shaderIndex, GLSLShaderProgram* mShader, PostPersistentData *pData, PostEffectContext& effectContext);
-		bool PrepPass(GLSLShaderProgram* mShader, const int pass);
-
+		bool CollectUIValues(int shaderIndex, const IPostEffectContext* effectContext, int maskIndex);
+		
 	private:
 		void ProcessLightObjects(PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
-
 		void ProcessSingleLight(PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
-
-		void UpdateShaderUniforms(GLSLShaderProgram* mShader, PostPersistentData* pData, int w, int h, 
-			double seedValue, double flareAmount, double flareTimer, double* flarePos, 
-			FBColor& flareTint, double flareInner, double flareOuter, float fadeToBordersValue, 
-			double borderWidthValue, double featherValue);
 	};
 
 	SubShader	subShaders[NUMBER_OF_SHADERS];
