@@ -13,7 +13,7 @@
 
 #version 140
 
-in vec2 TexCoord;
+in vec2 texCoord;
 out vec4 FragColor;
 
 uniform sampler2D 	colorSampler;
@@ -50,8 +50,6 @@ vec4 textureWithKernel(in sampler2D sampler, in vec2 tx)
 
 void main (void)
 {
-	vec2 texCoord = TexCoord;
-
 	vec2 dx  = scale / iResolution;
 	vec2 sdx = dx;
 	vec4 srccolor = textureWithKernel ( colorSampler, texCoord );

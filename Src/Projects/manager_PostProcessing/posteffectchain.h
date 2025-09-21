@@ -19,6 +19,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectcontextmobu.h"
 #include "posteffectbuffers.h"
 
+#include "posteffectshader_lineardepth.h"
 #include "posteffectshader_bilateral_blur.h"
 
 #include "glslShaderProgram.h"
@@ -90,7 +91,7 @@ protected:
 
 	// shared shaders
 	
-	std::unique_ptr<GLSLShaderProgram>			mShaderDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
+	std::unique_ptr<PostEffectLinearDepth>		mEffectDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
 	std::unique_ptr<GLSLShaderProgram>			mShaderBlur;		//!< bilateral blur effect, for SSAO
 	//std::unique_ptr<GLSLShaderProgram>			mShaderImageBlur;	//!< for masking
 	std::unique_ptr<PostEffectBilateralBlur>	mEffectBilateralBlur; //!< for masking

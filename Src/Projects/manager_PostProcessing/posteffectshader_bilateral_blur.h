@@ -3,24 +3,22 @@
 
 // posteffectshader_bilateral_blur
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
-
-#include "graphics_framebuffer.h"
-
-#include "glslShaderProgram.h"
-#include "Framebuffer.h"
-
 #include "posteffectsingleshader.h"
 #include "posteffect_shader_userobject.h"
 
-#include <memory>
-#include <bitset>
+// forward
+class PostEffectShaderBilateralBlur;
+
+/// <summary>
+/// effect with once shader - bilateral blur
+/// </summary>
+using PostEffectBilateralBlur = PostEffectSingleShader<PostEffectShaderBilateralBlur>;
 
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input
@@ -35,7 +33,7 @@ public:
 public:
 
 	PostEffectShaderBilateralBlur(FBComponent* uiComponent=nullptr);
-	virtual ~PostEffectShaderBilateralBlur();
+	virtual ~PostEffectShaderBilateralBlur() = default;
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
 	virtual int GetNumberOfVariations() const override { return 1; }
@@ -43,18 +41,15 @@ public:
 	virtual int GetNumberOfPasses() const override { return 1; }
 
 	//! an effect public name
-	virtual const char* GetName() const override;
+	const char* GetName() const override { return SHADER_NAME; }
 	//! get a filename of vertex shader, for this effect. returns a relative filename
-	virtual const char* GetVertexFname(const int variationIndex) const override;
+	const char* GetVertexFname(const int variationIndex) const override { return VERTEX_SHADER_FILE; }	
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
-	virtual const char* GetFragmentFname(const int variationIndex) const override;
-
-	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass, int w, int h) override;
+	const char* GetFragmentFname(const int variationIndex) const override { return FRAGMENT_SHADER_FILE; }
 
 public:
-	IEffectShaderConnections::ShaderProperty* ColorTexture{ nullptr };
-	IEffectShaderConnections::ShaderProperty* BlurScale{ nullptr };
+	ShaderProperty* ColorTexture{ nullptr };
+	ShaderProperty* BlurScale{ nullptr };
 
 protected:
 
@@ -62,25 +57,10 @@ protected:
 	virtual const char* GetMaskingChannelPropertyName() const override { return nullptr; }
 	virtual bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
-	//! is called once the shader is loaded
-	virtual bool OnPrepareUniforms(const int variationIndex) override;
-	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
-
 private:
-	//GLint		mColorSamplerLoc{ -1 };
-	//GLint		mLocImageBlurScale{ -1 };
-
-	//FBVector2d	mBlurMaskScale;
-	//GLint		mTextureId; //!< a binded texture, that we are going to blur
-
+	
 	FBComponent* mUIComponent{ nullptr };
 };
-
-/// <summary>
-/// effect with once shader - bilateral blur
-/// </summary>
-typedef PostEffectSingleShader<PostEffectShaderBilateralBlur> PostEffectBilateralBlur;
 
 
 

@@ -143,6 +143,8 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 
 	if (mEffectBilateralBlur.get())
 		mEffectBilateralBlur->CollectUIValues(&effectContext);
+	if (mEffectDepthLinearize.get())
+		mEffectDepthLinearize->CollectUIValues(&effectContext);
 
 	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
 	{
@@ -578,43 +580,22 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 
 void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId)
 {
-	
-	//const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
-
-	// prep data
-
-	const float znear = static_cast<float>(mLastCamera->NearPlaneDistance);
-	const float zfar = static_cast<float>(mLastCamera->FarPlaneDistance);
-	FBCameraType cameraType;
-	mLastCamera->Type.GetData(&cameraType, sizeof(FBCameraType));
-	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
-
-	const float clipInfo[4]{
-		znear * zfar,
-		znear - zfar,
-		zfar,
-		(perspective) ? 1.0f : 0.0f
-	};
-	
 	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer("depthLinearize"); //buffers->GetBufferDepthPtr();
 
-	//FrameBuffer* pBufferDepth = buffers->GetBufferDepthPtr();
+	const PostEffectBase::RenderEffectContext renderContext
+	{
+		nullptr, // intermediate buffers
+		0,
+		depthId, // depth id
+		buffers->GetWidth(),
+		buffers->GetHeight(),
+		false, // generate mips
+		pBufferDepth,
+		1 // last color attachment for processing
+	};
 
-	// render
+	mEffectDepthLinearize->Process(renderContext, nullptr);
 
-	pBufferDepth->Bind();
-
-	mShaderDepthLinearize->Bind();
-
-	glBindTexture(GL_TEXTURE_2D, depthId);
-
-	if (mLocDepthLinearizeClipInfo >= 0)
-		glUniform4fv(mLocDepthLinearizeClipInfo, 1, clipInfo);
-
-	drawOrthoQuad2d(pBufferDepth->GetWidth(), pBufferDepth->GetHeight());
-
-	mShaderDepthLinearize->UnBind();
-	pBufferDepth->UnBind();
 
 	// DONE: bind a depth texture
 	const GLuint linearDepthId = pBufferDepth->GetColorObject();
@@ -1121,27 +1102,11 @@ bool PostEffectChain::LoadShaders()
 		//
 		// DEPTH LINEARIZE
 
-		std::unique_ptr<GLSLShaderProgram> pNewShader(new GLSLShaderProgram);
-
-		FBString vertex_path(shadersPath, SHADER_DEPTH_LINEARIZE_VERTEX);
-		FBString fragment_path(shadersPath, SHADER_DEPTH_LINEARIZE_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
+		mEffectDepthLinearize.reset(new PostEffectLinearDepth());
+		if (!mEffectDepthLinearize->Load(shadersPath))
 		{
-			throw std::exception("failed to load and prepare depth linearize shader");
+			throw std::exception("failed to load and prepare depth linearize effect");
 		}
-
-		// samplers and locations
-		pNewShader->Bind();
-
-		GLint loc = pNewShader->findLocation("depthSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		mLocDepthLinearizeClipInfo = pNewShader->findLocation("gClipInfo");
-
-		pNewShader->UnBind();
-
-		mShaderDepthLinearize.reset(pNewShader.release());
 
 		//
 		// BLUR (for SSAO)
@@ -1179,33 +1144,9 @@ bool PostEffectChain::LoadShaders()
 		mEffectBilateralBlur.reset(new PostEffectBilateralBlur());
 		if (!mEffectBilateralBlur->Load(shadersPath))
 		{
-			throw std::exception("failed to load and prepare image blur shader");
+			throw std::exception("failed to load and prepare image blur effect");
 		}
 
-		/*
-		pNewShader.reset(new GLSLShaderProgram);
-
-		vertex_path = FBString(shadersPath, SHADER_IMAGE_BLUR_VERTEX);
-		fragment_path = FBString(shadersPath, SHADER_IMAGE_BLUR_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
-		{
-			throw std::exception("failed to load and prepare image blur shader");
-		}
-
-		// samplers and locations
-		pNewShader->Bind();
-
-		loc = pNewShader->findLocation("colorSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		
-		mLocImageBlurScale = pNewShader->findLocation("scale");
-
-		pNewShader->UnBind();
-
-		mShaderImageBlur.reset(pNewShader.release());
-		*/
 		//
 		// MIX
 

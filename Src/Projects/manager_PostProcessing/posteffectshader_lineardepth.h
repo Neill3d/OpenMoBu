@@ -3,26 +3,21 @@
 
 // posteffectshader_lineardepth
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
+#include "posteffectsingleshader.h"
 
-#include "graphics_framebuffer.h"
+// forward
+class PostEffectShaderLinearDepth;
 
-#include "glslShaderProgram.h"
-#include "Framebuffer.h"
-
-#include "posteffectbase.h"
-
-#include <memory>
-#include <bitset>
-
-
-//////////////////////////////
+/// <summary>
+/// effect with once shader - bilateral blur
+/// </summary>
+using PostEffectLinearDepth = PostEffectSingleShader<PostEffectShaderLinearDepth>;
 
 
 /// <summary>
@@ -32,34 +27,28 @@ class PostEffectShaderLinearDepth : PostEffectBufferShader
 {
 public:
 
-	PostEffectShaderLinearDepth();
-	virtual ~PostEffectShaderLinearDepth();
+	PostEffectShaderLinearDepth(FBComponent* uiComponent = nullptr);
+	virtual ~PostEffectShaderLinearDepth() = default;
 
-	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
-	virtual int GetNumberOfVariations() const override { return 1; }
+	int GetNumberOfVariations() const override { return 1; }
+	int GetNumberOfPasses() const override { return 1; }
 
-	//! an effect public name
-	virtual const char* GetName() const override;
-	//! get a filename of vertex shader, for this effect. returns a relative filename
-	virtual const char* GetVertexFname(const int variationIndex) const override;
-	//! get a filename of a fragment shader, for this effect, returns a relative filename
-	virtual const char* GetFragmentFname(const int variationIndex) const override;
+	const char* GetName() const override { return SHADER_NAME; }
+	const char* GetVertexFname(const int variationIndex) const override { return VERTEX_SHADER_FILE; }
+	const char* GetFragmentFname(const int variationIndex) const override { return FRAGMENT_SHADER_FILE; }
 
-	/// new feature to have several passes for a specified effect
-	virtual const int GetNumberOfPasses() const override;
-	//! initialize a specific path for drawing
-	virtual bool PrepPass(const int pass, int w, int h) override;
+public:
+
+	// properties
+	ShaderProperty* mDepthTexture;
+	ShaderProperty* mClipInfo;
 
 protected:
-	//! prepare uniforms for a given variation of the effect
-	virtual bool OnPrepareUniforms(const int variationIndex) override;
+	static constexpr const char* SHADER_NAME = "LinearDepth";
+	static constexpr const char* VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
+	static constexpr const char* FRAGMENT_SHADER_FILE = "/GLSL/depthLinearize.fsh";
+
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex) override;		//!< grab main UI values for the effect
+	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
-
-private:
-
-	GLint	mLocDepthLinearizeClipInfo{ -1 };
-
-	float clipInfo[4];
 };

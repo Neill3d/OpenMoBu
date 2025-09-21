@@ -29,8 +29,6 @@ varying vec2 fourStepsRightTextureCoordinate;
 
 void main (void)
 {
-	//vec2 tx  = gl_TexCoord [0].xy;
-	
 	vec4 fragmentColor = texture2D(sampler, centerTextureCoordinate) * 0.38026;
 
 	fragmentColor += texture2D(sampler, oneStepLeftTextureCoordinate) * 0.27667;

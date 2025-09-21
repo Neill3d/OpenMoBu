@@ -15,57 +15,27 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 /////////////////////////////////////////////////////////////////////////
 // PostEffectShaderLinearDepth
 
-PostEffectShaderLinearDepth::PostEffectShaderLinearDepth()
-	: PostEffectBufferShader()
-{}
-
-PostEffectShaderLinearDepth::~PostEffectShaderLinearDepth()
-{}
-
-
-//! an effect public name
-const char* PostEffectShaderLinearDepth::GetName() const
+PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponent)
+	: PostEffectBufferShader(uiComponent)
 {
-	return "LinearDepth";
-}
-//! get a filename of vertex shader, for this effect. returns a relative filename
-const char* PostEffectShaderLinearDepth::GetVertexFname(const int variationIndex) const
-{
-	return "/GLSL/simple.vsh";
-}
+	mDepthTexture = &AddProperty(ShaderProperty("depth", "depthSampler"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::DepthSamplerSlot);
 
-//! get a filename of a fragment shader, for this effect, returns a relative filename
-const char* PostEffectShaderLinearDepth::GetFragmentFname(const int variationIndex) const
-{
-	return "/GLSL/depthLinearize.fsh";
-}
-
-//! prepare uniforms for a given variation of the effect
-bool PostEffectShaderLinearDepth::OnPrepareUniforms(const int variationIndex)
-{
-	GLSLShaderProgram* shader = GetShaderPtr();
-	if (!shader)
-		return false;
-
-	shader->Bind();
-
-	GLint loc = shader->findLocation("depthSampler");
-	if (loc >= 0)
-		glUniform1i(loc, CommonEffect::DepthSamplerSlot);
-	mLocDepthLinearizeClipInfo = shader->findLocation("gClipInfo");
-
-	shader->UnBind();
-
-	return true;
+	mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo"))
+		.SetType(EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderLinearDepth::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderLinearDepth::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	const float znear = static_cast<float>(effectContext.camera->NearPlaneDistance);
-	const float zfar = static_cast<float>(effectContext.camera->FarPlaneDistance);
+	FBCamera* camera = effectContext->GetCamera();
+
+	const float znear = static_cast<float>(camera->NearPlaneDistance);
+	const float zfar = static_cast<float>(camera->FarPlaneDistance);
 	FBCameraType cameraType;
-	effectContext.camera->Type.GetData(&cameraType, sizeof(FBCameraType));
+	camera->Type.GetData(&cameraType, sizeof(FBCameraType));
 	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
 
 	const float newClipInfo[4]{
@@ -74,30 +44,6 @@ bool PostEffectShaderLinearDepth::OnCollectUI(PostPersistentData* pData, const P
 		zfar,
 		(perspective) ? 1.0f : 0.0f
 	};
-	memmove(clipInfo, newClipInfo, sizeof(float) * 4);
-	return true;
-}
-
-/// new feature to have several passes for a specified effect
-const int PostEffectShaderLinearDepth::GetNumberOfPasses() const
-{
-	return 1;
-}
-//! initialize a specific path for drawing
-bool PostEffectShaderLinearDepth::PrepPass(const int pass, int w, int h)
-{
-	GLSLShaderProgram* shader = GetShaderPtr();
-	if (!shader)
-		return false;
-
-	// TODO: are we assume that the pass is already binded ?!
-	shader->Bind();
-
-	if (mLocDepthLinearizeClipInfo >= 0)
-		glUniform4fv(mLocDepthLinearizeClipInfo, 1, clipInfo);
-
-	// TODO: we probably could skip that, as we are going to render using the shader
-	shader->UnBind();
-
+	mClipInfo->SetValue(newClipInfo[0], newClipInfo[1], newClipInfo[2], newClipInfo[3]);
 	return true;
 }
