@@ -142,7 +142,7 @@ private:
 	/// <summary>
 	/// render a linear depth (for SSAO)
 	/// </summary>
-	void RenderLinearDepth(PostEffectBuffers* buffers);
+	void RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId);
 
 	void RenderWorldNormals(PostEffectBuffers* buffers);
 

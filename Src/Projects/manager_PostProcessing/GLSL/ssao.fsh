@@ -15,8 +15,11 @@
 
 #version 130
 
+in vec2 texCoord;
+out vec4 FragColor;
+
 uniform	sampler2D	colorSampler;
-uniform sampler2D	depthSampler;
+uniform sampler2D	linearDepthSampler;
 uniform sampler2D	texRandom;
 uniform sampler2D	maskSampler;
 
@@ -58,7 +61,7 @@ vec3 UVToView(vec2 uv, float eye_z)
 
 vec3 FetchViewPos(vec2 UV)
 {
-  float ViewDepth = textureLod(depthSampler, UV, 0).x;	// texLinearDepth
+  float ViewDepth = textureLod(linearDepthSampler, UV, 0).x;	// texLinearDepth
   return UVToView(UV, ViewDepth);
 }
 
@@ -112,7 +115,7 @@ vec2 RotateDirection(vec2 Dir, vec2 CosSin)
 //----------------------------------------------------------------------------------
 vec4 GetJitter()
 {
-	return texture2DLod( texRandom, (gl_FragCoord.xy / AO_RANDOMTEX_SIZE), 0);
+	return textureLod( texRandom, (gl_FragCoord.xy / AO_RANDOMTEX_SIZE), 0);
 }
 
 //----------------------------------------------------------------------------------
@@ -157,12 +160,12 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 
 void main()
 {
-	vec2 uv = gl_TexCoord[0].st;
+	vec2 uv = texCoord;
 	
 	if (uv.y < upperClip || uv.y > lowerClip)
 	{
 		vec4 fragColor = texture2D(colorSampler, uv);
-		gl_FragColor =  fragColor;
+		FragColor =  fragColor;
 		return;
 	}
 	
@@ -194,5 +197,5 @@ void main()
 		outcolor.rgb *= AO;
 	}
 	
-	gl_FragColor = outcolor;		
+	FragColor = outcolor;		
 }

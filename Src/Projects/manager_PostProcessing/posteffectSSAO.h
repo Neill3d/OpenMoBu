@@ -60,36 +60,30 @@ protected:
 
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
-	// shader locations
-	enum { LOCATIONS_COUNT = 13 };
-	union 
-	{
-		struct
-		{
-			// locations
+	//! bind effect shader program
+	void Bind() override;
+	//! unbind effect shader program
+	void UnBind() override;
 
-			GLint		clipInfo;
+private:
 
-			GLint		projInfo;
-			GLint		projOrtho;
-			GLint		InvQuarterResolution;
-			GLint		InvFullResolution;
+	ShaderProperty* mClipInfo;
+	ShaderProperty* mProjInfo;
+	ShaderProperty* mProjOrtho;
+	ShaderProperty* mInvQuarterResolution;
+	ShaderProperty* mInvFullResolution;
+	ShaderProperty* mRadiusToScreen;
+	ShaderProperty* mR2;
+	ShaderProperty* mNegInvR2;
+	ShaderProperty* mNDotVBias;
 
-			GLint		RadiusToScreen;
-			GLint		R2;
-			GLint		NegInvR2;
-			GLint		NDotVBias;
+	ShaderProperty* mAOMultiplier;
+	ShaderProperty* mPowExponent;
 
-			GLint		AOMultiplier;
-			GLint		PowExponent;
+	ShaderProperty* mOnlyAO;
+	ShaderProperty* mHbaoRandom;
 
-			GLint		OnlyAO;
-			GLint		hbaoRandom;
-		};
-
-		GLint		arr[LOCATIONS_COUNT];
-	} mLoc;
-
+	// texture Id
 	GLuint	hbao_random;
 
 	float		mRandom[4]{ 0.0f };

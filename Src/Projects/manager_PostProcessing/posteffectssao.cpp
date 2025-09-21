@@ -33,13 +33,66 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	, e2(rd())
 	, dist(0, 1.0)
 {
-	for (int i = 0; i < LOCATIONS_COUNT; ++i)
-		mLoc.arr[i] = -1;
 
-	// 
+	MakeCommonProperties();
+
+	AddProperty(ShaderProperty("color", "colorSampler"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::ColorSamplerSlot);
+
+	AddProperty(ShaderProperty("random", "texRandom"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::UserSamplerSlot);
+
+	// NOTE: skip of automatic reading value and let it be done manually
+	mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo", nullptr))
+		.SetType(EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::ShouldSkip, true); 
+	mProjInfo = &AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
+		.SetType(EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+	mProjOrtho = &AddProperty(ShaderProperty("projOrtho", "projOrtho", nullptr))
+		.SetType(EPropertyType::INT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	mInvQuarterResolution = &AddProperty(ShaderProperty("InvQuarterResolution", "InvQuarterResolution", nullptr))
+		.SetType(EPropertyType::VEC2)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+	mInvFullResolution = &AddProperty(ShaderProperty("InvFullResolution", "InvFullResolution", nullptr))
+		.SetType(EPropertyType::VEC2)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	mRadiusToScreen = &AddProperty(ShaderProperty("RadiusToScreen", "RadiusToScreen", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+	mR2 = &AddProperty(ShaderProperty("R2", "R2", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	mNegInvR2 = &AddProperty(ShaderProperty("NegInvR2", "NegInvR2", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+	mNDotVBias = &AddProperty(ShaderProperty("NDotVBias", "NDotVBias", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	mAOMultiplier = &AddProperty(ShaderProperty("AOMultiplier", "AOMultiplier", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	mPowExponent = &AddProperty(ShaderProperty("PowExponent", "PowExponent", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	mOnlyAO = &AddProperty(ShaderProperty("OnlyAO", "OnlyAO", nullptr))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+	mHbaoRandom = &AddProperty(ShaderProperty("g_Jitter", "g_Jitter", nullptr))
+		.SetType(EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
+	// lazy initialize of random texture on first render
 	hbao_random = 0;
-	//InitMisc();
-
 }
 
 //! a destructor
@@ -66,72 +119,29 @@ void EffectShaderSSAO::DeleteTextures()
 	}
 }
 
-
-bool PostEffectSSAO::PrepUniforms(const int shaderIndex)
+bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	GLSLShaderProgram* mShader = mShaders[shaderIndex];
-	if (!mShader)
-		return false;
+	FBCamera* camera = effectContext->GetCamera();
+	const PostPersistentData* pData = effectContext->GetPostProcessData();
 
-	mShader->Bind();
-
-	GLint loc = mShader->findLocation("colorSampler");
-	if (loc >= 0)
-		glUniform1i(loc, GetColorSamplerSlot());
-	loc = mShader->findLocation("depthSampler");
-	if (loc >= 0)
-		glUniform1i(loc, GetDepthSamplerSlot());
-	loc = mShader->findLocation("texRandom");
-	if (loc >= 0)
-		glUniform1i(loc, GetRandomSamplerSlot());
-
-	PrepareCommonLocations(mShader);
-
-	mLoc.clipInfo = mShader->findLocation("gClipInfo");
-
-	mLoc.projInfo = mShader->findLocation("projInfo");
-	mLoc.projOrtho = mShader->findLocation("projOrtho");
-	mLoc.InvQuarterResolution= mShader->findLocation("InvQuarterResolution");
-	mLoc.InvFullResolution= mShader->findLocation("InvFullResolution");
-
-	mLoc.RadiusToScreen= mShader->findLocation("RadiusToScreen");
-	mLoc.R2 = mShader->findLocation("R2");
-	mLoc.NegInvR2 = mShader->findLocation("NegInvR2");
-	mLoc.NDotVBias = mShader->findLocation("NDotVBias");
-
-	mLoc.AOMultiplier = mShader->findLocation("AOMultiplier");
-	mLoc.PowExponent = mShader->findLocation("PowExponent");
-
-	mLoc.OnlyAO = mShader->findLocation("OnlyAO");
-	mLoc.hbaoRandom = mShader->findLocation("g_Jitter");
-
-	mShader->UnBind();
-
-	//
-	InitMisc();
-	return true;
-}
-
-bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext)
-{
-	const float znear = (float) effectContext.camera->NearPlaneDistance;
-	const float zfar = (float) effectContext.camera->FarPlaneDistance;
+	const float znear = (float) camera->NearPlaneDistance;
+	const float zfar = (float) camera->FarPlaneDistance;
 	FBCameraType cameraType;
-	effectContext.camera->Type.GetData(&cameraType, sizeof(FBCameraType));
+	camera->Type.GetData(&cameraType, sizeof(FBCameraType));
 	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
 	
 	// calculate a diagonal fov
 
 	// convert to mm
-	const double filmWidth = 25.4 * effectContext.camera->FilmSizeWidth;
-	const double filmHeight = 25.4 * effectContext.camera->FilmSizeHeight;
+	const double filmWidth = 25.4 * camera->FilmSizeWidth;
+	const double filmHeight = 25.4 * camera->FilmSizeHeight;
 
 	const double diag = sqrt(filmWidth*filmWidth + filmHeight*filmHeight);
-	const double focallen = effectContext.camera->FocalLength;
+	const double focallen = camera->FocalLength;
 
 	const float fov = 2.0 * atan(diag / (focallen * 2.0));
 
-	float clipInfo[4]
+	const float clipInfo[4]
 	{
 		znear * zfar,
 		znear - zfar,
@@ -139,14 +149,11 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContex
 		(perspective) ? 1.0f : 0.0f
 	};
 
-	float onlyAO = (pData->OnlyAO) ? 1.0f : 0.0f;
-
-	if (pData->SSAO_Blur)
-		onlyAO = 1.0f;
+	const float onlyAO = (pData->OnlyAO || pData->SSAO_Blur) ? 1.0f : 0.0f;
 
 	FBMatrix dproj, dinvProj;
-	effectContext.camera->GetCameraMatrix(dproj, kFBProjection);
-	effectContext.camera->GetCameraMatrix(dinvProj, kFBProjInverse);
+	camera->GetCameraMatrix(dproj, kFBProjection);
+	camera->GetCameraMatrix(dinvProj, kFBProjInverse);
 
 	float P[16];
 	for (int i = 0; i < 16; ++i)
@@ -174,10 +181,10 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContex
 
 	float projScale;
 	if (useOrtho){
-		projScale = float(effectContext.h) / (projInfoOrtho[1]);
+		projScale = float(effectContext->GetViewHeight()) / (projInfoOrtho[1]);
 	}
 	else {
-		projScale = float(effectContext.h) / (tanf(fov * 0.5f) * 2.0f);
+		projScale = float(effectContext->GetViewHeight()) / (tanf(fov * 0.5f) * 2.0f);
 	}
 
 	// radius
@@ -199,79 +206,53 @@ bool PostEffectSSAO::CollectUIValues(PostPersistentData *pData, PostEffectContex
 	else if (bias > 1.0f)
 		bias = 1.0f;
 
-	float aoMult = 1.0f / (1.0f - bias);
+	const float aoMult = 1.0f / (1.0f - bias);
 
 	// resolution
-	int quarterWidth = ((effectContext.w + 3) / 4);
-	int quarterHeight = ((effectContext.h + 3) / 4);
+	const int quarterWidth = ((effectContext->GetViewWidth() + 3) / 4);
+	const int quarterHeight = ((effectContext->GetViewHeight() + 3) / 4);
 
-	GLSLShaderProgram* mShader = GetShaderPtr();
-	if (!mShader)
-		return false;
-	
-	mShader->Bind();
+	mClipInfo->SetValue(clipInfo[0], clipInfo[1], clipInfo[2], clipInfo[3]);
+	mOnlyAO->SetValue(onlyAO);
+	mProjInfo->SetValue(projInfo[0], projInfo[1], projInfo[2], projInfo[3]);
+	mProjOrtho->SetValue(projOrtho);
+	mRadiusToScreen->SetValue(RadiusToScreen);
+	mR2->SetValue(R2);
+	mNegInvR2->SetValue(negInvR2);
+	mPowExponent->SetValue(intensity);
+	mNDotVBias->SetValue(bias);
+	mAOMultiplier->SetValue(aoMult);
+	mInvQuarterResolution->SetValue(1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
+	mInvFullResolution->SetValue(1.0f / float(effectContext->GetViewWidth()), 1.0f / float(effectContext->GetViewHeight()));
+	mHbaoRandom->SetValue(mRandom[0], mRandom[1], mRandom[2], mRandom[3]);
 
-	CollectCommonData(pData);
 
-	if (mLoc.clipInfo >= 0)
-		glUniform4fv(mLoc.clipInfo, 1, clipInfo);
-
-	if (mLoc.OnlyAO >= 0)
-		glUniform1f(mLoc.OnlyAO, (float)onlyAO);
-
-	// proj
-	if (mLoc.projInfo >= 0)
-		glUniform4fv(mLoc.projInfo, 1, projInfo);
-	if (mLoc.projOrtho >= 0)
-		glUniform1i(mLoc.projOrtho, projOrtho);
-
-	// pass radius
-	if (mLoc.RadiusToScreen >= 0)
-		glUniform1f(mLoc.RadiusToScreen, (float)RadiusToScreen);
-	if (mLoc.R2 >= 0)
-		glUniform1f(mLoc.R2, (float)R2);
-	if (mLoc.NegInvR2 >= 0)
-		glUniform1f(mLoc.NegInvR2, (float)negInvR2);
-
-	// ao
-	if (mLoc.PowExponent >= 0)
-		glUniform1f(mLoc.PowExponent, intensity);
-	if (mLoc.NDotVBias >= 0)
-		glUniform1f(mLoc.NDotVBias, bias);
-	if (mLoc.AOMultiplier >= 0)
-		glUniform1f(mLoc.AOMultiplier, aoMult);
-
-	// resolution
-	if (mLoc.InvQuarterResolution >= 0)
-		glUniform2f(mLoc.InvQuarterResolution, 1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
-	if (mLoc.InvFullResolution >= 0)
-		glUniform2f(mLoc.InvFullResolution, 1.0f / float(effectContext.w), 1.0f / float(effectContext.h));
-
-	if (mLoc.hbaoRandom >= 0)
-		glUniform4fv(mLoc.hbaoRandom, 1, mRandom);
-
-	mShader->UnBind();
 	return true;
 }
 
 void EffectShaderSSAO::Bind()
 {
+	if (hbaoRandom == 0)
+	{
+		InitMisc();
+	}
+
 	// bind a random texture
-	glActiveTexture(GL_TEXTURE0 + GetRandomSamplerSlot());
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, hbao_random);
 	glActiveTexture(GL_TEXTURE0);
 
-	PostEffectBase::Bind();
+	PostEffectBufferShader::Bind();
 }
 
 void EffectShaderSSAO::UnBind()
 {
 	// bind a random texture
-	glActiveTexture(GL_TEXTURE0 + GetRandomSamplerSlot());
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 
-	PostEffectBase::UnBind();
+	PostEffectBufferShader::UnBind();
 }
 
 bool EffectShaderSSAO::InitMisc()

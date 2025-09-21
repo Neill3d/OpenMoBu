@@ -576,10 +576,10 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 	*/
 }
 
-void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
+void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId)
 {
-	/*
-	const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
+	
+	//const GLuint depthId = buffers->GetSrcBufferPtr()->GetDepthObject();
 
 	// prep data
 
@@ -595,8 +595,10 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
 		zfar,
 		(perspective) ? 1.0f : 0.0f
 	};
+	
+	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer("depthLinearize"); //buffers->GetBufferDepthPtr();
 
-	FrameBuffer* pBufferDepth = buffers->GetBufferDepthPtr();
+	//FrameBuffer* pBufferDepth = buffers->GetBufferDepthPtr();
 
 	// render
 
@@ -617,10 +619,10 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers)
 	// DONE: bind a depth texture
 	const GLuint linearDepthId = pBufferDepth->GetColorObject();
 
-	glActiveTexture(GL_TEXTURE0 + CommonEffectUniforms::GetLinearDepthSamplerSlot());
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::LinearDepthSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, linearDepthId);
 	glActiveTexture(GL_TEXTURE0);
-	*/
+	
 }
 
 void PostEffectChain::RenderWorldNormals(PostEffectBuffers* buffers)
@@ -715,9 +717,6 @@ void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, Po
 	maskRequest->Bind(PostPersistentData::NUMBER_OF_MASKS);
 	mShaderMix->Bind();
 
-	//const int w = buffers->GetWidth();
-	//const int h = buffers->GetHeight();
-
 	mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 1.0f, 0.0f);
 
 	drawOrthoQuad2d(w, h);
@@ -808,7 +807,8 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 	
 	if (isLinearDepthSamplerBinded)
 	{
-		RenderLinearDepth(buffers);
+		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
+		RenderLinearDepth(buffers, depthId);
 	}
 
 	const bool isWorldNormalSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
@@ -1012,9 +1012,9 @@ PostEffectBase* PostEffectChain::ShaderFactory(const BuildInEffect effectType, c
 
 	switch (effectType)
 	{
-	//case SHADER_TYPE_FISHEYE:
-	//	newEffect = new PostEffectFishEye();
-	//	break;
+	case BuildInEffect::FISHEYE:
+		newEffect = new PostEffectFishEye();
+		break;
 	case BuildInEffect::COLOR:
 		newEffect = new PostEffectColor();
 		break;
@@ -1024,21 +1024,21 @@ PostEffectBase* PostEffectChain::ShaderFactory(const BuildInEffect effectType, c
 	case BuildInEffect::FILMGRAIN:
 		newEffect = new PostEffectFilmGrain();
 		break;
-	//case SHADER_TYPE_LENSFLARE:
-	//	newEffect = new PostEffectLensFlare();
-	//	break;
-	//case SHADER_TYPE_SSAO:
-	//	newEffect = new PostEffectSSAO();
-	//	break;
-	//case SHADER_TYPE_DOF:
-	//	newEffect = new PostEffectDOF();
-	//	break;
+	case BuildInEffect::LENSFLARE:
+		newEffect = new PostEffectLensFlare();
+		break;
+	case BuildInEffect::SSAO:
+		newEffect = new PostEffectSSAO();
+		break;
+	case BuildInEffect::DOF:
+		newEffect = new PostEffectDOF();
+		break;
 	case BuildInEffect::DISPLACEMENT:
 		newEffect = new PostEffectDisplacement();
 		break;
-	//case SHADER_TYPE_MOTIONBLUR:
-	//	newEffect = new PostEffectMotionBlur();
-	//	break;
+	case BuildInEffect::MOTIONBLUR:
+		newEffect = new PostEffectMotionBlur();
+		break;
 	}
 
 	if (immediatelyLoad && newEffect)

@@ -73,7 +73,7 @@ IEffectShaderConnections::EPropertyType IEffectShaderConnections::UniformTypeToS
 	case GL_INT:
 		return IEffectShaderConnections::EPropertyType::INT;
 	case GL_BOOL:
-		return IEffectShaderConnections::EPropertyType::INT;
+		return IEffectShaderConnections::EPropertyType::FLOAT;
 	case GL_FLOAT_VEC2:
 		return IEffectShaderConnections::EPropertyType::VEC2;
 	case GL_FLOAT_VEC3:
@@ -121,6 +121,7 @@ IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProper
 	type = newType;
 	switch (newType) {
 	case IEffectShaderConnections::EPropertyType::INT:
+	case IEffectShaderConnections::EPropertyType::BOOL:
 	case IEffectShaderConnections::EPropertyType::FLOAT:
 	case IEffectShaderConnections::EPropertyType::TEXTURE:
 		value = std::array<float, 1>{ 0.0f };
@@ -146,6 +147,14 @@ IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProper
 	assert((type == IEffectShaderConnections::EPropertyType::INT)
 		|| (type == IEffectShaderConnections::EPropertyType::FLOAT)
 		|| (type == IEffectShaderConnections::EPropertyType::TEXTURE));
+
+	value = std::array<float, 1>{ static_cast<float>(valueIn) };
+	return *this;
+}
+
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(bool valueIn)
+{
+	assert(type == IEffectShaderConnections::EPropertyType::BOOL);
 
 	value = std::array<float, 1>{ static_cast<float>(valueIn) };
 	return *this;
@@ -231,6 +240,13 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 		int ivalue = 0;
 		fbProperty->GetData(&ivalue, sizeof(int));
 		GetFloatData()[0] = static_cast<float>(ivalue);
+	} break;
+
+	case IEffectShaderConnections::EPropertyType::BOOL:
+	{
+		bool bvalue = false;
+		fbProperty->GetData(&bvalue, sizeof(bool));
+		GetFloatData()[0] = static_cast<float>(bvalue);
 	} break;
 
 	case IEffectShaderConnections::EPropertyType::FLOAT:

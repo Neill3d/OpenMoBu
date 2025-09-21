@@ -544,6 +544,10 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 			glUniform1i(prop.second.location, static_cast<int>(prop.second.GetFloatData()[0]));
 			break;
 
+		case IEffectShaderConnections::EPropertyType::BOOL:
+			glUniform1f(prop.second.location, prop.second.GetFloatData()[0]);
+			break;
+
 		case IEffectShaderConnections::EPropertyType::FLOAT:
 			if (!prop.second.HasFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE))
 			{

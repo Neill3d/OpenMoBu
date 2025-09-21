@@ -143,6 +143,7 @@ public:
 		float GetScale() const;
 
 		ShaderProperty& SetValue(int valueIn);
+		ShaderProperty& SetValue(bool valueIn);
 		ShaderProperty& SetValue(float valueIn);
 		ShaderProperty& SetValue(double valueIn);
 

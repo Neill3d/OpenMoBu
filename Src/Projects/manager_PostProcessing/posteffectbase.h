@@ -60,6 +60,8 @@ namespace CommonEffect {
 	/// glsl sampler slot binded for a mask texture
 	/// </summary>
 	inline constexpr GLint MaskSamplerSlot = 4;
+
+	inline constexpr GLint UserSamplerSlot = 5; // for custom user texture input
 };
 
 
