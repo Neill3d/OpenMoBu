@@ -55,7 +55,7 @@ public:
 	int				mEnterId = 0;
 	size_t			mFrameId = 0;
 
-	GLint			mAttachedFBO[MAX_ATTACH_STACK];
+	GLint			mAttachedFBO[MAX_ATTACH_STACK]{ 0 };
 
 
 	//

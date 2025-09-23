@@ -3,23 +3,17 @@
 
 // posteffectbase
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "GL/glew.h"
-
-#include "graphics_framebuffer.h"
-
-#include "Framebuffer.h"
-#include "glslShaderProgram.h"
-
 #include "posteffectcontext.h"
 #include "posteffectbuffershader.h"
 
 // forward
+class FrameBuffer;
 class PostEffectBuffers;
 class PostPersistentData;
 class ScopedEffectBind;
@@ -117,11 +111,11 @@ public:
 		int viewWidth;
 		int viewHeight;
 
-		bool generateMips;
-
 		// OUTPUT: write an effect composition to a given frame buffer
 		FrameBuffer* dstFrameBuffer;
 		int colorAttachment; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
+	
+		bool generateMips;
 	};
 
 	virtual void Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext);
@@ -132,12 +126,10 @@ public:
 
 protected:
 
-	//std::string mName;
-
-	int mMaskIndex{ -1 }; //!< which mask channel the effect is use (-1 for a default, globally defined mask channel)
-
 	std::vector<std::unique_ptr<FrameBuffer>>	mFrameBuffers; // in case buffer shader is used to render it into texture
 	std::vector<int> mBufferShaderVersions; // keep last processing buffer shader version, every resolution change is going to inc the version
+
+	int mMaskIndex{ -1 }; //!< which mask channel the effect is use (-1 for a default, globally defined mask channel)
 
 	// in case of render to texture
 	void InitializeFrameBuffers(int w, int h);

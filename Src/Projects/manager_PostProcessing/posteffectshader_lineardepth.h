@@ -23,7 +23,7 @@ using PostEffectLinearDepth = PostEffectSingleShader<PostEffectShaderLinearDepth
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input
 /// </summary>
-class PostEffectShaderLinearDepth : PostEffectBufferShader
+class PostEffectShaderLinearDepth : public PostEffectBufferShader
 {
 public:
 
@@ -47,6 +47,14 @@ protected:
 	static constexpr const char* SHADER_NAME = "LinearDepth";
 	static constexpr const char* VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
 	static constexpr const char* FRAGMENT_SHADER_FILE = "/GLSL/depthLinearize.fsh";
+
+	const char* GetUseMaskingPropertyName() const override { return nullptr; }
+	const char* GetMaskingChannelPropertyName() const override { return nullptr; }
+
+	// this is a predefined effect shader, properties are defined manually
+	virtual bool DoPopulatePropertiesFromUniforms() const override {
+		return false;
+	}
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;

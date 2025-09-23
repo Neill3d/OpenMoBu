@@ -24,21 +24,12 @@ using PostEffectLensFlare = PostEffectSingleShader<EffectShaderLensFlare>;
 /// </summary>
 struct EffectShaderLensFlare : public PostEffectBufferShader
 {
-private:
-	static const int NUMBER_OF_SHADERS{ 3 };
-	static constexpr const char* SHADER_NAME = "Lens Flare";
-	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
-	static constexpr const char* SHADER_FRAGMENT = "/GLSL/lensFlare.fsh";
-	static constexpr const char* SHADER_BUBBLE_FRAGMENT = "/GLSL/lensFlareBubble.fsh";
-	static constexpr const char* SHADER_ANAMORPHIC_FRAGMENT = "/GLSL/lensFlareAnamorphic.fsh";
-
 public:
 	
 	EffectShaderLensFlare(FBComponent* ownerIn);
 	virtual ~EffectShaderLensFlare() = default;
 
 	int GetNumberOfVariations() const override { return NUMBER_OF_SHADERS; }
-
 	int GetNumberOfPasses() const override;
 
 	[[nodiscard]] const char* GetName() const noexcept override { return SHADER_NAME; }
@@ -53,11 +44,15 @@ public:
 		}
 	}
 
-	//virtual bool PrepUniforms(const int shaderIndex) override;
-	//virtual bool CollectUIValues(PostPersistentData *pData, PostEffectContext& effectContext) override;
-
-	//virtual const int GetNumberOfPasses() const override;
 	bool PrepPass(int pass, int width, int height) override;
+
+private:
+	static const int NUMBER_OF_SHADERS{ 3 };
+	static constexpr const char* SHADER_NAME = "Lens Flare";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/lensFlare.fsh";
+	static constexpr const char* SHADER_BUBBLE_FRAGMENT = "/GLSL/lensFlareBubble.fsh";
+	static constexpr const char* SHADER_ANAMORPHIC_FRAGMENT = "/GLSL/lensFlareAnamorphic.fsh";
 
 protected:
 
@@ -71,28 +66,21 @@ protected:
 
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 
-
 private:
 
-	ShaderProperty*		mFlareSeed;
-	ShaderProperty*		mAmount;
-	ShaderProperty*		mTime;
-	ShaderProperty* mLightPos; // vec3 array
+	ShaderProperty* mFlareSeed{ nullptr };
+	ShaderProperty* mAmount{ nullptr };
+	ShaderProperty* mTime{ nullptr };
+	ShaderProperty* mLightPos{ nullptr }; // vec3 array
 
-	ShaderProperty* mTint;	
-	ShaderProperty* mInner;
-	ShaderProperty* mOuter;
-	ShaderProperty* mFadeToBorders;
-	ShaderProperty* mBorderWidth;
-	ShaderProperty* mFeather;
+	ShaderProperty* mTint{ nullptr };
+	ShaderProperty* mInner{ nullptr };
+	ShaderProperty* mOuter{ nullptr };
+	ShaderProperty* mFadeToBorders{ nullptr };
+	ShaderProperty* mBorderWidth{ nullptr };
+	ShaderProperty* mFeather{ nullptr };
 
-
-	//Louis
-	//EFlareType		FlareType{ EFlareType::flare1 };
-	
-	// shader locations
-
-	struct SubShader //: public CommonEffectUniforms
+	struct SubShader
 	{
 	public:
 

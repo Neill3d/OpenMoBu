@@ -15,6 +15,11 @@
 // DoF with bokeh GLSL shader v2.4
 // by Martins Upitis (martinsh) (devlog-martinsh.blogspot.com)
 
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
+
 uniform	sampler2D	colorSampler;
 uniform sampler2D	depthSampler;
 uniform sampler2D	blurSampler;
@@ -217,7 +222,7 @@ float linearize(float depth)
 /*
 float LogarithmicDepth()
 {
-	float d = texture2D(depthSampler, gl_TexCoord[0].st).x;
+	float d = texture2D(depthSampler, texCoord.st).x;
 	float C = 1.0;
 	float z = (exp(d*log(C*zFar+1.0)) - 1.0)/C;
 	return z;
@@ -227,7 +232,7 @@ float LinearizeDepth()
 {
   float n = zNear; // camera z near
   float f = zFar; // camera z far
-  float z = texture2D(depthSampler, gl_TexCoord[0].st).x;
+  float z = texture2D(depthSampler, texCoord.st).x;
   //return (2.0 * n) / (f + n - z * (f - n));	
   
   //float z_b = texture2D(depthBuffTex, vTexCoord).x;
@@ -259,12 +264,11 @@ void main()
 {
 	//scene depth calculation
 	
-	vec2 texCoord = gl_TexCoord[0].st;
+	vec2 texCoord = texCoord.st;
 	
 	if (texCoord.y < upperClip || texCoord.y > lowerClip)
 	{
-		vec4 fragColor = texture2D(colorSampler, texCoord);
-		gl_FragColor =  fragColor;
+		FragColor = texture2D(colorSampler, texCoord);
 		return;
 	}
 	
@@ -281,11 +285,11 @@ void main()
 		depth = LinearizeDepth();
 	}
 	*/
-	//depth = linearize(texture2D(depthSampler,gl_TexCoord[0].xy).x);
+	//depth = linearize(texture2D(depthSampler, texCoord.xy).x);
 	/*
 	if (depthblur)
 	{
-		depth = linearize(bdepth(gl_TexCoord[0].xy));
+		depth = linearize(bdepth(texCoord.xy));
 	}
 	*/
 	//focal plane calculation
@@ -337,13 +341,13 @@ void main()
 	if (debugBlurValue > 0.0)
 	{
 		vec4 outColor2 = vec4(blur, blur, blur, 1.0);
-		gl_FragColor = outColor2;
+		FragColor = outColor2;
 		return;
 	}
 	
 	// calculation of pattern for ditering
 	
-	vec2 noise = rand(gl_TexCoord[0].xy)*namount*blur;
+	vec2 noise = rand(texCoord.xy)*namount*blur;
 	
 	// getting blur x and y step factor
 	
@@ -374,7 +378,7 @@ void main()
 				{ 
 					p = penta(vec2(pw,ph));
 				}
-				col += color(gl_TexCoord[0].xy + vec2(pw*w,ph*h),blur)*mix(1.0,(float(i))/(float(rings)),bias)*p;  
+				col += color(texCoord.xy + vec2(pw*w,ph*h),blur)*mix(1.0,(float(i))/(float(rings)),bias)*p;  
 				s += 1.0*mix(1.0,(float(i))/(float(rings)),bias)*p;   
 			}
 		}
@@ -392,8 +396,8 @@ void main()
 		mask = texture2D(maskSampler, texCoord);
 	}
 
-	gl_FragColor.rgb = mix(col, inputColor, mask.r * useMasking);
-	gl_FragColor.a = 1.0;
+	FragColor.rgb = mix(col, inputColor, mask.r * useMasking);
+	FragColor.a = 1.0;
 }
 // end of a shader
 

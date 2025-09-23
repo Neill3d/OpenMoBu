@@ -10,13 +10,13 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include "effectshaderconnections.h"
-
-#include "Framebuffer.h"
-#include "glslShaderProgram.h"
 #include <memory>
+#include <unordered_map>
 
 // forward
+class FrameBuffer;
 class PostEffectBuffers;
+class GLSLShaderProgram;
 
 /// <summary>
 /// effect with one or more gpu shaders (number of variations, mostly 1)
@@ -133,6 +133,8 @@ protected:
 
 protected:
 
+	// system uniforms
+
 	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
 	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
 
@@ -143,16 +145,22 @@ protected:
 
 protected:
 
-	FBComponent* mOwner{ nullptr }; //!< scene component which used to communicate with a user and a scene
+	// variances of post effect
 
-	bool isDownscale{ false };
-	int version{ 0 }; //!< keep track of resolution modifications, inc version everytime we change resolution
 	int mCurrentShader{ 0 }; //!< current variance of a shader
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders; //!< store a list of all variances
 
 	void SetCurrentShader(const int index) { mCurrentShader = index; }
 	int GetCurrentShader() const { return mCurrentShader; }
 	void FreeShaders();
+
+protected:
+
+	FBComponent* mOwner{ nullptr }; //!< scene component which used to communicate with a user and a scene
+
+	bool isDownscale{ false };
+	int version{ 0 }; //!< keep track of resolution modifications, inc version everytime we change resolution
+	
 
 	//!< TODO: masking property in the UI, should we move it into input connection ?!
 	virtual const char* GetUseMaskingPropertyName() const = 0;

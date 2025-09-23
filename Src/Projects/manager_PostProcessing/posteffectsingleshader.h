@@ -1,6 +1,7 @@
 #pragma once
 
 #include "posteffectbase.h"
+#include "posteffectbuffershader.h"
 
 /// <summary>
 /// this is for cases when effect contains of one buffer shader execution and directly output to effects chain buffer
@@ -30,8 +31,8 @@ public:
 	}
 
 	virtual int GetNumberOfBufferShaders() const override { return 1; }
-	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override { return mBufferShader.get(); }
-	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override { return mBufferShader.get(); }
+	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override { return static_cast<PostEffectBufferShader*>(mBufferShader.get()); }
+	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override { return static_cast<const PostEffectBufferShader*>(mBufferShader.get()); }
 
 protected:
 

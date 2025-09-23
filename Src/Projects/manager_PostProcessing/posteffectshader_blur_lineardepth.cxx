@@ -1,7 +1,7 @@
 
 /**	\file	posteffectshader_blur_lineardepth.cxx
 
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -16,80 +16,40 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 /////////////////////////////////////////////////////////////////////////
 // PostEffectShaderBlurLinearDepth
 
-PostEffectShaderBlurLinearDepth::PostEffectShaderBlurLinearDepth()
-	: PostEffectBufferShader()
-{}
-
-PostEffectShaderBlurLinearDepth::~PostEffectShaderBlurLinearDepth()
-{}
-
-
-//! an effect public name
-const char* PostEffectShaderBlurLinearDepth::GetName() const
+PostEffectShaderBlurLinearDepth::PostEffectShaderBlurLinearDepth(FBComponent* uiComponent)
+	: PostEffectBufferShader(uiComponent)
 {
-	return "Blur w/th LinearDepth";
-}
-//! get a filename of vertex shader, for this effect. returns a relative filename
-const char* PostEffectShaderBlurLinearDepth::GetVertexFname(const int variationIndex) const
-{
-	return "/GLSL/simple.vsh";
-}
+	mColorTexture = &AddProperty(ShaderProperty("color", "sampler0"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::ColorSamplerSlot);
 
-//! get a filename of a fragment shader, for this effect, returns a relative filename
-const char* PostEffectShaderBlurLinearDepth::GetFragmentFname(const int variationIndex) const
-{
-	return "/GLSL/depthLinearize.fsh";
-}
+	mLinearDepthTexture = &AddProperty(ShaderProperty("linearDepth", "linearDepthSampler"))
+		.SetType(EPropertyType::TEXTURE)
+		.SetValue(CommonEffect::LinearDepthSamplerSlot);
 
-//! prepare uniforms for a given variation of the effect
-bool PostEffectShaderBlurLinearDepth::OnPrepareUniforms(const int variationIndex)
-{
-	GLSLShaderProgram* shader = GetShaderPtr();
-	if (!shader)
-		return false;
+	mBlurSharpness = &AddProperty(ShaderProperty("blurSharpness", "g_Sharpness"))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	shader->Bind();
-
-	GLint loc = shader->findLocation("sampler0");
-	if (loc >= 0)
-		glUniform1i(loc, CommonEffect::ColorSamplerSlot);
-	loc = shader->findLocation("linearDepthSampler");
-	if (loc >= 0)
-		glUniform1i(loc, CommonEffect::LinearDepthSamplerSlot);
-
-	mLocBlurSharpness = shader->findLocation("g_Sharpness");
-	mLocBlurRes = shader->findLocation("g_InvResolutionDirection");
-
-	shader->UnBind();
-
-	return true;
+	mInvRes = &AddProperty(ShaderProperty("invRes", "g_InvResolutionDirection"))
+		.SetType(EPropertyType::VEC2)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBlurLinearDepth::OnCollectUI(PostPersistentData* pData, const PostEffectContext& effectContext, int maskIndex)
+bool PostEffectShaderBlurLinearDepth::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	const int w = effectContext.w; // buffers->GetWidth();
-	const int h = effectContext.h; // buffers->GetHeight();
+	const PostPersistentData* data = effectContext->GetPostProcessData();
 
-	blurSharpness = 0.1f * (float)pData->SSAO_BlurSharpness;
-	invRes[0] = 1.0f / static_cast<float>(w);
-	invRes[1] = 1.0f / static_cast<float>(h);
+	const int w = effectContext->GetViewWidth();
+	const int h = effectContext->GetViewHeight();
 
-	return true;
-}
+	const float blurSharpness = 0.1f * (float)data->SSAO_BlurSharpness;
+	const float invRes0 = 1.0f / static_cast<float>(w);
+	const float invRes1 = 1.0f / static_cast<float>(h);
 
-/// new feature to have several passes for a specified effect
-const int PostEffectShaderBlurLinearDepth::GetNumberOfPasses() const
-{
-	return 1;
-}
-//! initialize a specific path for drawing
-bool PostEffectShaderBlurLinearDepth::PrepPass(const int pass, int w, int h)
-{
-	if (mLocBlurSharpness >= 0)
-		glUniform1f(mLocBlurSharpness, blurSharpness);
-	if (mLocBlurRes >= 0)
-		glUniform2f(mLocBlurRes, invRes[0], invRes[1]);
+	mBlurSharpness->SetValue(blurSharpness);
+	mInvRes->SetValue(invRes0, invRes1);
 
 	return true;
 }

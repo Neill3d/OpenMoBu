@@ -2,7 +2,7 @@
 
 // postprocessing_effectChain
 /*
-Sergei <Neill3d> Solokhin 2018-2024
+Sergei <Neill3d> Solokhin 2018-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -19,8 +19,10 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectcontextmobu.h"
 #include "posteffectbuffers.h"
 
+#include "posteffectshader_downscale.h"
 #include "posteffectshader_lineardepth.h"
 #include "posteffectshader_bilateral_blur.h"
+#include "posteffectshader_blur_lineardepth.h"
 
 #include "glslShaderProgram.h"
 #include "Framebuffer.h"
@@ -30,19 +32,15 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward
 class PostEffectBuffers;
-//class PostEffectBilateralBlur;
 
 /// <summary>
 /// chain of post processing effects, apply effects in an order
 /// </summary>
 class PostEffectChain
 {
-
 public:
-	//! a constructor
 	PostEffectChain();
-	//! a destructor
-	~PostEffectChain();
+	virtual ~PostEffectChain() = default;
 
 	void ChangeContext();
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
@@ -78,7 +76,7 @@ protected:
 	HdlFBPlugTemplate<PostPersistentData>	mSettings;
 	FBCamera* mLastCamera{ nullptr };
 
-	// instances of each effect
+	// build-in effects
 	std::unique_ptr<PostEffectBase>		mFishEye;
 	std::unique_ptr<PostEffectBase>		mColor;
 	std::unique_ptr<PostEffectBase>		mVignetting;
@@ -92,23 +90,15 @@ protected:
 	// shared shaders
 	
 	std::unique_ptr<PostEffectLinearDepth>		mEffectDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
-	std::unique_ptr<GLSLShaderProgram>			mShaderBlur;		//!< bilateral blur effect, for SSAO
-	//std::unique_ptr<GLSLShaderProgram>			mShaderImageBlur;	//!< for masking
+	std::unique_ptr<PostEffectBlurLinearDepth>	mEffectBlur;		//!< bilateral blur effect, for SSAO
+	//std::unique_ptr<GLSLShaderProgram>		mShaderImageBlur;	//!< for masking
 	std::unique_ptr<PostEffectBilateralBlur>	mEffectBilateralBlur; //!< for masking
 	std::unique_ptr<GLSLShaderProgram>			mShaderMix;			//!< multiplication result of two inputs, (for SSAO)
-	std::unique_ptr<GLSLShaderProgram>			mShaderDownscale;
+	std::unique_ptr<PostEffectDownscale>		mEffectDownscale; // effect for downscaling the preview image (send to client)
 
 	std::unique_ptr<GLSLShaderProgram>			mShaderSceneMasked; //!< render models into mask with some additional filtering
 
-	// order execution chain
-	//std::vector<PostEffectBase*>		mChain;
-
 	PingPongData					mDoubleBufferPingPongData;
-
-	GLint							mLocDepthLinearizeClipInfo{ -1 };
-	GLint							mLocBlurSharpness{ -1 };
-	GLint							mLocBlurRes{ -1 };
-	GLint							mLocImageBlurScale{ -1 };
 
 	bool							mNeedReloadShaders{ true };
 	bool							mIsCompressedDataReady{ false };
@@ -143,7 +133,7 @@ private:
 	/// <summary>
 	/// render a linear depth (for SSAO)
 	/// </summary>
-	void RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId);
+	void RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, const PostEffectContextMoBu& effectContext);
 
 	void RenderWorldNormals(PostEffectBuffers* buffers);
 

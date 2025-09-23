@@ -42,12 +42,12 @@ private:
 
 private:
 
-	ShaderProperty* mTimer;
-	ShaderProperty* mGrainAmount; //!< = 0.05; //grain amount
-	ShaderProperty* mColored; //!< = false; //colored noise?
-	ShaderProperty* mColorAmount; // = 0.6;
-	ShaderProperty* mGrainSize; // = 1.6; //grain particle size (1.5 - 2.5)
-	ShaderProperty* mLumAmount; // = 1.0; //
+	ShaderProperty* mTimer{ nullptr };
+	ShaderProperty* mGrainAmount{ nullptr }; //!< = 0.05; //grain amount
+	ShaderProperty* mColored{ nullptr }; //!< = false; //colored noise?
+	ShaderProperty* mColorAmount{ nullptr }; // = 0.6;
+	ShaderProperty* mGrainSize{ nullptr }; // = 1.6; //grain particle size (1.5 - 2.5)
+	ShaderProperty* mLumAmount{ nullptr }; // = 1.0; //
 
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;

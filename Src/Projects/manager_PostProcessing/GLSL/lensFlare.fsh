@@ -14,6 +14,10 @@
 // musk's lense flare, modified by icecool.
 // See the original at: https://www.shadertoy.com/view/4sX3Rs 
 
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
 
 uniform sampler2D sampler0;
 uniform sampler2D maskSampler;
@@ -120,12 +124,11 @@ vec3 cc(vec3 color, float factor,float factor2) // color modifier
 
 void main (void)
 {
-	vec2 tx = gl_TexCoord [0].st;
+	vec2 tx = texCoord.st;
 	
 	if (tx.y < upperClip || tx.y > lowerClip)
 	{
-		vec4 fragColor = texture2D(sampler0, tx);
-		gl_FragData [0] =  fragColor;
+		FragColor = texture2D(sampler0, tx);
 		return;
 	}
 	
@@ -172,5 +175,5 @@ void main (void)
 		mask = texture2D( maskSampler, tx );
 	}
 	color.rgb = mix(flareColor * f + color.rgb, color.rgb, mask.r * useMasking);
-	gl_FragData [0] =  color;
+	FragColor = color;
 }

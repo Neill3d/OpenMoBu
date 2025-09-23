@@ -87,12 +87,12 @@ public: // CALLBACKS
 
 private:
 
-	bool				mFirstRun;
+	bool				mFirstRun{ true };
 
 	FBApplication		mApplication;
 	FBSystem			mSystem;
 	
-	bool		mDoVideoClipTimewrap;
+	bool		mDoVideoClipTimewrap{ false };
 
 	//
 	static HGLRC			gCurrentContext;
@@ -100,15 +100,15 @@ private:
 	static std::map<HGLRC, PostProcessContextData*>	gContextMap;
 
 
-	int				mEnterId;
-	size_t			mFrameId;
+	int				mEnterId{ 0 };
+	size_t			mFrameId{ 0 };
 
 	// Tango device experiment
-	double				mLastSendTimeSecs;
-	void				*mSocketSender;
-	void				*mSocketRecv;
+	double				mLastSendTimeSecs{ 0.0 };
+	void* mSocketSender{ nullptr };
+	void* mSocketRecv{ nullptr };
 
-	bool				mIsSynced;
+	bool				mIsSynced{ false };
 	FBTime				mLastSyncTime;
 	FBTime				mSyncDuration;
 
@@ -136,9 +136,9 @@ private:
 	void	LoadShaderTextInsertions();
 
 public:
-	bool			mLastProcessCompositions;
+	bool			mLastProcessCompositions{ false };
 
-	bool skipRender;
+	bool skipRender{ false };
 
 	void	PreRenderFirstEntry();
 

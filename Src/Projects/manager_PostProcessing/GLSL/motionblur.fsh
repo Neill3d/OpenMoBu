@@ -12,7 +12,10 @@
 //	Special for Les Androids Associes
 //
 
-#version 130
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
 
 uniform	sampler2D	inputSampler;
 uniform sampler2D	depthSampler;
@@ -39,9 +42,9 @@ uniform mat4 prevModelViewProj; 	// previous model->view->projection
 
 
 
-void ComputeDepth(out float depth, in vec2 texCoord)
+void ComputeDepth(out float depth, in vec2 inTexCoord)
 {
-	float d = texture2D(depthSampler, texCoord).x;
+	float d = texture2D(depthSampler, inTexCoord).x;
 	
 	float C = 1.0;
 	float z = (exp(d*log(C*zFar+1.0)) - 1.0)/C;
@@ -61,7 +64,7 @@ void ComputeDepth(out float depth, in vec2 texCoord)
 
 void main()
 {
-	vec2 uv = gl_TexCoord[0].st;
+	vec2 uv = texCoord;
 	
 	float zOverW = 0.0;
 	ComputeDepth(zOverW, uv);
@@ -109,5 +112,5 @@ void main()
 	}
 	outcolor.rgb = mix(outcolor.rgb, inputColor.rgb, mask.r * useMasking);
 
-	gl_FragColor = outcolor;	
+	FragColor = outcolor;	
 }

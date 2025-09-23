@@ -12,6 +12,11 @@
 //	Special for Les Androids Associes
 //
 
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
+
 uniform	sampler2D	sampler0;
 uniform sampler2D	maskSampler;
 
@@ -111,12 +116,9 @@ vec2 coordRot(in vec2 tc, in float angle)
 
 void main() 
 {
-	vec2 texCoord = gl_TexCoord[0].st;
-	
 	if (texCoord.y < upperClip || texCoord.y > lowerClip)
 	{
-		vec4 fragColor = texture2D(sampler0, texCoord);
-		gl_FragColor =  fragColor;
+		FragColor = texture2D(sampler0, texCoord);
 		return;
 	}
 	
@@ -153,5 +155,5 @@ void main()
 	}
 
 	col = mix(noise * grainamount + col, col, mask.r * useMasking);
-	gl_FragColor =  vec4(col,1.0);
+	FragColor =  vec4(col,1.0);
 }

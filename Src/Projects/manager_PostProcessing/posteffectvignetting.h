@@ -24,14 +24,8 @@ using PostEffectVignetting = PostEffectSingleShader<EffectShaderVignetting>;
 /// </summary>
 class EffectShaderVignetting : public PostEffectBufferShader
 {
-private:
-	static constexpr const char* SHADER_NAME = "Vignetting";
-	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
-	static constexpr const char* SHADER_FRAGMENT = "/GLSL/vignetting.fsh";
-	
 public:
 
-	//! a constructor
 	EffectShaderVignetting(FBComponent* ownerIn);
 	virtual ~EffectShaderVignetting() = default;
 
@@ -40,6 +34,11 @@ public:
 	[[nodiscard]] const char* GetName() const noexcept override { return SHADER_NAME; }
 	[[nodiscard]] const char* GetVertexFname(const int shaderIndex) const noexcept override { return SHADER_VERTEX; }
 	[[nodiscard]] const char* GetFragmentFname(const int shaderIndex) const noexcept override { return SHADER_FRAGMENT; }
+
+private:
+	static constexpr const char* SHADER_NAME = "Vignetting";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/vignetting.fsh";
 
 protected:
 

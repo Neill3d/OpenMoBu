@@ -24,35 +24,34 @@ using PostEffectColor = PostEffectSingleShader<EffectShaderColor>;
 /// </summary>
 class EffectShaderColor : public PostEffectBufferShader
 {
-private:
-	static constexpr const char* SHADER_NAME = "Color Correction";
-	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
-	static constexpr const char* SHADER_FRAGMENT = "/GLSL/color.fsh";
-	
 public:
 	
 	EffectShaderColor(FBComponent* ownerIn);
 	virtual ~EffectShaderColor() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
+	int GetNumberOfPasses() const override { return 1; }
 
 	const char* GetName() const override { return SHADER_NAME; }
 	const char* GetVertexFname(const int shaderIndex) const override { return SHADER_VERTEX; }
 	const char* GetFragmentFname(const int shaderIndex) const override { return SHADER_FRAGMENT; }
 
+private:
+	static constexpr const char* SHADER_NAME = "Color Correction";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/color.fsh";
+
 protected:
 
-	ShaderProperty* mChromaticAberration;
-	ShaderProperty* mCSB;
-	ShaderProperty* mHue;
+	ShaderProperty* mChromaticAberration{ nullptr };
+	ShaderProperty* mCSB{ nullptr };
+	ShaderProperty* mHue{ nullptr };
 	
 	[[nodiscard]] virtual const char* GetUseMaskingPropertyName() const noexcept override;
 	[[nodiscard]] virtual const char* GetMaskingChannelPropertyName() const noexcept override;
 
 	// this is a predefined effect shader, properties are defined manually
-	virtual bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	bool DoPopulatePropertiesFromUniforms() const override { return false;  }
 
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
 };

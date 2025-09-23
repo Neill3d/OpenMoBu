@@ -26,11 +26,6 @@ using PostEffectBilateralBlur = PostEffectSingleShader<PostEffectShaderBilateral
 class PostEffectShaderBilateralBlur : public PostEffectBufferShader
 {
 public:
-	static constexpr const char* SHADER_NAME = "Gaussian Blur";
-	static constexpr const char* VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
-	static constexpr const char* FRAGMENT_SHADER_FILE = "/GLSL/imageBlur.glslf";
-
-public:
 
 	PostEffectShaderBilateralBlur(FBComponent* uiComponent=nullptr);
 	virtual ~PostEffectShaderBilateralBlur() = default;
@@ -48,6 +43,10 @@ public:
 	const char* GetFragmentFname(const int variationIndex) const override { return FRAGMENT_SHADER_FILE; }
 
 public:
+	static constexpr const char* SHADER_NAME = "Gaussian Blur";
+	static constexpr const char* VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
+	static constexpr const char* FRAGMENT_SHADER_FILE = "/GLSL/imageBlur.glslf";
+
 	ShaderProperty* ColorTexture{ nullptr };
 	ShaderProperty* BlurScale{ nullptr };
 

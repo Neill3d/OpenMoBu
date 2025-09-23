@@ -63,14 +63,8 @@ PostEffectChain::PostEffectChain()
 
 	mIsCompressedDataReady = false;
 	mNeedReloadShaders = true;
-	mLocDepthLinearizeClipInfo = -1;
+	//mLocDepthLinearizeClipInfo = -1;
 	mLastCompressTime = 0.0;
-}
-
-//! a destructor
-PostEffectChain::~PostEffectChain()
-{
-
 }
 
 void PostEffectChain::ChangeContext()
@@ -145,6 +139,10 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 		mEffectBilateralBlur->CollectUIValues(&effectContext);
 	if (mEffectDepthLinearize.get())
 		mEffectDepthLinearize->CollectUIValues(&effectContext);
+	if (mEffectDownscale.get())
+		mEffectDownscale->CollectUIValues(&effectContext);
+	if (mEffectBlur.get())
+		mEffectBlur->CollectUIValues(&effectContext);
 
 	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
 	{
@@ -578,7 +576,7 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 	*/
 }
 
-void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId)
+void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, const PostEffectContextMoBu& effectContext)
 {
 	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer("depthLinearize"); //buffers->GetBufferDepthPtr();
 
@@ -589,12 +587,12 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint
 		depthId, // depth id
 		buffers->GetWidth(),
 		buffers->GetHeight(),
-		false, // generate mips
 		pBufferDepth,
-		1 // last color attachment for processing
+		1, // last color attachment for processing
+		false // generate mips
 	};
 
-	mEffectDepthLinearize->Process(renderContext, nullptr);
+	mEffectDepthLinearize->Process(renderContext, &effectContext);
 
 
 	// DONE: bind a depth texture
@@ -667,9 +665,9 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 		0, // depth id
 		w,
 		h,
-		false, // generate mips
 		maskRequest.GetFrameBufferPtr(),
-		PostPersistentData::NUMBER_OF_MASKS // last color attachment for processing
+		PostPersistentData::NUMBER_OF_MASKS, // last color attachment for processing
+		false // generate mips
 	};
 
 	mEffectBilateralBlur->SetMaskIndex(maskIndex);
@@ -789,7 +787,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 	if (isLinearDepthSamplerBinded)
 	{
 		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
-		RenderLinearDepth(buffers, depthId);
+		RenderLinearDepth(buffers, depthId, effectContext);
 	}
 
 	const bool isWorldNormalSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
@@ -917,10 +915,10 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 				doubleBufferRequest->GetPtr()->GetDepthObject(), // depth texture id
 				w,
 				h,
-				generateMips,
 				// OUTPUT
 				doubleBufferRequest->GetPtr(), // dst frame buffer
-				doubleBufferRequest->GetWriteAttachment()
+				doubleBufferRequest->GetWriteAttachment(),
+				generateMips
 			};
 
 			effect->Process(renderContext, &effectContext);
@@ -1026,7 +1024,7 @@ PostEffectBase* PostEffectChain::ShaderFactory(const BuildInEffect effectType, c
 	{
 		if (!newEffect->Load(shadersLocation))
 		{
-			LOGE("Post Effect failed to Load\n");
+			LOGE("Post Effect %s failed to Load from %s\n", newEffect->GetName(), shadersLocation);
 
 			delete newEffect;
 			newEffect = nullptr;
@@ -1111,32 +1109,11 @@ bool PostEffectChain::LoadShaders()
 		//
 		// BLUR (for SSAO)
 
-		pNewShader.reset(new GLSLShaderProgram);
-
-		vertex_path = FBString(shadersPath, SHADER_BLUR_VERTEX);
-		fragment_path = FBString(shadersPath, SHADER_BLUR_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
+		mEffectBlur.reset(new PostEffectBlurLinearDepth());
+		if (!mEffectBlur->Load(shadersPath))
 		{
-			throw std::exception("failed to load and prepare blur shader");
+			throw std::exception("failed to load and prepare SSAO blur effect");
 		}
-
-		// samplers and locations
-		pNewShader->Bind();
-
-		loc = pNewShader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		loc = pNewShader->findLocation("linearDepthSampler");
-		if (loc >= 0)
-			glUniform1i(loc, 2);
-
-		mLocBlurSharpness = pNewShader->findLocation("g_Sharpness");
-		mLocBlurRes = pNewShader->findLocation("g_InvResolutionDirection");
-
-		pNewShader->UnBind();
-
-		mShaderBlur.reset(pNewShader.release());
 
 		//
 		// IMAGE BLUR, simple bilateral blur
@@ -1149,11 +1126,11 @@ bool PostEffectChain::LoadShaders()
 
 		//
 		// MIX
-
+		std::unique_ptr<GLSLShaderProgram> pNewShader;
 		pNewShader.reset(new GLSLShaderProgram);
 
-		vertex_path = FBString(shadersPath, SHADER_MIX_VERTEX);
-		fragment_path = FBString(shadersPath, SHADER_MIX_FRAGMENT);
+		FBString vertex_path = FBString(shadersPath, SHADER_MIX_VERTEX);
+		FBString fragment_path = FBString(shadersPath, SHADER_MIX_FRAGMENT);
 
 		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -1163,7 +1140,7 @@ bool PostEffectChain::LoadShaders()
 		// samplers and locations
 		pNewShader->Bind();
 
-		loc = pNewShader->findLocation("sampler0");
+		GLint loc = pNewShader->findLocation("sampler0");
 		if (loc >= 0)
 			glUniform1i(loc, 0);
 		loc = pNewShader->findLocation("sampler1");
@@ -1177,26 +1154,11 @@ bool PostEffectChain::LoadShaders()
 		//
 		// DOWNSCALE
 
-		pNewShader.reset(new GLSLShaderProgram);
-
-		vertex_path = FBString(shadersPath, SHADER_DOWNSCALE_VERTEX);
-		fragment_path = FBString(shadersPath, SHADER_DOWNSCALE_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
+		mEffectDownscale.reset(new PostEffectDownscale());
+		if (!mEffectDownscale->Load(shadersPath))
 		{
-			throw std::exception("failed to load and prepare downscale shader");
+			throw std::exception("failed to load and prepare downscale effect");
 		}
-
-		// samplers and locations
-		pNewShader->Bind();
-
-		loc = pNewShader->findLocation("sampler");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		
-		pNewShader->UnBind();
-
-		mShaderDownscale.reset(pNewShader.release());
 
 		//
 		// SCENE MASKED
@@ -1236,8 +1198,9 @@ void PostEffectChain::FreeShaders()
 	mDisplacement.reset(nullptr);
 	mMotionBlur.reset(nullptr);
 
-	mShaderDepthLinearize.reset(nullptr);
-	mShaderBlur.reset(nullptr);
+	mEffectDepthLinearize.reset(nullptr);
+	mEffectBilateralBlur.reset(nullptr);
+	mEffectBlur.reset(nullptr);
 	mShaderMix.reset(nullptr);
-	mShaderDownscale.reset(nullptr);
+	mEffectDownscale.reset(nullptr);
 }
