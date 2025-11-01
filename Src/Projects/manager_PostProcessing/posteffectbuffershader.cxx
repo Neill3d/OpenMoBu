@@ -585,7 +585,6 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 
 				if (textureId > 0)
 				{
-					//const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
 					glUniform1i(prop.second.location, userTextureSlot);
 
 					glActiveTexture(GL_TEXTURE0 + userTextureSlot);

@@ -28,9 +28,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectbuffers.h"
 #include "posteffectchain.h"
 
-// number of entering in render callback
-#define MAX_ATTACH_STACK		10
-
 /// <summary>
 /// All post process render data for an ogl context
 /// </summary>
@@ -55,13 +52,15 @@ public:
 	int				mEnterId = 0;
 	size_t			mFrameId = 0;
 
+	// number of entering in render callback
+	constexpr static int MAX_ATTACH_STACK = 10;
 	GLint			mAttachedFBO[MAX_ATTACH_STACK]{ 0 };
 
 
 	//
 	MainFrameBuffer						mMainFrameBuffer;
 
-	std::unique_ptr<GLSLShaderProgram>			mShaderSimple;	//!< for simple blit quads on a screen
+	std::unique_ptr<GLSLShaderProgram>	mShaderSimple;	//!< for simple blit quads on a screen
 
 	PostEffectChain						mEffectChain;
 

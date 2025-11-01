@@ -165,12 +165,13 @@ void main(void)
 	float att = 1.0 - clamp(2.0 * (light_pos.z - 0.5), 0.0, 1.0);
 	mouse.z = clamp(0.275 * log(100.0 * att), 0.0, 1.0);
 	mouse.x *= iResolution.x/iResolution.y; //fix aspect ratio
-	vec3 col;
-	vec3 sun, sunflare, lensflare;
-	vec3 flare = lensflare2(uv*1.5, mouse*1.5, sunflare, lensflare);
+	vec3 col = vec3(0.0);
+	vec3 sun = vec3(0.0);
+	vec3 sunflare, lensflare;
+	vec3 flare = lensflare2(uv*1.5, mouse.xy*1.5, sunflare, lensflare);
 	
-	vec3 anflare = pow(anflares(uv-mouse, 0.5, 400.0, 0.9 + (flareSeed*0.05 - 1), 0.1), vec3(4.0));
-    sun += getSun(uv-mouse) + (flare + anflare)*suncolor*2.0;
+	vec3 anflare = pow(anflares(uv-mouse.xy, 0.5, 400.0, 0.9 + (flareSeed*0.05 - 1), 0.1), vec3(4.0));
+    sun += getSun(uv-mouse.xy) + (flare + anflare)*suncolor*2.0;
     col += sun;
     col = pow(col, vec3(1.0/2.2));
     

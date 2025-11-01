@@ -13,10 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_helper.h"
 #include "math3d.h"
 
-////////////////////////////////////////////////////////////////////////////////////
-// post lens flare
 
-//! a constructor
 EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
 {
@@ -34,7 +31,8 @@ EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
 	mLightPos = &AddProperty(ShaderProperty("light_pos", "light_pos", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
+		.SetFlag(PropertyFlag::ShouldSkip, true) // NOTE: skip of automatic reading value and let it be done manually
+		.SetType(EPropertyType::VEC4);
 
 	mTint = &AddProperty(ShaderProperty(PostPersistentData::FLARE_TINT, "tint", nullptr))
 		.SetType(EPropertyType::VEC4);
@@ -85,6 +83,31 @@ bool EffectShaderLensFlare::OnCollectUI(const IPostEffectContext* effectContext,
 
 	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, effectContext, maskIndex);
 }
+
+int EffectShaderLensFlare::GetNumberOfPasses() const
+{
+	return subShaders[mCurrentShader].m_NumberOfPasses;
+}
+
+bool EffectShaderLensFlare::PrepPass(int pass, int width, int height)
+{
+	assert(mCurrentShader >= 0 && mCurrentShader < NUMBER_OF_SHADERS);
+	const SubShader& subShader = subShaders[mCurrentShader];
+
+	if (pass < static_cast<int>(subShader.m_LightPositions.size()))
+	{
+		const FBVector3d pos(subShader.m_LightPositions[pass]);
+		mLightPos->SetValue(static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
+
+		const FBColor _tint(subShader.m_LightColors[pass]);
+		mTint->SetValue(static_cast<float>(_tint[0]), static_cast<float>(_tint[1]), static_cast<float>(_tint[2]), 1.0f);
+	}
+
+	return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// EffectShaderLensFlare::SubShader
 
 void EffectShaderLensFlare::SubShader::Init()
 {
@@ -154,11 +177,11 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostPersistentData* pD
 	FBVector4d v4;
 	FBVectorMatrixMult(v4, mvp, FBVector4d(lightPos[0], lightPos[1], lightPos[2], 1.0));
 
-	v4[0] = w * 0.5 * (v4[0] + 1.0);
-	v4[1] = h * 0.5 * (v4[1] + 1.0);
+	v4[0] = static_cast<double>(w) * 0.5 * (v4[0] + 1.0);
+	v4[1] = static_cast<double>(h) * 0.5 * (v4[1] + 1.0);
 
-	flarePos[0] = v4[0] / w;
-	flarePos[1] = v4[1] / h;
+	flarePos[0] = v4[0] / static_cast<double>(w);
+	flarePos[1] = v4[1] / static_cast<double>(h);
 	flarePos[2] = v4[2];
 
 	m_LightPositions[index].Set(flarePos);
@@ -215,24 +238,3 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostPersistentData* pD
 	m_LightAlpha[index] = alpha;
 }
 
-int EffectShaderLensFlare::GetNumberOfPasses() const
-{
-	return subShaders[mCurrentShader].m_NumberOfPasses;
-}
-
-bool EffectShaderLensFlare::PrepPass(int pass, int width, int height)
-{
-	assert(mCurrentShader >= 0 && mCurrentShader < NUMBER_OF_SHADERS);
-	const SubShader& subShader = subShaders[mCurrentShader];
-
-	if (pass < static_cast<int>(subShader.m_LightPositions.size()))
-	{
-		const FBVector3d pos(subShader.m_LightPositions[pass]);
-		mLightPos->SetValue(static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
-	
-		const FBColor _tint(subShader.m_LightColors[pass]);
-		mTint->SetValue(static_cast<float>(_tint[0]), static_cast<float>(_tint[1]), static_cast<float>(_tint[2]), 1.0f);
-	}
-
-	return true;
-}
