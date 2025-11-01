@@ -26,7 +26,7 @@ EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 	mFlareSeed = &AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr));
 	mAmount = &AddProperty(ShaderProperty(PostPersistentData::FLARE_AMOUNT, "amount", nullptr))
 		.SetScale(0.01f);
-	// TODO: iTime is a system uniform to catch up system time, in our case we need to set it manually
+	
 	mTime = &AddProperty(ShaderProperty("timer", "iTime", nullptr))
 		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
@@ -67,6 +67,7 @@ bool EffectShaderLensFlare::OnCollectUI(const IPostEffectContext* effectContext,
 {
 	PostPersistentData* data = effectContext->GetPostProcessData();
 
+	const int LastShaderIndex = GetCurrentShader();
 	SetCurrentShader(data->FlareType.AsInt());
 
 	if (GetCurrentShader() < 0 || GetCurrentShader() >= NUMBER_OF_SHADERS)
@@ -74,6 +75,11 @@ bool EffectShaderLensFlare::OnCollectUI(const IPostEffectContext* effectContext,
 		SetCurrentShader(0);
 		const EFlareType newFlareType{ EFlareType::flare1 };
 		data->FlareType.SetData((void*)&newFlareType);
+	}
+
+	if (LastShaderIndex != GetCurrentShader())
+	{
+		bHasShaderChanged = true;
 	}
 
 	const double systemTime = (data->FlareUsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();

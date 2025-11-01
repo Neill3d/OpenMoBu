@@ -103,4 +103,5 @@ private:
 	};
 
 	SubShader	subShaders[NUMBER_OF_SHADERS];
+	
 };

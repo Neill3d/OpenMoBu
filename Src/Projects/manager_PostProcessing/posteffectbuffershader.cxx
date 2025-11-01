@@ -142,6 +142,19 @@ const char* PostEffectBufferShader::GetName() const
 
 // load and initialize shader from a specified location
 
+void PostEffectBufferShader::SetCurrentShader(const int index)
+{
+	if (index < 0 || index >= mShaders.size())
+	{
+		LOGE("PostEffectBufferShader::SetCurrentShader: index %d is out of range\n", index);
+		return;
+	}
+	if (mCurrentShader != index)
+	{
+		bHasShaderChanged = true;
+	}
+	mCurrentShader = index;
+}
 void PostEffectBufferShader::FreeShaders()
 {
 	mShaders.clear();
@@ -326,6 +339,12 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 		return;
 
 	GLuint texId = inputTextureId;
+
+	if (bHasShaderChanged)
+	{
+		PrepUniforms(GetCurrentShader());
+		bHasShaderChanged = false;
+	}
 
 	Bind();
 	UploadUniforms(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips, effectContext);

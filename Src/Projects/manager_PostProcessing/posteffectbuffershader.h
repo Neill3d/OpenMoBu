@@ -148,9 +148,10 @@ protected:
 	// variances of post effect
 
 	int mCurrentShader{ 0 }; //!< current variance of a shader
+	bool bHasShaderChanged{ false };
 	std::vector<std::unique_ptr<GLSLShaderProgram>>	mShaders; //!< store a list of all variances
 
-	void SetCurrentShader(const int index) { mCurrentShader = index; }
+	void SetCurrentShader(const int index);
 	int GetCurrentShader() const { return mCurrentShader; }
 	void FreeShaders();
 
