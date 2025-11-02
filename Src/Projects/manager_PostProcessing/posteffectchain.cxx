@@ -652,7 +652,7 @@ void PostEffectChain::ReleaseDoubleFrameBuffer(PostEffectBuffers* buffers)
 	buffers->ReleaseFramebuffer("doubleBuffer");
 }
 
-void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers)
+void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext)
 {
 	assert(maskIndex < PostPersistentData::NUMBER_OF_MASKS);
 	if (!mEffectBilateralBlur.get())
@@ -679,7 +679,11 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 	};
 
 	mEffectBilateralBlur->SetMaskIndex(maskIndex);
-	mEffectBilateralBlur->Process(renderContext, nullptr);
+	
+	const FBVector2d value = mSettings->GetMaskScale(maskIndex);
+	mEffectBilateralBlur->GetBufferShaderTypedPtr()->BlurScale->SetValue(static_cast<float>(value[0]), static_cast<float>(value[1]));
+
+	mEffectBilateralBlur->Process(renderContext, &effectContext);
 
 	BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), w, h, PostPersistentData::NUMBER_OF_MASKS,
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
@@ -816,7 +820,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 		{
 			if (maskRenderFlags[i] && mSettings->Masks[i].BlurMask)
 			{
-				BlurMasksPass(i, buffers);
+				BlurMasksPass(i, buffers, effectContext);
 			}
 		}
 	}

@@ -34,6 +34,9 @@ public:
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override { return static_cast<PostEffectBufferShader*>(mBufferShader.get()); }
 	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override { return static_cast<const PostEffectBufferShader*>(mBufferShader.get()); }
 
+	T* GetBufferShaderTypedPtr() { return mBufferShader.get(); }
+	const T* GetBufferShaderTypedPtr() const { return mBufferShader.get(); }
+
 protected:
 
 	std::unique_ptr<T>		mBufferShader;

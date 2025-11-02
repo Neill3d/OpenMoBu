@@ -121,8 +121,9 @@ void PostEffectBufferShader::MakeCommonProperties()
 
 	const char* maskingPropName = GetUseMaskingPropertyName();
 	assert(maskingPropName != nullptr);
-	AddProperty(IEffectShaderConnections::ShaderProperty(maskingPropName, "useMasking", nullptr))
-		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true);
+	UseMaskingProperty = &AddProperty(IEffectShaderConnections::ShaderProperty(maskingPropName, "useMasking", nullptr))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
+		.SetType(IEffectShaderConnections::EPropertyType::BOOL);
 
 	AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::UPPER_CLIP, "upperClip", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
@@ -247,6 +248,12 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, const IPost
 				prop.second.ReadFBPropertyValue(effectContext, maskIndex);
 			}
 		}
+	}
+
+	if (UseMaskingProperty && effectContext->GetPostProcessData()
+		&& effectContext->GetPostProcessData()->EnableMaskingForAllEffects)
+	{
+		UseMaskingProperty->SetValue(true);
 	}
 
 	return true;
@@ -706,20 +713,28 @@ void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effect
 	const GLint* sysLocations = mSystemUniformLocations;
 	bool useMasking = false;
 
-	if (effectContext->GetComponent())
-	{
-		if (FBProperty* prop = effectContext->GetComponent()->PropertyList.Find(GetUseMaskingPropertyName()))
+	auto fn_lookForMaskingFlag = [&useMasking](FBComponent* component, const char* propertyName) {
+		if (FBProperty* prop = component->PropertyList.Find(propertyName))
 		{
 			bool bvalue{ false };
 			prop->GetData(&bvalue, sizeof(bool));
 			useMasking = bvalue;
 		}
+	};
+	
+	if (effectContext->GetComponent())
+	{
+		fn_lookForMaskingFlag(effectContext->GetComponent(), GetUseMaskingPropertyName());
 	}
-
-	auto IsUniformBound = [sysLocations](ShaderSystemUniform systemUniform) {
+	else if (effectContext->GetPostProcessData())
+	{
+		fn_lookForMaskingFlag(effectContext->GetPostProcessData(), GetUseMaskingPropertyName());
+	}
+	
+	const auto IsUniformBound = [sysLocations](ShaderSystemUniform systemUniform) {
 		return sysLocations[static_cast<int>(systemUniform)] >= 0;
 		};
-	auto GetUniformLocation = [sysLocations](ShaderSystemUniform systemUniform) {
+	const auto GetUniformLocation = [sysLocations](ShaderSystemUniform systemUniform) {
 		return sysLocations[static_cast<int>(systemUniform)];
 		};
 

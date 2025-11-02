@@ -316,7 +316,7 @@ void Manip_PostProcessing::HideGraph()
 void Manip_PostProcessing::ViewExpose()
 {
 	glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
-
+	
 	GRenderAfterRender();
 
 	glPopAttrib();

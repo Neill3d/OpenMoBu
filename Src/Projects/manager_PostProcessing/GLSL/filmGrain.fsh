@@ -148,12 +148,8 @@ void main()
 	//
 	// masking 
 
-	vec4 mask = vec4(0.0, 0.0, 0.0, 0.0);
-	if (useMasking > 0.0)
-	{
-		mask = texture2D( maskSampler, texCoord );
-	}
-
-	col = mix(noise * grainamount + col, col, mask.r * useMasking);
-	FragColor =  vec4(col,1.0);
+	float masked = (useMasking > 0.0) ? texture2D(maskSampler, texCoord).r : 0.0;
+	
+	col = mix(noise * grainamount + col, col, masked);
+	FragColor =  vec4(col, 1.0);
 }

@@ -126,6 +126,8 @@ protected:
 
 	std::unordered_map<std::string, ShaderProperty>		mProperties;
 
+	ShaderProperty* UseMaskingProperty{ nullptr };
+
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertyAdded(ShaderProperty& property)
 	{

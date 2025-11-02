@@ -150,7 +150,7 @@ private:
 	/// <summary>
 	/// when a blur is used in any of masks
 	/// </summary>
-	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers);
+	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext);
 
 	/// <summary>
 	/// mix masks = mask A * mask B
