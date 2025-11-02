@@ -555,8 +555,15 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 	for (auto& prop : mProperties)
 	{
 		if (prop.second.location < 0)
+		{
+			if (prop.second.bIsLocationRequired)
+			{
+				LOGE("required property location is not found %s\n", prop.second.name);
+			}
+			
 			continue;
-
+		}
+		
 		switch (prop.second.type)
 		{
 		case IEffectShaderConnections::EPropertyType::INT:
@@ -656,7 +663,7 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 			break;
 
 		default:
-			LOGE("not supported property for auto upload into uniform %s", prop.second.name);
+			LOGE("not supported property for auto upload into uniform %s\n", prop.second.name);
 		}
 	}
 }

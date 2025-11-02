@@ -31,6 +31,7 @@ uniform float	lowerClip;
 
 uniform float		focalDistance, focalRange;
 uniform vec2		gResolution; //viewport resolution
+uniform vec2 texelSize;
 
 uniform float 		zNear;
 uniform float 		zFar;
@@ -39,8 +40,6 @@ uniform float 		zFar;
 
 float width = gResolution.x; //texture width
 float height = gResolution.y; //texture height
-
-vec2 texel = vec2(1.0/width,1.0/height);
 
 //uniform variables from external script
 
@@ -52,13 +51,6 @@ bool showFocus = false; //show debug focus point and focal range (red = focal po
 uniform float debugBlurValue;
 
 uniform vec4 focusPoint;
-
-/* 
-make sure that these two values are the same for your camera, otherwise distances will be wrong.
-*/
-
-float znear = zNear; //camera clipping start
-float zfar = zFar; //camera clipping end
 
 //------------------------------------------
 //user variables
@@ -146,7 +138,7 @@ float bdepth(vec2 coords) //blurring depth
 	float kernel[9];
 	vec2 offset[9];
 	
-	vec2 wh = vec2(texel.x, texel.y) * dbsize;
+	vec2 wh = vec2(texelSize.x, texelSize.y) * dbsize;
 	
 	offset[0] = vec2(-wh.x,-wh.y);
 	offset[1] = vec2( 0.0, -wh.y);
@@ -179,9 +171,9 @@ vec3 color(vec2 coords,float blur) //processing the sample
 {
 	vec3 col = vec3(0.0);
 	
-	col.r = texture2D(colorSampler,coords + vec2(0.0,1.0)*texel*fringe*blur).r;
-	col.g = texture2D(colorSampler,coords + vec2(-0.866,-0.5)*texel*fringe*blur).g;
-	col.b = texture2D(colorSampler,coords + vec2(0.866,-0.5)*texel*fringe*blur).b;
+	col.r = texture2D(colorSampler,coords + vec2(0.0,1.0)*texelSize*fringe*blur).r;
+	col.g = texture2D(colorSampler,coords + vec2(-0.866,-0.5)*texelSize*fringe*blur).g;
+	col.b = texture2D(colorSampler,coords + vec2(0.866,-0.5)*texelSize*fringe*blur).b;
 	
 	vec3 lumcoeff = vec3(0.299,0.587,0.114);
 	float lum = dot(col.rgb, lumcoeff);
@@ -216,32 +208,9 @@ vec3 debugFocus(vec3 col, float blur, float depth)
 
 float linearize(float depth)
 {
-	return -zfar * znear / (depth * (zfar - znear) - zfar);
+	return -zFar * zNear / (depth * (zFar - zNear) - zFar);
 }
 
-/*
-float LogarithmicDepth()
-{
-	float d = texture2D(depthSampler, texCoord.st).x;
-	float C = 1.0;
-	float z = (exp(d*log(C*zFar+1.0)) - 1.0)/C;
-	return z;
-}
-
-float LinearizeDepth()
-{
-  float n = zNear; // camera z near
-  float f = zFar; // camera z far
-  float z = texture2D(depthSampler, texCoord.st).x;
-  //return (2.0 * n) / (f + n - z * (f - n));	
-  
-  //float z_b = texture2D(depthBuffTex, vTexCoord).x;
-  float z_b = z;
-  float z_n = 2.0 * z_b - 1.0;
-  float z_e = 2.0 * zNear * zFar / (zFar + zNear - z_n * (zFar - zNear));
-  return z_e;
-}
-*/
 void ComputeDepth(out float depth, in vec2 texCoord)
 {
 	float d = texture2D(depthSampler, texCoord).x;
@@ -262,36 +231,17 @@ void ComputeDepth(out float depth, in vec2 texCoord)
 
 void main() 
 {
-	//scene depth calculation
-	
-	vec2 texCoord = texCoord.st;
-	
 	if (texCoord.y < upperClip || texCoord.y > lowerClip)
 	{
 		FragColor = texture2D(colorSampler, texCoord);
 		return;
 	}
+
+	//scene depth calculation
 	
 	float depth = 0.0;
 	ComputeDepth(depth, texCoord);
 	
-	/*
-	if (logarithmicDepth > 0.0)
-	{
-		depth = LogarithmicDepth();
-	}
-	else
-	{
-		depth = LinearizeDepth();
-	}
-	*/
-	//depth = linearize(texture2D(depthSampler, texCoord.xy).x);
-	/*
-	if (depthblur)
-	{
-		depth = linearize(bdepth(texCoord.xy));
-	}
-	*/
 	//focal plane calculation
 	
 	float fDepth = focalDepth / zFar;

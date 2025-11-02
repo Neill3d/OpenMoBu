@@ -39,7 +39,7 @@ EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 		IEffectShaderConnections::EPropertyType::FLOAT));
 
 	mFStop = &AddProperty(ShaderProperty(PostPersistentData::DOF_FSTOP,
-		"fStop",
+		"fstop",
 		IEffectShaderConnections::EPropertyType::FLOAT));
 
 	mCoC = &AddProperty(ShaderProperty(PostPersistentData::DOF_COC,
@@ -59,15 +59,18 @@ EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 	// Focus control
 	mAutoFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_AUTO_FOCUS,
 		"autoFocus",
-		IEffectShaderConnections::EPropertyType::BOOL));
+		IEffectShaderConnections::EPropertyType::BOOL))
+		.SetRequired(false);
 
 	mFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_USE_FOCUS_POINT,
 		"focus",
-		IEffectShaderConnections::EPropertyType::BOOL));
+		IEffectShaderConnections::EPropertyType::BOOL))
+		.SetRequired(false);
 
 	mFocusPoint = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCUS_POINT,
 		"focusPoint",
-		IEffectShaderConnections::EPropertyType::VEC4));
+		IEffectShaderConnections::EPropertyType::VEC4))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mManualDOF = &AddProperty(ShaderProperty("manualdof", "manualdof",
 		IEffectShaderConnections::EPropertyType::BOOL))
@@ -130,7 +133,7 @@ EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 	// Debug utilities
 	mDebugBlurValue = &AddProperty(ShaderProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE,
 		"debugBlurValue",
-		IEffectShaderConnections::EPropertyType::FLOAT));
+		IEffectShaderConnections::EPropertyType::BOOL));
 }
 
 const char* EffectShaderDOF::GetUseMaskingPropertyName() const noexcept
@@ -150,24 +153,24 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 
 	double _focalDistance = pData->FocalDistance;
 	double _focalRange = pData->FocalRange;
-	double _fstop = pData->FStop;
-	int _samples = pData->Samples;
-	int _rings = pData->Rings;
+	//double _fstop = pData->FStop;
+	//int _samples = pData->Samples;
+	//int _rings = pData->Rings;
 
 	float _useFocusPoint = (pData->UseFocusPoint) ? 1.0f : 0.0f;
 	FBVector2d _focusPoint = pData->FocusPoint;
 
-	double _blurForeground = (pData->BlurForeground) ? 1.0 : 0.0;
+	//double _blurForeground = (pData->BlurForeground) ? 1.0 : 0.0;
 
-	double _CoC = pData->CoC;
-	double _threshold = pData->Threshold;
+	//double _CoC = pData->CoC;
+	//double _threshold = pData->Threshold;
 	
 //	double _gain = pData->Gain;
-	double _bias = pData->Bias;
-	double _fringe = pData->Fringe;
-	double _feather = pData->PentagonFeather;
+	//double _bias = pData->Bias;
+	//double _fringe = pData->Fringe;
+	//double _feather = pData->PentagonFeather;
 
-	double _debugBlurValue = (pData->DebugBlurValue) ? 1.0 : 0.0;
+	//double _debugBlurValue = (pData->DebugBlurValue) ? 1.0 : 0.0;
 
 	if (pData->UseCameraDOFProperties)
 	{
@@ -225,7 +228,7 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 	mFocalDistance->SetValue(static_cast<float>(_focalDistance));
 	mFocalRange->SetValue(static_cast<float>(_focalRange));
 
-	mFStop->SetValue(static_cast<float>(_fstop));
+	//mFStop->SetValue(static_cast<float>(_fstop));
 
 	mManualDOF->SetValue(false);
 	mNDOFStart->SetValue(1.0f);
@@ -233,20 +236,20 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 	mFDOFStart->SetValue(1.0f);
 	mFDOFDist->SetValue(3.0f);
 
-	mSamples->SetValue(_samples);
-	mRings->SetValue(_rings);
+	//mSamples->SetValue(_samples);
+	//mRings->SetValue(_rings);
 	
-	mBlurForeground->SetValue(static_cast<float>(_blurForeground));
+	//mBlurForeground->SetValue(static_cast<float>(_blurForeground));
 
-	mCoC->SetValue(static_cast<float>(_CoC));
+	//mCoC->SetValue(static_cast<float>(_CoC));
 
-	mBlurForeground->SetValue(static_cast<float>(_blurForeground));
+	//mBlurForeground->SetValue(static_cast<float>(_blurForeground));
 
-	mThreshold->SetValue(static_cast<float>(_threshold));
-	mBias->SetValue(static_cast<float>(_bias));
-	mFringe->SetValue(static_cast<float>(_fringe));
-	mFeather->SetValue(static_cast<float>(_feather));
-	mDebugBlurValue->SetValue(static_cast<float>(_debugBlurValue));
+	//mThreshold->SetValue(static_cast<float>(_threshold));
+	//mBias->SetValue(static_cast<float>(_bias));
+	//mFringe->SetValue(static_cast<float>(_fringe));
+	//mFeather->SetValue(static_cast<float>(_feather));
+	//mDebugBlurValue->SetValue(static_cast<float>(_debugBlurValue));
 	
 	mFocusPoint->SetValue(0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
 

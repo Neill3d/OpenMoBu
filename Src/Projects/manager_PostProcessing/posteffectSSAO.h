@@ -67,13 +67,13 @@ protected:
 
 private:
 
-	ShaderProperty* mClipInfo;
+	//ShaderProperty* mClipInfo;
 	ShaderProperty* mProjInfo;
 	ShaderProperty* mProjOrtho;
-	ShaderProperty* mInvQuarterResolution;
+	//ShaderProperty* mInvQuarterResolution;
 	ShaderProperty* mInvFullResolution;
 	ShaderProperty* mRadiusToScreen;
-	ShaderProperty* mR2;
+	//ShaderProperty* mR2;
 	ShaderProperty* mNegInvR2;
 	ShaderProperty* mNDotVBias;
 
@@ -81,10 +81,10 @@ private:
 	ShaderProperty* mPowExponent;
 
 	ShaderProperty* mOnlyAO;
-	ShaderProperty* mHbaoRandom;
+	//ShaderProperty* mHbaoRandom;
 
 	// texture Id
-	GLuint	hbao_random;
+	GLuint	hbaoRandomTexId;
 
 	float		mRandom[4]{ 0.0f };
 	

@@ -588,12 +588,20 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint
 		buffers->GetWidth(),
 		buffers->GetHeight(),
 		pBufferDepth,
-		1, // last color attachment for processing
+		0, // last color attachment for processing
 		false // generate mips
 	};
 
-	mEffectDepthLinearize->Process(renderContext, &effectContext);
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::DepthSamplerSlot);
+	glBindTexture(GL_TEXTURE_2D, depthId);
 
+	// ensure the texture stores depth and returns raw depth values
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+	glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
+
+	glActiveTexture(GL_TEXTURE0);
+
+	mEffectDepthLinearize->Process(renderContext, &effectContext);
 
 	// DONE: bind a depth texture
 	const GLuint linearDepthId = pBufferDepth->GetColorObject();

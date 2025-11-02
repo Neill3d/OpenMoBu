@@ -27,22 +27,22 @@ uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
-uniform vec4	gClipInfo;	// z_n * z_f,  z_n - z_f,  z_f, perspective = 1 : 0
+//uniform vec4	gClipInfo;	// z_n * z_f,  z_n - z_f,  z_f, perspective = 1 : 0
 
 uniform vec4 projInfo;
 uniform int projOrtho;
-uniform vec2 InvQuarterResolution;
+//uniform vec2 InvQuarterResolution;
 uniform vec2 InvFullResolution;
 
 uniform float RadiusToScreen;		// radius
-uniform float R2;					// 1 / radius
+//uniform float R2;					// 1 / radius
 uniform float NegInvR2;				// radius * radius
 uniform float NDotVBias;			
 
 uniform float	AOMultiplier;
 uniform float 	PowExponent;
 
-uniform vec4 	g_Jitter;
+//uniform vec4 	g_Jitter;
 
 uniform float	OnlyAO;		// display only AO when > 0.0
 
@@ -173,6 +173,13 @@ void main()
 
 	// Reconstruct view-space normal from nearest neighbors
 	vec3 ViewNormal = -ReconstructNormal(uv, ViewPosition);
+
+	if (OnlyAO > 0.0)
+	{
+		float ViewDepth = textureLod(linearDepthSampler, uv, 0).x;
+		FragColor = vec4(vec3(ViewDepth), 1.0);
+		return;
+	}
 
 	// Compute projection of disk of radius control.R into screen space
 	float RadiusPixels = RadiusToScreen / (projOrtho != 0 ? 1.0 : ViewPosition.z);

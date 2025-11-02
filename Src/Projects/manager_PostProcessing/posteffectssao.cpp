@@ -22,7 +22,7 @@ static const int  HBAO_RANDOM_SIZE = AO_RANDOMTEX_SIZE;
 static const int  HBAO_RANDOM_ELEMENTS = HBAO_RANDOM_SIZE*HBAO_RANDOM_SIZE;
 static const int  MAX_SAMPLES = 8;
 
-float	hbaoRandom[HBAO_RANDOM_SIZE][HBAO_RANDOM_SIZE][4];
+
 
 static const int        grid = 32;
 static const float      globalscale = 16.0f;
@@ -45,9 +45,9 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 		.SetValue(CommonEffect::UserSamplerSlot);
 
 	// NOTE: skip of automatic reading value and let it be done manually
-	mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo", nullptr))
-		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true); 
+	//mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo", nullptr))
+	//	.SetType(EPropertyType::VEC4)
+	//	.SetFlag(PropertyFlag::ShouldSkip, true); 
 	mProjInfo = &AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
 		.SetType(EPropertyType::VEC4)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
@@ -55,9 +55,9 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 		.SetType(EPropertyType::INT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	mInvQuarterResolution = &AddProperty(ShaderProperty("InvQuarterResolution", "InvQuarterResolution", nullptr))
-		.SetType(EPropertyType::VEC2)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+	//mInvQuarterResolution = &AddProperty(ShaderProperty("InvQuarterResolution", "InvQuarterResolution", nullptr))
+	//	.SetType(EPropertyType::VEC2)
+	//	.SetFlag(PropertyFlag::ShouldSkip, true);
 	mInvFullResolution = &AddProperty(ShaderProperty("InvFullResolution", "InvFullResolution", nullptr))
 		.SetType(EPropertyType::VEC2)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
@@ -65,9 +65,9 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	mRadiusToScreen = &AddProperty(ShaderProperty("RadiusToScreen", "RadiusToScreen", nullptr))
 		.SetType(EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
-	mR2 = &AddProperty(ShaderProperty("R2", "R2", nullptr))
-		.SetType(EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+	//mR2 = &AddProperty(ShaderProperty("R2", "R2", nullptr))
+	//	.SetType(EPropertyType::FLOAT)
+	//	.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	mNegInvR2 = &AddProperty(ShaderProperty("NegInvR2", "NegInvR2", nullptr))
 		.SetType(EPropertyType::FLOAT)
@@ -87,12 +87,12 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	mOnlyAO = &AddProperty(ShaderProperty("OnlyAO", "OnlyAO", nullptr))
 		.SetType(EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
-	mHbaoRandom = &AddProperty(ShaderProperty("g_Jitter", "g_Jitter", nullptr))
-		.SetType(EPropertyType::VEC4)
-		.SetFlag(PropertyFlag::ShouldSkip, true);
+	//mHbaoRandom = &AddProperty(ShaderProperty("g_Jitter", "g_Jitter", nullptr))
+	//	.SetType(EPropertyType::VEC4)
+	//	.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	// lazy initialize of random texture on first render
-	hbao_random = 0;
+	hbaoRandomTexId = 0;
 }
 
 //! a destructor
@@ -112,10 +112,10 @@ const char* EffectShaderSSAO::GetMaskingChannelPropertyName() const noexcept
 
 void EffectShaderSSAO::DeleteTextures()
 {
-	if (hbao_random > 0)
+	if (hbaoRandomTexId > 0)
 	{
-		glDeleteTextures(1, &hbao_random);
-		hbao_random = 0;
+		glDeleteTextures(1, &hbaoRandomTexId);
+		hbaoRandomTexId = 0;
 	}
 }
 
@@ -124,8 +124,8 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 	FBCamera* camera = effectContext->GetCamera();
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 
-	const float znear = (float) camera->NearPlaneDistance;
-	const float zfar = (float) camera->FarPlaneDistance;
+	//const float znear = (float) camera->NearPlaneDistance;
+	//const float zfar = (float) camera->FarPlaneDistance;
 	FBCameraType cameraType;
 	camera->Type.GetData(&cameraType, sizeof(FBCameraType));
 	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
@@ -140,7 +140,7 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 	const double focallen = camera->FocalLength;
 
 	const float fov = 2.0 * atan(diag / (focallen * 2.0));
-
+	/*
 	const float clipInfo[4]
 	{
 		znear * zfar,
@@ -148,7 +148,7 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 		zfar,
 		(perspective) ? 1.0f : 0.0f
 	};
-
+	*/
 	const float onlyAO = (pData->OnlyAO || pData->SSAO_Blur) ? 1.0f : 0.0f;
 
 	FBMatrix dproj, dinvProj;
@@ -209,37 +209,36 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 	const float aoMult = 1.0f / (1.0f - bias);
 
 	// resolution
-	const int quarterWidth = ((effectContext->GetViewWidth() + 3) / 4);
-	const int quarterHeight = ((effectContext->GetViewHeight() + 3) / 4);
+	//const int quarterWidth = ((effectContext->GetViewWidth() + 3) / 4);
+	//const int quarterHeight = ((effectContext->GetViewHeight() + 3) / 4);
 
-	mClipInfo->SetValue(clipInfo[0], clipInfo[1], clipInfo[2], clipInfo[3]);
+	//mClipInfo->SetValue(clipInfo[0], clipInfo[1], clipInfo[2], clipInfo[3]);
 	mOnlyAO->SetValue(onlyAO);
 	mProjInfo->SetValue(projInfo[0], projInfo[1], projInfo[2], projInfo[3]);
 	mProjOrtho->SetValue(projOrtho);
 	mRadiusToScreen->SetValue(RadiusToScreen);
-	mR2->SetValue(R2);
+	//mR2->SetValue(R2);
 	mNegInvR2->SetValue(negInvR2);
 	mPowExponent->SetValue(intensity);
 	mNDotVBias->SetValue(bias);
 	mAOMultiplier->SetValue(aoMult);
-	mInvQuarterResolution->SetValue(1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
+	//mInvQuarterResolution->SetValue(1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
 	mInvFullResolution->SetValue(1.0f / float(effectContext->GetViewWidth()), 1.0f / float(effectContext->GetViewHeight()));
-	mHbaoRandom->SetValue(mRandom[0], mRandom[1], mRandom[2], mRandom[3]);
-
+	//mHbaoRandom->SetValue(mRandom[0], mRandom[1], mRandom[2], mRandom[3]);
 
 	return true;
 }
 
 void EffectShaderSSAO::Bind()
 {
-	if (hbaoRandom == 0)
+	if (hbaoRandomTexId == 0)
 	{
 		InitMisc();
 	}
 
 	// bind a random texture
 	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
-	glBindTexture(GL_TEXTURE_2D, hbao_random);
+	glBindTexture(GL_TEXTURE_2D, hbaoRandomTexId);
 	glActiveTexture(GL_TEXTURE0);
 
 	PostEffectBufferShader::Bind();
@@ -257,6 +256,8 @@ void EffectShaderSSAO::UnBind()
 
 bool EffectShaderSSAO::InitMisc()
 {
+	float	hbaoRandom[HBAO_RANDOM_SIZE][HBAO_RANDOM_SIZE][4];
+
 	float numDir = 8; // keep in sync to glsl
 
 	float Rand1 = (float) dist(e2);
@@ -287,9 +288,9 @@ bool EffectShaderSSAO::InitMisc()
 	}
 	
 	DeleteTextures();
-	glGenTextures(1, &hbao_random);
+	glGenTextures(1, &hbaoRandomTexId);
 
-	glBindTexture(GL_TEXTURE_2D, hbao_random);
+	glBindTexture(GL_TEXTURE_2D, hbaoRandomTexId);
 	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

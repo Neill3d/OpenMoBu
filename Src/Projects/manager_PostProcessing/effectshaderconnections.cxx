@@ -142,6 +142,12 @@ IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProper
 	return *this;
 }
 
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetRequired(bool isRequired)
+{
+	bIsLocationRequired = isRequired;
+	return *this;
+}
+
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(int valueIn)
 {
 	assert((type == IEffectShaderConnections::EPropertyType::INT)

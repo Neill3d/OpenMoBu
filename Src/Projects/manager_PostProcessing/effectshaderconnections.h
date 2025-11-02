@@ -113,12 +113,11 @@ public:
 
 		EPropertyType type{ EPropertyType::FLOAT };
 
-		std::bitset<PROPERTY_BITSET_SIZE> flags;
-
+		bool bIsLocationRequired{ true }; //!< should we treat missing location as an error or not
 		GLint location{ -1 }; //!< GLSL shader location holder
-
-		//std::unique_ptr<IUserData> userData;
-
+		
+		std::bitset<PROPERTY_BITSET_SIZE> flags;
+		
 		FBProperty* fbProperty{ nullptr };
 
 		// extracted value from reference object property
@@ -138,6 +137,8 @@ public:
 
 		ShaderProperty& SetType(IEffectShaderConnections::EPropertyType newType);
 		ShaderProperty& SetFlag(PropertyFlag testFlag, bool setValue);
+
+		ShaderProperty& SetRequired(bool isRequired);
 
 		ShaderProperty& SetScale(float scaleIn);
 		float GetScale() const;

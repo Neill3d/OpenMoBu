@@ -23,7 +23,9 @@ EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 		.SetType(EPropertyType::TEXTURE)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
-	mFlareSeed = &AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr));
+	mFlareSeed = &AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr))
+		.SetRequired(false);
+
 	mAmount = &AddProperty(ShaderProperty(PostPersistentData::FLARE_AMOUNT, "amount", nullptr))
 		.SetScale(0.01f);
 	
@@ -81,7 +83,10 @@ bool EffectShaderLensFlare::OnCollectUI(const IPostEffectContext* effectContext,
 	{
 		bHasShaderChanged = true;
 	}
-
+	
+	// flare seed property is used in bubble and anamorphic flare shaders
+	mFlareSeed->SetRequired(GetCurrentShader() != EFlareType::flare1);
+	
 	const double systemTime = (data->FlareUsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 	double timerMult = data->FlareTimeSpeed;
 	double flareTimer = 0.01 * timerMult * systemTime;

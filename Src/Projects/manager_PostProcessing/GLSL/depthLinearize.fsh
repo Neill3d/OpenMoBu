@@ -11,6 +11,11 @@
 //	Special for Les Androids Associes
 //
 
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
+
 uniform sampler2D depthSampler;
 
 uniform vec4	gClipInfo;	// z_n * z_f,  z_n - z_f,  z_f, perspective = 1 : 0
@@ -39,10 +44,8 @@ float reconstructCSZ(float d, vec4 clipInfo) {
 // -------------------------------------
 void main (void)
 {
-	vec2 tx = gl_TexCoord [0].st;
-	
-	float depth = texture2D(depthSampler, tx).x;
+	float depth = texture(depthSampler, texCoord).x;
 	float linear = reconstructCSZ(depth, gClipInfo);
 	
-	gl_FragData [0] =  vec4(linear);
+	FragColor = vec4(linear);
 }
