@@ -596,8 +596,8 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint
 	glBindTexture(GL_TEXTURE_2D, depthId);
 
 	// ensure the texture stores depth and returns raw depth values
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-	glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
 
 	glActiveTexture(GL_TEXTURE0);
 

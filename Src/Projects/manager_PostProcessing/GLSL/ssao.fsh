@@ -174,12 +174,12 @@ void main()
 	// Reconstruct view-space normal from nearest neighbors
 	vec3 ViewNormal = -ReconstructNormal(uv, ViewPosition);
 
-	if (OnlyAO > 0.0)
-	{
-		float ViewDepth = textureLod(linearDepthSampler, uv, 0).x;
-		FragColor = vec4(vec3(ViewDepth), 1.0);
-		return;
-	}
+	//if (OnlyAO > 0.0)
+	//{
+	//	float ViewDepth = textureLod(linearDepthSampler, uv, 0).x;
+	//	FragColor = vec4(vec3(ViewDepth), 1.0);
+	//	return;
+	//}
 
 	// Compute projection of disk of radius control.R into screen space
 	float RadiusPixels = RadiusToScreen / (projOrtho != 0 ? 1.0 : ViewPosition.z);

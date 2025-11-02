@@ -45,6 +45,8 @@ public:
 	[[nodiscard]] virtual float GetCameraNearDistance() const noexcept = 0;
 	[[nodiscard]] virtual float GetCameraFarDistance() const noexcept = 0;
 
+	[[nodiscard]] virtual bool IsCameraOrthogonal() const noexcept = 0;
+
 	[[nodiscard]] virtual double* GetModelViewMatrix() const noexcept = 0;
 	[[nodiscard]] virtual const float* GetModelViewMatrixF() const noexcept = 0;
 	[[nodiscard]] virtual double* GetProjectionMatrix() const noexcept = 0;

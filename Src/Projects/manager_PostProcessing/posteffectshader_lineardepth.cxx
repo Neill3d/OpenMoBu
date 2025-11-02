@@ -12,8 +12,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectshader_lineardepth.h"
 #include "mobu_logging.h"
 
-/////////////////////////////////////////////////////////////////////////
-// PostEffectShaderLinearDepth
 
 PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
@@ -27,23 +25,20 @@ PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponen
 		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
-//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 bool PostEffectShaderLinearDepth::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	FBCamera* camera = effectContext->GetCamera();
+	const float znear = effectContext->GetCameraNearDistance();
+	const float zfar = effectContext->GetCameraFarDistance();	
+	const float perspective = (!effectContext->IsCameraOrthogonal()) ? 1.0f : 0.0f;
 
-	const float znear = static_cast<float>(camera->NearPlaneDistance);
-	const float zfar = static_cast<float>(camera->FarPlaneDistance);
-	FBCameraType cameraType;
-	camera->Type.GetData(&cameraType, sizeof(FBCameraType));
-	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
-
-	const float newClipInfo[4]{
+	const float newClipInfo[4]
+	{
 		znear * zfar,
 		znear - zfar,
 		zfar,
-		(perspective) ? 1.0f : 0.0f
+		perspective
 	};
+
 	mClipInfo->SetValue(newClipInfo[0], newClipInfo[1], newClipInfo[2], newClipInfo[3]);
 	return true;
 }

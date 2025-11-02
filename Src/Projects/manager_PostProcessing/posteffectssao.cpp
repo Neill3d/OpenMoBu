@@ -15,18 +15,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "postprocessing_helper.h"
 
-#define AO_RANDOMTEX_SIZE 4
-
-static const int  NUM_MRT = 8;
-static const int  HBAO_RANDOM_SIZE = AO_RANDOMTEX_SIZE;
-static const int  HBAO_RANDOM_ELEMENTS = HBAO_RANDOM_SIZE*HBAO_RANDOM_SIZE;
-static const int  MAX_SAMPLES = 8;
-
-
-
-static const int        grid = 32;
-static const float      globalscale = 16.0f;
-
 //! a constructor
 EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
@@ -44,10 +32,6 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 		.SetType(EPropertyType::TEXTURE)
 		.SetValue(CommonEffect::UserSamplerSlot);
 
-	// NOTE: skip of automatic reading value and let it be done manually
-	//mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo", nullptr))
-	//	.SetType(EPropertyType::VEC4)
-	//	.SetFlag(PropertyFlag::ShouldSkip, true); 
 	mProjInfo = &AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
 		.SetType(EPropertyType::VEC4)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
@@ -55,9 +39,6 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 		.SetType(EPropertyType::INT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
 
-	//mInvQuarterResolution = &AddProperty(ShaderProperty("InvQuarterResolution", "InvQuarterResolution", nullptr))
-	//	.SetType(EPropertyType::VEC2)
-	//	.SetFlag(PropertyFlag::ShouldSkip, true);
 	mInvFullResolution = &AddProperty(ShaderProperty("InvFullResolution", "InvFullResolution", nullptr))
 		.SetType(EPropertyType::VEC2)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
@@ -65,10 +46,7 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	mRadiusToScreen = &AddProperty(ShaderProperty("RadiusToScreen", "RadiusToScreen", nullptr))
 		.SetType(EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
-	//mR2 = &AddProperty(ShaderProperty("R2", "R2", nullptr))
-	//	.SetType(EPropertyType::FLOAT)
-	//	.SetFlag(PropertyFlag::ShouldSkip, true);
-
+	
 	mNegInvR2 = &AddProperty(ShaderProperty("NegInvR2", "NegInvR2", nullptr))
 		.SetType(EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
@@ -87,10 +65,7 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	mOnlyAO = &AddProperty(ShaderProperty("OnlyAO", "OnlyAO", nullptr))
 		.SetType(EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
-	//mHbaoRandom = &AddProperty(ShaderProperty("g_Jitter", "g_Jitter", nullptr))
-	//	.SetType(EPropertyType::VEC4)
-	//	.SetFlag(PropertyFlag::ShouldSkip, true);
-
+	
 	// lazy initialize of random texture on first render
 	hbaoRandomTexId = 0;
 }
@@ -124,15 +99,9 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 	FBCamera* camera = effectContext->GetCamera();
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 
-	//const float znear = (float) camera->NearPlaneDistance;
-	//const float zfar = (float) camera->FarPlaneDistance;
-	FBCameraType cameraType;
-	camera->Type.GetData(&cameraType, sizeof(FBCameraType));
-	const bool perspective = (cameraType == FBCameraType::kFBCameraTypePerspective);
-	
 	// calculate a diagonal fov
-
 	// convert to mm
+
 	const double filmWidth = 25.4 * camera->FilmSizeWidth;
 	const double filmHeight = 25.4 * camera->FilmSizeHeight;
 
@@ -140,26 +109,10 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 	const double focallen = camera->FocalLength;
 
 	const float fov = 2.0 * atan(diag / (focallen * 2.0));
-	/*
-	const float clipInfo[4]
-	{
-		znear * zfar,
-		znear - zfar,
-		zfar,
-		(perspective) ? 1.0f : 0.0f
-	};
-	*/
+	
 	const float onlyAO = (pData->OnlyAO || pData->SSAO_Blur) ? 1.0f : 0.0f;
 
-	FBMatrix dproj, dinvProj;
-	camera->GetCameraMatrix(dproj, kFBProjection);
-	camera->GetCameraMatrix(dinvProj, kFBProjInverse);
-
-	float P[16];
-	for (int i = 0; i < 16; ++i)
-	{
-		P[i] = static_cast<float>(dproj[i]);
-	}
+	const float* P = effectContext->GetProjectionMatrixF();
 
 	const float projInfoPerspective[] = {
 		2.0f / (P[4 * 0 + 0]),       // (x) * (R - L)/N
@@ -175,12 +128,12 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 		-(1.0f - P[4 * 3 + 1]) / P[4 * 1 + 1], // B
 	};
 
-	int useOrtho = (false == perspective) ? 1 : 0;
-	int projOrtho = useOrtho;
-	const float *projInfo = useOrtho ? projInfoOrtho : projInfoPerspective;
+	const int projOrtho = (effectContext->IsCameraOrthogonal()) ? 1 : 0;
+	
+	const float *projInfo = projOrtho ? projInfoOrtho : projInfoPerspective;
 
 	float projScale;
-	if (useOrtho){
+	if (projOrtho){
 		projScale = float(effectContext->GetViewHeight()) / (projInfoOrtho[1]);
 	}
 	else {
@@ -208,24 +161,17 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 
 	const float aoMult = 1.0f / (1.0f - bias);
 
-	// resolution
-	//const int quarterWidth = ((effectContext->GetViewWidth() + 3) / 4);
-	//const int quarterHeight = ((effectContext->GetViewHeight() + 3) / 4);
-
-	//mClipInfo->SetValue(clipInfo[0], clipInfo[1], clipInfo[2], clipInfo[3]);
+	
 	mOnlyAO->SetValue(onlyAO);
 	mProjInfo->SetValue(projInfo[0], projInfo[1], projInfo[2], projInfo[3]);
 	mProjOrtho->SetValue(projOrtho);
 	mRadiusToScreen->SetValue(RadiusToScreen);
-	//mR2->SetValue(R2);
 	mNegInvR2->SetValue(negInvR2);
 	mPowExponent->SetValue(intensity);
 	mNDotVBias->SetValue(bias);
 	mAOMultiplier->SetValue(aoMult);
-	//mInvQuarterResolution->SetValue(1.0f / float(quarterWidth), 1.0f / float(quarterHeight));
 	mInvFullResolution->SetValue(1.0f / float(effectContext->GetViewWidth()), 1.0f / float(effectContext->GetViewHeight()));
-	//mHbaoRandom->SetValue(mRandom[0], mRandom[1], mRandom[2], mRandom[3]);
-
+	
 	return true;
 }
 
@@ -256,9 +202,10 @@ void EffectShaderSSAO::UnBind()
 
 bool EffectShaderSSAO::InitMisc()
 {
+	constexpr int HBAO_RANDOM_SIZE{ 4 };
 	float	hbaoRandom[HBAO_RANDOM_SIZE][HBAO_RANDOM_SIZE][4];
 
-	float numDir = 8; // keep in sync to glsl
+	constexpr float numDir{ 8.0f }; // keep in sync to glsl
 
 	float Rand1 = (float) dist(e2);
 	float Rand2 = (float) dist(e2);
@@ -284,7 +231,6 @@ bool EffectShaderSSAO::InitMisc()
 			hbaoRandom[i][j][2] = Rand2;
 			hbaoRandom[i][j][3] = 0;
 		}
-	
 	}
 	
 	DeleteTextures();

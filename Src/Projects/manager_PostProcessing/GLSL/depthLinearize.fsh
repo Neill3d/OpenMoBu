@@ -30,16 +30,6 @@ float reconstructCSZ(float d, vec4 clipInfo) {
     return (clipInfo[1]+clipInfo[2] - d * clipInfo[1]);
   }
 }
-/*
-    if (in_perspective == 1.0) // perspective
-    {
-        ze = (zNear * zFar) / (zFar - zb * (zFar - zNear)); 
-    }
-    else // orthographic proj 
-    {
-        ze  = zNear + zb  * (zFar - zNear);
-    }
-*/
 
 // -------------------------------------
 void main (void)

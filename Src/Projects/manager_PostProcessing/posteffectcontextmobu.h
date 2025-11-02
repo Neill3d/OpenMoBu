@@ -27,6 +27,8 @@ public:
 	virtual float GetCameraNearDistance() const noexcept override { return zNear; }
 	virtual float GetCameraFarDistance() const noexcept override { return zFar; }
 
+	virtual bool IsCameraOrthogonal() const noexcept override { return isCameraOrtho; }
+
 	virtual double* GetModelViewMatrix() const noexcept override { return modelView; }
 	virtual const float* GetModelViewMatrixF() const noexcept override { return modelViewF; }
 	virtual double* GetProjectionMatrix() const noexcept override { return projection; }
@@ -73,6 +75,7 @@ private:
 	mutable FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
 	PostPersistentData* postProcessData{ nullptr }; //!< this is a main post process object for common effects properties
 
+	bool isCameraOrtho{ false };
 
 	void PrepareCache()
 	{
@@ -82,6 +85,8 @@ private:
 		zNear = static_cast<float>(camera->NearPlaneDistance);
 		zFar = static_cast<float>(camera->FarPlaneDistance);
 		
+		isCameraOrtho = (camera->Type == FBCameraType::kFBCameraTypeOrthogonal);
+
 		camera->GetVector(cameraPosition, kModelTranslation, true);
 		for (int i = 0; i < 3; ++i)
 			cameraPositionF[i] = static_cast<float>(cameraPosition[i]);
