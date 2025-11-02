@@ -4,7 +4,7 @@
 
 #version 140
 
-in vec2 TexCoord;
+in vec2 texCoord;
 out vec4 FragColor;
 
 uniform float ampl_slider; // slider(0-100)
@@ -14,7 +14,7 @@ uniform sampler2D mySampler;
 
 void main (void)
 {
-	vec2 uv = TexCoord;
+	vec2 uv = texCoord;
 	vec4 input = texture2D( inputSampler, uv );
 	vec4 texColor = texture2D( mySampler, uv );
 
