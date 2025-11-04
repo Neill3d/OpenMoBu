@@ -63,10 +63,12 @@ public:
 
 	//! is being called after \ref Load is succeed
 	//!  so we could initialized some property or system uniform locations
-	bool PrepUniforms(const int variationIndex);
+	bool InitializeUniforms(const int variationIndex);
 
 	/// <summary>
-	/// is being called right before Render and when shader is binded
+	/// upload system and properties uniforms to the shader
+	/// that could trigger render of connected effects to have their result textures ready
+	/// @see AutoUploadUniforms, BindSystemUniforms, OnUploadUniforms
 	/// </summary>
 	void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
 
@@ -76,6 +78,9 @@ public:
 
 	/// <summary>
 	/// the given buffer shader will process the given inputTextureId and write result into dst frame buffer
+	/// @param dstBuffer defines which buffer render into
+	/// @param colorAttachment defines which color attachment of the dstBuffer to render into
+	/// @param inputTextureId defines the input texture to process
 	/// </summary>
 	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
 
@@ -85,9 +90,6 @@ public:
 
 	// shader version, increments on every shader reload
 	int GetVersion() const { return version; }
-
-	// binded textures for connected buffers starts from 5, then custom user textures will start from 10
-	static int GetUserSamplerId() { return 5; }
 
 public:
 	//
@@ -108,13 +110,14 @@ public:
 
 	int PopulatePropertiesFromShaderUniforms();
 
-	// TODO: upload properties values into uniforms
+	/**
+	* When one of the uniforms is a texture which is connected to a result of another effect,
+	* then in this procedure we are going to trigger the render of that effect to have the texture ready
+	* @param skipTextureProperties can be useful for multipass uniform update, when textures are already bound
+	*/
+	void AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips, 
+		const IPostEffectContext* effectContext, bool skipTextureProperties);
 
-	void AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
-
-	// TODO: auto update values from fb properties
-
-	// TODO: let's move it for buildin shaders only ?!
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
@@ -173,17 +176,15 @@ protected:
 
 	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
 	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) { return true; }
-	virtual void OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext)
-	{
-	}
+	virtual void OnUniformsUploaded() {}
 
 	//! bind effect shader program
 	virtual void Bind();
 	//! unbind effect shader program
 	virtual void UnBind();
 
-	//! initialize a specific path for drawing
-	virtual bool PrepPass(int pass, int width, int height) { return true; }
+	//! derived classes could have own preparation steps before each pass
+	virtual bool OnRenderPassBegin(int pass, int width, int height) { return true; }
 	
 	void RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 };

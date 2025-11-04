@@ -44,7 +44,7 @@ public:
 		}
 	}
 
-	bool PrepPass(int pass, int width, int height) override;
+	bool OnRenderPassBegin(int pass, int width, int height) override;
 
 private:
 	static const int NUMBER_OF_SHADERS{ 3 };

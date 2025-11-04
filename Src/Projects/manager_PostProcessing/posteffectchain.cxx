@@ -905,9 +905,11 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 		
 		for (const auto& effect : mChain)
 		{
-			if (!effect)
+			if (!effect || !effect->IsActive())
+			{
 				continue;
-
+			}
+			
 			// activate local mask for the effect if applied
 			const unsigned int effectMaskingIndex = (effect->GetMaskIndex() >= 0) ? static_cast<unsigned int>(effect->GetMaskIndex()) : globalMaskingIndex;
 			if (IsAnyObjectMaskedByMaskId(static_cast<EMaskingChannel>(effect->GetMaskIndex())) && effectMaskingIndex != globalMaskingIndex)

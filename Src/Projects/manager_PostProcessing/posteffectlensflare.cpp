@@ -100,18 +100,19 @@ int EffectShaderLensFlare::GetNumberOfPasses() const
 	return subShaders[mCurrentShader].m_NumberOfPasses;
 }
 
-bool EffectShaderLensFlare::PrepPass(int pass, int width, int height)
+bool EffectShaderLensFlare::OnRenderPassBegin(int pass, int width, int height)
 {
-	assert(mCurrentShader >= 0 && mCurrentShader < NUMBER_OF_SHADERS);
-	const SubShader& subShader = subShaders[mCurrentShader];
+	const int currentShader = GetCurrentShader();
+	assert(currentShader >= 0 && currentShader < GetNumberOfVariations());
+	const SubShader& subShader = subShaders[currentShader];
 
-	if (pass < static_cast<int>(subShader.m_LightPositions.size()))
+	if (pass >= 0 && pass < static_cast<int>(subShader.m_LightPositions.size()))
 	{
 		const FBVector3d pos(subShader.m_LightPositions[pass]);
 		mLightPos->SetValue(static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
-
-		const FBColor _tint(subShader.m_LightColors[pass]);
-		mTint->SetValue(static_cast<float>(_tint[0]), static_cast<float>(_tint[1]), static_cast<float>(_tint[2]), 1.0f);
+		
+		const FBColor tint(subShader.m_LightColors[pass]);
+		mTint->SetValue(static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
 	}
 
 	return true;
@@ -211,7 +212,7 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostPersistentData* pD
 		FBVector3d camPosition;
 		pCamera->GetVector(camPosition);
 		
-		double distToLight = VectorLength(VectorSubtract(lightPos, camPosition));
+		const double distToLight = VectorLength(VectorSubtract(lightPos, camPosition));
 
 		for (int i = 0, count = pData->FlareOcclusionObjects.GetCount(); i < count; ++i)
 		{

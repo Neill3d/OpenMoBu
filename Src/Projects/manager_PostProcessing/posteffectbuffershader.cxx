@@ -194,13 +194,13 @@ bool PostEffectBufferShader::Load(const int shaderIndex, const char* vname, cons
 	{
 		mShaders[shaderIndex].swap(shader);
 		// samplers and locations
-		PrepUniforms(shaderIndex);
+		InitializeUniforms(shaderIndex);
 	}
 	else
 	{
 		mShaders.push_back(std::move(shader));
 		// samplers and locations
-		PrepUniforms(static_cast<int>(mShaders.size())-1);
+		InitializeUniforms(static_cast<int>(mShaders.size())-1);
 	}
 
 	return true;
@@ -219,7 +219,7 @@ bool PostEffectBufferShader::Load(const char* shadersLocation)
 	return true;
 }
 
-bool PostEffectBufferShader::PrepUniforms(const int varianceIndex)
+bool PostEffectBufferShader::InitializeUniforms(const int varianceIndex)
 {
 	// existing registered properties got their shader uniform locations
 	MakePropertyLocationsFromShaderUniforms();
@@ -276,12 +276,7 @@ bool PostEffectBufferShader::CollectUIValues(const IPostEffectContext* effectCon
 
 void PostEffectBufferShader::UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext)
 {
-	// system uniforms
-	BindSystemUniforms(effectContext);
 	
-	AutoUploadUniforms(buffers, inputTextureId, w, h, generateMips, effectContext);
-
-	OnUploadUniforms(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips, effectContext);
 }
 
 bool PostEffectBufferShader::ReloadPropertyShaders()
@@ -314,8 +309,6 @@ const GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() const {
 
 void PostEffectBufferShader::RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips)
 {
-	PrepPass(passIndex, w, h);
-
 	// bind an input source image for processing by the effect
 
 	glBindTexture(GL_TEXTURE_2D, inputTextureId);
@@ -349,41 +342,67 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 
 	if (bHasShaderChanged)
 	{
-		PrepUniforms(GetCurrentShader());
+		InitializeUniforms(GetCurrentShader());
 		bHasShaderChanged = false;
 	}
 
 	Bind();
-	UploadUniforms(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips, effectContext);
 
-	//OnPreRender(buffers, dstBuffer, colorAttachment, inputTextureId, w, h, generateMips);
+	// system uniforms, properties uniforms, could trigger other effects to render
+	BindSystemUniforms(effectContext);
 
-	// render all passes except last one
-	// we can't do intermediate passes without buffers
-	// TODO:
-	/*
-	if (buffers)
+	if (GetNumberOfPasses() == 1)
 	{
-		for (int j = 0; j < GetNumberOfPasses() - 1; ++j)
+		OnRenderPassBegin(0, w, h); // properties could be updated here
+
+		constexpr bool skipTextureUniforms = false;
+		AutoUploadUniforms(buffers, inputTextureId, w, h, generateMips, effectContext, skipTextureUniforms);
+		OnUniformsUploaded();
+
+		// last one goes into dst buffer
+		const int finalPassIndex = GetNumberOfPasses() - 1;
+		RenderPass(finalPassIndex, dstBuffer, colorAttachment, texId, w, h, generateMips);
+	}
+	else
+	{
+		const int finalPassIndex = GetNumberOfPasses() - 1;
+
+		// bind sampler from another rendered buffer shader
+		const std::string bufferName = std::string(GetName()) + "_passes";
+
+		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferName, w, h, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 2, false);
+		PingPongData pingPongData;
+		FramebufferPingPongHelper pingPongHelper(buffer, &pingPongData);
+		
+		for (int j = 0; j < finalPassIndex; ++j)
 		{
-			RenderPass(j, buffers->GetDstBufferPtr(), texId, w, h, generateMips);
+			// here the derived class could update some property values for the given pass
+			OnRenderPassBegin(j, w, h);
+
+			const bool skipTextureUniforms = (j > 0); // only for the first pass we use the original input texture
+			AutoUploadUniforms(nullptr, inputTextureId, w, h, generateMips, effectContext, skipTextureUniforms);
+			OnUniformsUploaded();
+
+			RenderPass(j, pingPongHelper.GetPtr(), pingPongHelper.GetWriteAttachment(), texId, w, h, generateMips);
 
 			//
-			buffers->SwapBuffers();
+			pingPongHelper.Swap();
 
 			// the input for the next pass
-			texId = buffers->GetSrcBufferPtr()->GetColorObject();
+			texId = pingPongHelper.GetPtr()->GetColorObject(pingPongHelper.GetReadAttachment());
 		}
-	}
-	*/
-	// last one goes into dst buffer
 
-	const int finalPassIndex = GetNumberOfPasses() - 1;
-	RenderPass(finalPassIndex, dstBuffer, colorAttachment, texId, w, h, generateMips);
+		buffers->ReleaseFramebuffer(bufferName);
+
+		OnRenderPassBegin(finalPassIndex, w, h);
+		AutoUploadUniforms(nullptr, inputTextureId, w, h, generateMips, effectContext, false);
+		OnUniformsUploaded();
+
+		RenderPass(finalPassIndex, dstBuffer, colorAttachment, texId, w, h, generateMips);
+	}
 
 	UnBind();
 }
-
 
 void PostEffectBufferShader::Bind()
 {
@@ -541,8 +560,6 @@ int PostEffectBufferShader::PopulatePropertiesFromShaderUniforms()
 		// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
 		ExtractNameAndFlagsFromUniformNameAndType(prop, prop.uniformName, type);
 
-		//prop.property = mUserObject->GetOrMakeProperty(prop);
-
 		OnPropertyAdded(prop);
 
 		mProperties.emplace(prop.uniformName, std::move(prop));
@@ -552,13 +569,11 @@ int PostEffectBufferShader::PopulatePropertiesFromShaderUniforms()
 	return addedProperties;
 }
 
-void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext)
+void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips, 
+	const IPostEffectContext* effectContext, bool skipTextureProperties)
 {
-	GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
-	//GLSLShaderProgram* shader = GetShaderPtr();
-
-	//std::vector<EffectShaderUserObject*> shadersChain;
-
+	GLint userTextureSlot = CommonEffect::UserSamplerSlot; //!< start index to bind user textures
+	
 	for (auto& prop : mProperties)
 	{
 		if (prop.second.location < 0)
@@ -605,6 +620,11 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 			break;
 
 		case IEffectShaderConnections::EPropertyType::TEXTURE:
+
+			// designed to be used with multi-pass rendering, when textures are bound from the first pass
+			if (skipTextureProperties)
+				break;
+
 			if (FBTexture* texture = prop.second.texture)
 			{
 				// bind sampler from a media resource texture
@@ -654,7 +674,6 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 
 				Bind();
 
-				//const GLint loc = glGetUniformLocation(shader->GetProgramObj(), prop.first.c_str());
 				glUniform1i(prop.second.location, userTextureSlot);
 
 				userTextureSlot += 1;

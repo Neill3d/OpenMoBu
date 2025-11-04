@@ -317,7 +317,7 @@ int UserBufferShader::GetNumberOfPasses() const
 	return mUserObject->NumberOfPasses;
 }
 //! initialize a specific path for drawing
-bool UserBufferShader::PrepPass(const int pass, int w, int h)
+bool UserBufferShader::OnRenderPassBegin(const int pass, int w, int h)
 {
 	// TODO: define iPass value for the shader
 	
@@ -474,11 +474,6 @@ bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int 
 	}
 
 	return true;
-}
-
-void UserBufferShader::OnUploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext)
-{
-	
 }
 
 std::vector<PostEffectBufferShader*> UserBufferShader::GetConnectedShaders()
