@@ -20,8 +20,7 @@ uniform sampler2D depthSampler;
 
 uniform vec4	gClipInfo;	// z_n * z_f,  z_n - z_f,  z_f, perspective = 1 : 0
 
-// ----------------------------------
-
+// camera space z reconstruction from clip space z
 float reconstructCSZ(float d, vec4 clipInfo) {
   if (clipInfo[3] != 0.0) {
     return (clipInfo[0] / (clipInfo[1] * d + clipInfo[2]));
@@ -36,6 +35,6 @@ void main (void)
 {
 	float depth = texture(depthSampler, texCoord).x;
 	float linear = reconstructCSZ(depth, gClipInfo);
-	
+
 	FragColor = vec4(linear);
 }

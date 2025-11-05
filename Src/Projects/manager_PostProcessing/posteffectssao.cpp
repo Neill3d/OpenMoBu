@@ -21,7 +21,6 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	, e2(rd())
 	, dist(0, 1.0)
 {
-
 	MakeCommonProperties();
 
 	AddProperty(ShaderProperty("color", "colorSampler"))
@@ -114,14 +113,14 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 
 	const float* P = effectContext->GetProjectionMatrixF();
 
-	const float projInfoPerspective[] = {
+	const float projInfoPerspective[4] = {
 		2.0f / (P[4 * 0 + 0]),       // (x) * (R - L)/N
 		2.0f / (P[4 * 1 + 1]),       // (y) * (T - B)/N
 		-(1.0f - P[4 * 2 + 0]) / P[4 * 0 + 0], // L/N
 		-(1.0f + P[4 * 2 + 1]) / P[4 * 1 + 1], // B/N
 	};
 
-	const float projInfoOrtho[] = {
+	const float projInfoOrtho[4] = {
 		2.0f / (P[4 * 0 + 0]),      // ((x) * R - L)
 		2.0f / (P[4 * 1 + 1]),      // ((y) * T - B)
 		-(1.0f + P[4 * 3 + 0]) / P[4 * 0 + 0], // L
@@ -129,9 +128,8 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 	};
 
 	const int projOrtho = (effectContext->IsCameraOrthogonal()) ? 1 : 0;
+	const float* projInfo = projOrtho ? projInfoOrtho : projInfoPerspective;
 	
-	const float *projInfo = projOrtho ? projInfoOrtho : projInfoPerspective;
-
 	float projScale;
 	if (projOrtho){
 		projScale = float(effectContext->GetViewHeight()) / (projInfoOrtho[1]);
@@ -152,7 +150,7 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 	float intensity = 0.01f * (float) pData->SSAO_Intensity;
 	if (intensity < 0.0f)
 		intensity = 0.0f;
-
+	
 	float bias = 0.01f * (float)pData->SSAO_Bias;
 	if (bias < 0.0f)
 		bias = 0.0f;

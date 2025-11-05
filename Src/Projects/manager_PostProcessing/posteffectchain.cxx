@@ -578,7 +578,13 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 
 void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, const PostEffectContextMoBu& effectContext)
 {
-	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer("depthLinearize"); //buffers->GetBufferDepthPtr();
+	constexpr const char* depthLinearizeBufferName = "depthLinearize";
+
+	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer(depthLinearizeBufferName,
+		buffers->GetWidth(), buffers->GetHeight(), PostEffectBuffers::GetFlagsForSingleColorBuffer(),
+		1, false, [](FrameBuffer* frameBuffer) {
+			PostEffectBuffers::SetParametersForMainDepthBuffer(frameBuffer);
+	});
 
 	const PostEffectBase::RenderEffectContext renderContext
 	{
@@ -594,11 +600,6 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint
 
 	glActiveTexture(GL_TEXTURE0 + CommonEffect::DepthSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, depthId);
-
-	// ensure the texture stores depth and returns raw depth values
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
-
 	glActiveTexture(GL_TEXTURE0);
 
 	mEffectDepthLinearize->Process(renderContext, &effectContext);
@@ -610,6 +611,7 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint
 	glBindTexture(GL_TEXTURE_2D, linearDepthId);
 	glActiveTexture(GL_TEXTURE0);
 	
+	buffers->ReleaseFramebuffer(depthLinearizeBufferName);
 }
 
 void PostEffectChain::RenderWorldNormals(PostEffectBuffers* buffers)

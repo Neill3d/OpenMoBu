@@ -25,11 +25,6 @@ using PostEffectSSAO = PostEffectSingleShader<EffectShaderSSAO>;
 /// </summary>
 struct EffectShaderSSAO : public PostEffectBufferShader
 {
-private:
-	static constexpr const char* SHADER_NAME = "SSAO";
-	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
-	static constexpr const char* SHADER_FRAGMENT = "/GLSL/ssao.fsh";
-	
 public:
 
 	EffectShaderSSAO(FBComponent* ownerIn);
@@ -41,12 +36,10 @@ public:
 	[[nodiscard]] const char* GetVertexFname(const int shaderIndex) const noexcept override { return SHADER_VERTEX; }
 	[[nodiscard]] const char* GetFragmentFname(const int shaderIndex) const noexcept override { return SHADER_FRAGMENT; }
 
-	//virtual bool PrepUniforms(const int shaderIndex) override;
-	//virtual bool CollectUIValues(PostPersistentData* pData, PostEffectContext& effectContext) override;
-
-	//static GLint GetColorSamplerSlot() { return 0; }
-	//static GLint GetDepthSamplerSlot() { return 2; }
-	//static GLint GetRandomSamplerSlot() { return 5; }
+private:
+	static constexpr const char* SHADER_NAME = "SSAO";
+	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
+	static constexpr const char* SHADER_FRAGMENT = "/GLSL/ssao.fsh";
 
 protected:
 
@@ -67,13 +60,11 @@ protected:
 
 private:
 
-	//ShaderProperty* mClipInfo;
 	ShaderProperty* mProjInfo;
 	ShaderProperty* mProjOrtho;
-	//ShaderProperty* mInvQuarterResolution;
 	ShaderProperty* mInvFullResolution;
 	ShaderProperty* mRadiusToScreen;
-	//ShaderProperty* mR2;
+	
 	ShaderProperty* mNegInvR2;
 	ShaderProperty* mNDotVBias;
 
@@ -81,8 +72,7 @@ private:
 	ShaderProperty* mPowExponent;
 
 	ShaderProperty* mOnlyAO;
-	//ShaderProperty* mHbaoRandom;
-
+	
 	// texture Id
 	GLuint	hbaoRandomTexId;
 

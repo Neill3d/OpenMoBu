@@ -92,32 +92,20 @@ private:
 			cameraPositionF[i] = static_cast<float>(cameraPosition[i]);
 
 		camera->GetCameraMatrix(modelView, FBCameraMatrixType::kFBModelView);
+		camera->GetCameraMatrix(projection, FBCameraMatrixType::kFBProjection);
+		camera->GetCameraMatrix(modelViewProj, FBCameraMatrixType::kFBModelViewProj);
+		FBMatrixInverse(invModelViewProj, modelViewProj);
+		prevModelViewProj = parameters.prevModelViewProjMatrix;
+
 		for (int i = 0; i < 16; ++i)
 		{
 			modelViewF[i] = static_cast<float>(modelView[i]);
-		}
-		
-		camera->GetCameraMatrix(projection, FBCameraMatrixType::kFBProjection);
-		for (int i = 0; i < 16; ++i)
-		{
 			projectionF[i] = static_cast<float>(projection[i]);
-		}
-		camera->GetCameraMatrix(modelViewProj, FBCameraMatrixType::kFBModelViewProj);
-		for (int i = 0; i < 16; ++i)
-		{
 			modelViewProjF[i] = static_cast<float>(modelViewProj[i]);
-		}
-		FBMatrixInverse(invModelViewProj, modelViewProj);
-		for (int i = 0; i < 16; ++i)
-		{
 			invModelViewProjF[i] = static_cast<float>(invModelViewProj[i]);
-		}
-		prevModelViewProj = parameters.prevModelViewProjMatrix;
-		for (int i = 0; i < 16; ++i)
-		{
 			prevModelViewProjF[i] = static_cast<float>(prevModelViewProj[i]);
 		}
-
+		
 		std::time_t now = std::time(nullptr);
 		std::tm localTime;
 		localtime_s(&localTime, &now);  // now should be of type std::time_t
