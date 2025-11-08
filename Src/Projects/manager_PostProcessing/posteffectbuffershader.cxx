@@ -66,7 +66,6 @@ namespace _PostEffectBufferShaderInternal
 	}
 };
 
-
 const char* PostEffectBufferShader::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
 {
 	"inputSampler", //!< this is an input image that we read from
@@ -82,6 +81,7 @@ const char* PostEffectBufferShader::gSystemUniformNames[static_cast<int>(ShaderS
 
 	"gResolution", //!< vec2 that contains processing absolute resolution, like 1920x1080
 	"iResolution", //!< vec2 image absolute resolution, compatible with shadertoy naming
+	"uInvResolution", //!< inverse resolution
 	"texelSize", //!< vec2 of a texel size, computed as 1/resolution
 
 	"iTime", //!< compatible with shadertoy, float, shader playback time (in seconds)
@@ -810,6 +810,11 @@ void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effect
 	{
 		const GLint loc = GetUniformLocation(ShaderSystemUniform::iRESOLUTION);
 		glProgramUniform2f(programId, loc, static_cast<float>(effectContext->GetViewWidth()), static_cast<float>(effectContext->GetViewHeight()));
+	}
+	if (IsUniformBound(ShaderSystemUniform::INV_RESOLUTION))
+	{
+		const GLint loc = GetUniformLocation(ShaderSystemUniform::INV_RESOLUTION);
+		glProgramUniform2f(programId, loc, 1.0f/static_cast<float>(effectContext->GetViewWidth()), 1.0f/static_cast<float>(effectContext->GetViewHeight()));
 	}
 	if (IsUniformBound(ShaderSystemUniform::TEXEL_SIZE))
 	{

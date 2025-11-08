@@ -39,6 +39,7 @@ enum class ShaderSystemUniform : uint8_t
 
 	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
 	iRESOLUTION, //!< vec2 absolute resolution, compatible with shadertoy
+	INV_RESOLUTION, //!< inverse resolution
 	TEXEL_SIZE, //!< vec2 of a texel size, computed as 1/resolution
 
 	iTIME, //!< compatible with shadertoy, float, shader playback time (in seconds)
