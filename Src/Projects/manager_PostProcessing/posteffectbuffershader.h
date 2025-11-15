@@ -186,5 +186,5 @@ protected:
 	//! derived classes could have own preparation steps before each pass
 	virtual bool OnRenderPassBegin(int pass, int width, int height) { return true; }
 	
-	void RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
+	virtual void RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
 };

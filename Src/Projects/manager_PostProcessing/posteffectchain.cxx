@@ -301,7 +301,7 @@ void PostEffectChain::RenderSceneMaskToTexture(const int maskIndex, PostPersiste
 	maskBuffer->UnBind();
 }
 
-bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int& blurAndMix, int& blurAndMix2)
+bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain)
 {
 	int count = 0;
 
@@ -333,19 +333,12 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 
 	count = 0;
 
-	blurAndMix = -1;
-	blurAndMix2 = -1;
-
 	// ordering HERE
 
 	if (mSettings->SSAO && mSSAO.get())
 	{
 		chain[count] = mSSAO.get();
 		chain[count]->SetMaskIndex((mSettings->SSAO_UseMasking) ? static_cast<int>(mSettings->SSAO_MaskingChannel) : -1);
-		if (mSettings->SSAO_Blur)
-		{
-			blurAndMix = count;
-		}
 		count += 1;
 	}
 	if (mSettings->MotionBlur && mMotionBlur.get())
@@ -364,10 +357,6 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 	{
 		chain[count] = mColor.get();
 		chain[count]->SetMaskIndex((mSettings->ColorCorrection_UseMasking) ? static_cast<int>(mSettings->ColorCorrection_MaskingChannel) : -1);
-		if (mSettings->Bloom)
-		{
-			blurAndMix2 = count;
-		}
 		count += 1;
 	}
 	if (mSettings->LensFlare && mLensFlare.get())
@@ -410,108 +399,6 @@ bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, int
 	return true;
 }
 
-
-void PostEffectChain::BilateralBlurPass(PostEffectBuffers* buffers)
-{
-	/*
-	FrameBuffer* blurfb = buffers->RequestFramebuffer("bilateral_blur");
-
-	const int w = blurfb->GetWidth();
-	const int h = blurfb->GetHeight();
-
-	const float blurSharpness = 0.1f * (float)mSettings->SSAO_BlurSharpness;
-	const float invRes[2] = { 1.0f / float(w), 1.0f / float(h) };
-
-	// Bilateral Blur Pass
-
-	const GLuint texid = buffers->GetSrcBufferPtr()->GetColorObject();
-	glBindTexture(GL_TEXTURE_2D, texid);
-
-	buffers->GetDstBufferPtr()->Bind();
-	mShaderBlur->Bind();
-
-	if (mLocBlurSharpness >= 0)
-		glUniform1f(mLocBlurSharpness, blurSharpness);
-	if (mLocBlurRes >= 0)
-		glUniform2f(mLocBlurRes, invRes[0], invRes[1]);
-
-	drawOrthoQuad2d(w, h);
-
-	mShaderBlur->UnBind();
-	buffers->GetDstBufferPtr()->UnBind();
-
-	//
-	buffers->SwapBuffers();
-	*/
-}
-
-void PostEffectChain::BilateralBlurAndMixPass(PostEffectBuffers* buffers)
-{
-	/*
-	const int w = buffers->GetWidth();
-	const int h = buffers->GetHeight();
-
-	const float blurSharpness = 0.1f * (float)mSettings->SSAO_BlurSharpness;
-	const float invRes[2] = { 1.0f / float(w), 1.0f / float(h) };
-
-	// Bilateral Blur Pass
-
-	GLuint texid = buffers->GetSrcBufferPtr()->GetColorObject();
-	glBindTexture(GL_TEXTURE_2D, texid);
-
-	buffers->GetBufferBlurPtr()->Bind();
-	mShaderBlur->Bind();
-
-	if (mLocBlurSharpness >= 0)
-		glUniform1f(mLocBlurSharpness, blurSharpness);
-	if (mLocBlurRes >= 0)
-		glUniform2f(mLocBlurRes, invRes[0], invRes[1]);
-
-	const float color_shift = (mSettings->Bloom) ? static_cast<float>(0.01 * mSettings->BloomMinBright) : 0.0f;
-	mShaderBlur->setUniformFloat("g_ColorShift", color_shift);
-
-	drawOrthoQuad2d(w, h);
-
-	mShaderBlur->UnBind();
-	buffers->GetBufferBlurPtr()->UnBind();
-
-	//
-	buffers->SwapBuffers();
-
-	// Mix AO and Color Pass
-	const GLuint blurId = buffers->GetBufferBlurPtr()->GetColorObject();
-	texid = buffers->GetSrcBufferPtr()->GetColorObject();
-
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, blurId);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texid);
-
-	buffers->GetDstBufferPtr()->Bind();
-	mShaderMix->Bind();
-
-	if (mSettings->Bloom)
-	{
-		mShaderMix->setUniformVector("gBloom", static_cast<float>(0.01 * mSettings->BloomTone), static_cast<float>(0.01 * mSettings->BloomStretch), 0.0f, 1.0f);
-	}
-	else
-	{
-		mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 0.0f, 0.0f);
-	}
-
-	drawOrthoQuad2d(w, h);
-
-	mShaderMix->UnBind();
-	buffers->GetDstBufferPtr()->UnBind();
-
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0);
-
-	//
-	buffers->SwapBuffers();
-	*/
-}
 
 void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 {
@@ -576,12 +463,15 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 	*/
 }
 
-void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, const PostEffectContextMoBu& effectContext)
+void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext)
 {
 	constexpr const char* depthLinearizeBufferName = "depthLinearize";
 
+	const int outWidth = (makeDownscale) ? buffers->GetWidth() / 2 : buffers->GetWidth();
+	const int outHeight = (makeDownscale) ? buffers->GetHeight() / 2 : buffers->GetHeight();
+
 	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer(depthLinearizeBufferName,
-		buffers->GetWidth(), buffers->GetHeight(), PostEffectBuffers::GetFlagsForSingleColorBuffer(),
+		outWidth, outHeight, PostEffectBuffers::GetFlagsForSingleColorBuffer(),
 		1, false, [](FrameBuffer* frameBuffer) {
 			PostEffectBuffers::SetParametersForMainDepthBuffer(frameBuffer);
 	});
@@ -591,8 +481,8 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint
 		nullptr, // intermediate buffers
 		0,
 		depthId, // depth id
-		buffers->GetWidth(),
-		buffers->GetHeight(),
+		outWidth, // buffers->GetWidth(),
+		outHeight, // buffers->GetHeight(),
 		pBufferDepth,
 		0, // last color attachment for processing
 		false // generate mips
@@ -741,10 +631,8 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 		return false;
 
 	// 1. prepare chain count and order
-	int blurAndMix{ -1 };
-	int blurAndMix2{ -1 };
-
-	if (!PrepareChainOrder(mChain, blurAndMix, blurAndMix2))
+	
+	if (!PrepareChainOrder(mChain))
 		return false;
 
 	//
@@ -801,7 +689,8 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 	if (isLinearDepthSamplerBinded)
 	{
 		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
-		RenderLinearDepth(buffers, depthId, effectContext);
+		constexpr bool makeDownscale = false;
+		RenderLinearDepth(buffers, depthId, makeDownscale, effectContext);
 	}
 
 	const bool isWorldNormalSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
@@ -939,21 +828,6 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 			effect->Process(renderContext, &effectContext);
 
-			// 7. blur effect if applied
-			/*
-			// if we need more passes, blur and mix for SSAO or Bloom (Color Correction)
-			if (i == blurAndMix || i == blurAndMix2)
-			{
-				if (false == mSettings->OnlyAO || (i == blurAndMix2))
-				{
-					BilateralBlurAndMixPass(buffers);
-				}
-				else
-				{
-					BilateralBlurPass(buffers);
-				}
-			}
-			*/
 			// if local masking index was used, switch back to global mask for next effect
 			if (effectMaskingIndex != globalMaskingIndex)
 			{

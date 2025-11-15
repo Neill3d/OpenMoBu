@@ -118,6 +118,8 @@ set (POSTEFFECTSSHADERS
     posteffectshader_downscale.cxx
     posteffectshader_lineardepth.h
     posteffectshader_lineardepth.cxx
+    posteffectshader_mix.h
+    posteffectshader_mix.cxx
 )
 source_group("PostEffectsShaders" FILES ${POSTEFFECTSSHADERS})
 

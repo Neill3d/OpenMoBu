@@ -10,6 +10,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectcolor.h"
+#include "posteffectshader_mix.h"
+#include "posteffectshader_blur_lineardepth.h"
+#include "posteffectbuffers.h"
 #include "postpersistentdata.h"
 
 #define _USE_MATH_DEFINES
@@ -18,7 +21,119 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_helper.h"
 
 
-//! a constructor
+////////////////////////////////////////////////////////////////////////////////
+// PostEffectColor
+
+PostEffectColor::PostEffectColor()
+	: PostEffectBase()
+	, mShaderColor(std::make_unique<EffectShaderColor>(nullptr)) // making it without an owner component
+	, mShaderMix(std::make_unique<EffectShaderMix>(nullptr))
+	, mShaderBlur(std::make_unique<EffectShaderBlurLinearDepth>(nullptr))
+{
+}
+
+bool PostEffectColor::IsActive() const
+{
+	return true;
+}
+
+const char* PostEffectColor::GetName() const
+{
+	return mShaderColor->GetName();
+}
+
+PostEffectBufferShader* PostEffectColor::GetBufferShaderPtr(const int bufferShaderIndex)
+{
+	return static_cast<PostEffectBufferShader*>(mShaderColor.get());
+}
+const PostEffectBufferShader* PostEffectColor::GetBufferShaderPtr(const int bufferShaderIndex) const
+{
+	return static_cast<const PostEffectBufferShader*>(mShaderColor.get());
+}
+
+EffectShaderColor* PostEffectColor::GetBufferShaderTypedPtr()
+{
+	return mShaderColor.get();
+}
+const EffectShaderColor* PostEffectColor::GetBufferShaderTypedPtr() const
+{
+	return mShaderColor.get();
+}
+
+bool PostEffectColor::Load(const char* shaderLocation)
+{
+	if (!mShaderMix->Load(shaderLocation))
+		return false;
+	if (!mShaderBlur->Load(shaderLocation))
+		return false;
+
+	return PostEffectBase::Load(shaderLocation);
+}
+
+bool PostEffectColor::CollectUIValues(const IPostEffectContext* effectContext)
+{
+	mShaderMix->CollectUIValues(effectContext, 0);
+	mShaderBlur->CollectUIValues(effectContext, 0);
+
+	return PostEffectBase::CollectUIValues(effectContext);
+}
+
+void PostEffectColor::Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext)
+{
+	// render SSAO into its own buffer
+	constexpr const char* bufferName = "color_correction";
+	const PostPersistentData* postData = effectContext->GetPostProcessData();
+	PostEffectBuffers* buffers = renderContext.buffers;
+
+	if (postData->Bloom)
+	{
+		constexpr bool makeDownscale = false;
+		const int outWidth = (makeDownscale) ? buffers->GetWidth() / 2 : buffers->GetWidth();
+		const int outHeight = (makeDownscale) ? buffers->GetHeight() / 2 : buffers->GetHeight();
+		constexpr int numColorAttachments = 2;
+
+		FrameBuffer* pBuffer = buffers->RequestFramebuffer(bufferName,
+			outWidth, outHeight, PostEffectBuffers::GetFlagsForSingleColorBuffer(),
+			numColorAttachments,
+			false, [](FrameBuffer* frameBuffer) {
+				PostEffectBuffers::SetParametersForMainColorBuffer(frameBuffer, false);
+			});
+
+		mShaderColor->Render(buffers, pBuffer, 0, renderContext.srcTextureId,
+			outWidth, outHeight, false, effectContext);
+
+		{
+			const float color_shift = (postData->Bloom) ? static_cast<float>(0.01 * postData->BloomMinBright) : 0.0f;
+			mShaderBlur->mColorShift->SetValue(color_shift);
+			mShaderBlur->mInvRes->SetValue(1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
+			mShaderBlur->Render(buffers, pBuffer, 1, pBuffer->GetColorObject(0),
+				outWidth, outHeight, false, effectContext);
+		}
+
+		// mix src texture with color corrected image
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
+		const uint32_t ccTextureId = pBuffer->GetColorObject(1);
+		glBindTexture(GL_TEXTURE_2D, ccTextureId);
+		glActiveTexture(GL_TEXTURE0);
+
+		mShaderMix->Render(buffers, renderContext.dstFrameBuffer, renderContext.colorAttachment,
+			renderContext.srcTextureId,
+			renderContext.viewWidth, renderContext.viewHeight, renderContext.generateMips, effectContext);
+
+		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE0);
+
+		buffers->ReleaseFramebuffer(bufferName);
+	}
+	else
+	{
+		PostEffectBase::Process(renderContext, effectContext);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// EffectShaderColor
 EffectShaderColor::EffectShaderColor(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
 {

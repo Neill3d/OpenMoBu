@@ -11,6 +11,11 @@
 //	Special for Les Androids Associes
 //
 
+#version 130
+
+in vec2 texCoord;
+out vec4 FragColor;
+
 const float KERNEL_RADIUS = 3.0;
 
 uniform sampler2D 	sampler0;
@@ -45,8 +50,6 @@ vec4 BlurFunction(vec2 uv, float r, vec4 center_c, float center_d, inout float w
 
 void main (void)
 {
-	vec2 texCoord = gl_TexCoord [0].st;
-	
 	vec4  center_c = ShiftColor(texture2D( sampler0, texCoord ));
 	float center_d = texture2D( linearDepthSampler, texCoord).x;
   
@@ -67,5 +70,5 @@ void main (void)
 
 	vec4 out_Color = c_total/w_total;
 	
-	gl_FragData [0] = out_Color;
+	FragColor = out_Color;
 }

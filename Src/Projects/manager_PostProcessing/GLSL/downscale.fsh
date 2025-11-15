@@ -11,18 +11,21 @@
 //	Special for Les Androids Associes
 //
 
-uniform sampler2D 		sampler;
-uniform vec2			texelSize;
+#version 140
 
-varying vec2 centerTextureCoordinate;
-varying vec2 oneStepLeftTextureCoordinate;
-varying vec2 twoStepsLeftTextureCoordinate;
-varying vec2 threeStepsLeftTextureCoordinate;
-varying vec2 fourStepsLeftTextureCoordinate;
-varying vec2 oneStepRightTextureCoordinate;
-varying vec2 twoStepsRightTextureCoordinate;
-varying vec2 threeStepsRightTextureCoordinate;
-varying vec2 fourStepsRightTextureCoordinate;
+uniform sampler2D 		sampler;
+
+in vec2 centerTextureCoordinate;
+in vec2 oneStepLeftTextureCoordinate;
+in vec2 twoStepsLeftTextureCoordinate;
+in vec2 threeStepsLeftTextureCoordinate;
+in vec2 fourStepsLeftTextureCoordinate;
+in vec2 oneStepRightTextureCoordinate;
+in vec2 twoStepsRightTextureCoordinate;
+in vec2 threeStepsRightTextureCoordinate;
+in vec2 fourStepsRightTextureCoordinate;
+
+out vec4 FragColor;
 
 // sinc(x) * sinc(x/a) = (a * sin(pi * x) * sin(pi * x / a)) / (pi^2 * x^2)
 // Assuming a Lanczos constant of 2.0, and scaling values to max out at x = +/- 1.5
@@ -45,6 +48,5 @@ void main (void)
 
 	fragmentColor.a = 1.0;
 	
-	gl_FragColor = fragmentColor;
-	
+	FragColor = fragmentColor;
 }

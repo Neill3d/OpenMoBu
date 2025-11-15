@@ -12,11 +12,40 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward
 class EffectShaderColor;
+class EffectShaderMix;
+class EffectShaderBlurLinearDepth;
 
 /// <summary>
-/// effect with once shader - displacement, output directly to effects chain dst buffer
+/// effect with 3 shaders - Color Correction (with optional Bloom effect), output directly to effects chain dst buffer
 /// </summary>
-using PostEffectColor = PostEffectSingleShader<EffectShaderColor>;
+class PostEffectColor : public PostEffectBase
+{
+public:
+	PostEffectColor();
+	virtual ~PostEffectColor() = default;
+
+	virtual bool IsActive() const override;
+	virtual const char* GetName() const override;
+
+	virtual int GetNumberOfBufferShaders() const override { return 1; }
+	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override;
+	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override;
+
+	EffectShaderColor* GetBufferShaderTypedPtr();
+	const EffectShaderColor* GetBufferShaderTypedPtr() const;
+
+	virtual bool Load(const char* shaderLocation) override;
+
+	virtual bool CollectUIValues(const IPostEffectContext* effectContext) override;
+
+	virtual void Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext) override;
+
+protected:
+
+	std::unique_ptr<EffectShaderColor>		mShaderColor;
+	std::unique_ptr<EffectShaderMix>		mShaderMix;
+	std::unique_ptr<EffectShaderBlurLinearDepth> mShaderBlur;
+};
 
 
 /// <summary>

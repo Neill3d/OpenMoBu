@@ -82,12 +82,12 @@ public:
 	//! an effect public name
 	virtual const char* GetName() const abstract; // { return mName.c_str(); }
 
-	bool Load(const char* shaderLocation);
+	virtual bool Load(const char* shaderLocation);
 
 	virtual bool IsReadyAndActive() const;
 
 	// TODO: should it be a general FBComponent instead of pre-defined PostPersistentData user object ?!
-	bool CollectUIValues(const IPostEffectContext* effectContext);
+	virtual bool CollectUIValues(const IPostEffectContext* effectContext);
 
 	// TODO: mask index is like a pre-defined input connection
 	//! define internal mask channel index or -1 for default, it comes from a user input (UI)

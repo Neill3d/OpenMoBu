@@ -13,10 +13,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postpersistentdata.h"
 #include "mobu_logging.h"
 
-/////////////////////////////////////////////////////////////////////////
-// PostEffectShaderBlurLinearDepth
 
-PostEffectShaderBlurLinearDepth::PostEffectShaderBlurLinearDepth(FBComponent* uiComponent)
+EffectShaderBlurLinearDepth::EffectShaderBlurLinearDepth(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
 {
 	mColorTexture = &AddProperty(ShaderProperty("color", "sampler0"))
@@ -31,25 +29,31 @@ PostEffectShaderBlurLinearDepth::PostEffectShaderBlurLinearDepth(FBComponent* ui
 		.SetType(EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
 
+	mColorShift = &AddProperty(ShaderProperty("colorShift", "g_ColorShift"))
+		.SetType(EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+
 	mInvRes = &AddProperty(ShaderProperty("invRes", "g_InvResolutionDirection"))
 		.SetType(EPropertyType::VEC2)
 		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool PostEffectShaderBlurLinearDepth::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderBlurLinearDepth::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	const PostPersistentData* data = effectContext->GetPostProcessData();
+	if (const PostPersistentData* data = effectContext->GetPostProcessData())
+	{
+		const int w = effectContext->GetViewWidth();
+		const int h = effectContext->GetViewHeight();
 
-	const int w = effectContext->GetViewWidth();
-	const int h = effectContext->GetViewHeight();
+		const float blurSharpness = 0.1f * (float)data->SSAO_BlurSharpness;
+		const float invRes0 = 1.0f / static_cast<float>(w);
+		const float invRes1 = 1.0f / static_cast<float>(h);
 
-	const float blurSharpness = 0.1f * (float)data->SSAO_BlurSharpness;
-	const float invRes0 = 1.0f / static_cast<float>(w);
-	const float invRes1 = 1.0f / static_cast<float>(h);
-
-	mBlurSharpness->SetValue(blurSharpness);
-	mInvRes->SetValue(invRes0, invRes1);
+		mBlurSharpness->SetValue(blurSharpness);
+		mColorShift->SetValue(0.0f);
+		mInvRes->SetValue(invRes0, invRes1);
+	}
 
 	return true;
 }

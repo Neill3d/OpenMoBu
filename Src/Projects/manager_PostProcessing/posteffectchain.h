@@ -118,7 +118,7 @@ private:
 	/// blurAndMix2 - index of effect where bilateral blur and mix is requested (Bloom for ColorCorrection)
 	/// </summary>
 	/// <returns>true if chain of effects is not empty</returns>
-	bool PrepareChainOrder(std::vector<PostEffectBase*>& chain, int& blurAndMix, int& blurAndMix2);
+	bool PrepareChainOrder(std::vector<PostEffectBase*>& chain);
 
 	FrameBuffer* RequestMaskFrameBuffer(PostEffectBuffers* buffers);
 	void ReleaseMaskFrameBuffer(PostEffectBuffers* buffers);
@@ -132,20 +132,11 @@ private:
 
 	/// <summary>
 	/// render a linear depth (for SSAO)
+	/// @param makeDownscale - if true, the depth will be downscaled to half-size
 	/// </summary>
-	void RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, const PostEffectContextMoBu& effectContext);
+	void RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext);
 
 	void RenderWorldNormals(PostEffectBuffers* buffers);
-
-	/// <summary>
-	/// this is a pass of bluring the image for SSAO
-	/// </summary>
-	void BilateralBlurPass(PostEffectBuffers* buffers);
-
-	/// <summary>
-	/// this is a pass of bluring for Bloom (Color Correction)
-	/// </summary>
-	void BilateralBlurAndMixPass(PostEffectBuffers* buffers);
 
 	/// <summary>
 	/// when a blur is used in any of masks

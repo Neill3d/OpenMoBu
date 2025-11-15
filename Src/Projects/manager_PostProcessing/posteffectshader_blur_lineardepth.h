@@ -12,23 +12,23 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectsingleshader.h"
 
 // forward
-class PostEffectShaderBlurLinearDepth;
+class EffectShaderBlurLinearDepth;
 
 /// <summary>
 /// effect with once shader - bilateral blur
 /// </summary>
-using PostEffectBlurLinearDepth = PostEffectSingleShader<PostEffectShaderBlurLinearDepth>;
+using PostEffectBlurLinearDepth = PostEffectSingleShader<EffectShaderBlurLinearDepth>;
 
 
 /// <summary>
 /// one single fragment shader that we do one number of passes to process the input
 /// </summary>
-class PostEffectShaderBlurLinearDepth : public PostEffectBufferShader
+class EffectShaderBlurLinearDepth : public PostEffectBufferShader
 {
 public:
 
-	PostEffectShaderBlurLinearDepth(FBComponent* uiComponent);
-	virtual ~PostEffectShaderBlurLinearDepth() = default;
+	EffectShaderBlurLinearDepth(FBComponent* uiComponent);
+	virtual ~EffectShaderBlurLinearDepth() = default;
 
 	int GetNumberOfVariations() const override { return 1; }
 	int GetNumberOfPasses() const override { return 1; }
@@ -47,6 +47,7 @@ public:
 	ShaderProperty* mLinearDepthTexture{ nullptr };
 	ShaderProperty* mBlurSharpness{ nullptr };
 	ShaderProperty* mInvRes{ nullptr };
+	ShaderProperty* mColorShift{ nullptr };
 
 protected:
 	static constexpr const char* SHADER_NAME = "Blur w/th LinearDepth";
@@ -57,9 +58,7 @@ protected:
 	const char* GetMaskingChannelPropertyName() const override { return nullptr; }
 
 	// this is a predefined effect shader, properties are defined manually
-	bool DoPopulatePropertiesFromUniforms() const override {
-		return false;
-	}
+	bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 	bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;

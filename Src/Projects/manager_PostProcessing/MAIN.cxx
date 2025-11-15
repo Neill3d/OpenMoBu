@@ -47,6 +47,8 @@ FBLibraryDeclare( manager_postprocessing )
 
 	FBLibraryRegister(EffectShaderBilateralBlurUserObject);
 	FBLibraryRegisterElement(EffectShaderBilateralBlurUserObject);
+	FBLibraryRegister(EffectShaderMixUserObject);
+	FBLibraryRegisterElement(EffectShaderMixUserObject);
 
 	FBLibraryRegister(Manip_PostProcessing);
 	

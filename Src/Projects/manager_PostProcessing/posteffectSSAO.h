@@ -14,11 +14,40 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward
 class EffectShaderSSAO;
+class EffectShaderMix;
+class EffectShaderBlurLinearDepth;
 
 /// <summary>
-/// effect with once shader - Screen Space Ambient Occlusion, output directly to effects chain dst buffer
+/// effect with 3 shaders - Screen Space Ambient Occlusion, output directly to effects chain dst buffer
 /// </summary>
-using PostEffectSSAO = PostEffectSingleShader<EffectShaderSSAO>;
+class PostEffectSSAO : public PostEffectBase
+{
+public:
+	PostEffectSSAO();
+	virtual ~PostEffectSSAO() = default;
+
+	virtual bool IsActive() const override;
+	virtual const char* GetName() const override;
+
+	virtual int GetNumberOfBufferShaders() const override { return 1; }
+	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) override;
+	virtual const PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) const override;
+
+	EffectShaderSSAO* GetBufferShaderTypedPtr();
+	const EffectShaderSSAO* GetBufferShaderTypedPtr() const;
+
+	virtual bool Load(const char* shaderLocation) override;
+
+	virtual bool CollectUIValues(const IPostEffectContext* effectContext) override;
+
+	virtual void Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext) override;
+
+protected:
+
+	std::unique_ptr<EffectShaderSSAO>		mShaderSSAO;
+	std::unique_ptr<EffectShaderMix>		mShaderMix;
+	std::unique_ptr<EffectShaderBlurLinearDepth> mShaderBlur;
+};
 
 /// <summary>
 /// screen space ambient occlusion post processing effect
