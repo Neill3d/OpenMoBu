@@ -108,15 +108,16 @@ public:
 
 	PostGraph(const PostEffectChain* chain)
 	{
-		nodes.push_back( PostGraphNode(chain->GetSSAOEffect()) ); // 0
-		nodes.push_back(PostGraphNode(chain->GetColorEffect())); // 1
-		nodes.push_back(PostGraphNode(chain->GetDOFEffect())); // 2
-		nodes.push_back(PostGraphNode(chain->GetFilmGrainEffect())); // 3
-		nodes.push_back(PostGraphNode(chain->GetFishEyeEffect())); // 4
-		nodes.push_back(PostGraphNode(chain->GetVignettingEffect())); // 5
-		nodes.push_back(PostGraphNode(chain->GetDisplacementEffect())); // 6
-		nodes.push_back(PostGraphNode(chain->GetLensFlareEffect())); // 7
-		nodes.push_back(PostGraphNode(chain->GetMotionBlurEffect())); // 8
+		// TODO:
+		//nodes.push_back( PostGraphNode(chain->GetSSAOEffect()) ); // 0
+		//nodes.push_back(PostGraphNode(chain->GetColorEffect())); // 1
+		//nodes.push_back(PostGraphNode(chain->GetDOFEffect())); // 2
+		//nodes.push_back(PostGraphNode(chain->GetFilmGrainEffect())); // 3
+		//nodes.push_back(PostGraphNode(chain->GetFishEyeEffect())); // 4
+		//nodes.push_back(PostGraphNode(chain->GetVignettingEffect())); // 5
+		//nodes.push_back(PostGraphNode(chain->GetDisplacementEffect())); // 6
+		//nodes.push_back(PostGraphNode(chain->GetLensFlareEffect())); // 7
+		//nodes.push_back(PostGraphNode(chain->GetMotionBlurEffect())); // 8
 		
 		links.push_back({ 0, 8 });
 		links.push_back({ 8, 2 });
@@ -257,13 +258,13 @@ void Manip_PostProcessing::ShowGraph()
 
 		m_firstRun = false;
 	}
-
+	/*
 	if (!g_graph
 		&& GetPostProcessingManager()->GetCurrentEffectChain())
 	{
 		g_graph = new PostGraph(GetPostProcessingManager()->GetCurrentEffectChain());
 	}
-
+	*/
 	// Use ImGui functions between here and Render()
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = ImVec2(static_cast<float>(GetPaneWidth()), static_cast<float>(GetPaneHeight()));

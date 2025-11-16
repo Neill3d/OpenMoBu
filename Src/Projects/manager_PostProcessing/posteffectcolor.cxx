@@ -19,7 +19,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <math.h>
 
 #include "postprocessing_helper.h"
-
+#include "hashUtils.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // PostEffectColor
@@ -82,6 +82,8 @@ void PostEffectColor::Process(const RenderEffectContext& renderContext, const IP
 {
 	// render SSAO into its own buffer
 	constexpr const char* bufferName = "color_correction";
+	static const uint32_t bufferNameKey = xxhash32(bufferName);
+
 	const PostPersistentData* postData = effectContext->GetPostProcessData();
 	PostEffectBuffers* buffers = renderContext.buffers;
 
@@ -92,7 +94,7 @@ void PostEffectColor::Process(const RenderEffectContext& renderContext, const IP
 		const int outHeight = (makeDownscale) ? buffers->GetHeight() / 2 : buffers->GetHeight();
 		constexpr int numColorAttachments = 2;
 
-		FrameBuffer* pBuffer = buffers->RequestFramebuffer(bufferName,
+		FrameBuffer* pBuffer = buffers->RequestFramebuffer(bufferNameKey,
 			outWidth, outHeight, PostEffectBuffers::GetFlagsForSingleColorBuffer(),
 			numColorAttachments,
 			false, [](FrameBuffer* frameBuffer) {
@@ -116,15 +118,15 @@ void PostEffectColor::Process(const RenderEffectContext& renderContext, const IP
 		glBindTexture(GL_TEXTURE_2D, ccTextureId);
 		glActiveTexture(GL_TEXTURE0);
 
-		mShaderMix->Render(buffers, renderContext.dstFrameBuffer, renderContext.colorAttachment,
+		mShaderMix->Render(buffers, renderContext.targetFramebuffer, renderContext.colorAttachment,
 			renderContext.srcTextureId,
-			renderContext.viewWidth, renderContext.viewHeight, renderContext.generateMips, effectContext);
+			renderContext.width, renderContext.height, renderContext.generateMips, effectContext);
 
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glActiveTexture(GL_TEXTURE0);
 
-		buffers->ReleaseFramebuffer(bufferName);
+		buffers->ReleaseFramebuffer(bufferNameKey);
 	}
 	else
 	{

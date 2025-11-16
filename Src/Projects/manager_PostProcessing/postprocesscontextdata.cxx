@@ -25,7 +25,7 @@
 
 void PostProcessContextData::Init()
 {
-    mStartSystemTime = mSystem.SystemTime;
+    mStartSystemTime = FBSystem::TheOne().SystemTime;
     mLastSystemTime = std::numeric_limits<double>::max();
     mLastLocalTime = std::numeric_limits<double>::max();
     mVideoRendering = false;
@@ -46,6 +46,68 @@ void PostProcessContextData::Init()
     mMainFrameBuffer.InitTextureInternalFormat();
 }
 
+void PostProcessContextData::Evaluate()
+{
+    FBSystem& mSystem = FBSystem::TheOne();
+
+    // for all post processing view panes, evaluate their effect chains
+
+    for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
+    {
+        SPaneData& pane = mPaneSettings[nPane];
+
+        if (!pane.data)
+            continue;
+
+        FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+
+        int localViewport[4] = {
+            pCamera->CameraViewportX,
+            pCamera->CameraViewportY,
+            pCamera->CameraViewportWidth,
+            pCamera->CameraViewportHeight
+        };
+
+        if (true == pCamera->SystemCamera)
+        {
+            localViewport[2] = 0;
+        }
+        else if (false == mVideoRendering || nPane > 0)
+        {
+            if (true == mSchematicView[nPane])
+                localViewport[2] = 0;
+        }
+
+        FBTime sysTime = mSystem.SystemTime;
+        sysTime = sysTime - mStartSystemTime;
+        FBTime localTime = mSystem.LocalTime;
+        const double sysTimeSecs = sysTime.GetSecondDouble();
+        const double localTimeSecs = localTime.GetSecondDouble();
+
+        if (mLastSystemTime == std::numeric_limits<double>::max())
+            mLastSystemTime = sysTimeSecs;
+        if (mLastLocalTime == std::numeric_limits<double>::max())
+            mLastLocalTime = localTimeSecs;
+
+        const double systemTimeDT = sysTimeSecs - mLastSystemTime;
+        const double localTimeDT = localTimeSecs - mLastLocalTime;
+
+        const IPostEffectContext::Parameters contextParameters
+        {
+            localViewport[2], // w
+            localViewport[3], // h
+            static_cast<int>(localTime.GetFrame()), // local frame
+            sysTimeSecs,
+            systemTimeDT,
+            localTimeSecs,
+            localTimeDT
+        };
+
+        const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, contextParameters);
+        pane.effectChain.Evaluate(effectContext, standardEffectsCollection);
+    }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // RenderBeforeRender
@@ -56,7 +118,7 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
     // attachment point
     if (processCompositions)
     {
-
+        FBSystem& mSystem = FBSystem::TheOne();
         // let's run compression threads
 
         for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
@@ -86,7 +148,7 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
                 break;
             }
 
-            mEffectChain.BeginFrame(currBuffers);
+            //mEffectChain.BeginFrame(currBuffers);
         }
 
         // it will use attached dimentions, if any external buffer is exist
@@ -113,6 +175,8 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
     if (mEnterId <= 0)
         return lStatus;
+
+    FBSystem& mSystem = FBSystem::TheOne();
 
     /////////////
     // !!!
@@ -190,12 +254,14 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
             // not in schematic view
             if (localViewport[2] > 0 && nullptr != currBuffers
                 && localViewport[2] == currBuffers->GetWidth()
-                && nullptr != mPaneSettings[nPane])
+                && mPaneSettings[nPane].data)
             {
+                SPaneData& pane = mPaneSettings[nPane];
+
                 // TODO: let's pass input framebuffer to effect chain ?!
                 // 1. blit part of a main screen
 
-                DoubleFramebufferRequestScope doubleFramebufferRequest(&mEffectChain, currBuffers);
+                DoubleFramebufferRequestScope doubleFramebufferRequest(&pane.effectChain, currBuffers);
 
                 //doubleFramebufferRequest->GetWriteAttachment
                 //const GLuint postBufferObj = currBuffers->PrepAndGetBufferObject();
@@ -227,11 +293,12 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
                     localTimeDT
                 };
 
-                const PostEffectContextMoBu effectContext(pCamera, nullptr, mPaneSettings[nPane], contextParameters);
+                const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, contextParameters);
 
-                mEffectChain.Prep(mPaneSettings[nPane], effectContext);
+                standardEffectsCollection.Prep(pane.data);
+                pane.effectChain.Prep(pane.data, effectContext);
 
-                if (mEffectChain.Process(currBuffers, sysTimeSecs, effectContext))
+                if (pane.effectChain.Process(currBuffers, sysTimeSecs, effectContext, standardEffectsCollection))
                 {
                     CHECK_GL_ERROR();
 
@@ -255,7 +322,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 #endif
                     // 2.5 HUDs
 
-                    if (true == mPaneSettings[nPane]->DrawHUDLayer)
+                    if (true == pane.data->DrawHUDLayer)
                     {
                         // effect should be ended up with writing into target
                         doubleFramebufferRequest->Bind();
@@ -357,7 +424,7 @@ bool PostProcessContextData::EmptyGLErrorStack()
 
 void PostProcessContextData::PreRenderFirstEntry()
 {
-
+    FBSystem& mSystem = FBSystem::TheOne();
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
 
     //mPaneId = 0;
@@ -443,7 +510,7 @@ void PostProcessContextData::PreRenderFirstEntry()
     //
     for (int i = 0; i < mLastPaneCount; ++i)
     {
-        if (nullptr == mPaneSettings[i])
+        if (!mPaneSettings[i].data)
             continue;
 
         FBCamera *pCamera = pRenderer->GetCameraInPane(i);
@@ -472,8 +539,8 @@ void PostProcessContextData::PreRenderFirstEntry()
 
         // next line could change current fbo
 
-        bool usePreview = mPaneSettings[i]->OutputPreview;
-        double scaleF = mPaneSettings[i]->OutputScaleFactor;
+        bool usePreview = mPaneSettings[i].data->OutputPreview;
+        double scaleF = mPaneSettings[i].data->OutputScaleFactor;
 
         switch (i)
         {
@@ -537,7 +604,7 @@ bool PostProcessContextData::LoadShaders()
     {
         return true;
     }
-
+    FBSystem& mSystem = FBSystem::TheOne();
     FBString shaders_path(mSystem.ApplicationPath);
     shaders_path = shaders_path + "\\plugins";
 
@@ -628,13 +695,12 @@ void PostProcessContextData::FreeBuffers()
 
 bool PostProcessContextData::PrepPaneSettings()
 {
-    mPaneSettings.resize(4);
-
+    FBSystem& mSystem = FBSystem::TheOne();
     FBScene *pScene = mSystem.Scene;
     FBRenderer *pRenderer = mSystem.Renderer;
 
-    for (int i = 0; i < 4; ++i)
-        mPaneSettings[i] = nullptr;
+    for (int i = 0; i < MAX_PANE_COUNT; ++i)
+        mPaneSettings[i].data = nullptr;
 
     // find a global settings (without camera attachments)
 
@@ -655,7 +721,7 @@ bool PostProcessContextData::PrepPaneSettings()
 
     // looking for exclusing values
 
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < MAX_PANE_COUNT; ++i)
     {
         FBCamera *pPaneCamera = pRenderer->GetCameraInPane(i);
         if (pPaneCamera)
@@ -672,7 +738,7 @@ bool PostProcessContextData::PrepPaneSettings()
 
                     if (pData->Active && pData->UseCameraObject)
                     {
-                        mPaneSettings[i] = pData;
+                        mPaneSettings[i].data = pData;
                         break;
                     }
                 }
@@ -680,9 +746,9 @@ bool PostProcessContextData::PrepPaneSettings()
         }
 
         // if exclusive pane settings is not assign, then try to assign global one
-        if (nullptr == mPaneSettings[i])
+        if (!mPaneSettings[i].data)
         {
-            mPaneSettings[i] = pGlobalData;
+            mPaneSettings[i].data = pGlobalData;
         }
     }
 
@@ -691,10 +757,10 @@ bool PostProcessContextData::PrepPaneSettings()
 
 void PostProcessContextData::DrawHUD(int panex, int paney, int panew, int paneh, int vieww, int viewh)
 {
+    FBSystem& mSystem = FBSystem::TheOne();
     FBScene *pScene = mSystem.Scene;
 
     {
-
         glViewport(panex, paney, panew, paneh);
 
         glMatrixMode(GL_PROJECTION);

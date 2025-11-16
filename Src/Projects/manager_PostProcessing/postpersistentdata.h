@@ -566,8 +566,6 @@ protected:
 
 	friend class ToolPostProcessing;
 
-	FBSystem			mSystem;
-
     FBString			mText;
 	bool				mReloadShaders{ false };
 	EPostAction			mPostAction{ EPostAction::ePostActionNone };

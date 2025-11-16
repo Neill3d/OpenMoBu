@@ -1186,6 +1186,8 @@ void PostPersistentData::DoReloadShaders()
 
 void PostPersistentData::DoDebugFarDist()
 {
+	FBSystem& mSystem = FBSystem::TheOne();
+
 #if(PRODUCT_VERSION >= 2024)
 	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
 	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
@@ -1208,6 +1210,7 @@ void PostPersistentData::DoDebugFarDist()
 
 void PostPersistentData::DoFixCameraSettings()
 {
+	FBSystem& mSystem = FBSystem::TheOne();
 	FBRenderer *pRenderer = mSystem.Renderer;
 
 	int lOption = FBMessageBox("Post Processing", "Do you want to fix settings for a current pane camera or for DOF connected?", "Current", "All Conn", "Cancel");
@@ -1464,29 +1467,34 @@ void PostPersistentData::ConnectFocus(FBModelNull *pNull)
 void PostPersistentData::DoFocusObjectCreate()
 {
 	mPostAction = ePostActionFocusCreate;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::DoFocusObjectSelect()
 {
 	mPostAction = ePostActionFocusSelect;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::DoFlareLightCreate()
 {
 	mPostAction = ePostActionFlareCreate;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::DoFlareLightSelect()
 {
 	mPostAction = ePostActionFlareSelect;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 {
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostPersistentData::OnUIIdle);
 
 	switch (mPostAction)
@@ -1555,6 +1563,7 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 
 void PostPersistentData::ComputePointInFront(FBVector3d &v)
 {
+	FBSystem& mSystem = FBSystem::TheOne();
 #if(PRODUCT_VERSION >= 2024)
 	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
 	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
@@ -1564,7 +1573,7 @@ void PostPersistentData::ComputePointInFront(FBVector3d &v)
 	if (nullptr == pCamera)
 		return;
 	if (FBIS(pCamera, FBCameraSwitcher))
-		pCamera = ((FBCameraSwitcher*)pCamera)->CurrentCamera;
+		pCamera = FBCast<FBCameraSwitcher>(pCamera)->CurrentCamera;
 
 	if (nullptr == pCamera)
 		return;

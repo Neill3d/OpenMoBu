@@ -102,20 +102,20 @@ public:
 
 	struct RenderEffectContext
 	{
-		PostEffectBuffers* buffers;
+		PostEffectBuffers* buffers{ nullptr };
 
 		// INPUT: input in the effects chain for this effect
-		GLuint srcTextureId;
-		GLuint depthTextureId;
+		GLuint srcTextureId{ 0 };
+		GLuint depthTextureId{ 0 };
 
-		int viewWidth;
-		int viewHeight;
+		int width{ 1 };
+		int height{ 1 };
 
 		// OUTPUT: write an effect composition to a given frame buffer
-		FrameBuffer* dstFrameBuffer;
-		int colorAttachment; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
+		FrameBuffer* targetFramebuffer{ nullptr };
+		int colorAttachment{ 0 }; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
 	
-		bool generateMips;
+		bool generateMips{ false };
 	};
 
 	virtual void Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext);

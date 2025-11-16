@@ -74,7 +74,7 @@ public: // CALLBACKS
 	void OnUIIdle(HISender pSender, HKEvent pEvent);
 	
 	void OnVideoFrameRendering(HISender pSender, HKEvent pEvent);
-
+	/*
 	const PostEffectChain* GetCurrentEffectChain() const 
 	{ 
 		auto iter = gContextMap.find(gCurrentContext);
@@ -84,7 +84,7 @@ public: // CALLBACKS
 		}
 		return nullptr;
 	}
-
+	*/
 private:
 
 	bool				mFirstRun{ true };

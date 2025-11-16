@@ -149,6 +149,7 @@ bool PostProcessingManager::Open()
 
 	mSystem.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
+	FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
     return true;
@@ -264,7 +265,7 @@ void PostProcessingManager::LoadConfig()
 void PostProcessingManager::OnUIIdle(HISender pSender, HKEvent pEvent)
 {
 
-	if (true == mFirstRun)
+	if (mFirstRun)
 	{
 		mFirstRun = false;
 
@@ -336,6 +337,7 @@ bool PostProcessingManager::Close()
 {
 	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
+	FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
 	mApplication.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
@@ -422,7 +424,15 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 
 void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSender, HKEvent pEvent)
 {
-	
+	auto iter = gContextMap.find(gCurrentContext);
+
+	if (iter == end(gContextMap))
+	{
+		return;
+	}
+
+	PostProcessContextData* pContextData = iter->second;
+	pContextData->Evaluate();
 }
 
 
@@ -491,11 +501,12 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 		return;
 	}
 
+	PostProcessContextData* pContextData = iter->second;
 	bool usePostProcessing = false;
 
-	for (int i = 0; i<iter->second->mLastPaneCount; ++i)
+	for (int i = 0; i<pContextData->mLastPaneCount; ++i)
 	{
-		if (nullptr != iter->second->mPaneSettings[i])
+		if (pContextData->mPaneSettings[i].data)
 		{
 			usePostProcessing = true;
 			break;
@@ -507,13 +518,13 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
-		if (iter->second->mViewerViewport[2] <= 1 || iter->second->mViewerViewport[3] <= 1)
+		if (pContextData->mViewerViewport[2] <= 1 || pContextData->mViewerViewport[3] <= 1)
 		{
 			usePostProcessing = false;
 		}
 
 			mLastProcessCompositions = usePostProcessing;
-			iter->second->RenderBeforeRender(usePostProcessing, false);
+			pContextData->RenderBeforeRender(usePostProcessing, false);
 			
 			if (true == mDoVideoClipTimewrap)
 			{
@@ -534,7 +545,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 			//
 			FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
 
-			iter->second->RenderAfterRender(usePostProcessing, false);
+			pContextData->RenderAfterRender(usePostProcessing, false);
 
 		} break;
 

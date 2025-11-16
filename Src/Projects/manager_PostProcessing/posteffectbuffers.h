@@ -74,11 +74,12 @@ class IFramebufferProvider {
 public:
 	virtual ~IFramebufferProvider() = default;
 
-	virtual FrameBuffer* RequestFramebuffer(const std::string& name) = 0;
+	// @param nameKey is a hashed value of a framebuffer name
+	virtual FrameBuffer* RequestFramebuffer(uint32_t nameKey) = 0;
 
 	// Request a framebuffer with specific dimensions or properties
 	virtual FrameBuffer* RequestFramebuffer(
-		const std::string& name, 
+		uint32_t nameKey, 
 		int width, 
 		int height, 
 		int flags, 
@@ -86,7 +87,7 @@ public:
 		bool isAutoResize,
 		const std::function<void(FrameBuffer*)>& onInit=nullptr) = 0;
 
-	virtual void ReleaseFramebuffer(const std::string& name) = 0;
+	virtual void ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmidiately=false) = 0;
 
 	virtual void OnFrameRendered() = 0;
 
@@ -153,10 +154,10 @@ public:
 	//
 	// IFramebufferProvider
 
-	FrameBuffer* RequestFramebuffer(const std::string& name) override;
+	FrameBuffer* RequestFramebuffer(uint32_t nameKey) override;
 
 	FrameBuffer* RequestFramebuffer(
-		const std::string& name,
+		uint32_t nameKey,
 		int width,
 		int height,
 		int flags,
@@ -164,7 +165,7 @@ public:
 		bool isAutoResize,
 		const std::function<void(FrameBuffer*)>& onInit = nullptr) override;
 	
-	void ReleaseFramebuffer(const std::string& name) override;
+	void ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmidiately=false) override;
 
 	void OnFrameRendered() override;
 
@@ -174,25 +175,26 @@ private:
 
 	struct FramebufferEntry {
 		std::unique_ptr<FrameBuffer> framebuffer;
-		std::string name;
+		//std::string name;
 		int width{ 1 };
 		int height{ 1 };
 		bool isAutoResize{ true };
 		int referenceCount{ 0 };
-		int lazyEraseCounter{ 15 };
+		mutable int lazyEraseCounter{ 15 };
 		
 		void AddReference() { ++referenceCount; lazyEraseCounter = 15; }
 		void RemoveReference() { if (referenceCount > 0) --referenceCount; }
 		int GetReferenceCount() const { return referenceCount; }
 
-		bool ReadyToErase() { --lazyEraseCounter; return lazyEraseCounter <= 0; }
+		bool ReadyToErase() const { --lazyEraseCounter; return lazyEraseCounter <= 0; }
 	};
 
-	std::unordered_map<std::string, FramebufferEntry> framebufferPool;
+	// use xxhash32 for a key
+	std::unordered_map<uint32_t, FramebufferEntry> framebufferPool;
 	
-	std::string GenerateKey(const std::string& name, int width, int height, int flags, int numAttachments) {
-		return name + "(" + std::to_string(flags) + "):" + std::to_string(numAttachments) + "x" + std::to_string(width) + "x" + std::to_string(height);
-	}
+	//std::string GenerateKey(const std::string& name, int width, int height, int flags, int numAttachments) {
+	//	return name + "(" + std::to_string(flags) + "):" + std::to_string(numAttachments) + "x" + std::to_string(width) + "x" + std::to_string(height);
+	//}
 
 protected:
 

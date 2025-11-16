@@ -19,19 +19,18 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectcontextmobu.h"
 #include "posteffectbuffers.h"
 
-#include "posteffectshader_downscale.h"
-#include "posteffectshader_lineardepth.h"
-#include "posteffectshader_bilateral_blur.h"
-#include "posteffectshader_blur_lineardepth.h"
-
 #include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
+#include "posteffectshader_bilateral_blur.h"
+
+#include <atomic>
 #include <memory>
 #include <bitset>
 
 // forward
 class PostEffectBuffers;
+class StandardEffectCollection;
 
 /// <summary>
 /// chain of post processing effects, apply effects in an order
@@ -42,6 +41,9 @@ public:
 	PostEffectChain();
 	virtual ~PostEffectChain() = default;
 
+	void Evaluate(const PostEffectContextMoBu& effectContext, StandardEffectCollection& effectCollection);
+	void Synchronize();
+
 	void ChangeContext();
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
 	bool Prep(PostPersistentData *pData, const PostEffectContextMoBu& effectContext);
@@ -51,66 +53,56 @@ public:
 	/// <summary>
 	/// render each effect with a defined order
 	/// </summary>
-	bool Process(PostEffectBuffers* buffers, double time, const PostEffectContextMoBu& effectContext);
+	bool Process(PostEffectBuffers* buffers, double time, 
+		const PostEffectContextMoBu& effectContext, const StandardEffectCollection& effectCollection);
 
 	bool IsCompressedDataReady() const
 	{
 		return mIsCompressedDataReady;
 	}
 
-	const PostEffectBase* GetFishEyeEffect() const { return mFishEye.get(); }
-	const PostEffectBase* GetColorEffect() const { return mColor.get(); }
-	const PostEffectBase* GetVignettingEffect() const { return mVignetting.get(); }
-	const PostEffectBase* GetFilmGrainEffect() const { return mFilmGrain.get(); }
-	const PostEffectBase* GetLensFlareEffect() const { return mLensFlare.get(); }
-	const PostEffectBase* GetSSAOEffect() const { return mSSAO.get(); }
-	const PostEffectBase* GetDOFEffect() const { return mDOF.get(); }
-	const PostEffectBase* GetDisplacementEffect() const { return mDisplacement.get(); }
-	const PostEffectBase* GetMotionBlurEffect() const { return mMotionBlur.get(); }
-
+	
 	PingPongData* GetPingPongDataPtr() { return &mDoubleBufferPingPongData; }
 
 protected:
 
-	FBSystem								mSystem;
 	HdlFBPlugTemplate<PostPersistentData>	mSettings;
 	FBCamera* mLastCamera{ nullptr };
 
-	// build-in effects
-	std::unique_ptr<PostEffectBase>		mFishEye;
-	std::unique_ptr<PostEffectBase>		mColor;
-	std::unique_ptr<PostEffectBase>		mVignetting;
-	std::unique_ptr<PostEffectBase>		mFilmGrain;
-	std::unique_ptr<PostEffectBase>		mLensFlare;
-	std::unique_ptr<PostEffectBase>		mSSAO;
-	std::unique_ptr<PostEffectBase>		mDOF;
-	std::unique_ptr<PostEffectBase>		mDisplacement;
-	std::unique_ptr<PostEffectBase>		mMotionBlur;
+	// shaders to evaluate
+	struct RenderData
+	{
+		std::vector<PostEffectBase*>		mChain; // prepared effects to be processed during render
 
-	// shared shaders
+		bool isReady = false;
+
+		bool isMaskTextureBinded = false;
+		bool isMaskBlurRequested = false;
+		bool isMaskMixRequested = false;
+
+		bool maskRenderFlags[PostPersistentData::NUMBER_OF_MASKS] = { false, false, false, false };
+
+		bool isDepthSamplerBinded = false;
+		bool isLinearDepthSamplerBinded = false;
+		bool isWorldNormalSamplerBinded = false;
+	};
+
+	RenderData								mRenderData[2]; // double buffered from evaluation thread
+
+	// 0 or 1, which buffer is currently “active”
+	std::atomic<uint8_t>					gActiveData{ 0 };
+
 	
-	std::unique_ptr<PostEffectLinearDepth>		mEffectDepthLinearize;	//!< linearize depth for other filters (DOF, SSAO, Bilateral Blur, etc.)
-	std::unique_ptr<PostEffectBlurLinearDepth>	mEffectBlur;		//!< bilateral blur effect, for SSAO
-	//std::unique_ptr<GLSLShaderProgram>		mShaderImageBlur;	//!< for masking
-	std::unique_ptr<PostEffectBilateralBlur>	mEffectBilateralBlur; //!< for masking
-	std::unique_ptr<GLSLShaderProgram>			mShaderMix;			//!< multiplication result of two inputs, (for SSAO)
-	std::unique_ptr<PostEffectDownscale>		mEffectDownscale; // effect for downscaling the preview image (send to client)
-
-	std::unique_ptr<GLSLShaderProgram>			mShaderSceneMasked; //!< render models into mask with some additional filtering
-
-	PingPongData					mDoubleBufferPingPongData;
-
-	bool							mNeedReloadShaders{ true };
 	bool							mIsCompressedDataReady{ false };
 	double							mLastCompressTime{ 0.0 };
 
-	PostEffectBase* ShaderFactory(const BuildInEffect effectType, const char *shadersLocation, bool immediatelyLoad=true);
-
-	bool LoadShaders();
-	void FreeShaders();
+	PingPongData					mDoubleBufferPingPongData;
 
 private:
-	static bool CheckShadersPath(const char* path);
+	
+	static uint32_t DOUBLE_BUFFER_NAME_KEY;
+	static uint32_t MASK_BUFFER_NAME_KEY;
+	static uint32_t DEPTH_LINEAR_BUFFER_NAME_KEY;
 
 	/// <summary>
 	/// prepare /ref mChain order of effects for rendering
@@ -118,7 +110,7 @@ private:
 	/// blurAndMix2 - index of effect where bilateral blur and mix is requested (Bloom for ColorCorrection)
 	/// </summary>
 	/// <returns>true if chain of effects is not empty</returns>
-	bool PrepareChainOrder(std::vector<PostEffectBase*>& chain);
+	bool PrepareChainOrder(std::vector<PostEffectBase*>& chain, StandardEffectCollection* collection);
 
 	FrameBuffer* RequestMaskFrameBuffer(PostEffectBuffers* buffers);
 	void ReleaseMaskFrameBuffer(PostEffectBuffers* buffers);
@@ -132,22 +124,23 @@ private:
 
 	/// <summary>
 	/// render a linear depth (for SSAO)
+	/// @param effect with a shader to render a linear depth
 	/// @param makeDownscale - if true, the depth will be downscaled to half-size
 	/// </summary>
-	void RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext);
+	void RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBase* effect, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext);
 
 	void RenderWorldNormals(PostEffectBuffers* buffers);
 
 	/// <summary>
 	/// when a blur is used in any of masks
 	/// </summary>
-	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext);
+	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, PostEffectBilateralBlur* effect, const PostEffectContextMoBu& effectContext);
 
 	/// <summary>
 	/// mix masks = mask A * mask B
 	///  result is written back to mask A color attachment
 	/// </summary>
-	void MixMasksPass(const int maskindex, const int maskIndex2, PostEffectBuffers* buffers);
+	void MixMasksPass(GLSLShaderProgram* shader, const int maskindex, const int maskIndex2, PostEffectBuffers* buffers);
 
 	/// <summary>
 	/// send a packet with final post processed image
@@ -174,7 +167,7 @@ private:
 	/// </summary>
 	bool IsAnyObjectMaskedByMaskId(const EMaskingChannel maskId) const;
 
-	void RenderSceneMaskToTexture(const int maskIndex, PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers);
+	void RenderSceneMaskToTexture(GLSLShaderProgram* shader, const int maskIndex, PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers);
 };
 
 

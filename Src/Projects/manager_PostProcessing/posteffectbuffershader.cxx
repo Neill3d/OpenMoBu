@@ -13,7 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postpersistentdata.h"
 #include "posteffectbuffers.h"
 #include "mobu_logging.h"
-
+#include "hashUtils.h"
 #include "posteffect_shader_userobject.h"
 
 namespace _PostEffectBufferShaderInternal
@@ -240,12 +240,14 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, const IPost
 
 	for (auto& prop : mProperties)
 	{
-		if (strnlen(prop.second.name, 64) > 0)
+		auto& shaderProperty = prop.second;
+
+		if (strnlen(shaderProperty.name, 64) > 0)
 		{
-			if (FBProperty* fbProperty = component->PropertyList.Find(prop.second.name))
+			if (FBProperty* fbProperty = component->PropertyList.Find(shaderProperty.name))
 			{
-				prop.second.fbProperty = fbProperty;
-				prop.second.ReadFBPropertyValue(effectContext, maskIndex);
+				shaderProperty.fbProperty = fbProperty;
+				shaderProperty.ReadFBPropertyValue(shaderProperty.value, fbProperty, shaderProperty, effectContext, maskIndex);
 			}
 		}
 	}
@@ -283,12 +285,14 @@ bool PostEffectBufferShader::ReloadPropertyShaders()
 {
 	for (auto& prop : mProperties)
 	{
-		if (prop.second.type == IEffectShaderConnections::EPropertyType::TEXTURE)
-			prop.second.ReadTextureConnections();
+		auto& shaderProperty = prop.second;
 
-		if (prop.second.shaderUserObject)
+		if (shaderProperty.type == IEffectShaderConnections::EPropertyType::TEXTURE)
+			shaderProperty.value.ReadTextureConnections(shaderProperty.fbProperty);
+
+		if (shaderProperty.value.shaderUserObject)
 		{
-			if (!prop.second.shaderUserObject->DoReloadShaders())
+			if (!shaderProperty.value.shaderUserObject->DoReloadShaders())
 				return false;
 		}
 	}
@@ -369,8 +373,9 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 
 		// bind sampler from another rendered buffer shader
 		const std::string bufferName = std::string(GetName()) + "_passes";
+		const uint32_t bufferNameKey = xxhash32(bufferName);
 
-		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferName, w, h, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 2, false);
+		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, w, h, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 2, false);
 		PingPongData pingPongData;
 		FramebufferPingPongHelper pingPongHelper(buffer, &pingPongData);
 		
@@ -392,7 +397,7 @@ void PostEffectBufferShader::Render(PostEffectBuffers* buffers, FrameBuffer* dst
 			texId = pingPongHelper.GetPtr()->GetColorObject(pingPongHelper.GetReadAttachment());
 		}
 
-		buffers->ReleaseFramebuffer(bufferName);
+		buffers->ReleaseFramebuffer(bufferNameKey);
 
 		OnRenderPassBegin(finalPassIndex, w, h);
 		AutoUploadUniforms(nullptr, inputTextureId, w, h, generateMips, effectContext, false);
@@ -428,19 +433,21 @@ void PostEffectBufferShader::SetDownscaleMode(const bool value)
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::AddProperty(const ShaderProperty& property)
 {
 	const std::string uniformName(property.uniformName);
-	assert(mProperties.find(uniformName) == end(mProperties));
+	const uint32_t nameHash = xxhash32(uniformName, ShaderProperty::HASH_SEED);
+	assert(mProperties.find(nameHash) == end(mProperties));
 
-	mProperties.emplace(uniformName, property);
-	return mProperties[uniformName];
+	mProperties.emplace(nameHash, property);
+	return mProperties[nameHash];
 }
 
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::AddProperty(ShaderProperty&& property)
 {
 	const std::string uniformName(property.uniformName);
-	assert(mProperties.find(uniformName) == end(mProperties));
+	const uint32_t nameHash = xxhash32(uniformName, ShaderProperty::HASH_SEED);
+	assert(mProperties.find(nameHash) == end(mProperties));
 
-	mProperties.emplace(uniformName, std::move(property));
-	return mProperties[uniformName];
+	mProperties.emplace(nameHash, std::move(property));
+	return mProperties[nameHash];
 }
 
 int PostEffectBufferShader::GetNumberOfProperties()
@@ -457,7 +464,8 @@ IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::GetProperty(in
 
 IEffectShaderConnections::ShaderProperty* PostEffectBufferShader::FindProperty(const std::string & name)
 {
-	auto it = mProperties.find(name);
+	const uint32_t nameHash = xxhash32(name, ShaderProperty::HASH_SEED);
+	auto it = mProperties.find(nameHash);
 	return (it != end(mProperties)) ? &it->second : nullptr;
 }
 
@@ -562,7 +570,8 @@ int PostEffectBufferShader::PopulatePropertiesFromShaderUniforms()
 
 		OnPropertyAdded(prop);
 
-		mProperties.emplace(prop.uniformName, std::move(prop));
+		const uint32_t nameKey = xxhash32(prop.uniformName);
+		mProperties.emplace(nameKey, std::move(prop));
 		addedProperties += 1;
 	}
 
@@ -576,47 +585,49 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 	
 	for (auto& prop : mProperties)
 	{
-		if (prop.second.location < 0)
+		auto& shaderProperty = prop.second;
+
+		if (shaderProperty.location < 0)
 		{
-			if (prop.second.bIsLocationRequired)
+			if (shaderProperty.bIsLocationRequired)
 			{
-				LOGE("required property location is not found %s\n", prop.second.name);
+				LOGE("required property location is not found %s\n", shaderProperty.name);
 			}
 			
 			continue;
 		}
 		
-		switch (prop.second.type)
+		switch (shaderProperty.type)
 		{
 		case IEffectShaderConnections::EPropertyType::INT:
-			glUniform1i(prop.second.location, static_cast<int>(prop.second.GetFloatData()[0]));
+			glUniform1i(shaderProperty.location, static_cast<int>(shaderProperty.GetFloatData()[0]));
 			break;
 
 		case IEffectShaderConnections::EPropertyType::BOOL:
-			glUniform1f(prop.second.location, prop.second.GetFloatData()[0]);
+			glUniform1f(shaderProperty.location, shaderProperty.GetFloatData()[0]);
 			break;
 
 		case IEffectShaderConnections::EPropertyType::FLOAT:
-			if (!prop.second.HasFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE))
+			if (!shaderProperty.HasFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE))
 			{
-				glUniform1f(prop.second.location, prop.second.GetScale() * prop.second.GetFloatData()[0]);
+				glUniform1f(shaderProperty.location, shaderProperty.GetScale() * shaderProperty.GetFloatData()[0]);
 			}
 			else
 			{
-				glUniform1f(prop.second.location, 1.0f - prop.second.GetScale() * prop.second.GetFloatData()[0]);
+				glUniform1f(shaderProperty.location, 1.0f - shaderProperty.GetScale() * shaderProperty.GetFloatData()[0]);
 			}
 			break;
 
 		case IEffectShaderConnections::EPropertyType::VEC2:
-			glUniform2fv(prop.second.location, 1, prop.second.GetFloatData());
+			glUniform2fv(shaderProperty.location, 1, shaderProperty.GetFloatData());
 			break;
 
 		case IEffectShaderConnections::EPropertyType::VEC3:
-			glUniform3fv(prop.second.location, 1, prop.second.GetFloatData());
+			glUniform3fv(shaderProperty.location, 1, shaderProperty.GetFloatData());
 			break;
 
 		case IEffectShaderConnections::EPropertyType::VEC4:
-			glUniform4fv(prop.second.location, 1, prop.second.GetFloatData());
+			glUniform4fv(shaderProperty.location, 1, shaderProperty.GetFloatData());
 			break;
 
 		case IEffectShaderConnections::EPropertyType::TEXTURE:
@@ -625,7 +636,7 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 			if (skipTextureProperties)
 				break;
 
-			if (FBTexture* texture = prop.second.texture)
+			if (FBTexture* texture = shaderProperty.value.texture)
 			{
 				// bind sampler from a media resource texture
 
@@ -638,7 +649,7 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 
 				if (textureId > 0)
 				{
-					glUniform1i(prop.second.location, userTextureSlot);
+					glUniform1i(shaderProperty.location, userTextureSlot);
 
 					glActiveTexture(GL_TEXTURE0 + userTextureSlot);
 					glBindTexture(GL_TEXTURE_2D, textureId);
@@ -647,7 +658,7 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 					userTextureSlot += 1;
 				}
 			}
-			else if (EffectShaderUserObject* userObject = prop.second.shaderUserObject)
+			else if (EffectShaderUserObject* userObject = shaderProperty.value.shaderUserObject)
 			{
 				PostEffectBufferShader* bufferShader = userObject->GetUserShaderPtr();
 
@@ -655,17 +666,18 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 
 				// bind sampler from another rendered buffer shader
 				const std::string bufferName = std::string(GetName()) + "_" + std::string(userObject->Name);
+				const uint32_t bufferNameKey = xxhash32(bufferName);
 
 				int effectW = w;
 				int effectH = h;
 				userObject->RecalculateWidthAndHeight(effectW, effectH);
 
-				FrameBuffer* buffer = buffers->RequestFramebuffer(bufferName, effectW, effectH, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 1, false);
+				FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, effectW, effectH, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 1, false);
 
 				bufferShader->Render(buffers, buffer, 0, inputTextureId, effectW, effectH, generateMips, effectContext);
 
 				const GLuint bufferTextureId = buffer->GetColorObject();
-				buffers->ReleaseFramebuffer(bufferName);
+				buffers->ReleaseFramebuffer(bufferNameKey);
 
 				// bind input buffers
 				glActiveTexture(GL_TEXTURE0 + userTextureSlot);
@@ -674,22 +686,22 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 
 				Bind();
 
-				glUniform1i(prop.second.location, userTextureSlot);
+				glUniform1i(shaderProperty.location, userTextureSlot);
 
 				userTextureSlot += 1;
 			}
 			else
 			{
-				const int textureSlot = static_cast<int>(prop.second.GetFloatData()[0]);
+				const int textureSlot = static_cast<int>(shaderProperty.GetFloatData()[0]);
 				if (textureSlot >= 0 && textureSlot < 16)
 				{
-					glUniform1i(prop.second.location, textureSlot);
+					glUniform1i(shaderProperty.location, textureSlot);
 				}
 			}
 			break;
 
 		default:
-			LOGE("not supported property for auto upload into uniform %s\n", prop.second.name);
+			LOGE("not supported property for auto upload into uniform %s\n", shaderProperty.name);
 		}
 	}
 }

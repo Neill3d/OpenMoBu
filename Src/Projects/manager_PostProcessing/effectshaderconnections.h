@@ -102,15 +102,68 @@ public:
 		EffectShaderUserObject* shaderUserObject;
 	};
 
+	// a generic value holder for different property types
+	struct MANAGER_POSTPROCESSING_API ShaderPropertyValue
+	{
+		ShaderPropertyValue() : value(std::array<float, 1>{ 0.0f }) {}
 
+		// Type-safe dynamic storage for float values
+		std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value;
 
+		uint32_t	key=0; //!< unique key to identify property
+
+		EPropertyType type{ EPropertyType::FLOAT };
+
+		// extracted value from reference object property
+		FBTexture* texture{ nullptr };
+		EffectShaderUserObject* shaderUserObject{ nullptr };
+
+		// change type and apply a default value according to a given type
+		void SetType(IEffectShaderConnections::EPropertyType newType);
+
+		inline void SetValue(int valueIn) {
+			value = std::array<float, 1>{ static_cast<float>(valueIn) };
+		}
+		inline void SetValue(bool valueIn) {
+			value = std::array<float, 1>{ valueIn ? 1.0f : 0.0f };
+		}
+		inline void SetValue(float valueIn) {
+			value = std::array<float, 1>{ valueIn };
+		}
+		inline void SetValue(double valueIn) {
+			value = std::array<float, 1>{ static_cast<float>(valueIn) };
+		}
+
+		inline void SetValue(float x, float y) {
+			value = std::array<float, 2>{ x, y };
+		}
+		inline void SetValue(float x, float y, float z) {
+			value = std::array<float, 3>{ x, y, z };
+		}
+		inline void SetValue(float x, float y, float z, float w) {
+			value = std::array<float, 4>{ x, y, z, w };
+		}
+
+		inline const float* GetFloatData() const {
+			return std::visit([](auto&& arg) -> const float* {
+				return arg.data();
+				}, value);
+		}
+
+		void ReadTextureConnections(FBProperty* fbProperty);
+	};
+
+	// represents a single shader property, its type, name, value, etc.
 	struct MANAGER_POSTPROCESSING_API ShaderProperty
 	{
 		constexpr static int MAX_NAME_LENGTH{ 64 };
-		
+		constexpr static int HASH_SEED{ 123 };
+
 		char name[MAX_NAME_LENGTH]{ 0 };
 		char uniformName[MAX_NAME_LENGTH]{ 0 };
 		int length{ 0 };
+
+		uint32_t key{ 0 };
 
 		EPropertyType type{ EPropertyType::FLOAT };
 
@@ -121,16 +174,13 @@ public:
 		
 		FBProperty* fbProperty{ nullptr };
 
-		// extracted value from reference object property
-		FBTexture* texture{ nullptr };
-		EffectShaderUserObject* shaderUserObject{ nullptr };
+		// pre-cache evaluated value
+		ShaderPropertyValue value;
 
-		// Type-safe dynamic storage for float values
-		std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value;
-
+		// modify the output value that we upload on gpu
 		float scale{ 1.0f };
 
-		ShaderProperty() : value(std::array<float, 1>{ 0.0f }) {}
+		ShaderProperty() = default;
 
 		// constructor to associate property with fbProperty, recognize the type
 		ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn = nullptr);
@@ -153,13 +203,13 @@ public:
 		ShaderProperty& SetValue(float x, float y, float z);
 		ShaderProperty& SetValue(float x, float y, float z, float w);
 
-
-		float* GetFloatData();
+		const float* GetFloatData() const;
 
 		bool HasFlag(PropertyFlag testFlag) const;
 
-		void ReadFBPropertyValue(const IPostEffectContext* effectContext, int maskIndex);
-		void ReadTextureConnections();
+		static void ReadFBPropertyValue(ShaderPropertyValue& value, FBProperty* fbProperty, 
+			const ShaderProperty& shaderProperty, const IPostEffectContext* effectContext, int maskIndex);
+		
 	};
 
 	virtual ~IEffectShaderConnections() = default;
@@ -187,4 +237,5 @@ public:
 
 	static EPropertyType UniformTypeToShaderPropertyType(GLenum type);
 };
+
 

@@ -10,48 +10,24 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectchain.h"
-#include "posteffectssao.h"
-#include "posteffectdisplacement.h"
-#include "posteffectmotionblur.h"
-#include "posteffectlensflare.h"
-#include "posteffectcolor.h"
-#include "posteffectdof.h"
-#include "posteffectfilmgrain.h"
-#include "posteffectfisheye.h"
-#include "posteffectvignetting.h"
+#include "standardeffectcollection.h"
 #include "postprocessing_helper.h"
 #include "fxmaskingshader.h"
 #include "posteffectbuffers.h"
 #include "posteffect_userobject.h"
 #include "posteffectbase.h"
-#include "posteffectshader_bilateral_blur.h"
+
+
 
 #include "mobu_logging.h"
-
-// shared shaders
-
-#define SHADER_DEPTH_LINEARIZE_VERTEX		"\\GLSL\\simple.vsh"
-#define SHADER_DEPTH_LINEARIZE_FRAGMENT		"\\GLSL\\depthLinearize.fsh"
-
-// this is a depth based blur, fo SSAO
-#define SHADER_BLUR_VERTEX					"\\GLSL\\simple.vsh"
-#define SHADER_BLUR_FRAGMENT				"\\GLSL\\blur.fsh"
-
-// this is a simple gaussian image blur
-#define SHADER_IMAGE_BLUR_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_IMAGE_BLUR_FRAGMENT			"\\GLSL\\imageBlur.glslf"
-
-#define SHADER_MIX_VERTEX					"\\GLSL\\simple.vsh"
-#define SHADER_MIX_FRAGMENT					"\\GLSL\\mix.fsh"
-
-#define SHADER_DOWNSCALE_VERTEX				"\\GLSL\\downscale.vsh"
-#define SHADER_DOWNSCALE_FRAGMENT			"\\GLSL\\downscale.fsh"
-
-#define SHADER_SCENE_MASKED_VERTEX			"\\GLSL\\scene_masked.glslv"
-#define SHADER_SCENE_MASKED_FRAGMENT		"\\GLSL\\scene_masked.glslf"
+#include "hashUtils.h"
 
 // define new task cycle index
 FBProfiler_CreateTaskCycle(PostEffectChain, 0.5f, 0.1f, 0.1f);
+
+uint32_t PostEffectChain::DOUBLE_BUFFER_NAME_KEY = xxhash32("doubleBuffer");
+uint32_t PostEffectChain::MASK_BUFFER_NAME_KEY = xxhash32("mask");
+uint32_t PostEffectChain::DEPTH_LINEAR_BUFFER_NAME_KEY = xxhash32("depthLinearize");
 
 //! a constructor
 PostEffectChain::PostEffectChain()
@@ -62,15 +38,13 @@ PostEffectChain::PostEffectChain()
 	FBProfiling_SetupTaskCycle(PostEffectChain);
 
 	mIsCompressedDataReady = false;
-	mNeedReloadShaders = true;
+	
 	//mLocDepthLinearizeClipInfo = -1;
 	mLastCompressTime = 0.0;
 }
 
 void PostEffectChain::ChangeContext()
 {
-	FreeShaders();
-	mNeedReloadShaders = true;
 	mIsCompressedDataReady = false;
 	mLastCompressTime = 0.0;
 }
@@ -84,76 +58,7 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 
 	if (!mSettings.Ok())
 		return false;
-
-	if (mSettings.Ok())
-	{
-		if (mSettings->IsNeedToReloadShaders())
-		{
-			mNeedReloadShaders = true;
-			mSettings->SetReloadShadersState(false);
-		}
-	}
-	else
-	{
-		lSuccess = false;
-	}
-
-	if (mNeedReloadShaders)
-	{
-		if (!LoadShaders())
-			lSuccess = false;
-
-		mNeedReloadShaders = false;
-	}
-
-	// update UI values
 	
-	if (true == mSettings->FishEye && mFishEye.get())
-		mFishEye->CollectUIValues(&effectContext);
-	
-	if (true == mSettings->ColorCorrection && mColor.get())
-		mColor->CollectUIValues(&effectContext);
-	
-	if (true == mSettings->Vignetting && mVignetting.get())
-		mVignetting->CollectUIValues(&effectContext);
-	
-	if (true == mSettings->FilmGrain && mFilmGrain.get())
-		mFilmGrain->CollectUIValues(&effectContext);
-	
-	if (true == mSettings->LensFlare && mLensFlare.get())
-		mLensFlare->CollectUIValues(&effectContext);
-
-	if (true == mSettings->SSAO && mSSAO.get())
-		mSSAO->CollectUIValues(&effectContext);
-
-	if (true == mSettings->DepthOfField && mDOF.get())
-		mDOF->CollectUIValues(&effectContext);
-
-	if (true == mSettings->MotionBlur && mMotionBlur.get())
-		mMotionBlur->CollectUIValues(&effectContext);
-	
-	if (true == mSettings->Displacement && mDisplacement.get())
-		mDisplacement->CollectUIValues(&effectContext);
-
-	if (mEffectBilateralBlur.get())
-		mEffectBilateralBlur->CollectUIValues(&effectContext);
-	if (mEffectDepthLinearize.get())
-		mEffectDepthLinearize->CollectUIValues(&effectContext);
-	if (mEffectDownscale.get())
-		mEffectDownscale->CollectUIValues(&effectContext);
-	if (mEffectBlur.get())
-		mEffectBlur->CollectUIValues(&effectContext);
-
-	for (int i = 0, count = mSettings->GetNumberOfActiveUserEffects(); i < count; ++i)
-	{
-		if (PostEffectUserObject* postEffectObject = mSettings->GetActiveUserEffectObject(i))
-		{
-			effectContext.OverrideComponent(postEffectObject);
-			postEffectObject->GetUserEffectPtr()->CollectUIValues(&effectContext);
-			effectContext.OverrideComponent(nullptr);
-		}
-	}
-
 	return lSuccess;
 }
 
@@ -201,7 +106,7 @@ bool PostEffectChain::IsMaskUsedByEffect(const EMaskingChannel maskId) const
 
 bool PostEffectChain::HasAnyObjectMasked() const
 {
-	FBScene* scene = mSystem.Scene;
+	FBScene* scene = FBSystem::TheOne().Scene;
 
 	for (int i = 0; i < scene->Shaders.GetCount(); ++i)
 	{
@@ -220,7 +125,7 @@ bool PostEffectChain::HasAnyObjectMasked() const
 
 bool PostEffectChain::IsAnyObjectMaskedByMaskId(const EMaskingChannel maskId) const
 {
-	FBScene* scene = mSystem.Scene;
+	FBScene* scene = FBSystem::TheOne().Scene;
 
 	for (int i = 0; i < scene->Shaders.GetCount(); ++i)
 	{
@@ -247,154 +152,135 @@ bool PostEffectChain::IsAnyObjectMaskedByMaskId(const EMaskingChannel maskId) co
 	return false;
 }
 
-void PostEffectChain::RenderSceneMaskToTexture(const int maskIndex, PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers)
+void PostEffectChain::RenderSceneMaskToTexture(GLSLShaderProgram* shader, const int maskIndex, PostPersistentData::SMaskProperties& maskProps, PostEffectBuffers* buffers)
 {
-	if (mShaderSceneMasked.get() == nullptr)
+	if (!shader || !buffers)
 		return;
 
-	// TODO: wrapper to have request and release with a method scope !
-	// TODO: request with default viewport width and height and default flags ?!
-
-	FrameBuffer* maskBuffer = buffers->RequestFramebuffer("mask"); //buffers->GetBufferMaskPtr();
+	FrameBuffer* maskBuffer = buffers->RequestFramebuffer(MASK_BUFFER_NAME_KEY);
+	if (!maskBuffer)
+	{
+		LOGE("Failed to request a framebuffer to render scene mask to texture");
+		return;
+	}
+	
 	maskBuffer->Bind(maskIndex);
 
 	glViewport(0, 0, maskBuffer->GetWidth(), maskBuffer->GetHeight());
 
-	if (!maskProps.InvertMask)
-	{
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	}
-	else
-	{
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	}
+	const bool invert = maskProps.InvertMask;
 
+	const float clearValue = invert ? 1.0f : 0.0f;
+	glClearColor(clearValue, clearValue, clearValue, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	nv::vec4 baseColor;
-	nv::vec4 rimColor;
+	static const nv::vec4 white(1.0f, 1.0f, 1.0f, 1.0f);
+	static const nv::vec4 black(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (!maskProps.InvertMask)
-	{
-		baseColor = nv::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		rimColor = nv::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	}
-	else
-	{
-		baseColor = nv::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-		rimColor = nv::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	}
+	const nv::vec4& baseColor = invert ? black : white;
+	const nv::vec4& rimColor = invert ? white : black;
 
-	mShaderSceneMasked->Bind();
+	shader->Bind();
 
-	const float rimFactor = static_cast<float>(maskProps.UseRimForMask * 0.01);
-	const float rimPower = static_cast<float>(maskProps.MaskRimPower * 0.01);
+	constexpr float PERCENT_TO_FACTOR = 0.01f;
+	const float rimFactor = static_cast<float>(maskProps.UseRimForMask) * PERCENT_TO_FACTOR;
+	const float rimPower = static_cast<float>(maskProps.MaskRimPower) * PERCENT_TO_FACTOR;
 
-	mShaderSceneMasked->setUniformVector("baseColor", baseColor.x, baseColor.y, baseColor.z, baseColor.w);
-	mShaderSceneMasked->setUniformVector("rimOptions", rimFactor, rimPower, 0.0f, 0.0f);
-	mShaderSceneMasked->setUniformVector("rimColor", rimColor.x, rimColor.y, rimColor.z, rimColor.w);
+	shader->setUniformVector("baseColor", baseColor.x, baseColor.y, baseColor.z, baseColor.w);
+	shader->setUniformVector("rimOptions", rimFactor, rimPower, 0.0f, 0.0f);
+	shader->setUniformVector("rimColor", rimColor.x, rimColor.y, rimColor.z, rimColor.w);
 
 	RenderMaskedModels(maskIndex, mLastCamera);
 
-	mShaderSceneMasked->UnBind();
+	shader->UnBind();
 
 	maskBuffer->UnBind();
+
+	buffers->ReleaseFramebuffer(MASK_BUFFER_NAME_KEY);
 }
 
-bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain)
+bool PostEffectChain::PrepareChainOrder(std::vector<PostEffectBase*>& chain, StandardEffectCollection* collection)
 {
-	int count = 0;
-
-	if (mSettings->FishEye)
-		count += 1;
-	if (mSettings->ColorCorrection)
-		count += 1;
-	if (mSettings->Vignetting)
-		count += 1;
-	if (mSettings->FilmGrain)
-		count += 1;
-	if (mSettings->LensFlare)
-		count += 1;
-	if (mSettings->SSAO)
-		count += 1;
-	if (mSettings->DepthOfField)
-		count += 1;
-	if (mSettings->Displacement)
-		count += 1;
-	if (mSettings->MotionBlur)
-		count += 1;
-
-	count += mSettings->GetNumberOfActiveUserEffects();
-	
-	if (0 == count && 0 == mSettings->OutputPreview.AsInt())
+	if (!mSettings.Ok() || !collection)
+	{
+		chain.clear();
 		return false;
-
-	chain.resize(count);
-
-	count = 0;
-
-	// ordering HERE
-
-	if (mSettings->SSAO && mSSAO.get())
-	{
-		chain[count] = mSSAO.get();
-		chain[count]->SetMaskIndex((mSettings->SSAO_UseMasking) ? static_cast<int>(mSettings->SSAO_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->MotionBlur && mMotionBlur.get())
-	{
-		chain[count] = mMotionBlur.get();
-		chain[count]->SetMaskIndex((mSettings->MotionBlur_UseMasking) ? static_cast<int>(mSettings->MotionBlur_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->DepthOfField && mDOF.get())
-	{
-		chain[count] = mDOF.get();
-		chain[count]->SetMaskIndex((mSettings->DOF_UseMasking) ? static_cast<int>(mSettings->DOF_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->ColorCorrection && mColor.get())
-	{
-		chain[count] = mColor.get();
-		chain[count]->SetMaskIndex((mSettings->ColorCorrection_UseMasking) ? static_cast<int>(mSettings->ColorCorrection_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->LensFlare && mLensFlare.get())
-	{
-		chain[count] = mLensFlare.get();
-		chain[count]->SetMaskIndex((mSettings->LensFlare_UseMasking) ? static_cast<int>(mSettings->LensFlare_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->Displacement && mDisplacement.get())
-	{
-		chain[count] = mDisplacement.get();
-		chain[count]->SetMaskIndex((mSettings->Disp_UseMasking) ? static_cast<int>(mSettings->Disp_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->FishEye && mFishEye.get())
-	{
-		chain[count] = mFishEye.get();
-		chain[count]->SetMaskIndex((mSettings->FishEye_UseMasking) ? static_cast<int>(mSettings->FishEye_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->FilmGrain && mFilmGrain.get())
-	{
-		chain[count] = mFilmGrain.get();
-		chain[count]->SetMaskIndex((mSettings->FilmGrain_UseMasking) ? static_cast<int>(mSettings->FilmGrain_MaskingChannel) : -1);
-		count += 1;
-	}
-	if (mSettings->Vignetting && mVignetting.get())
-	{
-		chain[count] = mVignetting.get();
-		chain[count]->SetMaskIndex((mSettings->Vign_UseMasking) ? static_cast<int>(mSettings->Vign_MaskingChannel) : -1);
-		count += 1;
 	}
 
-	for (int i = 0; i < mSettings->GetNumberOfActiveUserEffects(); ++i)
+	chain.clear();
+	// 9 built-in effects + user-defined ones
+	chain.reserve(9 + static_cast<size_t>(mSettings->GetNumberOfActiveUserEffects()));
+
+	auto addEffect = [&](bool enabled,
+		PostEffectBase* effect,
+		bool useMask,
+		int maskChannel)
+		{
+			if (!enabled || !effect)
+				return;
+
+			effect->SetMaskIndex(useMask ? maskChannel : -1);
+			chain.push_back(effect);
+		};
+
+	// Ordering HERE
+	addEffect(mSettings->SSAO,
+		collection->GetSSAOEffect(),
+		mSettings->SSAO_UseMasking,
+		static_cast<int>(mSettings->SSAO_MaskingChannel));
+
+	addEffect(mSettings->MotionBlur,
+		collection->GetMotionBlurEffect(),
+		mSettings->MotionBlur_UseMasking,
+		static_cast<int>(mSettings->MotionBlur_MaskingChannel));
+
+	addEffect(mSettings->DepthOfField,
+		collection->GetDOFEffect(),
+		mSettings->DOF_UseMasking,
+		static_cast<int>(mSettings->DOF_MaskingChannel));
+
+	addEffect(mSettings->ColorCorrection,
+		collection->GetColorEffect(),
+		mSettings->ColorCorrection_UseMasking,
+		static_cast<int>(mSettings->ColorCorrection_MaskingChannel));
+
+	addEffect(mSettings->LensFlare,
+		collection->GetLensFlareEffect(),
+		mSettings->LensFlare_UseMasking,
+		static_cast<int>(mSettings->LensFlare_MaskingChannel));
+
+	addEffect(mSettings->Displacement,
+		collection->GetDisplacementEffect(),
+		mSettings->Disp_UseMasking,
+		static_cast<int>(mSettings->Disp_MaskingChannel));
+
+	addEffect(mSettings->FishEye,
+		collection->GetFishEyeEffect(),
+		mSettings->FishEye_UseMasking,
+		static_cast<int>(mSettings->FishEye_MaskingChannel));
+
+	addEffect(mSettings->FilmGrain,
+		collection->GetFilmGrainEffect(),
+		mSettings->FilmGrain_UseMasking,
+		static_cast<int>(mSettings->FilmGrain_MaskingChannel));
+
+	addEffect(mSettings->Vignetting,
+		collection->GetVignettingEffect(),
+		mSettings->Vign_UseMasking,
+		static_cast<int>(mSettings->Vign_MaskingChannel));
+
+	// User-defined effects
+	const int userCount = mSettings->GetNumberOfActiveUserEffects();
+	for (int i = 0; i < userCount; ++i)
 	{
-		chain[count] = mSettings->GetActiveUserEffect(i);
-		count += 1;
+		if (auto* effect = mSettings->GetActiveUserEffect(i))
+		{
+			chain.push_back(effect);
+		}
 	}
+
+	if (chain.empty() && mSettings->OutputPreview.AsInt() == 0)
+		return false;
 
 	return true;
 }
@@ -463,36 +349,42 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 	*/
 }
 
-void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext)
+void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBase* effect, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext)
 {
-	constexpr const char* depthLinearizeBufferName = "depthLinearize";
+	if (!buffers || !effect || depthId == 0)
+		return;
 
-	const int outWidth = (makeDownscale) ? buffers->GetWidth() / 2 : buffers->GetWidth();
-	const int outHeight = (makeDownscale) ? buffers->GetHeight() / 2 : buffers->GetHeight();
+	int outWidth = buffers->GetWidth();
+	int outHeight = buffers->GetHeight();
 
-	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer(depthLinearizeBufferName,
+	if (makeDownscale)
+	{
+		outWidth = std::max(1, outWidth / 2);
+		outHeight = std::max(1, outHeight / 2);
+	}
+
+	FrameBuffer* pBufferDepth = buffers->RequestFramebuffer(DEPTH_LINEAR_BUFFER_NAME_KEY,
 		outWidth, outHeight, PostEffectBuffers::GetFlagsForSingleColorBuffer(),
 		1, false, [](FrameBuffer* frameBuffer) {
 			PostEffectBuffers::SetParametersForMainDepthBuffer(frameBuffer);
 	});
-
-	const PostEffectBase::RenderEffectContext renderContext
+	if (!pBufferDepth)
 	{
-		nullptr, // intermediate buffers
-		0,
-		depthId, // depth id
-		outWidth, // buffers->GetWidth(),
-		outHeight, // buffers->GetHeight(),
-		pBufferDepth,
-		0, // last color attachment for processing
-		false // generate mips
-	};
+		LOGE("Failed to request a framebuffer to render a linear depth");
+		return;
+	}
+	
+	PostEffectBase::RenderEffectContext renderContext;
+	renderContext.depthTextureId = depthId;
+	renderContext.width = outWidth;
+	renderContext.height = outHeight;
+	renderContext.targetFramebuffer = pBufferDepth;
 
 	glActiveTexture(GL_TEXTURE0 + CommonEffect::DepthSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, depthId);
 	glActiveTexture(GL_TEXTURE0);
 
-	mEffectDepthLinearize->Process(renderContext, &effectContext);
+	effect->Process(renderContext, &effectContext);
 
 	// DONE: bind a depth texture
 	const GLuint linearDepthId = pBufferDepth->GetColorObject();
@@ -501,7 +393,7 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, const GLuint
 	glBindTexture(GL_TEXTURE_2D, linearDepthId);
 	glActiveTexture(GL_TEXTURE0);
 	
-	buffers->ReleaseFramebuffer(depthLinearizeBufferName);
+	buffers->ReleaseFramebuffer(DEPTH_LINEAR_BUFFER_NAME_KEY);
 }
 
 void PostEffectChain::RenderWorldNormals(PostEffectBuffers* buffers)
@@ -511,7 +403,7 @@ void PostEffectChain::RenderWorldNormals(PostEffectBuffers* buffers)
 
 FrameBuffer* PostEffectChain::RequestMaskFrameBuffer(PostEffectBuffers* buffers)
 {
-	FrameBuffer* maskfb = buffers->RequestFramebuffer("mask", 
+	FrameBuffer* maskfb = buffers->RequestFramebuffer(MASK_BUFFER_NAME_KEY, 
 		buffers->GetWidth(), buffers->GetHeight(), 
 		PostEffectBuffers::GetFlagsForMainColorBuffer(),
 		PostPersistentData::NUMBER_OF_MASKS + 1,
@@ -522,12 +414,12 @@ FrameBuffer* PostEffectChain::RequestMaskFrameBuffer(PostEffectBuffers* buffers)
 
 void PostEffectChain::ReleaseMaskFrameBuffer(PostEffectBuffers* buffers)
 {
-	buffers->ReleaseFramebuffer("mask");
+	buffers->ReleaseFramebuffer(MASK_BUFFER_NAME_KEY);
 }
 
 FrameBuffer* PostEffectChain::RequestDoubleFrameBuffer(PostEffectBuffers* buffers)
 {
-	FrameBuffer* buffer = buffers->RequestFramebuffer("doubleBuffer",
+	FrameBuffer* buffer = buffers->RequestFramebuffer(DOUBLE_BUFFER_NAME_KEY,
 		buffers->GetWidth(), buffers->GetHeight(),
 		PostEffectBuffers::GetFlagsForMainColorBuffer(),
 		2,
@@ -541,13 +433,13 @@ FrameBuffer* PostEffectChain::RequestDoubleFrameBuffer(PostEffectBuffers* buffer
 
 void PostEffectChain::ReleaseDoubleFrameBuffer(PostEffectBuffers* buffers)
 {
-	buffers->ReleaseFramebuffer("doubleBuffer");
+	buffers->ReleaseFramebuffer(DOUBLE_BUFFER_NAME_KEY);
 }
 
-void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext)
+void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, PostEffectBilateralBlur* effect, const PostEffectContextMoBu& effectContext)
 {
 	assert(maskIndex < PostPersistentData::NUMBER_OF_MASKS);
-	if (!mEffectBilateralBlur.get())
+	if (!effect)
 		return;
 
 	// Bilateral Blur Pass
@@ -558,30 +450,25 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 	const int w = maskRequest->GetWidth();
 	const int h = maskRequest->GetHeight();
 
-	const PostEffectBase::RenderEffectContext renderContext
-	{
-		nullptr, // intermediate buffers
-		texid,
-		0, // depth id
-		w,
-		h,
-		maskRequest.GetFrameBufferPtr(),
-		PostPersistentData::NUMBER_OF_MASKS, // last color attachment for processing
-		false // generate mips
-	};
+	PostEffectBase::RenderEffectContext renderContext;
+	renderContext.srcTextureId = texid;
+	renderContext.width = w;
+	renderContext.height = h;
+	renderContext.targetFramebuffer = maskRequest.GetFrameBufferPtr();
+	renderContext.colorAttachment = PostPersistentData::NUMBER_OF_MASKS; // last color attachment for processing
 
-	mEffectBilateralBlur->SetMaskIndex(maskIndex);
+	effect->SetMaskIndex(maskIndex);
 	
 	const FBVector2d value = mSettings->GetMaskScale(maskIndex);
-	mEffectBilateralBlur->GetBufferShaderTypedPtr()->BlurScale->SetValue(static_cast<float>(value[0]), static_cast<float>(value[1]));
+	effect->GetBufferShaderTypedPtr()->BlurScale->SetValue(static_cast<float>(value[0]), static_cast<float>(value[1]));
 
-	mEffectBilateralBlur->Process(renderContext, &effectContext);
+	effect->Process(renderContext, &effectContext);
 
 	BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), w, h, PostPersistentData::NUMBER_OF_MASKS,
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
-void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers)
+void PostEffectChain::MixMasksPass(GLSLShaderProgram* shader, const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers)
 {
 	MaskFramebufferRequestScope maskRequest(this, buffers);
 	
@@ -598,13 +485,13 @@ void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, Po
 	glBindTexture(GL_TEXTURE_2D, texid);
 
 	maskRequest->Bind(PostPersistentData::NUMBER_OF_MASKS);
-	mShaderMix->Bind();
+	shader->Bind();
 
-	mShaderMix->setUniformVector("gBloom", 0.0f, 0.0f, 1.0f, 0.0f);
+	shader->setUniformVector("gBloom", 0.0f, 0.0f, 1.0f, 0.0f);
 
 	drawOrthoQuad2d(w, h);
 
-	mShaderMix->UnBind();
+	shader->UnBind();
 	maskRequest->UnBind();
 
 	glActiveTexture(GL_TEXTURE3);
@@ -616,9 +503,109 @@ void PostEffectChain::MixMasksPass(const int maskIndex, const int maskIndex2, Po
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
-bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const PostEffectContextMoBu& effectContext)
+void PostEffectChain::Evaluate(const PostEffectContextMoBu& effectContext, StandardEffectCollection& effectCollection)
 {
-	std::vector<PostEffectBase*>		mChain;
+	constexpr std::uint8_t kBufferCount = 2;
+
+	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
+	const uint8_t writeIndex = (activeIndex + 1) % kBufferCount;
+
+	RenderData& data = mRenderData[writeIndex];
+
+	std::vector<PostEffectBase*>& effectChain = data.mChain;
+
+	data.isReady = false;
+
+	if (!mSettings.Ok())
+	{
+		return;
+	}
+	
+	if (!PrepareChainOrder(effectChain, &effectCollection))
+	{	
+		return;
+	}
+
+	data.isReady = true;
+	data.isMaskTextureBinded = false;
+	data.isMaskBlurRequested = false;
+	data.isMaskMixRequested = false;
+
+	for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+	{
+		data.maskRenderFlags[i] = false;
+	}
+	
+	if (HasAnyMaskUsedByEffect() && HasAnyObjectMasked() && mLastCamera)
+	{
+		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		{
+			const EMaskingChannel maskId = static_cast<EMaskingChannel>(i);
+			if (IsMaskUsedByEffect(maskId) && IsAnyObjectMaskedByMaskId(maskId))
+			{
+				data.isMaskBlurRequested |= mSettings->Masks[i].BlurMask;
+
+				if (mSettings->Masks[i].UseMixWithMask && mSettings->Masks[i].MixWithMask != maskId)
+				{
+					const int maskIndex2 = static_cast<int>(mSettings->Masks[i].MixWithMask);
+					if (maskIndex2 >= 0 && maskIndex2 < PostPersistentData::NUMBER_OF_MASKS)
+					{
+						data.isMaskMixRequested = true;
+						data.maskRenderFlags[maskIndex2] = true;
+					}
+				}
+
+				data.maskRenderFlags[i] = true;
+				data.isMaskTextureBinded = true;
+			}
+		}
+	}
+
+	data.isDepthSamplerBinded = false;
+	data.isLinearDepthSamplerBinded = false;
+	data.isWorldNormalSamplerBinded = false;
+
+	for (const auto* effect : effectChain)
+	{
+		if (!effect || !effect->IsActive())
+			continue;
+
+		data.isDepthSamplerBinded |= effect->IsDepthSamplerUsed();
+		data.isLinearDepthSamplerBinded |= effect->IsLinearDepthSamplerUsed();
+		data.isWorldNormalSamplerBinded |= effect->IsWorldNormalSamplerUsed();
+
+		if (data.isDepthSamplerBinded &&
+			data.isLinearDepthSamplerBinded &&
+			data.isWorldNormalSamplerBinded)
+		{
+			break; // nothing more to gain
+		}
+	}
+
+	for (const auto& effect : effectChain)
+	{
+		if (!effect || !effect->IsActive())
+		{
+			continue;
+		}
+
+		effect->CollectUIValues(&effectContext);
+	}
+}
+
+void PostEffectChain::Synchronize()
+{
+	// swap
+	// uint8_t oldIndex =
+	gActiveData.fetch_xor(1, std::memory_order_acq_rel);
+}
+
+bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, 
+	const PostEffectContextMoBu& effectContext, const StandardEffectCollection& effectCollection)
+{
+	const uint8_t idx = gActiveData.load(std::memory_order_acquire);
+	RenderData& data = mRenderData[idx];
+	std::vector<PostEffectBase*>& effectChain = data.mChain;
 
 	//
 	// Start PostEffectChain task cycle profiling, 
@@ -627,13 +614,13 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	mIsCompressedDataReady = false;
 
-	if (!buffers->Ok() || !mSettings.Ok())
+	if (!buffers || !buffers->Ok() || !mSettings.Ok() || !data.isReady)
 		return false;
 
 	// 1. prepare chain count and order
-	
-	if (!PrepareChainOrder(mChain))
-		return false;
+	// NOTE: done at evaluate stage
+	//if (!PrepareChainOrder(effectChain, effectCollection))
+	//	return false;
 
 	//
 	DoubleFramebufferRequestScope doubleBufferRequest(this, buffers);
@@ -641,93 +628,44 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	// 2. prepare and render into masks
 
-	bool isMaskTextureBinded = false;
-	bool isMaskBlurRequested = false;
-	bool isMaskMixRequested = false;
-
-	bool maskRenderFlags[PostPersistentData::NUMBER_OF_MASKS] = { false, false, false, false };
-
-	if (HasAnyMaskUsedByEffect() && HasAnyObjectMasked() && mLastCamera)
+	for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
 	{
-		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
+		if (data.maskRenderFlags[i])
 		{
-			const EMaskingChannel maskId = static_cast<EMaskingChannel>(i);
-			if (IsMaskUsedByEffect(maskId) && IsAnyObjectMaskedByMaskId(maskId))
-			{
-				if (mSettings->Masks[i].BlurMask)
-				{
-					isMaskBlurRequested = true;
-				}
-
-				if (mSettings->Masks[i].UseMixWithMask && mSettings->Masks[i].MixWithMask != maskId)
-				{
-					isMaskMixRequested = true;
-					const int maskIndex2 = static_cast<int>(mSettings->Masks[i].MixWithMask);
-					maskRenderFlags[maskIndex2] = true;
-				}
-
-				maskRenderFlags[i] = true;
-				isMaskTextureBinded = true;
-			}
-		}
-
-		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
-		{
-			if (maskRenderFlags[i])
-			{
-				RenderSceneMaskToTexture(i, mSettings->Masks[i], buffers);
-			}
+			RenderSceneMaskToTexture(effectCollection.mShaderSceneMasked.get(), i, mSettings->Masks[i], buffers);
 		}
 	}
-
-	// 3. in case of SSAO active, render a linear depth texture
-	const bool isLinearDepthSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase * effect) 
-		{
-			return (effect) ? effect->IsLinearDepthSamplerUsed() : false;
-		}) != end(mChain);
 	
-	if (isLinearDepthSamplerBinded)
-	{
-		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
-		constexpr bool makeDownscale = false;
-		RenderLinearDepth(buffers, depthId, makeDownscale, effectContext);
-	}
-
-	const bool isWorldNormalSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
-		{
-			return (effect) ? effect->IsWorldNormalSamplerUsed() : false;
-		}) != end(mChain);
-
-	if (isWorldNormalSamplerBinded)
-	{
-		RenderWorldNormals(buffers);
-	}
-
 	// 4a. blur masks (if applied)
 
-	if (isMaskBlurRequested)
+	if (data.isMaskBlurRequested)
 	{
 		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
 		{
-			if (maskRenderFlags[i] && mSettings->Masks[i].BlurMask)
+			if (data.maskRenderFlags[i] && mSettings->Masks[i].BlurMask)
 			{
-				BlurMasksPass(i, buffers, effectContext);
+				BlurMasksPass(i, buffers, effectCollection.mEffectBilateralBlur.get(), effectContext);
 			}
 		}
 	}
 
 	// 4b. mix masks (if applied)
-	if (isMaskMixRequested)
+	if (data.isMaskMixRequested)
 	{
 		for (int i = 0; i < PostPersistentData::NUMBER_OF_MASKS; ++i)
 		{
+			if (!data.maskRenderFlags[i] || !mSettings->Masks[i].UseMixWithMask)
+			{
+				continue;
+			}
+
 			const int mask2 = static_cast<int>(mSettings->Masks[i].MixWithMask);
 
-			if (maskRenderFlags[i] && mSettings->Masks[i].UseMixWithMask
+			if (mask2 >= 0 && mask2 < PostPersistentData::NUMBER_OF_MASKS
 				&& i != mask2
-				&& maskRenderFlags[mask2])
+				&& data.maskRenderFlags[mask2])
 			{
-				MixMasksPass(i, mask2, buffers);
+				MixMasksPass(effectCollection.mShaderMix.get(), i, mask2, buffers);
 			}
 		}
 	}
@@ -747,7 +685,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	// 5. bind textures of mask and depth for effects
 
-	if (isMaskTextureBinded)
+	if (data.isMaskTextureBinded)
 	{
 		const GLuint maskTextureId = maskRequest->GetColorObject(globalMaskingIndex);
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
@@ -755,12 +693,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 		glActiveTexture(GL_TEXTURE0);
 	}
 
-	const bool isDepthSamplerBinded = std::find_if(begin(mChain), end(mChain), [](const PostEffectBase* effect)
-		{
-			return (effect) ? effect->IsDepthSamplerUsed() : false;
-		}) != end(mChain);
-
-	if (isDepthSamplerBinded)
+	if (data.isDepthSamplerBinded)
 	{
 		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
 
@@ -769,32 +702,53 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 		glActiveTexture(GL_TEXTURE0);
 	}
 
+	// 3. in case of SSAO active, render a linear depth texture
+
+	if (data.isLinearDepthSamplerBinded)
+	{
+		auto* doubleBuffer = doubleBufferRequest->GetPtr();
+		auto* depthEffect = effectCollection.mEffectDepthLinearize.get();
+		if (doubleBuffer && depthEffect)
+		{
+			const GLuint depthId = doubleBuffer->GetDepthObject();
+			if (depthId != 0)
+			{
+				constexpr bool makeDownscale = false;
+				RenderLinearDepth(buffers, depthEffect, depthId, makeDownscale, effectContext);
+			}
+		}
+	}
+
+	if (data.isWorldNormalSamplerBinded)
+	{
+		RenderWorldNormals(buffers);
+	}
+
 	// compute effect chain with double buffer
 
 	// DONE: when buffer is attached, buffer is used itself !
 	bool lSuccess = false;
 	const bool generateMips = mSettings->GenerateMipMaps;
 
-	if (!mChain.empty())
+	if (!effectChain.empty())
 	{
-		// optional. generate mipmaps for the first target
-		GLuint texid = doubleBufferRequest->GetPtr()->GetColorObject(doubleBufferRequest->GetReadAttachment());
-		const int w = doubleBufferRequest->GetPtr()->GetWidth();
-		const int h = doubleBufferRequest->GetPtr()->GetHeight();
+		auto* doubleBuffer = doubleBufferRequest->GetPtr();
 
-		if (generateMips)
+		// optional. generate mipmaps for the first target
+		GLuint texid = doubleBuffer->GetColorObject(doubleBufferRequest->GetReadAttachment());
+		const int w = doubleBuffer->GetWidth();
+		const int h = doubleBuffer->GetHeight();
+
+		if (generateMips && texid > 0)
 		{
-			if (texid > 0)
-			{
-				glBindTexture(GL_TEXTURE_2D, texid);
-				glGenerateMipmap(GL_TEXTURE_2D);
-				glBindTexture(GL_TEXTURE_2D, 0);
-			}
+			glBindTexture(GL_TEXTURE_2D, texid);
+			glGenerateMipmap(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
 		// 6. render each effect in order
 		
-		for (const auto& effect : mChain)
+		for (const auto& effect : effectChain)
 		{
 			if (!effect || !effect->IsActive())
 			{
@@ -802,26 +756,31 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 			}
 			
 			// activate local mask for the effect if applied
-			const unsigned int effectMaskingIndex = (effect->GetMaskIndex() >= 0) ? static_cast<unsigned int>(effect->GetMaskIndex()) : globalMaskingIndex;
-			if (IsAnyObjectMaskedByMaskId(static_cast<EMaskingChannel>(effect->GetMaskIndex())) && effectMaskingIndex != globalMaskingIndex)
+			bool customMaskBinded = false;
+			const int maskIndex = effect->GetMaskIndex();
+			if (maskIndex >= 0 && data.maskRenderFlags[maskIndex] && maskIndex != static_cast<int>(globalMaskingIndex))
 			{
-				const GLuint maskTextureId = maskRequest->GetColorObject(effectMaskingIndex);
+				const GLuint maskTextureId = maskRequest->GetColorObject(maskIndex);
 				glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
 				glBindTexture(GL_TEXTURE_2D, maskTextureId);
 				glActiveTexture(GL_TEXTURE0);
+				customMaskBinded = true;
 			}
-
+			
 			doubleBufferRequest->Swap(); // current written goes to read and we are ready to write from a shader
 
+			const GLuint srcTex = doubleBuffer->GetColorObject(doubleBufferRequest->GetReadAttachment());
+			const GLuint depthTex = doubleBuffer->GetDepthObject();
+			
 			const PostEffectBase::RenderEffectContext renderContext{
 				buffers,
 				// INPUT
-				doubleBufferRequest->GetPtr()->GetColorObject(doubleBufferRequest->GetReadAttachment()), // src texture id
-				doubleBufferRequest->GetPtr()->GetDepthObject(), // depth texture id
+				srcTex, // src texture id
+				depthTex, // depth texture id
 				w,
 				h,
 				// OUTPUT
-				doubleBufferRequest->GetPtr(), // dst frame buffer
+				doubleBuffer, // dst frame buffer
 				doubleBufferRequest->GetWriteAttachment(),
 				generateMips
 			};
@@ -829,7 +788,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 			effect->Process(renderContext, &effectContext);
 
 			// if local masking index was used, switch back to global mask for next effect
-			if (effectMaskingIndex != globalMaskingIndex)
+			if (customMaskBinded)
 			{
 				const GLuint maskTextureId = maskRequest->GetColorObject(globalMaskingIndex);
 				glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
@@ -849,22 +808,22 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	// unbind additional texture slots (from depth, masks)
 
-	if (isDepthSamplerBinded)
+	if (data.isDepthSamplerBinded)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::DepthSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	if (isLinearDepthSamplerBinded)
+	if (data.isLinearDepthSamplerBinded)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::LinearDepthSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	if (isWorldNormalSamplerBinded)
+	if (data.isWorldNormalSamplerBinded)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::WorldNormalSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	if (isMaskTextureBinded)
+	if (data.isMaskTextureBinded)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -872,225 +831,4 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, const 
 
 	glActiveTexture(GL_TEXTURE0);
 	return lSuccess;
-}
-
-PostEffectBase* PostEffectChain::ShaderFactory(const BuildInEffect effectType, const char *shadersLocation, bool immediatelyLoad)
-{
-
-	PostEffectBase *newEffect = nullptr;
-
-	switch (effectType)
-	{
-	case BuildInEffect::FISHEYE:
-		newEffect = new PostEffectFishEye();
-		break;
-	case BuildInEffect::COLOR:
-		newEffect = new PostEffectColor();
-		break;
-	case BuildInEffect::VIGNETTE:
-		newEffect = new PostEffectVignetting();
-		break;
-	case BuildInEffect::FILMGRAIN:
-		newEffect = new PostEffectFilmGrain();
-		break;
-	case BuildInEffect::LENSFLARE:
-		newEffect = new PostEffectLensFlare();
-		break;
-	case BuildInEffect::SSAO:
-		newEffect = new PostEffectSSAO();
-		break;
-	case BuildInEffect::DOF:
-		newEffect = new PostEffectDOF();
-		break;
-	case BuildInEffect::DISPLACEMENT:
-		newEffect = new PostEffectDisplacement();
-		break;
-	case BuildInEffect::MOTIONBLUR:
-		newEffect = new PostEffectMotionBlur();
-		break;
-	}
-
-	if (immediatelyLoad && newEffect)
-	{
-		if (!newEffect->Load(shadersLocation))
-		{
-			LOGE("Post Effect %s failed to Load from %s\n", newEffect->GetName(), shadersLocation);
-
-			delete newEffect;
-			newEffect = nullptr;
-		}
-	}
-	
-	return newEffect;
-}
-
-bool PostEffectChain::CheckShadersPath(const char* path)
-{
-	const char* test_shaders[] = {
-		SHADER_DEPTH_LINEARIZE_VERTEX,
-		SHADER_DEPTH_LINEARIZE_FRAGMENT,
-
-		SHADER_BLUR_VERTEX,
-		SHADER_BLUR_FRAGMENT,
-		SHADER_IMAGE_BLUR_FRAGMENT,
-
-		SHADER_MIX_VERTEX,
-		SHADER_MIX_FRAGMENT,
-
-		SHADER_DOWNSCALE_VERTEX,
-		SHADER_DOWNSCALE_FRAGMENT,
-
-		SHADER_SCENE_MASKED_VERTEX,
-		SHADER_SCENE_MASKED_FRAGMENT
-	};
-	LOGV("[CheckShadersPath] testing path %s\n", path);
-	for (const char* shader_path : test_shaders)
-	{
-		FBString full_path(path, shader_path);
-
-		if (!IsFileExists(full_path))
-		{
-			LOGV("[CheckShadersPath] %s is not found\n", shader_path);
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool PostEffectChain::LoadShaders()
-{
-	FreeShaders();
-
-	char shadersPath[MAX_PATH];
-	if (!FindEffectLocation(CheckShadersPath, shadersPath, MAX_PATH))
-	{
-		LOGE("[PostProcessing] Failed to find shaders location!\n");
-		return false;
-	}
-
-	LOGE("[PostProcessing] Shaders Location - %s\n", shadersPath);
-
-	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, shadersPath));
-	mColor.reset(ShaderFactory(BuildInEffect::COLOR, shadersPath));
-	mVignetting.reset(ShaderFactory(BuildInEffect::VIGNETTE, shadersPath));
-	mFilmGrain.reset(ShaderFactory(BuildInEffect::FILMGRAIN, shadersPath));
-	mLensFlare.reset(ShaderFactory(BuildInEffect::LENSFLARE, shadersPath));
-	mSSAO.reset(ShaderFactory(BuildInEffect::SSAO, shadersPath));
-	mDOF.reset(ShaderFactory(BuildInEffect::DOF, shadersPath));
-	mDisplacement.reset(ShaderFactory(BuildInEffect::DISPLACEMENT, shadersPath));
-	mMotionBlur.reset(ShaderFactory(BuildInEffect::MOTIONBLUR, shadersPath));
-
-	// load shared shaders (blur, mix)
-
-	bool lSuccess = true;
-
-	try
-	{
-		//
-		// DEPTH LINEARIZE
-
-		mEffectDepthLinearize.reset(new PostEffectLinearDepth());
-		if (!mEffectDepthLinearize->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare depth linearize effect");
-		}
-
-		//
-		// BLUR (for SSAO)
-
-		mEffectBlur.reset(new PostEffectBlurLinearDepth());
-		if (!mEffectBlur->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare SSAO blur effect");
-		}
-
-		//
-		// IMAGE BLUR, simple bilateral blur
-
-		mEffectBilateralBlur.reset(new PostEffectBilateralBlur());
-		if (!mEffectBilateralBlur->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare image blur effect");
-		}
-
-		//
-		// MIX
-		std::unique_ptr<GLSLShaderProgram> pNewShader;
-		pNewShader.reset(new GLSLShaderProgram);
-
-		FBString vertex_path = FBString(shadersPath, SHADER_MIX_VERTEX);
-		FBString fragment_path = FBString(shadersPath, SHADER_MIX_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
-		{
-			throw std::exception("failed to load and prepare mix shader");
-		}
-
-		// samplers and locations
-		pNewShader->Bind();
-
-		GLint loc = pNewShader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		loc = pNewShader->findLocation("sampler1");
-		if (loc >= 0)
-			glUniform1i(loc, 3);
-
-		pNewShader->UnBind();
-
-		mShaderMix.reset(pNewShader.release());
-
-		//
-		// DOWNSCALE
-
-		mEffectDownscale.reset(new PostEffectDownscale());
-		if (!mEffectDownscale->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare downscale effect");
-		}
-
-		//
-		// SCENE MASKED
-
-		pNewShader.reset(new GLSLShaderProgram);
-
-		vertex_path = FBString(shadersPath, SHADER_SCENE_MASKED_VERTEX);
-		fragment_path = FBString(shadersPath, SHADER_SCENE_MASKED_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
-		{
-			throw std::exception("failed to load and prepare downscale shader");
-		}
-
-		mShaderSceneMasked.reset(pNewShader.release());
-
-	}
-	catch (const std::exception &e)
-	{
-		FBTrace("Post Effect Chain ERROR: %s\n", e.what());
-		lSuccess = false;
-	}
-
-	return lSuccess;
-}
-
-
-void PostEffectChain::FreeShaders()
-{
-	mFishEye.reset(nullptr);
-	mColor.reset(nullptr);
-	mVignetting.reset(nullptr);
-	mFilmGrain.reset(nullptr);
-	mLensFlare.reset(nullptr);
-	mSSAO.reset(nullptr);
-	mDOF.reset(nullptr);
-	mDisplacement.reset(nullptr);
-	mMotionBlur.reset(nullptr);
-
-	mEffectDepthLinearize.reset(nullptr);
-	mEffectBilateralBlur.reset(nullptr);
-	mEffectBlur.reset(nullptr);
-	mShaderMix.reset(nullptr);
-	mEffectDownscale.reset(nullptr);
 }

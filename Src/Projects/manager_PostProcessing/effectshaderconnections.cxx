@@ -11,7 +11,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "effectshaderconnections.h"
 #include "mobu_logging.h"
-
+#include "hashUtils.h"
 #include "posteffect_shader_userobject.h"
 
 /////////////////////////////////////////////////////////////////////////
@@ -90,6 +90,9 @@ IEffectShaderConnections::EPropertyType IEffectShaderConnections::UniformTypeToS
 	}
 }
 
+/////////////////////////////////////////////////////////////////////////
+// ShaderProperty
+
 IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn)
 {
 	if (nameIn)
@@ -102,6 +105,9 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, con
 		SetType(propertyType);
 		fbProperty = fbPropertyIn;
 	}
+
+	key = xxhash32(name, HASH_SEED);
+	value.key = key;
 }
 
 IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, const char* uniformNameIn, IEffectShaderConnections::EPropertyType typeIn, FBProperty* fbPropertyIn)
@@ -115,30 +121,15 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, con
 
 	if (fbPropertyIn)
 		fbProperty = fbPropertyIn;
+
+	key = xxhash32(name, HASH_SEED);
+	value.key = key;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetType(IEffectShaderConnections::EPropertyType newType) {
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetType(IEffectShaderConnections::EPropertyType newType) 
+{
 	type = newType;
-	switch (newType) {
-	case IEffectShaderConnections::EPropertyType::INT:
-	case IEffectShaderConnections::EPropertyType::BOOL:
-	case IEffectShaderConnections::EPropertyType::FLOAT:
-	case IEffectShaderConnections::EPropertyType::TEXTURE:
-		value = std::array<float, 1>{ 0.0f };
-		break;
-	case IEffectShaderConnections::EPropertyType::VEC2:
-		value = std::array<float, 2>{0.0f, 0.0f};
-		break;
-	case IEffectShaderConnections::EPropertyType::VEC3:
-		value = std::array<float, 3>{0.0f, 0.0f, 0.0f};
-		break;
-	case IEffectShaderConnections::EPropertyType::VEC4:
-		value = std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f};
-		break;
-	case IEffectShaderConnections::EPropertyType::MAT4:
-		value = std::vector<float>(15, 0.0f);
-		break;
-	}
+	value.SetType(newType);
 	return *this;
 }
 
@@ -154,55 +145,49 @@ IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProper
 		|| (type == IEffectShaderConnections::EPropertyType::FLOAT)
 		|| (type == IEffectShaderConnections::EPropertyType::TEXTURE));
 
-	value = std::array<float, 1>{ static_cast<float>(valueIn) };
+	value.SetValue(valueIn);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(bool valueIn)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::BOOL);
-
-	value = std::array<float, 1>{ static_cast<float>(valueIn) };
+	value.SetValue(valueIn);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float valueIn)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::FLOAT);
-
-	value = std::array<float, 1>{ valueIn };
+	value.SetValue(valueIn);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(double valueIn)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::FLOAT);
-
-	value = std::array<float, 1>{ static_cast<float>(valueIn) };
+	value.SetValue(valueIn);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float x, float y)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::VEC2);
-
-	value = std::array<float, 2>{ x, y };
+	value.SetValue(x, y);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float x, float y, float z)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::VEC3);
-
-	value = std::array<float, 3>{ x, y, z };
+	value.SetValue(x, y, z);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float x, float y, float z, float w)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::VEC4);
-
-	value = std::array<float, 4>{ x, y, z, w };
+	value.SetValue(x, y, z, w);
 	return *this;
 }
 
@@ -222,69 +207,83 @@ float IEffectShaderConnections::ShaderProperty::GetScale() const
 	return scale;
 }
 
-float* IEffectShaderConnections::ShaderProperty::GetFloatData() {
-	return std::visit([](auto& data) -> float* {
-		return data.data();
-		}, value);
+const float* IEffectShaderConnections::ShaderProperty::GetFloatData() const {
+	return value.GetFloatData();
 }
 
 bool IEffectShaderConnections::ShaderProperty::HasFlag(PropertyFlag testFlag) const {
 	return flags.test(static_cast<size_t>(testFlag));
 }
 
-void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEffectContext* effectContext, int maskIndex)
+void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(ShaderPropertyValue& value, FBProperty* fbProperty, const ShaderProperty& shaderProperty, const IPostEffectContext* effectContext, int maskIndex)
 {
 	if (fbProperty == nullptr)
 		return;
 
-	double v[4]{ 0.0 };
+	assert(value.type == shaderProperty.type);
 
-	switch (type)
+	double v[4]{ 0.0 };
+	const FBPropertyType fbType = fbProperty->GetPropertyType();
+
+	switch (fbType)
 	{
-	case IEffectShaderConnections::EPropertyType::INT:
+	case FBPropertyType::kFBPT_int:
 	{
+		assert(value.type == IEffectShaderConnections::EPropertyType::INT);
 		int ivalue = 0;
 		fbProperty->GetData(&ivalue, sizeof(int));
-		GetFloatData()[0] = static_cast<float>(ivalue);
+		value.SetValue(ivalue);
 	} break;
 
-	case IEffectShaderConnections::EPropertyType::BOOL:
+	case FBPropertyType::kFBPT_bool:
 	{
+		assert(value.type == IEffectShaderConnections::EPropertyType::BOOL);
 		bool bvalue = false;
 		fbProperty->GetData(&bvalue, sizeof(bool));
-		GetFloatData()[0] = static_cast<float>(bvalue);
+		value.SetValue(bvalue);
 	} break;
 
-	case IEffectShaderConnections::EPropertyType::FLOAT:
+	case FBPropertyType::kFBPT_double:
 	{
-		if (HasFlag(IEffectShaderConnections::PropertyFlag::IsFlag))
+		assert(value.type == IEffectShaderConnections::EPropertyType::FLOAT);
+		fbProperty->GetData(v, sizeof(double));
+		value.SetValue(v[0]);
+	} break;
+
+	case FBPropertyType::kFBPT_float:
+	{
+		assert(value.type == IEffectShaderConnections::EPropertyType::FLOAT);
+		float fvalue = 0.0f;
+		fbProperty->GetData(&fvalue, sizeof(float));
+		value.SetValue(fvalue);
+	} break;
+
+	case FBPropertyType::kFBPT_Vector2D:
+	{
+		assert(value.type == IEffectShaderConnections::EPropertyType::VEC2);
+		fbProperty->GetData(v, sizeof(double) * 2);
+		value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]));
+	} break;
+
+	case FBPropertyType::kFBPT_Vector3D:
+	case FBPropertyType::kFBPT_ColorRGB:
+	{
+		if (!shaderProperty.HasFlag(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace))
 		{
-			bool bvalue = false;
-			fbProperty->GetData(&bvalue, sizeof(bool));
-			GetFloatData()[0] = bvalue ? 1.0f : 0.0f;
+			assert(value.type == IEffectShaderConnections::EPropertyType::VEC3);
+			fbProperty->GetData(v, sizeof(double) * 3);
+			value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
 		}
 		else
 		{
-			fbProperty->GetData(v, sizeof(double));
-			GetFloatData()[0] = static_cast<float>(v[0]);
-		}
-	} break;
+			assert(effectContext != nullptr);
+			// convert world to screen shape, output VEC2
+			assert(value.type == IEffectShaderConnections::EPropertyType::VEC2);
 
-	case IEffectShaderConnections::EPropertyType::VEC2:
-	{
-		if (!HasFlag(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace))
-		{
-			fbProperty->GetData(v, sizeof(double) * 2);
-			float* value = GetFloatData();
-			value[0] = static_cast<float>(v[0]);
-			value[1] = static_cast<float>(v[1]);
-		}
-		else
-		{
 			// world space to screen space
 			fbProperty->GetData(v, sizeof(double) * 3);
 
-			FBMatrix mvp(effectContext->GetModelViewProjMatrix());
+			const FBMatrix mvp(effectContext->GetModelViewProjMatrix());
 
 			FBVector4d v4;
 			FBVectorMatrixMult(v4, mvp, FBVector4d(v[0], v[1], v[2], 1.0));
@@ -292,39 +291,27 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 			v4[0] = effectContext->GetViewWidth() * 0.5 * (v4[0] + 1.0);
 			v4[1] = effectContext->GetViewHeight() * 0.5 * (v4[1] + 1.0);
 
-			float* value = GetFloatData();
-			value[0] = static_cast<float>(v4[0]) / static_cast<float>(effectContext->GetViewWidth());
-			value[1] = static_cast<float>(v4[1]) / static_cast<float>(effectContext->GetViewHeight());
-			//value[2] = static_cast<float>(v4[2]);
+			value.SetValue(static_cast<float>(v4[0]) / static_cast<float>(effectContext->GetViewWidth()),
+				static_cast<float>(v4[1]) / static_cast<float>(effectContext->GetViewHeight()));
 		}
-		
-	} break;
-
-	case IEffectShaderConnections::EPropertyType::VEC3:
-	{
-		fbProperty->GetData(v, sizeof(double) * 3);
-
-		float* value = GetFloatData();
-		value[0] = static_cast<float>(v[0]);
-		value[1] = static_cast<float>(v[1]);
-		value[2] = static_cast<float>(v[2]);
 
 	} break;
 
-	case IEffectShaderConnections::EPropertyType::VEC4:
+	case FBPropertyType::kFBPT_Vector4D:
+	case FBPropertyType::kFBPT_ColorRGBA:
 	{
+		assert(value.type == IEffectShaderConnections::EPropertyType::VEC4);
 		fbProperty->GetData(v, sizeof(double) * 4);
-
-		float* value = GetFloatData();
-		value[0] = static_cast<float>(v[0]);
-		value[1] = static_cast<float>(v[1]);
-		value[2] = static_cast<float>(v[2]);
-		value[3] = static_cast<float>(v[3]);
+		value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
 	} break;
 
-	case IEffectShaderConnections::EPropertyType::TEXTURE:
-		ReadTextureConnections();
-		
+	case FBPropertyType::kFBPT_object:
+	{
+		assert(value.type == IEffectShaderConnections::EPropertyType::TEXTURE);
+		value.ReadTextureConnections(fbProperty);
+
+		// TODO: queue the connected user shader to read values
+		/*
 		if (shaderUserObject)
 		{
 			FBComponent* tempComponent = effectContext->GetComponent();
@@ -332,11 +319,45 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(const IPostEf
 			shaderUserObject->GetUserShaderPtr()->CollectUIValues(effectContext, maskIndex);
 			effectContext->OverrideComponent(tempComponent);
 		}
+		*/
+	} break;
+
+	default:
+		LOGE("unsupported fb property type %d", static_cast<int>(fbType));
 		break;
 	}
 }
 
-void IEffectShaderConnections::ShaderProperty::ReadTextureConnections()
+
+/////////////////////////////////////////////////////////////////////////
+// ShaderPropertyValue
+
+void IEffectShaderConnections::ShaderPropertyValue::SetType(IEffectShaderConnections::EPropertyType newType)
+{
+	type = newType;
+	switch (newType) {
+	case IEffectShaderConnections::EPropertyType::INT:
+	case IEffectShaderConnections::EPropertyType::BOOL:
+	case IEffectShaderConnections::EPropertyType::FLOAT:
+	case IEffectShaderConnections::EPropertyType::TEXTURE:
+		value = std::array<float, 1>{ 0.0f };
+		break;
+	case IEffectShaderConnections::EPropertyType::VEC2:
+		value = std::array<float, 2>{ 0.0f, 0.0f };
+		break;
+	case IEffectShaderConnections::EPropertyType::VEC3:
+		value = std::array<float, 3>{ 0.0f, 0.0f, 0.0f };
+		break;
+	case IEffectShaderConnections::EPropertyType::VEC4:
+		value = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };
+		break;
+	case IEffectShaderConnections::EPropertyType::MAT4:
+		value = std::vector<float>(15, 0.0f);
+		break;
+	}
+}
+
+void IEffectShaderConnections::ShaderPropertyValue::ReadTextureConnections(FBProperty* fbProperty)
 {
 	texture = nullptr;
 	shaderUserObject = nullptr;
@@ -365,3 +386,4 @@ void IEffectShaderConnections::ShaderProperty::ReadTextureConnections()
 		}
 	}
 }
+

@@ -17,6 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <math.h>
 
 #include "postprocessing_helper.h"
+#include "hashUtils.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // PostEffectSSAO
@@ -80,6 +81,8 @@ void PostEffectSSAO::Process(const RenderEffectContext& renderContext, const IPo
 {
 	// render SSAO into its own buffer
 	constexpr const char* ssaoBufferName = "ssao";
+	static const uint32_t ssaoBufferNameKey = xxhash32(ssaoBufferName);
+
 	const PostPersistentData* postData = effectContext->GetPostProcessData();
 	PostEffectBuffers* buffers = renderContext.buffers;
 
@@ -91,7 +94,7 @@ void PostEffectSSAO::Process(const RenderEffectContext& renderContext, const IPo
 		const int outHeight = (makeDownscale) ? buffers->GetHeight() / 2 : buffers->GetHeight();
 		constexpr int numColorAttachments = 2;
 
-		FrameBuffer* pBufferSSAO = buffers->RequestFramebuffer(ssaoBufferName,
+		FrameBuffer* pBufferSSAO = buffers->RequestFramebuffer(ssaoBufferNameKey,
 			outWidth, outHeight, PostEffectBuffers::GetFlagsForSingleColorBuffer(),
 			numColorAttachments,
 			false, [](FrameBuffer* frameBuffer) {
@@ -116,22 +119,22 @@ void PostEffectSSAO::Process(const RenderEffectContext& renderContext, const IPo
 		glBindTexture(GL_TEXTURE_2D, ssaoTextureId);
 		glActiveTexture(GL_TEXTURE0);
 
-		mShaderMix->Render(buffers, renderContext.dstFrameBuffer, renderContext.colorAttachment,
+		mShaderMix->Render(buffers, renderContext.targetFramebuffer, renderContext.colorAttachment,
 			renderContext.srcTextureId,
-			renderContext.viewWidth, renderContext.viewHeight, renderContext.generateMips, effectContext);
+			renderContext.width, renderContext.height, renderContext.generateMips, effectContext);
 
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glActiveTexture(GL_TEXTURE0);
 
-		buffers->ReleaseFramebuffer(ssaoBufferName);
+		buffers->ReleaseFramebuffer(ssaoBufferNameKey);
 	}
 	else
 	{
 		// just render SSAO result into the output
-		mShaderSSAO->Render(buffers, renderContext.dstFrameBuffer, renderContext.colorAttachment,
+		mShaderSSAO->Render(buffers, renderContext.targetFramebuffer, renderContext.colorAttachment,
 			renderContext.srcTextureId,
-			renderContext.viewWidth, renderContext.viewHeight, renderContext.generateMips, effectContext);
+			renderContext.width, renderContext.height, renderContext.generateMips, effectContext);
 	}
 }
 

@@ -127,7 +127,7 @@ public:
 
 protected:
 
-	std::unordered_map<std::string, ShaderProperty>		mProperties;
+	std::unordered_map<uint32_t, ShaderProperty>		mProperties;
 
 	ShaderProperty* UseMaskingProperty{ nullptr };
 

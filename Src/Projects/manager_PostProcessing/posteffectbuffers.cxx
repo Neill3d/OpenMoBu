@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectbuffers.h"
+#include "hashUtils.h"
 
 ////////////////////////////////////////////////////////////////////////////////////
 // post effect buffers
@@ -415,16 +416,17 @@ bool PostEffectBuffers::PreviewCompressEnd()
 */
 
 
-FrameBuffer* PostEffectBuffers::RequestFramebuffer(const std::string& name)
+FrameBuffer* PostEffectBuffers::RequestFramebuffer(uint32_t nameKey)
 {
-	const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+	//const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+	//const uint32_t key = xxhash32(name);
 
-	auto it = framebufferPool.find(key);
+	auto it = framebufferPool.find(nameKey);
 	if (it == end(framebufferPool))
 	{
 		auto framebuffer = std::make_unique<FrameBuffer>(mWidth, mHeight);
-		framebufferPool[key] = { std::move(framebuffer), name };
-		it = framebufferPool.find(key);
+		framebufferPool[nameKey] = { std::move(framebuffer) }; // , name };
+		it = framebufferPool.find(nameKey);
 	}
 
 	// increment reference count and return framebuffer
@@ -433,7 +435,7 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(const std::string& name)
 }
 
 FrameBuffer* PostEffectBuffers::RequestFramebuffer(
-	const std::string& name,
+	uint32_t nameKey,
 	int width,
 	int height,
 	int flags,
@@ -441,9 +443,10 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 	bool isAutoResize,
 	const std::function<void(FrameBuffer*)>& onInit)
 {
-	const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+	//const std::string key = name; // GenerateKey(name, width, height, flags, numColorAttachments);
+	//const uint32_t key = xxhash32(name);
 
-	auto it = framebufferPool.find(key);
+	auto it = framebufferPool.find(nameKey);
 	if (it == end(framebufferPool) || width != it->second.width || height != it->second.height)
 	{
 		if (it == end(framebufferPool))
@@ -454,7 +457,7 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 				onInit(framebuffer.get());
 			}
 			framebuffer->ReSize(width, height);
-			framebufferPool[key] = { std::move(framebuffer), name, width, height, isAutoResize };
+			framebufferPool[nameKey] = { std::move(framebuffer), width, height, isAutoResize }; // , name
 		}
 		else
 		{
@@ -469,7 +472,7 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 			it->second.isAutoResize = isAutoResize;
 		}
 
-		it = framebufferPool.find(key);
+		it = framebufferPool.find(nameKey);
 	}
 
 	// increment reference count and return framebuffer
@@ -477,44 +480,37 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 	return it->second.framebuffer.get();
 }
 
-void PostEffectBuffers::ReleaseFramebuffer(const std::string& name)
+void PostEffectBuffers::ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmidiately)
 {
-	const std::string key = name; // GenerateKey(...)
-
-	auto it = framebufferPool.find(key);
+	//const std::string key = name; // GenerateKey(...)
+	
+	auto it = framebufferPool.find(nameKey);
 	if (it != end(framebufferPool))
 	{
 		// Decrement reference count
 		it->second.RemoveReference();
 
-		if (it->second.GetReferenceCount() == 0) {
-			// delay for n-frame with removal, lazy erase
-			//framebufferPool.erase(it);
+		// if not forced, then delay for n-frame with removal, lazy erase
+		if (doRemoveImmidiately && it->second.GetReferenceCount() == 0) 
+		{
+			framebufferPool.erase(it);
 		}
 	}
 }
 
-void PostEffectBuffers::OnFrameRendered() {
-	std::vector<std::string> listToErase;
-	for (auto& entry : framebufferPool)
+void PostEffectBuffers::OnFrameRendered() 
+{
+	for (auto it = begin(framebufferPool); it != end(framebufferPool); )
 	{
-		if (entry.second.GetReferenceCount() == 0)
+		const FramebufferEntry& entry = it->second;
+
+		if (entry.GetReferenceCount() == 0 && entry.ReadyToErase())
 		{
-			if (entry.second.ReadyToErase())
-			{
-				listToErase.push_back(entry.first);
-			}
+			it = framebufferPool.erase(it);
 		}
-	}
-	if (!listToErase.empty())
-	{
-		for (const auto& key : listToErase)
+		else
 		{
-			auto it = framebufferPool.find(key);
-			if (it != end(framebufferPool))
-			{
-				framebufferPool.erase(it);
-			}
+			++it;
 		}
 	}
 }

@@ -154,8 +154,8 @@ void PostEffectBase::Process(const RenderEffectContext& renderContext, const IPo
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader))
 	{
-		bufferShader->Render(renderContext.buffers, renderContext.dstFrameBuffer, renderContext.colorAttachment, renderContext.srcTextureId, 
-			renderContext.viewWidth, renderContext.viewHeight, renderContext.generateMips, effectContext);
+		bufferShader->Render(renderContext.buffers, renderContext.targetFramebuffer, renderContext.colorAttachment, renderContext.srcTextureId, 
+			renderContext.width, renderContext.height, renderContext.generateMips, effectContext);
 	}	
 }
 

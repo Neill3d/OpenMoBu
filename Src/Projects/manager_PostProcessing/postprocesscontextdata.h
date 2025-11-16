@@ -27,6 +27,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_fonts.h"
 #include "posteffectbuffers.h"
 #include "posteffectchain.h"
+#include "standardeffectcollection.h"
 
 /// <summary>
 /// All post process render data for an ogl context
@@ -34,8 +35,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 struct PostProcessContextData
 {
 public:
-	FBSystem			mSystem;
-
+	
 	FBTime				mStartSystemTime;
 	double				mLastSystemTime{ std::numeric_limits<double>::max() };
 	double				mLastLocalTime{ std::numeric_limits<double>::max() };
@@ -62,9 +62,17 @@ public:
 
 	std::unique_ptr<GLSLShaderProgram>	mShaderSimple;	//!< for simple blit quads on a screen
 
-	PostEffectChain						mEffectChain;
+	struct SPaneData
+	{
+		PostEffectChain			effectChain; // evaluation and render - prepared chain of effects and property values
+		PostPersistentData* data{ nullptr };
+	};
 
-	std::vector<PostPersistentData*>	mPaneSettings;	//!< choose a propriate settings according to a pane camera
+	static const int MAX_PANE_COUNT = 4;
+	SPaneData	mPaneSettings[MAX_PANE_COUNT];	//!< choose a propriate settings according to a pane camera
+
+	// build-in effects collection to be re-used per effect chain
+	StandardEffectCollection standardEffectsCollection;
 
 	// if each pane has different size (in practice should be not more then 2
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers0;
@@ -76,10 +84,13 @@ public:
 
 	void	PreRenderFirstEntry();
 
+	// run in custom thread to evaluate the processing data
+	void	Evaluate();
+
 	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
 	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);
 
-	const PostEffectChain& GetEffectChain() const { return mEffectChain; }
+	//const PostEffectChain& GetEffectChain() const { return mEffectChain; }
 
 private:
     bool EmptyGLErrorStack();

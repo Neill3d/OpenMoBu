@@ -363,19 +363,25 @@ bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int 
 
 	BindSystemUniforms(effectContext);
 
+	// TODO: setup user uniforms looks like a duplication of 
+	// IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue
+	assert(false);
+
 	// setup user uniforms
 	//const GLuint programId = shader->GetProgramObj();
 	//GLint userTextureSlot = PostEffectBufferShader::GetUserSamplerId(); //!< start index to bind user textures
-
+	/*
 	for (auto& prop : mProperties)
 	{
-		switch (prop.second.type)
+		auto& shaderProperty = prop.second;
+
+		switch (shaderProperty.type)
 		{
 		case IEffectShaderConnections::EPropertyType::INT:
 		{
 			int ivalue = 0;
-			prop.second.fbProperty->GetData(&ivalue, sizeof(int));
-			prop.second.GetFloatData()[0] = static_cast<float>(ivalue);
+			shaderProperty.fbProperty->GetData(&ivalue, sizeof(int));
+			shaderProperty.GetFloatData()[0] = static_cast<float>(ivalue);
 		} break;
 
 		case IEffectShaderConnections::EPropertyType::FLOAT:
@@ -445,8 +451,8 @@ bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int 
 		} break;
 
 		case IEffectShaderConnections::EPropertyType::TEXTURE:
-			prop.second.texture = nullptr;
-			prop.second.shaderUserObject = nullptr;
+			shaderProperty.texture = nullptr;
+			shaderProperty.shaderUserObject = nullptr;
 
 			if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(prop.second.fbProperty))
 			{
@@ -472,6 +478,7 @@ bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int 
 			break;
 		}
 	}
+	*/
 
 	return true;
 }
@@ -481,9 +488,11 @@ std::vector<PostEffectBufferShader*> UserBufferShader::GetConnectedShaders()
 	std::vector<PostEffectBufferShader*> result;
 	for (auto& prop : mProperties)
 	{
-		if (prop.second.shaderUserObject && prop.second.shaderUserObject->GetUserShaderPtr())
+		auto& shaderProperty = prop.second;
+
+		if (shaderProperty.value.shaderUserObject && shaderProperty.value.shaderUserObject->GetUserShaderPtr())
 		{
-			result.push_back(prop.second.shaderUserObject->GetUserShaderPtr());
+			result.push_back(shaderProperty.value.shaderUserObject->GetUserShaderPtr());
 		}
 	}
 	return result;
@@ -502,4 +511,6 @@ void EffectShaderUserObject::RecalculateWidthAndHeight(int& w, int& h)
 		h = h / 4;
 		break;
 	}
+	w = std::max(1, w);
+	h = std::max(1, h);
 }
