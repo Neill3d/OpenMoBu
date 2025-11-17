@@ -25,14 +25,18 @@ EffectShaderFishEye::EffectShaderFishEye(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
 	mAmount = &AddProperty(ShaderProperty(PostPersistentData::FISHEYE_AMOUNT, "amount", nullptr))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 	mLensRadius = &AddProperty(ShaderProperty(PostPersistentData::FISHEYE_LENS_RADIUS, "lensradius", nullptr))
-		.SetScale(1.0f);
+		.SetScale(1.0f)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 	mSignCurvature = &AddProperty(ShaderProperty(PostPersistentData::FISHEYE_SIGN_CURV, "signcurvature", nullptr))
-		.SetScale(1.0f);
+		.SetScale(1.0f)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
 const char* EffectShaderFishEye::GetUseMaskingPropertyName() const noexcept
@@ -47,6 +51,8 @@ const char* EffectShaderFishEye::GetMaskingChannelPropertyName() const noexcept
 bool EffectShaderFishEye::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
+	if (!pData)
+		return false;
 
 	const double amount = pData->FishEyeAmount;
 	const double lensradius = pData->FishEyeLensRadius;

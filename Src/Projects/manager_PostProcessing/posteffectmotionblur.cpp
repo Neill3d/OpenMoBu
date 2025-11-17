@@ -46,7 +46,7 @@ const char* EffectShaderMotionBlur::GetMaskingChannelPropertyName() const noexce
 
 bool EffectShaderMotionBlur::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
-	if (!effectContext->GetCamera())
+	if (!effectContext->GetCamera() || !effectContext->GetPostProcessData())
 		return false;
 
 	const float znear = effectContext->GetCameraNearDistance();

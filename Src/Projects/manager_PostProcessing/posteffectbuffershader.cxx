@@ -241,6 +241,11 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, const IPost
 	for (auto& prop : mProperties)
 	{
 		auto& shaderProperty = prop.second;
+		if (shaderProperty.HasFlag(PropertyFlag::ShouldSkip))
+		{
+			// the shader will process the value on its own
+			continue;
+		}
 
 		if (strnlen(shaderProperty.name, 64) > 0)
 		{
@@ -608,14 +613,13 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 			break;
 
 		case IEffectShaderConnections::EPropertyType::FLOAT:
-			if (!shaderProperty.HasFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE))
-			{
-				glUniform1f(shaderProperty.location, shaderProperty.GetScale() * shaderProperty.GetFloatData()[0]);
-			}
-			else
-			{
-				glUniform1f(shaderProperty.location, 1.0f - shaderProperty.GetScale() * shaderProperty.GetFloatData()[0]);
-			}
+		{
+			float value = shaderProperty.GetScale() * shaderProperty.GetFloatData()[0];
+			if (shaderProperty.HasFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE))
+				value = 1.0f - value;
+
+			glUniform1f(shaderProperty.location, value);
+		}
 			break;
 
 		case IEffectShaderConnections::EPropertyType::VEC2:

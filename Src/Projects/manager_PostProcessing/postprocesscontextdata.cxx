@@ -108,6 +108,18 @@ void PostProcessContextData::Evaluate()
     }
 }
 
+void PostProcessContextData::Synchronize()
+{
+    for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
+    {
+        SPaneData& pane = mPaneSettings[nPane];
+
+        if (!pane.data)
+            continue;
+
+        pane.effectChain.Synchronize();
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 // RenderBeforeRender

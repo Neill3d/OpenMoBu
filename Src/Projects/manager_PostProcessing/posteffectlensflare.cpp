@@ -21,7 +21,8 @@ EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
-		.SetValue(CommonEffect::ColorSamplerSlot);
+		.SetValue(CommonEffect::ColorSamplerSlot)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mFlareSeed = &AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr))
 		.SetRequired(false);
@@ -37,7 +38,8 @@ EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 		.SetType(EPropertyType::VEC4);
 
 	mTint = &AddProperty(ShaderProperty(PostPersistentData::FLARE_TINT, "tint", nullptr))
-		.SetType(EPropertyType::VEC4);
+		.SetType(EPropertyType::VEC4)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 
 	mInner = &AddProperty(ShaderProperty(PostPersistentData::FLARE_INNER, "inner", nullptr))
 		.SetScale(0.01f);
@@ -68,6 +70,8 @@ const char* EffectShaderLensFlare::GetMaskingChannelPropertyName() const noexcep
 bool EffectShaderLensFlare::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* data = effectContext->GetPostProcessData();
+	if (!data)
+		return false;
 
 	const int LastShaderIndex = GetCurrentShader();
 	SetCurrentShader(data->FlareType.AsInt());

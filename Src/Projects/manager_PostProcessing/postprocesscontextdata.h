@@ -86,6 +86,7 @@ public:
 
 	// run in custom thread to evaluate the processing data
 	void	Evaluate();
+	void	Synchronize();
 
 	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
 	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);

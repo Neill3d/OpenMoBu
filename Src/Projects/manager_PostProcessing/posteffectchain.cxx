@@ -603,8 +603,8 @@ void PostEffectChain::Synchronize()
 bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, 
 	const PostEffectContextMoBu& effectContext, const StandardEffectCollection& effectCollection)
 {
-	const uint8_t idx = gActiveData.load(std::memory_order_acquire);
-	RenderData& data = mRenderData[idx];
+	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
+	RenderData& data = mRenderData[activeIndex];
 	std::vector<PostEffectBase*>& effectChain = data.mChain;
 
 	//

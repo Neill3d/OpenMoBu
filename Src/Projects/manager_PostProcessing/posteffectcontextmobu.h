@@ -43,9 +43,9 @@ public:
 	// 4 floats in format - year + 1900, month + 1, day, seconds since midnight
 	virtual const float* GetIDate() const noexcept override { return iDate; }
 
-	FBCamera* GetCamera() const { return camera; }
-	FBComponent* GetComponent() const { return userObject; }
-	PostPersistentData* GetPostProcessData() const { return postProcessData; }
+	inline FBCamera* GetCamera() const { return camera; }
+	inline FBComponent* GetComponent() const { return userObject; }
+	inline PostPersistentData* GetPostProcessData() const { return postProcessData; }
 
 	void OverrideComponent(FBComponent* component) const { userObject = component; }
 

@@ -22,15 +22,21 @@ EffectShaderVignetting::EffectShaderVignetting(FBComponent* ownerIn)
 	
 	AddProperty(ShaderProperty("color", "colorSampler"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 	
 	mAmount = &AddProperty(ShaderProperty(PostPersistentData::VIGN_AMOUNT, "amount", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetScale(0.01f);
 	VignOut = &AddProperty(ShaderProperty(PostPersistentData::VIGN_OUT, "vignout", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetScale(0.01f);
 	VignIn = &AddProperty(ShaderProperty(PostPersistentData::VIGN_IN, "vignin", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetScale(0.01f);
-	VignFade = &AddProperty(ShaderProperty(PostPersistentData::VIGN_FADE, "vignfade", nullptr));
+	VignFade = &AddProperty(ShaderProperty(PostPersistentData::VIGN_FADE, "vignfade", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true)
+		.SetScale(-0.1f);
 }
 
 const char* EffectShaderVignetting::GetUseMaskingPropertyName() const noexcept
@@ -45,6 +51,8 @@ const char* EffectShaderVignetting::GetMaskingChannelPropertyName() const noexce
 bool EffectShaderVignetting::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* data = effectContext->GetPostProcessData();
+	if (!data)
+		return false;
 
 	const double amount = data->VignAmount;
 	const double vignout = data->VignOut;
@@ -55,6 +63,5 @@ bool EffectShaderVignetting::OnCollectUI(const IPostEffectContext* effectContext
 	VignOut->SetValue(static_cast<float>(vignout));
 	VignIn->SetValue(static_cast<float>(vignin));
 	VignFade->SetValue(static_cast<float>(vignfade));
-
 	return true;
 }

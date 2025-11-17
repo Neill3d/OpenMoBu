@@ -26,6 +26,7 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "inputSampler"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 	mTime = &AddProperty(ShaderProperty("time", "iTime", nullptr))
 		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
@@ -54,6 +55,8 @@ const char* EffectShaderDisplacement::GetMaskingChannelPropertyName() const noex
 bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* postProcess = effectContext->GetPostProcessData();
+	if (!postProcess)
+		return false;
 
 	// this is a custom logic of updating uniform values
 

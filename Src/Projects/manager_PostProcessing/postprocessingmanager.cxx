@@ -150,6 +150,7 @@ bool PostProcessingManager::Open()
 	mSystem.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
 	FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	FBEvaluateManager::TheOne().OnSynchronizationEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
     return true;
@@ -338,6 +339,7 @@ bool PostProcessingManager::Close()
 	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
 	FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	FBEvaluateManager::TheOne().OnSynchronizationEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
 	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
 	mApplication.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
@@ -418,7 +420,15 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 		// plugin developer could add some lightweight scene modification tasks here
 		// and no need to worry complicated thread issues. 
 		//
+		auto iter = gContextMap.find(gCurrentContext);
 
+		if (iter == end(gContextMap))
+		{
+			return;
+		}
+
+		PostProcessContextData* pContextData = iter->second;
+		pContextData->Synchronize();
 	}
 }
 

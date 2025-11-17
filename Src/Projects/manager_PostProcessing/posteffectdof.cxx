@@ -27,34 +27,41 @@ EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "colorSampler"))
 		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
 	// Core depth of field parameters
 	mFocalDistance = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_DISTANCE,
 		"focalDistance",
-		IEffectShaderConnections::EPropertyType::FLOAT));
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mFocalRange = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_RANGE,
 		"focalRange",
-		IEffectShaderConnections::EPropertyType::FLOAT));
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mFStop = &AddProperty(ShaderProperty(PostPersistentData::DOF_FSTOP,
 		"fstop",
-		IEffectShaderConnections::EPropertyType::FLOAT));
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mCoC = &AddProperty(ShaderProperty(PostPersistentData::DOF_COC,
 		"CoC",
-		IEffectShaderConnections::EPropertyType::FLOAT));
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	// Rendering parameters
 	
 	mSamples = &AddProperty(ShaderProperty(PostPersistentData::DOF_SAMPLES,
 		"samples",
-		IEffectShaderConnections::EPropertyType::INT));
+		IEffectShaderConnections::EPropertyType::INT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mRings = &AddProperty(ShaderProperty(PostPersistentData::DOF_RINGS,
 		"rings",
-		IEffectShaderConnections::EPropertyType::INT));
+		IEffectShaderConnections::EPropertyType::INT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	// Focus control
 	mAutoFocus = &AddProperty(ShaderProperty(PostPersistentData::DOF_AUTO_FOCUS,
@@ -95,45 +102,54 @@ EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 	// Visual enhancement parameters
 	mBlurForeground = &AddProperty(ShaderProperty(PostPersistentData::DOF_BLUR_FOREGROUND,
 		"blurForeground",
-		IEffectShaderConnections::EPropertyType::BOOL));
+		IEffectShaderConnections::EPropertyType::BOOL))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mThreshold = &AddProperty(ShaderProperty(PostPersistentData::DOF_THRESHOLD,
 		"threshold",
 		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mGain = &AddProperty(ShaderProperty(PostPersistentData::DOF_GAIN,
 		"gain",
-		IEffectShaderConnections::EPropertyType::FLOAT));
+		IEffectShaderConnections::EPropertyType::FLOAT))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mBias = &AddProperty(ShaderProperty(PostPersistentData::DOF_BIAS,
 		"bias",
 		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mFringe = &AddProperty(ShaderProperty(PostPersistentData::DOF_FRINGE,
 		"fringe",
 		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mNoise = &AddProperty(ShaderProperty(PostPersistentData::DOF_NOISE,
 		"noise",
-		IEffectShaderConnections::EPropertyType::BOOL));
+		IEffectShaderConnections::EPropertyType::BOOL))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	// Experimental bokeh shape parameters
 	mPentagon = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON,
 		"pentagon",
-		IEffectShaderConnections::EPropertyType::BOOL));
+		IEffectShaderConnections::EPropertyType::BOOL))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mFeather = &AddProperty(ShaderProperty(PostPersistentData::DOF_PENTAGON_FEATHER,
 		"feather",
 		IEffectShaderConnections::EPropertyType::FLOAT))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	// Debug utilities
 	mDebugBlurValue = &AddProperty(ShaderProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE,
 		"debugBlurValue",
-		IEffectShaderConnections::EPropertyType::BOOL));
+		IEffectShaderConnections::EPropertyType::BOOL))
+		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 }
 
 const char* EffectShaderDOF::GetUseMaskingPropertyName() const noexcept
@@ -148,29 +164,31 @@ const char* EffectShaderDOF::GetMaskingChannelPropertyName() const noexcept
 bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* pData = effectContext->GetPostProcessData();
+	if (!pData)
+		return false;
 
 	FBCamera* camera = effectContext->GetCamera();
 
 	double _focalDistance = pData->FocalDistance;
 	double _focalRange = pData->FocalRange;
-	//double _fstop = pData->FStop;
-	//int _samples = pData->Samples;
-	//int _rings = pData->Rings;
+	double _fstop = pData->FStop;
+	int _samples = pData->Samples;
+	int _rings = pData->Rings;
 
 	float _useFocusPoint = (pData->UseFocusPoint) ? 1.0f : 0.0f;
 	FBVector2d _focusPoint = pData->FocusPoint;
 
-	//double _blurForeground = (pData->BlurForeground) ? 1.0 : 0.0;
+	const bool _blurForeground = pData->BlurForeground;
 
-	//double _CoC = pData->CoC;
-	//double _threshold = pData->Threshold;
+	double _CoC = pData->CoC;
+	double _threshold = pData->Threshold;
 	
-//	double _gain = pData->Gain;
-	//double _bias = pData->Bias;
-	//double _fringe = pData->Fringe;
-	//double _feather = pData->PentagonFeather;
+	double _gain = pData->Gain;
+	double _bias = pData->Bias;
+	double _fringe = pData->Fringe;
+	double _feather = pData->PentagonFeather;
 
-	//double _debugBlurValue = (pData->DebugBlurValue) ? 1.0 : 0.0;
+	const bool _debugBlurValue = pData->DebugBlurValue;
 
 	if (pData->UseCameraDOFProperties)
 	{
@@ -184,7 +202,7 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 			pInterest = camera->Interest;
 		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)
 			pInterest = camera->FocusModel;
-
+		
 		if (nullptr != pInterest)
 		{
 			FBMatrix modelView, modelViewI;
@@ -228,7 +246,7 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 	mFocalDistance->SetValue(static_cast<float>(_focalDistance));
 	mFocalRange->SetValue(static_cast<float>(_focalRange));
 
-	//mFStop->SetValue(static_cast<float>(_fstop));
+	mFStop->SetValue(static_cast<float>(_fstop));
 
 	mManualDOF->SetValue(false);
 	mNDOFStart->SetValue(1.0f);
@@ -236,21 +254,23 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 	mFDOFStart->SetValue(1.0f);
 	mFDOFDist->SetValue(3.0f);
 
-	//mSamples->SetValue(_samples);
-	//mRings->SetValue(_rings);
+	mSamples->SetValue(_samples);
+	mRings->SetValue(_rings);
 	
-	//mBlurForeground->SetValue(static_cast<float>(_blurForeground));
+	mCoC->SetValue(static_cast<float>(_CoC));
 
-	//mCoC->SetValue(static_cast<float>(_CoC));
+	mBlurForeground->SetValue(_blurForeground);
 
-	//mBlurForeground->SetValue(static_cast<float>(_blurForeground));
-
-	//mThreshold->SetValue(static_cast<float>(_threshold));
-	//mBias->SetValue(static_cast<float>(_bias));
-	//mFringe->SetValue(static_cast<float>(_fringe));
-	//mFeather->SetValue(static_cast<float>(_feather));
-	//mDebugBlurValue->SetValue(static_cast<float>(_debugBlurValue));
+	mThreshold->SetValue(static_cast<float>(_threshold));
+	mGain->SetValue(static_cast<float>(_gain));
+	mBias->SetValue(static_cast<float>(_bias));
+	mFringe->SetValue(static_cast<float>(_fringe));
+	mFeather->SetValue(static_cast<float>(_feather));
+	mDebugBlurValue->SetValue(_debugBlurValue);
 	
+	mNoise->SetValue(pData->Noise);
+	mPentagon->SetValue(pData->Pentagon);
+
 	mFocusPoint->SetValue(0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
 
 	return true;

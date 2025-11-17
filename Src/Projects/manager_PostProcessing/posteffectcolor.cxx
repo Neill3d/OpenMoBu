@@ -87,7 +87,7 @@ void PostEffectColor::Process(const RenderEffectContext& renderContext, const IP
 	const PostPersistentData* postData = effectContext->GetPostProcessData();
 	PostEffectBuffers* buffers = renderContext.buffers;
 
-	if (postData->Bloom)
+	if (postData && buffers && postData->Bloom)
 	{
 		constexpr bool makeDownscale = false;
 		const int outWidth = (makeDownscale) ? buffers->GetWidth() / 2 : buffers->GetWidth();
@@ -143,6 +143,7 @@ EffectShaderColor::EffectShaderColor(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
 	mChromaticAberration = &AddProperty(ShaderProperty("gCA", "gCA", EPropertyType::VEC4))
@@ -168,6 +169,8 @@ const char* EffectShaderColor::GetMaskingChannelPropertyName() const noexcept
 bool EffectShaderColor::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
+	if (!pData)
+		return false;
 
 	const float chromatic_aberration = (pData->ChromaticAberration) ? 1.0f : 0.0f;
 	const FBVector2d ca_dir = pData->ChromaticAberrationDirection;

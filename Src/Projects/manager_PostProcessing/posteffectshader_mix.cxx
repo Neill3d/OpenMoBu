@@ -34,19 +34,23 @@ EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 
 		ShaderProperty texturePropertyA(EffectShaderMixUserObject::INPUT_TEXTURE_LABEL, "sampler0", EPropertyType::TEXTURE, &userObject->InputTexture);
 		mColorSamplerA = &AddProperty(std::move(texturePropertyA))
-			.SetValue(CommonEffect::ColorSamplerSlot);
+			.SetValue(CommonEffect::ColorSamplerSlot)
+			.SetFlag(PropertyFlag::ShouldSkip, true);
 
 		ShaderProperty texturePropertyB(EffectShaderMixUserObject::INPUT_TEXTURE_2_LABEL, "sampler1", EPropertyType::TEXTURE, &userObject->SecondTexture);
 		mColorSamplerB = &AddProperty(std::move(texturePropertyB))
-			.SetValue(CommonEffect::UserSamplerSlot);
+			.SetValue(CommonEffect::UserSamplerSlot)
+			.SetFlag(PropertyFlag::ShouldSkip, true);
 	}
 	else
 	{
 		mColorSamplerA = &AddProperty(ShaderProperty("color", "sampler0"))
 			.SetType(EPropertyType::TEXTURE)
+			.SetFlag(PropertyFlag::ShouldSkip, true)
 			.SetValue(CommonEffect::ColorSamplerSlot);
 		mColorSamplerB = &AddProperty(ShaderProperty("color", "sampler1"))
 			.SetType(EPropertyType::TEXTURE)
+			.SetFlag(PropertyFlag::ShouldSkip, true)
 			.SetValue(CommonEffect::UserSamplerSlot);
 	}
 
@@ -63,7 +67,7 @@ bool EffectShaderMix::OnCollectUI(const IPostEffectContext* effectContext, int m
 		// collect from the main post process user object
 
 		PostPersistentData* data = effectContext->GetPostProcessData();
-		if (data->Bloom)
+		if (data && data->Bloom)
 		{
 			mBloom->SetValue(static_cast<float>(0.01 * data->BloomTone),
 				static_cast<float>(0.01 * data->BloomStretch),

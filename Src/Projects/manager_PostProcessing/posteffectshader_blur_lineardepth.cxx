@@ -19,10 +19,12 @@ EffectShaderBlurLinearDepth::EffectShaderBlurLinearDepth(FBComponent* uiComponen
 {
 	mColorTexture = &AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
 	mLinearDepthTexture = &AddProperty(ShaderProperty("linearDepth", "linearDepthSampler"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::LinearDepthSamplerSlot);
 
 	mBlurSharpness = &AddProperty(ShaderProperty("blurSharpness", "g_Sharpness"))

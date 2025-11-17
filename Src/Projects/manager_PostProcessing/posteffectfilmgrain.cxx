@@ -25,20 +25,26 @@ EffectShaderFilmGrain::EffectShaderFilmGrain(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
 	mTimer = &AddProperty(ShaderProperty("time", "timer", EPropertyType::FLOAT))
 		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 
 	mGrainAmount = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_AMOUNT, "grainamount", nullptr))
-		.SetScale(0.01f);
-	mColored = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_COLORED, "colored", nullptr));
+		.SetScale(0.01f)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
+	mColored = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_COLORED, "colored", nullptr))
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 	mColorAmount = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_COLOR_AMOUNT, "coloramount", nullptr))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 	mGrainSize = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_SIZE, "grainsize", nullptr))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 	mLumAmount = &AddProperty(ShaderProperty(PostPersistentData::GRAIN_LUMAMOUNT, "lumamount", nullptr))
-		.SetScale(0.01f);
+		.SetScale(0.01f)
+		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
 const char* EffectShaderFilmGrain::GetUseMaskingPropertyName() const noexcept
@@ -53,6 +59,8 @@ const char* EffectShaderFilmGrain::GetMaskingChannelPropertyName() const noexcep
 bool EffectShaderFilmGrain::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
+	if (!pData)
+		return false;
 
 	const double time = (pData->FG_UsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 

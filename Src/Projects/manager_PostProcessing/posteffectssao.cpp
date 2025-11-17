@@ -151,10 +151,12 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "colorSampler"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 
 	AddProperty(ShaderProperty("random", "texRandom"))
 		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::ShouldSkip, true)
 		.SetValue(CommonEffect::UserSamplerSlot);
 
 	mProjInfo = &AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
@@ -223,6 +225,8 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 {
 	FBCamera* camera = effectContext->GetCamera();
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
+	if (!camera || !pData)
+		return false;
 
 	// calculate a diagonal fov
 	// convert to mm
