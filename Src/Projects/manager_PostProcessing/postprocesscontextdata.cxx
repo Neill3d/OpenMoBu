@@ -30,6 +30,7 @@ void PostProcessContextData::Init()
     mLastLocalTime = std::numeric_limits<double>::max();
     mVideoRendering = false;
     mLastPaneCount = 0;
+    isReadyToEvaluate = false;
 
     for (int i = 0; i < 4; ++i)
     {
@@ -46,62 +47,63 @@ void PostProcessContextData::Init()
     mMainFrameBuffer.InitTextureInternalFormat();
 }
 
-void PostProcessContextData::Evaluate()
+void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime)
 {
+    if (!isReadyToEvaluate)
+    {
+        return;
+    }
+
     FBSystem& mSystem = FBSystem::TheOne();
+	FBRenderer* pRenderer = mSystem.Renderer;
+    if (!pRenderer)
+		return;
+
+    systemTime = systemTime - mStartSystemTime;
+
+    const double sysTimeSecs = systemTime.GetSecondDouble();
+    const double localTimeSecs = localTime.GetSecondDouble();
+
+    if (mLastSystemTime == std::numeric_limits<double>::max())
+        mLastSystemTime = sysTimeSecs;
+    if (mLastLocalTime == std::numeric_limits<double>::max())
+        mLastLocalTime = localTimeSecs;
+
+    const double systemTimeDT = sysTimeSecs - mLastSystemTime;
+    const double localTimeDT = localTimeSecs - mLastLocalTime;
+
+    IPostEffectContext::Parameters contextParameters;
+	contextParameters.localFrame = static_cast<int>(localTime.GetFrame());
+	contextParameters.sysTime = sysTimeSecs;
+	contextParameters.sysTimeDT = systemTimeDT;
+	contextParameters.localTime = localTimeSecs;
+	contextParameters.localTimeDT = localTimeDT;
 
     // for all post processing view panes, evaluate their effect chains
 
     for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
     {
         SPaneData& pane = mPaneSettings[nPane];
+        FBCamera* pCamera = pRenderer->GetCameraInPane(nPane);
 
-        if (!pane.data)
+        if (!pane.data || pane.data->IsNeedToReloadShaders() || !pCamera)
             continue;
 
-        FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+		int viewportWidth = pCamera->CameraViewportWidth;
+		int viewportHeight = pCamera->CameraViewportHeight;
 
-        int localViewport[4] = {
-            pCamera->CameraViewportX,
-            pCamera->CameraViewportY,
-            pCamera->CameraViewportWidth,
-            pCamera->CameraViewportHeight
-        };
-
-        if (true == pCamera->SystemCamera)
+        if (pCamera->SystemCamera)
         {
-            localViewport[2] = 0;
+            viewportWidth = 0;
         }
-        else if (false == mVideoRendering || nPane > 0)
+        else if (!mVideoRendering || nPane > 0)
         {
-            if (true == mSchematicView[nPane])
-                localViewport[2] = 0;
+            if (mSchematicView[nPane])
+                viewportWidth = 0;
         }
 
-        FBTime sysTime = mSystem.SystemTime;
-        sysTime = sysTime - mStartSystemTime;
-        FBTime localTime = mSystem.LocalTime;
-        const double sysTimeSecs = sysTime.GetSecondDouble();
-        const double localTimeSecs = localTime.GetSecondDouble();
-
-        if (mLastSystemTime == std::numeric_limits<double>::max())
-            mLastSystemTime = sysTimeSecs;
-        if (mLastLocalTime == std::numeric_limits<double>::max())
-            mLastLocalTime = localTimeSecs;
-
-        const double systemTimeDT = sysTimeSecs - mLastSystemTime;
-        const double localTimeDT = localTimeSecs - mLastLocalTime;
-
-        const IPostEffectContext::Parameters contextParameters
-        {
-            localViewport[2], // w
-            localViewport[3], // h
-            static_cast<int>(localTime.GetFrame()), // local frame
-            sysTimeSecs,
-            systemTimeDT,
-            localTimeSecs,
-            localTimeDT
-        };
+		contextParameters.w = viewportWidth;
+		contextParameters.h = viewportHeight;
 
         const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, contextParameters);
         pane.effectChain.Evaluate(effectContext, standardEffectsCollection);
@@ -110,6 +112,8 @@ void PostProcessContextData::Evaluate()
 
 void PostProcessContextData::Synchronize()
 {
+    isReadyToEvaluate = false;
+
     for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
     {
         SPaneData& pane = mPaneSettings[nPane];
@@ -117,7 +121,14 @@ void PostProcessContextData::Synchronize()
         if (!pane.data)
             continue;
 
+        if (pane.data->IsNeedToReloadShaders())
+        {
+            isReadyToEvaluate = false;
+            break;
+		}
+
         pane.effectChain.Synchronize();
+        isReadyToEvaluate = false;
     }
 }
 
@@ -181,7 +192,7 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
 // RenderAfterRender - post processing work after main scene rendering is finished
 
 
-bool PostProcessContextData::RenderAfterRender(const bool processCompositions, const bool renderToBuffer)
+bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool renderToBuffer, FBTime systemTime, FBTime localTime)
 {
     bool lStatus = false;
 
@@ -189,6 +200,9 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
         return lStatus;
 
     FBSystem& mSystem = FBSystem::TheOne();
+	FBRenderer* pRenderer = mSystem.Renderer;
+	if (!pRenderer)
+		return lStatus;
 
     /////////////
     // !!!
@@ -208,10 +222,8 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
         EmptyGLErrorStack();
 #endif
         
-        FBTime sysTime = mSystem.SystemTime;
-        sysTime = sysTime - mStartSystemTime;
-        FBTime localTime = mSystem.LocalTime;
-        const double sysTimeSecs = sysTime.GetSecondDouble();
+        systemTime = systemTime - mStartSystemTime;
+        const double sysTimeSecs = systemTime.GetSecondDouble();
         const double localTimeSecs = localTime.GetSecondDouble();
 
         if (mLastSystemTime == std::numeric_limits<double>::max())
@@ -225,9 +237,18 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
         mLastSystemTime = sysTimeSecs;
         mLastLocalTime = localTimeSecs;
 
+        IPostEffectContext::Parameters contextParameters;
+        contextParameters.localFrame = static_cast<int>(localTime.GetFrame());
+        contextParameters.sysTime = sysTimeSecs;
+        contextParameters.sysTimeDT = systemTimeDT;
+        contextParameters.localTime = localTimeSecs;
+        contextParameters.localTimeDT = localTimeDT;
+
         for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
         {
-            FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+            FBCamera* pCamera = pRenderer->GetCameraInPane(nPane);
+            if (!pCamera)
+                continue;
 
             int localViewport[4] = {
                 pCamera->CameraViewportX,
@@ -294,23 +315,25 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
 
                 // 2. process it
 
-                const IPostEffectContext::Parameters contextParameters
-                {
-                    localViewport[2], // w
-                    localViewport[3], // h
-                    static_cast<int>(localTime.GetFrame()), // local frame
-                    sysTimeSecs,
-                    systemTimeDT,
-                    localTimeSecs,
-                    localTimeDT
-                };
+                contextParameters.w = localViewport[2];
+                contextParameters.h = localViewport[3];
 
                 const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, contextParameters);
 
-                standardEffectsCollection.Prep(pane.data);
-                pane.effectChain.Prep(pane.data, effectContext);
+                // TODO: reload shaders requested, stop evaluation, prep shaders, continue evaluation
 
-                if (pane.effectChain.Process(currBuffers, sysTimeSecs, effectContext, standardEffectsCollection))
+                if (!isReadyToEvaluate && pane.data->IsNeedToReloadShaders())
+                {
+                    standardEffectsCollection.ChangeContext();
+                    pane.effectChain.ChangeContext();
+                    pane.data->SetReloadShadersState(false);
+                }
+
+                bool isReadyToRender = true;
+                isReadyToRender &= standardEffectsCollection.Prep(pane.data);
+                isReadyToRender &= pane.effectChain.Prep(pane.data, effectContext);
+
+                if (isReadyToRender && pane.effectChain.Process(currBuffers, sysTimeSecs, effectContext, standardEffectsCollection))
                 {
                     CHECK_GL_ERROR();
 
@@ -360,9 +383,7 @@ bool PostProcessContextData::RenderAfterRender(const bool processCompositions, c
                             mMainFrameBuffer.GetAttachedFBO(), localViewport[0], localViewport[1], localViewport[2], localViewport[3], 0,
                             false, false, false, false); // don't copy depth or any other color attachment
                     }
-
                 }
-
             }
 
             if (currBuffers)
@@ -703,6 +724,14 @@ void PostProcessContextData::FreeBuffers()
     mEffectBuffers1->ChangeContext();
     mEffectBuffers2->ChangeContext();
     mEffectBuffers3->ChangeContext();
+}
+
+void PostProcessContextData::ResetPaneSettings()
+{
+    mLastPaneCount = 0;
+    isReadyToEvaluate = false;
+    for (int i = 0; i < MAX_PANE_COUNT; ++i)
+        mPaneSettings[i].data = nullptr;
 }
 
 bool PostProcessContextData::PrepPaneSettings()

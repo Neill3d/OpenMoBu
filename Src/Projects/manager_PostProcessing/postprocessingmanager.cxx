@@ -365,12 +365,22 @@ void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 
 	//ClearOutputCompositePtr();
 	//mSettings = nullptr;
+	for (auto& contextPair : gContextMap)
+	{
+		PostProcessContextData* pContextData = contextPair.second;
+		pContextData->ResetPaneSettings();
+	}
 }
 
 void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
 	//mSettings = nullptr;
 	skipRender = true;
+	for (auto& contextPair : gContextMap)
+	{
+		PostProcessContextData* pContextData = contextPair.second;
+		pContextData->ResetPaneSettings();
+	}
 }
 
 void PostProcessingManager::EventFileOpenOverride(HISender pSender, HKEvent pEvent)
@@ -434,15 +444,24 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 
 void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSender, HKEvent pEvent)
 {
-	auto iter = gContextMap.find(gCurrentContext);
+	FBEventEvalGlobalCallback lFBEvent(pEvent);
 
-	if (iter == end(gContextMap))
+	const FBGlobalEvalCallbackTiming timing = lFBEvent.GetTiming();
+	
+	if (timing == FBGlobalEvalCallbackTiming::kFBGlobalEvalCallbackAfterDAG)
 	{
-		return;
+		FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
+		FBTime systemTime = evalInfo->GetSystemTime();
+		FBTime localTime = evalInfo->GetLocalTime();
+		
+		// TODO: this is not context based, we have to evaluate once
+		// and reuse in every context !
+		if (auto iter = gContextMap.find(gCurrentContext); iter != end(gContextMap))
+		{
+			PostProcessContextData* pContextData = iter->second;
+			pContextData->Evaluate(systemTime, localTime);
+		}
 	}
-
-	PostProcessContextData* pContextData = iter->second;
-	pContextData->Evaluate();
 }
 
 
@@ -461,7 +480,6 @@ void PostProcessingManager::CheckForAContextChange()
 	}
 
 	auto iter = gContextMap.find(hContext);
-
 	if (iter == end(gContextMap))
 	{
 		PostProcessContextData *newData = new PostProcessContextData();
@@ -492,7 +510,6 @@ void PostProcessingManager::PreRenderFirstEntry()
 
 void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent)
 {
-
 	if (skipRender)
 		return;
 
@@ -555,7 +572,11 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 			//
 			FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
 
-			pContextData->RenderAfterRender(usePostProcessing, false);
+			FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
+			FBTime systemTime = evalInfo->GetSystemTime();
+			FBTime localTime = evalInfo->GetLocalTime();
+
+			pContextData->RenderAfterRender(usePostProcessing, false, systemTime, localTime);
 
 		} break;
 
@@ -573,7 +594,9 @@ bool PostProcessingManager::ExternalRenderAfterRender()
 
 	if (iter != end(gContextMap))
 	{
-		return iter->second->RenderAfterRender(mLastProcessCompositions, false);
+		FBSystem& system = FBSystem::TheOne();
+
+		return iter->second->RenderAfterRender(mLastProcessCompositions, false, system.SystemTime, system.LocalTime);
 	}
 	return false;
 }

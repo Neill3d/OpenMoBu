@@ -59,21 +59,8 @@ void StandardEffectCollection::ChangeContext()
 
 bool StandardEffectCollection::Prep(PostPersistentData* pData)
 {
-	bool lSuccess = true;
+	bool lSuccess = pData != nullptr;
 
-	if (pData)
-	{
-		if (pData->IsNeedToReloadShaders())
-		{
-			mNeedReloadShaders = true;
-			pData->SetReloadShadersState(false);
-		}
-	}
-	else
-	{
-		lSuccess = false;
-	}
-	
 	if (mNeedReloadShaders)
 	{
 		if (!LoadShaders())

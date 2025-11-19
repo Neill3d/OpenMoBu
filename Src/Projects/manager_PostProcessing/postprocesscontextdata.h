@@ -80,16 +80,21 @@ public:
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers2;
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers3;
 
+	bool isReadyToEvaluate{ false };
+
 	void    Init();
+	// once we load file, we should reset pane user object pointers 
+	// and wait for next PrepPaneSettings call
+	void	ResetPaneSettings();
 
 	void	PreRenderFirstEntry();
 
 	// run in custom thread to evaluate the processing data
-	void	Evaluate();
+	void	Evaluate(FBTime systemTime, FBTime localTime);
 	void	Synchronize();
 
-	void	RenderBeforeRender(const bool processCompositions, const bool renderToBuffer);
-	bool	RenderAfterRender(const bool processCompositions, const bool renderToBuffer);
+	void	RenderBeforeRender(bool processCompositions, bool renderToBuffer);
+	bool	RenderAfterRender(bool processCompositions, bool renderToBuffer, FBTime systemTime, FBTime localTime);
 
 	//const PostEffectChain& GetEffectChain() const { return mEffectChain; }
 

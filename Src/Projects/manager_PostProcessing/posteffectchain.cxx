@@ -47,6 +47,9 @@ void PostEffectChain::ChangeContext()
 {
 	mIsCompressedDataReady = false;
 	mLastCompressTime = 0.0;
+
+	mRenderData[0].isReady = false;
+	mRenderData[1].isReady = false;
 }
 
 bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoBu& effectContext)
@@ -56,7 +59,7 @@ bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoB
 	mSettings = pData;
 	mLastCamera = effectContext.GetCamera();
 
-	if (!mSettings.Ok())
+	if (!mSettings.Ok() || !mLastCamera)
 		return false;
 	
 	return lSuccess;
