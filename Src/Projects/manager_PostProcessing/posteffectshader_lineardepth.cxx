@@ -16,10 +16,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
 {
-	mDepthTexture = &AddProperty(ShaderProperty("depth", "depthSampler"))
-		.SetType(EPropertyType::TEXTURE)
-		.SetValue(CommonEffect::DepthSamplerSlot);
-
 	mClipInfo = &AddProperty(ShaderProperty("clipInfo", "gClipInfo"))
 		.SetType(EPropertyType::VEC4)
 		.SetFlag(PropertyFlag::ShouldSkip, true);

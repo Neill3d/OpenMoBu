@@ -128,7 +128,7 @@ void PostProcessContextData::Synchronize()
 		}
 
         pane.effectChain.Synchronize();
-        isReadyToEvaluate = false;
+        isReadyToEvaluate = true;
     }
 }
 
@@ -731,7 +731,9 @@ void PostProcessContextData::ResetPaneSettings()
     mLastPaneCount = 0;
     isReadyToEvaluate = false;
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
+    {
         mPaneSettings[i].data = nullptr;
+    }
 }
 
 bool PostProcessContextData::PrepPaneSettings()

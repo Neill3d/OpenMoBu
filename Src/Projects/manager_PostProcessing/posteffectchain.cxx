@@ -17,8 +17,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffect_userobject.h"
 #include "posteffectbase.h"
 
-
-
 #include "mobu_logging.h"
 #include "hashUtils.h"
 
@@ -38,8 +36,6 @@ PostEffectChain::PostEffectChain()
 	FBProfiling_SetupTaskCycle(PostEffectChain);
 
 	mIsCompressedDataReady = false;
-	
-	//mLocDepthLinearizeClipInfo = -1;
 	mLastCompressTime = 0.0;
 }
 
@@ -49,7 +45,9 @@ void PostEffectChain::ChangeContext()
 	mLastCompressTime = 0.0;
 
 	mRenderData[0].isReady = false;
+	mRenderData[0].mChain.clear();
 	mRenderData[1].isReady = false;
+	mRenderData[2].mChain.clear();
 }
 
 bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoBu& effectContext)
@@ -387,6 +385,7 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBa
 	glBindTexture(GL_TEXTURE_2D, depthId);
 	glActiveTexture(GL_TEXTURE0);
 
+	effect->CollectUIValues(&effectContext);
 	effect->Process(renderContext, &effectContext);
 
 	// DONE: bind a depth texture
@@ -608,7 +607,9 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime,
 {
 	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
 	RenderData& data = mRenderData[activeIndex];
-	std::vector<PostEffectBase*>& effectChain = data.mChain;
+
+	if (!data.isReady)
+		return false;
 
 	//
 	// Start PostEffectChain task cycle profiling, 
@@ -617,15 +618,9 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime,
 
 	mIsCompressedDataReady = false;
 
-	if (!buffers || !buffers->Ok() || !mSettings.Ok() || !data.isReady)
+	if (!buffers || !buffers->Ok() || !mSettings.Ok())
 		return false;
 
-	// 1. prepare chain count and order
-	// NOTE: done at evaluate stage
-	//if (!PrepareChainOrder(effectChain, effectCollection))
-	//	return false;
-
-	//
 	DoubleFramebufferRequestScope doubleBufferRequest(this, buffers);
 	MaskFramebufferRequestScope maskRequest(this, buffers);
 
@@ -733,6 +728,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime,
 	bool lSuccess = false;
 	const bool generateMips = mSettings->GenerateMipMaps;
 
+	const std::vector<PostEffectBase*>& effectChain = data.mChain;
 	if (!effectChain.empty())
 	{
 		auto* doubleBuffer = doubleBufferRequest->GetPtr();

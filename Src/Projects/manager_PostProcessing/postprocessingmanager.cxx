@@ -363,8 +363,6 @@ void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 {
 	// clear all pointers (start point)
 
-	//ClearOutputCompositePtr();
-	//mSettings = nullptr;
 	for (auto& contextPair : gContextMap)
 	{
 		PostProcessContextData* pContextData = contextPair.second;
@@ -374,7 +372,6 @@ void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 
 void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
 	skipRender = true;
 	for (auto& contextPair : gContextMap)
 	{
@@ -391,15 +388,16 @@ void PostProcessingManager::EventFileOpenOverride(HISender pSender, HKEvent pEve
 
 void PostProcessingManager::EventFileMerge(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
-	//mSettingsMerge = true;
-	
 }
 
 void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
 	skipRender = false;
+	for (auto& contextPair : gContextMap)
+	{
+		PostProcessContextData* pContextData = contextPair.second;
+		pContextData->ResetPaneSettings();
+	}
 }
 
 

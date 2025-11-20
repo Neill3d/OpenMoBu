@@ -15,7 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 class PostEffectShaderLinearDepth;
 
 /// <summary>
-/// effect with once shader - bilateral blur
+/// effect with once shader - linear depth extraction
 /// </summary>
 using PostEffectLinearDepth = PostEffectSingleShader<PostEffectShaderLinearDepth>;
 
@@ -40,7 +40,6 @@ public:
 public:
 
 	// properties
-	ShaderProperty* mDepthTexture;
 	ShaderProperty* mClipInfo;
 
 protected:
