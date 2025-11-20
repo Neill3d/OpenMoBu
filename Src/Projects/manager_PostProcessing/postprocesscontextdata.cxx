@@ -47,7 +47,7 @@ void PostProcessContextData::Init()
     mMainFrameBuffer.InitTextureInternalFormat();
 }
 
-void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime)
+void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluteInfoIn)
 {
     if (!isReadyToEvaluate)
     {
@@ -105,7 +105,7 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime)
 		contextParameters.w = viewportWidth;
 		contextParameters.h = viewportHeight;
 
-        const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, contextParameters);
+        const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, pEvaluteInfoIn, contextParameters);
         pane.effectChain.Evaluate(effectContext, standardEffectsCollection);
     }
 }
@@ -192,7 +192,8 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
 // RenderAfterRender - post processing work after main scene rendering is finished
 
 
-bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool renderToBuffer, FBTime systemTime, FBTime localTime)
+bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool renderToBuffer, 
+    FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
 {
     bool lStatus = false;
 
@@ -318,7 +319,7 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 contextParameters.w = localViewport[2];
                 contextParameters.h = localViewport[3];
 
-                const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, contextParameters);
+                const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, pEvaluateInfoIn, contextParameters);
 
                 // TODO: reload shaders requested, stop evaluation, prep shaders, continue evaluation
 

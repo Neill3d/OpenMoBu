@@ -98,8 +98,8 @@ private:
 		bool CollectUIValues(int shaderIndex, const IPostEffectContext* effectContext, int maskIndex);
 		
 	private:
-		void ProcessLightObjects(PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
-		void ProcessSingleLight(PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
+		void ProcessLightObjects(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
+		void ProcessSingleLight(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
 	};
 
 	SubShader	subShaders[NUMBER_OF_SHADERS];

@@ -30,13 +30,6 @@ uniform float		dt;
 uniform float	upperClip;
 uniform float	lowerClip;
 
-uniform vec4	gClipInfo;	// z_n * z_f,  z_n - z_f,  z_f, perspective = 1 : 0
-
-uniform vec4 projInfo;
-uniform int projOrtho;
-uniform vec2 InvQuarterResolution;
-uniform vec2 InvFullResolution;
-
 uniform mat4 invModelViewProj;	// inverse model->view-space
 uniform mat4 prevModelViewProj; 	// previous model->view->projection
 
@@ -66,6 +59,12 @@ void main()
 {
 	vec2 uv = texCoord;
 	
+	if (uv.y < upperClip || uv.y > lowerClip)
+	{
+		FragColor = texture2D(inputSampler, uv);
+		return;
+	}
+
 	float zOverW = 0.0;
 	ComputeDepth(zOverW, uv);
 	

@@ -197,7 +197,7 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 
 		FBModel *pInterest = nullptr;
 		FBCameraFocusDistanceSource cameraFocusDistanceSource;
-		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource));
+		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
 		if (kFBFocusDistanceCameraInterest == cameraFocusDistanceSource)
 			pInterest = camera->Interest;
 		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)

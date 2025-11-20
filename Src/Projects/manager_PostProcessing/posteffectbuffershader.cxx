@@ -596,7 +596,7 @@ void PostEffectBufferShader::AutoUploadUniforms(PostEffectBuffers* buffers, cons
 		{
 			if (shaderProperty.bIsLocationRequired)
 			{
-				LOGE("required property location is not found %s\n", shaderProperty.name);
+				LOGE("required property location is not found %s for shader %s\n", shaderProperty.name, GetName());
 			}
 			
 			continue;

@@ -90,11 +90,12 @@ public:
 	void	PreRenderFirstEntry();
 
 	// run in custom thread to evaluate the processing data
-	void	Evaluate(FBTime systemTime, FBTime localTime);
+	void	Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluteInfoIn);
 	void	Synchronize();
 
 	void	RenderBeforeRender(bool processCompositions, bool renderToBuffer);
-	bool	RenderAfterRender(bool processCompositions, bool renderToBuffer, FBTime systemTime, FBTime localTime);
+	bool	RenderAfterRender(bool processCompositions, bool renderToBuffer, 
+		FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
 
 	//const PostEffectChain& GetEffectChain() const { return mEffectChain; }
 

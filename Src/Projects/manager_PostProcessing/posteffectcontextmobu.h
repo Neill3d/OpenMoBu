@@ -12,10 +12,11 @@ class PostEffectContextMoBu : public IPostEffectContext
 {
 public:
 
-	PostEffectContextMoBu(FBCamera* cameraIn, FBComponent* userObjectIn, PostPersistentData* postProcessDataIn, const Parameters& parametersIn)
+	PostEffectContextMoBu(FBCamera* cameraIn, FBComponent* userObjectIn, PostPersistentData* postProcessDataIn, FBEvaluateInfo* pEvaluateInfoIn, const Parameters& parametersIn)
 		: camera(cameraIn)
 		, userObject(userObjectIn)
 		, postProcessData(postProcessDataIn)
+		, pEvaluateInfo(pEvaluateInfoIn)
 	{
 		parameters = parametersIn;
 		PrepareCache();
@@ -43,9 +44,10 @@ public:
 	// 4 floats in format - year + 1900, month + 1, day, seconds since midnight
 	virtual const float* GetIDate() const noexcept override { return iDate; }
 
-	inline FBCamera* GetCamera() const { return camera; }
-	inline FBComponent* GetComponent() const { return userObject; }
-	inline PostPersistentData* GetPostProcessData() const { return postProcessData; }
+	inline FBCamera* GetCamera() const override { return camera; }
+	inline FBComponent* GetComponent() const override { return userObject; }
+	inline PostPersistentData* GetPostProcessData() const override { return postProcessData; }
+	inline FBEvaluateInfo* GetEvaluateInfo() const override { return pEvaluateInfo; }
 
 	void OverrideComponent(FBComponent* component) const { userObject = component; }
 
@@ -74,6 +76,7 @@ private:
 	FBCamera* camera{ nullptr }; //!< current camera that we are drawing with
 	mutable FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
 	PostPersistentData* postProcessData{ nullptr }; //!< this is a main post process object for common effects properties
+	FBEvaluateInfo* pEvaluateInfo{ nullptr }; //!< evaluate info from the caller thread (evalute, render, etc.)
 
 	bool isCameraOrtho{ false };
 

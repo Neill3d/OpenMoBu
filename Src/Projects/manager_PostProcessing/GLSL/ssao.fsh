@@ -27,22 +27,16 @@ uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
-//uniform vec4	gClipInfo;	// z_n * z_f,  z_n - z_f,  z_f, perspective = 1 : 0
-
 uniform vec4 projInfo;
 uniform int projOrtho;
-//uniform vec2 InvQuarterResolution;
 uniform vec2 InvFullResolution;
 
 uniform float RadiusToScreen;		// radius
-//uniform float R2;					// 1 / radius
 uniform float NegInvR2;				// radius * radius
 uniform float NDotVBias;			
 
 uniform float	AOMultiplier;
 uniform float 	PowExponent;
-
-//uniform vec4 	g_Jitter;
 
 uniform float	OnlyAO;		// display only AO when > 0.0
 

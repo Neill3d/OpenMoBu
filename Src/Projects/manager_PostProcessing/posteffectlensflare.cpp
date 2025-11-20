@@ -150,7 +150,7 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, const IP
 
 	if (pData->UseFlareLightObject && pData->FlareLight.GetCount() > 0)
 	{
-		ProcessLightObjects(pData, effectContext->GetCamera(), effectContext->GetViewWidth(), effectContext->GetViewHeight(), 
+		ProcessLightObjects(effectContext, pData, effectContext->GetCamera(), effectContext->GetViewWidth(), effectContext->GetViewHeight(), 
 			effectContext->GetSystemTimeDT(), effectContext->GetSystemTime(), flarePos);
 	}
 	else
@@ -163,7 +163,7 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, const IP
 	return true;
 }
 
-void EffectShaderLensFlare::SubShader::ProcessLightObjects(PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
+void EffectShaderLensFlare::SubShader::ProcessLightObjects(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
 {
 	m_NumberOfPasses = pData->FlareLight.GetCount();
 	m_LightPositions.resize(m_NumberOfPasses);
@@ -175,7 +175,7 @@ void EffectShaderLensFlare::SubShader::ProcessLightObjects(PostPersistentData* p
 
 	for (int i = 0; i < m_NumberOfPasses; ++i)
 	{
-		ProcessSingleLight(pData, pCamera, mvp, i, w, h, dt, flarePos);
+		ProcessSingleLight(effectContext, pData, pCamera, mvp, i, w, h, dt, flarePos);
 	}
 
 	// relative coords to a screen size
@@ -183,7 +183,7 @@ void EffectShaderLensFlare::SubShader::ProcessLightObjects(PostPersistentData* p
 	pData->FlarePosY = 100.0 * flarePos[1];
 }
 
-void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
+void EffectShaderLensFlare::SubShader::ProcessSingleLight(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
 {
 	FBLight* pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(index));
 
@@ -240,7 +240,7 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostPersistentData* pD
 
 	float alpha = m_LightAlpha[index];
 	double occSpeed = 100.0;
-	pData->FlareOcclusionSpeed.GetData(&occSpeed, sizeof(double));
+	pData->FlareOcclusionSpeed.GetData(&occSpeed, sizeof(double), effectContext->GetEvaluateInfo());
 	alpha += static_cast<float>(occSpeed) * ((isFading) ? -dt : dt);
 	alpha = clamp01(alpha);
 

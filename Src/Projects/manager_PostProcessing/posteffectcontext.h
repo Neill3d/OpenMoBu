@@ -64,6 +64,7 @@ public:
 	[[nodiscard]] virtual FBCamera* GetCamera() const = 0;
 	[[nodiscard]] virtual FBComponent* GetComponent() const = 0;
 	[[nodiscard]] virtual PostPersistentData* GetPostProcessData() const = 0;
+	[[nodiscard]] virtual FBEvaluateInfo* GetEvaluateInfo() const = 0;
 
 	virtual void OverrideComponent(FBComponent* component) const = 0;
 

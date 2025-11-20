@@ -457,7 +457,7 @@ void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSende
 		if (auto iter = gContextMap.find(gCurrentContext); iter != end(gContextMap))
 		{
 			PostProcessContextData* pContextData = iter->second;
-			pContextData->Evaluate(systemTime, localTime);
+			pContextData->Evaluate(systemTime, localTime, evalInfo);
 		}
 	}
 }
@@ -574,7 +574,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 			FBTime systemTime = evalInfo->GetSystemTime();
 			FBTime localTime = evalInfo->GetLocalTime();
 
-			pContextData->RenderAfterRender(usePostProcessing, false, systemTime, localTime);
+			pContextData->RenderAfterRender(usePostProcessing, false, systemTime, localTime, evalInfo);
 
 		} break;
 
@@ -594,7 +594,7 @@ bool PostProcessingManager::ExternalRenderAfterRender()
 	{
 		FBSystem& system = FBSystem::TheOne();
 
-		return iter->second->RenderAfterRender(mLastProcessCompositions, false, system.SystemTime, system.LocalTime);
+		return iter->second->RenderAfterRender(mLastProcessCompositions, false, system.SystemTime, system.LocalTime, FBGetDisplayInfo());
 	}
 	return false;
 }

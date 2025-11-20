@@ -16,7 +16,6 @@
 // INSERT: HEADER
 
 uniform float iTime;
-uniform float iSpeed;
 
 uniform float	useQuakeEffect;
 

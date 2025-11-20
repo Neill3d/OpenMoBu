@@ -54,12 +54,7 @@ protected:
 
 private:
 	
-	ShaderProperty* mDt;
-	ShaderProperty* mClipInfo;
-	ShaderProperty* mProjInfo;
-	ShaderProperty* mProjOrtho;
-	ShaderProperty* mInvQuarterResolution;
-	ShaderProperty* mInvFullResolution;
+	ShaderProperty*		mDt;
 
 	FBMatrix			mLastModelViewProj;
 	

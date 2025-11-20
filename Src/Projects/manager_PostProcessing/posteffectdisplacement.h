@@ -41,7 +41,6 @@ public:
 protected:
 
 	ShaderProperty* mTime;
-	ShaderProperty* mSpeed;
 	ShaderProperty* mUseQuakeEffect;
 	ShaderProperty* mXDistMag;
 	ShaderProperty* mYDistMag;

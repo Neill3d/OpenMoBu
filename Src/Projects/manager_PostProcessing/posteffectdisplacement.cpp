@@ -30,8 +30,6 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 		.SetValue(CommonEffect::ColorSamplerSlot);
 	mTime = &AddProperty(ShaderProperty("time", "iTime", nullptr))
 		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
-	mSpeed = &AddProperty(ShaderProperty("speed", "iSpeed", nullptr))
-		.SetFlag(PropertyFlag::ShouldSkip, true);
 	mUseQuakeEffect = &AddProperty(ShaderProperty(PostPersistentData::DISP_USE_QUAKE_EFFECT, "useQuakeEffect", nullptr))
 		.SetFlag(PropertyFlag::IsFlag, true);
 
@@ -65,7 +63,6 @@ bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectConte
 	const double _timer = 0.01 * timerMult * time;
 
 	mTime->SetValue(static_cast<float>(_timer));
-	mSpeed->SetValue(static_cast<float>(timerMult));
 
 	return true;
 }
