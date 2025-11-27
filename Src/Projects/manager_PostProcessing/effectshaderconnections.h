@@ -4,6 +4,7 @@
 #include "posteffectcontext.h"
 
 #include <array>
+#include <atomic>
 #include <bitset>
 #include <variant>
 #include <vector>
@@ -67,6 +68,7 @@ public:
 
 	enum class EPropertyType : uint8_t
 	{
+		NONE, // in case we have input property with no connection or value
 		INT,
 		BOOL,
 		FLOAT,
@@ -74,7 +76,8 @@ public:
 		VEC3,
 		VEC4,
 		MAT4,
-		TEXTURE
+		TEXTURE, // pointer to texture
+		SHADER_USER_OBJECT // pointer to shader user object
 	};
 
 	enum class PropertyFlag : uint8_t
@@ -105,21 +108,26 @@ public:
 	// a generic value holder for different property types
 	struct MANAGER_POSTPROCESSING_API ShaderPropertyValue
 	{
-		ShaderPropertyValue() : value(std::array<float, 1>{ 0.0f }) {}
+		ShaderPropertyValue() = default;
 
-		// Type-safe dynamic storage for float values
-		std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value;
+		ShaderPropertyValue(IEffectShaderConnections::EPropertyType newType) : value(std::array<float, 1>{ 0.0f }) 
+		{
+			SetType(newType);
+		}
+		ShaderPropertyValue(const ShaderPropertyValue& other) = default;
 
-		uint32_t	key=0; //!< unique key to identify property
-
-		EPropertyType type{ EPropertyType::FLOAT };
-
-		// extracted value from reference object property
-		FBTexture* texture{ nullptr };
-		EffectShaderUserObject* shaderUserObject{ nullptr };
+		void SetNameHash(uint32_t nameHashIn) { key = nameHashIn; }
+		inline uint32_t GetNameHash() const { return key; }
 
 		// change type and apply a default value according to a given type
 		void SetType(IEffectShaderConnections::EPropertyType newType);
+		inline IEffectShaderConnections::EPropertyType GetType() const { return type; }
+
+		void SetLocation(GLint locationIn) { location = locationIn; }
+		inline GLint GetLocation() const { return location; }
+
+		void SetRequired(bool isRequired) { bIsLocationRequired = isRequired; }
+		inline bool IsRequired() const { return bIsLocationRequired; }
 
 		inline void SetValue(int valueIn) {
 			value = std::array<float, 1>{ static_cast<float>(valueIn) };
@@ -150,7 +158,29 @@ public:
 				}, value);
 		}
 
-		void ReadTextureConnections(FBProperty* fbProperty);
+		inline void SetScale(float valueIn) { scale = valueIn; }
+		inline float GetScale() const { return scale; }
+
+		inline void SetInvertValue(bool doInvertValueIn) { doInvertValue = doInvertValueIn; }
+		inline bool IsInvertValue() const { return doInvertValue; }
+
+	private:
+
+		// Type-safe dynamic storage for float values
+		std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value;
+
+		uint32_t	key = 0; //!< unique key to identify property
+
+		EPropertyType type{ EPropertyType::FLOAT };
+
+		bool bIsLocationRequired{ true }; //!< should we treat missing location as an error or not
+		GLshort location{ -1 }; //!< GLSL shader location holder
+
+		float scale{ 1.0f };
+
+		bool doInvertValue{ false };
+
+		int8_t padding[3]{ 0 };
 	};
 
 	// represents a single shader property, its type, name, value, etc.
@@ -159,57 +189,91 @@ public:
 		constexpr static int MAX_NAME_LENGTH{ 64 };
 		constexpr static int HASH_SEED{ 123 };
 
-		char name[MAX_NAME_LENGTH]{ 0 };
-		char uniformName[MAX_NAME_LENGTH]{ 0 };
-		int length{ 0 };
-
-		uint32_t key{ 0 };
-
-		EPropertyType type{ EPropertyType::FLOAT };
-
-		bool bIsLocationRequired{ true }; //!< should we treat missing location as an error or not
-		GLint location{ -1 }; //!< GLSL shader location holder
-		
-		std::bitset<PROPERTY_BITSET_SIZE> flags;
-		
-		FBProperty* fbProperty{ nullptr };
-
-		// pre-cache evaluated value
-		ShaderPropertyValue value;
-
-		// modify the output value that we upload on gpu
-		float scale{ 1.0f };
-
 		ShaderProperty() = default;
+		ShaderProperty(const ShaderProperty& other);
 
 		// constructor to associate property with fbProperty, recognize the type
 		ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn = nullptr);
 		ShaderProperty(const char* nameIn, const char* uniformNameIn, IEffectShaderConnections::EPropertyType typeIn, FBProperty* fbPropertyIn = nullptr);
 
-		ShaderProperty& SetType(IEffectShaderConnections::EPropertyType newType);
-		ShaderProperty& SetFlag(PropertyFlag testFlag, bool setValue);
+		void SetName(const std::string& nameIN) { strncpy_s(name, nameIN.c_str(), nameIN.size()); }
+		inline const char* GetName() const { return name; }
+		inline uint32_t GetNameHash() const { return mDefaultValue.GetNameHash(); }
+		inline const char* GetUniformName() const { return uniformName; }
+		inline char* GetUniformNameAccess() { return uniformName; }
 
+		void SetLocation(GLint locationIN) {
+			mDefaultValue.SetLocation(locationIN);
+		}
+		inline GLint GetLocation() const { return mDefaultValue.GetLocation(); }
+
+		ShaderProperty& SetType(IEffectShaderConnections::EPropertyType newType);
+		inline IEffectShaderConnections::EPropertyType GetType() const { return mDefaultValue.GetType();  }
+		ShaderProperty& SetFlag(PropertyFlag testFlag, bool setValue);
+		bool HasFlag(PropertyFlag testFlag) const;
+
+		// toggle a check if glsl location is found
 		ShaderProperty& SetRequired(bool isRequired);
 
 		ShaderProperty& SetScale(float scaleIn);
 		float GetScale() const;
-
-		ShaderProperty& SetValue(int valueIn);
-		ShaderProperty& SetValue(bool valueIn);
-		ShaderProperty& SetValue(float valueIn);
-		ShaderProperty& SetValue(double valueIn);
-
-		ShaderProperty& SetValue(float x, float y);
-		ShaderProperty& SetValue(float x, float y, float z);
-		ShaderProperty& SetValue(float x, float y, float z, float w);
-
-		const float* GetFloatData() const;
-
-		bool HasFlag(PropertyFlag testFlag) const;
-
-		static void ReadFBPropertyValue(ShaderPropertyValue& value, FBProperty* fbProperty, 
-			const ShaderProperty& shaderProperty, const IPostEffectContext* effectContext, int maskIndex);
 		
+		inline void SetFBProperty(FBProperty* fbPropertyIN) { fbProperty = fbPropertyIN; }
+		inline FBProperty* GetFBProperty() const { return fbProperty; }
+
+		ShaderProperty& SetDefaultValue(int valueIn);
+		ShaderProperty& SetDefaultValue(bool valueIn);
+		ShaderProperty& SetDefaultValue(float valueIn);
+		ShaderProperty& SetDefaultValue(double valueIn);
+
+		ShaderProperty& SetDefaultValue(float x, float y);
+		ShaderProperty& SetDefaultValue(float x, float y, float z);
+		ShaderProperty& SetDefaultValue(float x, float y, float z, float w);
+
+		const float* GetDefaultFloatData() const;
+		ShaderPropertyValue& GetDefaultValue() { return mDefaultValue; }
+		const ShaderPropertyValue& GetDefaultValue() const { return mDefaultValue; }
+		
+		void SwapValueBuffers();
+
+		static void ReadFBPropertyValue(
+			ShaderPropertyValue& value, 
+			const ShaderProperty& shaderProperty, 
+			const IPostEffectContext* effectContext, 
+			int maskIndex);
+		
+		// when shader property comes from FBPropertyListObject
+		//  we read first object in the list and can have either texture of shader user object type from it
+		void ReadTextureConnections(FBProperty* fbProperty);
+
+		FBTexture* GetTexturePtr() { 
+			assert(GetType() == EPropertyType::TEXTURE);
+			return texture; 
+		}
+		EffectShaderUserObject* GetShaderUserObject() { 
+			assert(GetType() == EPropertyType::SHADER_USER_OBJECT);
+			return shaderUserObject; 
+		}
+
+	private:
+		
+		ShaderPropertyValue mDefaultValue;
+		
+		char name[MAX_NAME_LENGTH]{ 0 };
+		char uniformName[MAX_NAME_LENGTH]{ 0 };
+		
+		int32_t padding{ 0 };
+
+		std::bitset<PROPERTY_BITSET_SIZE> flags;
+
+		FBProperty* fbProperty{ nullptr };
+
+		// extracted value from reference object property
+		union
+		{
+			FBTexture* texture{ nullptr };
+			EffectShaderUserObject* shaderUserObject;
+		};
 	};
 
 	virtual ~IEffectShaderConnections() = default;
@@ -227,8 +291,8 @@ public:
 	//virtual void GetOutputProperty(int index) = 0;
 
 	// look for a UI interface, and read properties and its values
-	// should it be a separate class
-	virtual bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) = 0;
+	// we should write values into effectContext's shaderPropertyStorage
+	virtual bool CollectUIValues(IPostEffectContext* effectContext, int maskIndex) = 0;
 
 	// use uniformName to track down some type casts
 	static FBPropertyType ShaderPropertyToFBPropertyType(const ShaderProperty& prop);

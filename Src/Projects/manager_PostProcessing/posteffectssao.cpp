@@ -12,6 +12,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectshader_blur_lineardepth.h"
 #include "posteffectbuffers.h"
 #include "postpersistentdata.h"
+#include "shaderpropertystorage.h"
+#include "shaderpropertywriter.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -68,16 +70,16 @@ bool PostEffectSSAO::Load(const char* shaderLocation)
 	return PostEffectBase::Load(shaderLocation);
 }
 
-bool PostEffectSSAO::CollectUIValues(const IPostEffectContext* effectContext)
+bool PostEffectSSAO::CollectUIValues(IPostEffectContext* effectContext)
 {
 	mShaderMix->CollectUIValues(effectContext, 0);
-	mShaderMix->mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f); // disable bloom in mix shader
+	//mShaderMix->mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f); // disable bloom in mix shader
 	mShaderBlur->CollectUIValues(effectContext, 0);
 	
 	return PostEffectBase::CollectUIValues(effectContext);
 }
 
-void PostEffectSSAO::Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext)
+void PostEffectSSAO::Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext)
 {
 	// render SSAO into its own buffer
 	constexpr const char* ssaoBufferName = "ssao";
@@ -101,16 +103,33 @@ void PostEffectSSAO::Process(const RenderEffectContext& renderContext, const IPo
 				PostEffectBuffers::SetParametersForMainColorBuffer(frameBuffer, false);
 			});
 
-		mShaderSSAO->Render(buffers, pBufferSSAO, 0, renderContext.srcTextureId,
-			outWidth, outHeight, false, effectContext);
+		PostEffectRenderContext renderContextSSAO;
+		renderContextSSAO.buffers = buffers;
+		renderContextSSAO.targetFramebuffer = pBufferSSAO;
+		renderContextSSAO.colorAttachment = 0;
+		renderContextSSAO.srcTextureId = renderContext.srcTextureId;
+		renderContextSSAO.width = outWidth;
+		renderContextSSAO.height = outHeight;
+		renderContextSSAO.generateMips = false;
+
+		mShaderSSAO->Render(renderContextSSAO, effectContext);
 
 		if (doBlur)
 		{
+			PostEffectRenderContext renderContextBlur;
+			renderContextBlur.buffers = buffers;
+			renderContextBlur.targetFramebuffer = pBufferSSAO;
+			renderContextBlur.colorAttachment = 1;
+			renderContextBlur.srcTextureId = pBufferSSAO->GetColorObject(0);
+			renderContextBlur.width = outWidth;
+			renderContextBlur.height = outHeight;
+			renderContextBlur.generateMips = false;
+
 			const float color_shift = 0.0f;
-			mShaderBlur->mColorShift->SetValue(color_shift);
-			mShaderBlur->mInvRes->SetValue(1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));
-			mShaderBlur->Render(buffers, pBufferSSAO, 1, pBufferSSAO->GetColorObject(0),
-				outWidth, outHeight, false, effectContext);
+			renderContextBlur.OverrideUniform(*mShaderBlur->mColorShift, color_shift);
+			renderContextBlur.OverrideUniform(*mShaderBlur->mInvRes, 1.0f / static_cast<float>(outWidth), 1.0f / static_cast<float>(outHeight));			
+
+			mShaderBlur->Render(renderContextBlur, effectContext);
 		}
 	
 		// mix SSAO result with the original scene
@@ -119,9 +138,11 @@ void PostEffectSSAO::Process(const RenderEffectContext& renderContext, const IPo
 		glBindTexture(GL_TEXTURE_2D, ssaoTextureId);
 		glActiveTexture(GL_TEXTURE0);
 
-		mShaderMix->Render(buffers, renderContext.targetFramebuffer, renderContext.colorAttachment,
-			renderContext.srcTextureId,
-			renderContext.width, renderContext.height, renderContext.generateMips, effectContext);
+		PostEffectRenderContext renderContextMix = renderContext;
+		// disable bloom in mix shader
+		renderContextMix.OverrideUniform(*mShaderMix->mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
+
+		mShaderMix->Render(renderContext, effectContext);
 
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -132,15 +153,15 @@ void PostEffectSSAO::Process(const RenderEffectContext& renderContext, const IPo
 	else
 	{
 		// just render SSAO result into the output
-		mShaderSSAO->Render(buffers, renderContext.targetFramebuffer, renderContext.colorAttachment,
-			renderContext.srcTextureId,
-			renderContext.width, renderContext.height, renderContext.generateMips, effectContext);
+		mShaderSSAO->Render(renderContext, effectContext);
 	}
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // EffectShaderSSAO
+
+uint32_t EffectShaderSSAO::SHADER_NAME_HASH = xxhash32(EffectShaderSSAO::SHADER_NAME);
 
 EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
@@ -152,12 +173,12 @@ EffectShaderSSAO::EffectShaderSSAO(FBComponent* ownerIn)
 	AddProperty(ShaderProperty("color", "colorSampler"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetValue(CommonEffect::ColorSamplerSlot);
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 	AddProperty(ShaderProperty("random", "texRandom"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetValue(CommonEffect::UserSamplerSlot);
+		.SetDefaultValue(CommonEffect::UserSamplerSlot);
 
 	mProjInfo = &AddProperty(ShaderProperty("projInfo", "projInfo", nullptr))
 		.SetType(EPropertyType::VEC4)
@@ -221,7 +242,7 @@ void EffectShaderSSAO::DeleteTextures()
 	}
 }
 
-bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderSSAO::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	FBCamera* camera = effectContext->GetCamera();
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
@@ -289,21 +310,34 @@ bool EffectShaderSSAO::OnCollectUI(const IPostEffectContext* effectContext, int 
 
 	const float aoMult = 1.0f / (1.0f - bias);
 
-	
-	mOnlyAO->SetValue(onlyAO);
-	mProjInfo->SetValue(projInfo[0], projInfo[1], projInfo[2], projInfo[3]);
-	mProjOrtho->SetValue(projOrtho);
-	mRadiusToScreen->SetValue(RadiusToScreen);
-	mNegInvR2->SetValue(negInvR2);
-	mPowExponent->SetValue(intensity);
-	mNDotVBias->SetValue(bias);
-	mAOMultiplier->SetValue(aoMult);
-	mInvFullResolution->SetValue(1.0f / float(effectContext->GetViewWidth()), 1.0f / float(effectContext->GetViewHeight()));
+	ShaderPropertyWriter write(this, effectContext);
+
+	write(mOnlyAO, onlyAO)
+		(mProjInfo, projInfo[0], projInfo[1], projInfo[2], projInfo[3])
+		(mProjOrtho, projOrtho)
+		(mRadiusToScreen, RadiusToScreen)
+		(mNegInvR2, negInvR2)
+		(mPowExponent, intensity)
+		(mNDotVBias, bias)
+		(mAOMultiplier, aoMult)
+		(mInvFullResolution,
+			1.0f / float(effectContext->GetViewWidth()),
+			1.0f / float(effectContext->GetViewHeight()));
+
+	//mOnlyAO->SetValue(onlyAO);
+	//mProjInfo->SetValue(projInfo[0], projInfo[1], projInfo[2], projInfo[3]);
+	//mProjOrtho->SetValue(projOrtho);
+	//mRadiusToScreen->SetValue(RadiusToScreen);
+	//mNegInvR2->SetValue(negInvR2);
+	//mPowExponent->SetValue(intensity);
+	//mNDotVBias->SetValue(bias);
+	//mAOMultiplier->SetValue(aoMult);
+	//mInvFullResolution->SetValue(1.0f / float(effectContext->GetViewWidth()), 1.0f / float(effectContext->GetViewHeight()));
 	
 	return true;
 }
 
-void EffectShaderSSAO::Bind()
+bool EffectShaderSSAO::Bind()
 {
 	if (hbaoRandomTexId == 0)
 	{
@@ -315,7 +349,7 @@ void EffectShaderSSAO::Bind()
 	glBindTexture(GL_TEXTURE_2D, hbaoRandomTexId);
 	glActiveTexture(GL_TEXTURE0);
 
-	PostEffectBufferShader::Bind();
+	return PostEffectBufferShader::Bind();
 }
 
 void EffectShaderSSAO::UnBind()

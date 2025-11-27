@@ -12,6 +12,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectbase.h"
 #include "postpersistentdata.h"
 #include "posteffectbuffers.h"
+#include "shaderpropertystorage.h"
 #include "mobu_logging.h"
 
 #include "posteffect_shader_userobject.h"
@@ -97,7 +98,7 @@ bool PostEffectBase::IsWorldNormalSamplerUsed() const
 	return false;
 }
 
-bool PostEffectBase::CollectUIValues(const IPostEffectContext* effectContext)
+bool PostEffectBase::CollectUIValues(IPostEffectContext* effectContext)
 {
 	for (int i = 0; i < GetNumberOfBufferShaders(); ++i)
 	{
@@ -118,8 +119,7 @@ bool PostEffectBase::CollectUIValues(const IPostEffectContext* effectContext)
 	return true;
 }
 
-
-void PostEffectBase::Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext)
+void PostEffectBase::Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext)
 {
 	if (GetNumberOfBufferShaders() == 0)
 		return;
@@ -154,8 +154,7 @@ void PostEffectBase::Process(const RenderEffectContext& renderContext, const IPo
 	const int mainBufferShader = GetNumberOfBufferShaders() - 1;
 	if (PostEffectBufferShader* bufferShader = GetBufferShaderPtr(mainBufferShader))
 	{
-		bufferShader->Render(renderContext.buffers, renderContext.targetFramebuffer, renderContext.colorAttachment, renderContext.srcTextureId, 
-			renderContext.width, renderContext.height, renderContext.generateMips, effectContext);
+		bufferShader->Render(renderContext, effectContext);
 	}	
 }
 

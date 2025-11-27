@@ -8,11 +8,19 @@
 #include <limits>
 #include <ctime>
 
+#include "posteffectchain.h"
+#include "shaderpropertystorage.h"
+
+// TODO: mark to delete in case context is not in use any more !
 class PostEffectContextMoBu : public IPostEffectContext
 {
 public:
 
-	PostEffectContextMoBu(FBCamera* cameraIn, FBComponent* userObjectIn, PostPersistentData* postProcessDataIn, FBEvaluateInfo* pEvaluateInfoIn, const Parameters& parametersIn)
+	PostEffectContextMoBu(FBCamera* cameraIn, 
+		FBComponent* userObjectIn, 
+		PostPersistentData* postProcessDataIn, 
+		FBEvaluateInfo* pEvaluateInfoIn, 
+		const Parameters& parametersIn)
 		: camera(cameraIn)
 		, userObject(userObjectIn)
 		, postProcessData(postProcessDataIn)
@@ -48,8 +56,55 @@ public:
 	inline FBComponent* GetComponent() const override { return userObject; }
 	inline PostPersistentData* GetPostProcessData() const override { return postProcessData; }
 	inline FBEvaluateInfo* GetEvaluateInfo() const override { return pEvaluateInfo; }
+	inline const PostEffectChain* GetFXChain() const override { return &effectChain; }
+	inline PostEffectChain* GetFXChain() { return &effectChain; }
+	inline const ShaderPropertyStorage* GetShaderPropertyStorage() const override { return &shaderPropertyStorage; }
+	inline ShaderPropertyStorage* GetShaderPropertyStorage() { return &shaderPropertyStorage; }
 
 	void OverrideComponent(FBComponent* component) const { userObject = component; }
+
+	void UpdateEvaluateInfo(FBEvaluateInfo* pEvaluateInfoIn)
+	{
+		pEvaluateInfo = pEvaluateInfoIn;
+	}
+	void UpdateContextParameters(FBCamera* cameraIn, const Parameters& parametersIn)
+	{
+		camera = cameraIn;
+		parameters = parametersIn;
+		PrepareCache();
+	}
+
+	void Evaluate(
+		FBEvaluateInfo* pEvaluateInfoIn, 
+		FBCamera* cameraIn, 
+		StandardEffectCollection& standardEffectCollection, 
+		const Parameters& parametersIn)
+	{
+		UpdateEvaluateInfo(pEvaluateInfoIn);
+		UpdateContextParameters(cameraIn, parametersIn);
+		effectChain.Evaluate(standardEffectCollection, this);
+	}
+
+	void Synchronize()
+	{
+		effectChain.Synchronize();
+		shaderPropertyStorage.CommitWrite(0);
+	}
+
+	void ChangeContext()
+	{
+		effectChain.ChangeContext();
+	}
+
+	bool Prep()
+	{
+		return effectChain.Prep(postProcessData, this);
+	}
+
+	bool Process(PostEffectBuffers* buffers, StandardEffectCollection& standardEffectCollection)
+	{
+		return effectChain.Process(buffers, parameters.localTime, this, standardEffectCollection);
+	}
 
 private:
 
@@ -77,6 +132,10 @@ private:
 	mutable FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
 	PostPersistentData* postProcessData{ nullptr }; //!< this is a main post process object for common effects properties
 	FBEvaluateInfo* pEvaluateInfo{ nullptr }; //!< evaluate info from the caller thread (evalute, render, etc.)
+
+	PostEffectChain effectChain; //!< build a chain from a postProcessData
+	ShaderPropertyStorage shaderPropertyStorage; //!< storage for shader properties
+
 
 	bool isCameraOrtho{ false };
 

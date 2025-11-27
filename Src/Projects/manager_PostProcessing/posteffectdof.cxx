@@ -11,13 +11,16 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectdof.h"
 #include "postpersistentdata.h"
+#include "shaderpropertywriter.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "postprocessing_helper.h"
+#include <hashUtils.h>
 
-//! a constructor
+uint32_t EffectShaderDOF::SHADER_NAME_HASH = xxhash32(EffectShaderDOF::SHADER_NAME);
+
 EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
 {
@@ -28,7 +31,7 @@ EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 	AddProperty(ShaderProperty("color", "colorSampler"))
 		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
 		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true)
-		.SetValue(CommonEffect::ColorSamplerSlot);
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 	// Core depth of field parameters
 	mFocalDistance = &AddProperty(ShaderProperty(PostPersistentData::DOF_FOCAL_DISTANCE,
@@ -161,7 +164,7 @@ const char* EffectShaderDOF::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::DOF_MASKING_CHANNEL;
 }
 
-bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderDOF::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
@@ -243,6 +246,30 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 		_focalDistance = dist;
 	}
 
+	ShaderPropertyWriter writer(this, effectContext);
+
+	writer(mFocalDistance, static_cast<float>(_focalDistance))
+		(mFocalRange, static_cast<float>(_focalRange))
+		(mFStop, static_cast<float>(_fstop))
+		(mManualDOF, false)
+		(mNDOFStart, 1.0f)
+		(mNDOFDist, 2.0f)
+		(mFDOFStart, 1.0f)
+		(mFDOFDist, 3.0f)
+		(mSamples, _samples)
+		(mRings, _rings)
+		(mCoC, static_cast<float>(_CoC))
+		(mBlurForeground, _blurForeground)
+		(mThreshold, static_cast<float>(_threshold))
+		(mGain, static_cast<float>(_gain))
+		(mBias, static_cast<float>(_bias))
+		(mFringe, static_cast<float>(_fringe))
+		(mFeather, static_cast<float>(_feather))
+		(mDebugBlurValue, _debugBlurValue)
+		(mNoise, pData->Noise)
+		(mPentagon, pData->Pentagon)
+		(mFocusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
+	/*
 	mFocalDistance->SetValue(static_cast<float>(_focalDistance));
 	mFocalRange->SetValue(static_cast<float>(_focalRange));
 
@@ -272,6 +299,6 @@ bool EffectShaderDOF::OnCollectUI(const IPostEffectContext* effectContext, int m
 	mPentagon->SetValue(pData->Pentagon);
 
 	mFocusPoint->SetValue(0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
-
+	*/
 	return true;
 }

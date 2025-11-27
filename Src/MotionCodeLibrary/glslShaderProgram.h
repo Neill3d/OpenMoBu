@@ -82,8 +82,8 @@ bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
 
 	bool ReCompileShaders(const char* vertex_file, const char* fragment_file );
 
-
-  void Bind() const;
+  // return true if the shader program is binded
+  bool Bind() const;
   void UnBind() const;
 
   bool setUniformUINT ( const char *name, const GLint value );

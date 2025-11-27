@@ -35,6 +35,7 @@ public:
 
 	//! an effect public name
 	const char* GetName() const override { return SHADER_NAME; }
+	uint32_t GetNameHash() const override { return SHADER_NAME_HASH; }
 	//! get a filename of vertex shader, for this effect. returns a relative filename
 	const char* GetVertexFname(const int variationIndex) const override { return VERTEX_SHADER_FILE; }
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
@@ -51,6 +52,7 @@ public:
 
 protected:
 	static constexpr const char* SHADER_NAME = "Blur w/th LinearDepth";
+	static uint32_t SHADER_NAME_HASH;
 	static constexpr const char* VERTEX_SHADER_FILE = "/GLSL/simple130.glslv";
 	static constexpr const char* FRAGMENT_SHADER_FILE = "/GLSL/blur.fsh";
 
@@ -61,5 +63,5 @@ protected:
 	bool DoPopulatePropertiesFromUniforms() const override { return false; }
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
+	bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
 };

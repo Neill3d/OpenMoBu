@@ -16,8 +16,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "graphics_framebuffer.h"
 #include "postpersistentdata.h"
 #include "posteffectbase.h"
-#include "posteffectcontextmobu.h"
 #include "posteffectbuffers.h"
+#include "shaderpropertystorage.h"
 
 #include "glslShaderProgram.h"
 #include "Framebuffer.h"
@@ -31,6 +31,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 // forward
 class PostEffectBuffers;
 class StandardEffectCollection;
+class PostEffectContextMoBu;
 
 /// <summary>
 /// chain of post processing effects, apply effects in an order
@@ -41,20 +42,23 @@ public:
 	PostEffectChain();
 	virtual ~PostEffectChain() = default;
 
-	void Evaluate(const PostEffectContextMoBu& effectContext, StandardEffectCollection& effectCollection);
+	void Evaluate(StandardEffectCollection& effectCollection, PostEffectContextMoBu* effectContext);
 	void Synchronize();
 
 	void ChangeContext();
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
-	bool Prep(PostPersistentData *pData, const PostEffectContextMoBu& effectContext);
+	bool Prep(PostPersistentData *pData, const PostEffectContextMoBu* effectContext);
 
 	bool BeginFrame(PostEffectBuffers* buffers);
 
 	/// <summary>
 	/// render each effect with a defined order
 	/// </summary>
-	bool Process(PostEffectBuffers* buffers, double time, 
-		const PostEffectContextMoBu& effectContext, const StandardEffectCollection& effectCollection);
+	bool Process(
+		PostEffectBuffers* buffers, 
+		double systemTime, 
+		PostEffectContextMoBu* effectContext, 
+		const StandardEffectCollection& effectCollection);
 
 	bool IsCompressedDataReady() const
 	{
@@ -72,8 +76,9 @@ protected:
 	// shaders to evaluate
 	struct RenderData
 	{
-		std::vector<PostEffectBase*>		mChain; // prepared effects to be processed during render
-
+		// prepared effects to be processed during render
+		std::vector<PostEffectBase*>		mChain; 
+		
 		bool isReady = false;
 
 		bool isMaskTextureBinded = false;
@@ -127,7 +132,7 @@ private:
 	/// @param effect with a shader to render a linear depth
 	/// @param makeDownscale - if true, the depth will be downscaled to half-size
 	/// </summary>
-	void RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBase* effect, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext);
+	void RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBase* effect, const GLuint depthId, bool makeDownscale, PostEffectContextMoBu& effectContext);
 
 	void RenderWorldNormals(PostEffectBuffers* buffers);
 

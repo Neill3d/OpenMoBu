@@ -12,7 +12,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "postprocessing_helper.h"
 #include "math3d.h"
+#include <hashUtils.h>
 
+uint32_t EffectShaderLensFlare::SHADER_NAME_HASH = xxhash32(EffectShaderLensFlare::SHADER_NAME);
 
 EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
@@ -21,7 +23,7 @@ EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 
 	AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
-		.SetValue(CommonEffect::ColorSamplerSlot)
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot)
 		.SetFlag(IEffectShaderConnections::PropertyFlag::ShouldSkip, true);
 
 	mFlareSeed = &AddProperty(ShaderProperty(PostPersistentData::FLARE_SEED, "flareSeed", nullptr))
@@ -67,7 +69,7 @@ const char* EffectShaderLensFlare::GetMaskingChannelPropertyName() const noexcep
 	return PostPersistentData::FLARE_MASKING_CHANNEL;
 }
 
-bool EffectShaderLensFlare::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderLensFlare::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* data = effectContext->GetPostProcessData();
 	if (!data)
@@ -94,8 +96,10 @@ bool EffectShaderLensFlare::OnCollectUI(const IPostEffectContext* effectContext,
 	const double systemTime = (data->FlareUsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 	double timerMult = data->FlareTimeSpeed;
 	double flareTimer = 0.01 * timerMult * systemTime;
-	mTime->SetValue(flareTimer);
+	//mTime->SetValue(flareTimer);
 
+	effectContext->GetShaderPropertyStorage()->WriteValue(GetNameHash(), *mTime, flareTimer);
+	
 	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, effectContext, maskIndex);
 }
 
@@ -104,19 +108,21 @@ int EffectShaderLensFlare::GetNumberOfPasses() const
 	return subShaders[mCurrentShader].m_NumberOfPasses;
 }
 
-bool EffectShaderLensFlare::OnRenderPassBegin(int pass, int width, int height)
+bool EffectShaderLensFlare::OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext)
 {
 	const int currentShader = GetCurrentShader();
 	assert(currentShader >= 0 && currentShader < GetNumberOfVariations());
 	const SubShader& subShader = subShaders[currentShader];
 
-	if (pass >= 0 && pass < static_cast<int>(subShader.m_LightPositions.size()))
+	if (passIndex >= 0 && passIndex < static_cast<int>(subShader.m_LightPositions.size()))
 	{
-		const FBVector3d pos(subShader.m_LightPositions[pass]);
-		mLightPos->SetValue(static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
+		const FBVector3d pos(subShader.m_LightPositions[passIndex]);
+		renderContext.OverrideUniform(*mLightPos, static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
+		//mLightPos->SetValue(static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
 		
-		const FBColor tint(subShader.m_LightColors[pass]);
-		mTint->SetValue(static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
+		const FBColor tint(subShader.m_LightColors[passIndex]);
+		renderContext.OverrideUniform(*mTint, static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
+		//mTint->SetValue(static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
 	}
 
 	return true;
@@ -130,7 +136,7 @@ void EffectShaderLensFlare::SubShader::Init()
 	m_NumberOfPasses = 1;
 }
 
-bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, IPostEffectContext* effectContext, int maskIndex)
 {
 	PostPersistentData* pData = effectContext->GetPostProcessData();
 
@@ -163,7 +169,7 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, const IP
 	return true;
 }
 
-void EffectShaderLensFlare::SubShader::ProcessLightObjects(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
+void EffectShaderLensFlare::SubShader::ProcessLightObjects(IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos)
 {
 	m_NumberOfPasses = pData->FlareLight.GetCount();
 	m_LightPositions.resize(m_NumberOfPasses);
@@ -183,7 +189,7 @@ void EffectShaderLensFlare::SubShader::ProcessLightObjects(const IPostEffectCont
 	pData->FlarePosY = 100.0 * flarePos[1];
 }
 
-void EffectShaderLensFlare::SubShader::ProcessSingleLight(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
+void EffectShaderLensFlare::SubShader::ProcessSingleLight(IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
 {
 	FBLight* pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(index));
 

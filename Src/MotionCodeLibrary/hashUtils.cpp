@@ -17,7 +17,7 @@
 
 ////////////////////////////////////////////////////////////////
 
-uint32_t xxhash32(const std::string& str, uint32_t seed)
+uint32_t xxhash32(const char* str, size_t len, uint32_t seed)
 {
 	constexpr uint32_t PRIME1 = 0x9E3779B1U;
 	constexpr uint32_t PRIME2 = 0x85EBCA77U;
@@ -25,8 +25,8 @@ uint32_t xxhash32(const std::string& str, uint32_t seed)
 	constexpr uint32_t PRIME4 = 0x27D4EB2FU;
 	constexpr uint32_t PRIME5 = 0x165667B1U;
 
-	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.data());
-	size_t len = str.size();
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(str); // str.data());
+	//size_t len = str.size();
 	uint32_t h32;
 
 	if (len >= 16)

@@ -11,6 +11,7 @@
 //--- Class declaration
 #include "postprocesscontextdata.h"
 #include "posteffectbuffers.h"
+#include "posteffectcontextmobu.h"
 #include "postprocessing_helper.h"
 
 #define IS_INSIDE_MAIN_CYCLE			(mEnterId==1)
@@ -29,7 +30,8 @@ void PostProcessContextData::Init()
     mLastSystemTime = std::numeric_limits<double>::max();
     mLastLocalTime = std::numeric_limits<double>::max();
     mVideoRendering = false;
-    mLastPaneCount = 0;
+    mEvaluatePaneCount = 0;
+    mRenderPaneCount = 0;
     isReadyToEvaluate = false;
 
     for (int i = 0; i < 4; ++i)
@@ -54,10 +56,10 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
         return;
     }
 
-    FBSystem& mSystem = FBSystem::TheOne();
-	FBRenderer* pRenderer = mSystem.Renderer;
-    if (!pRenderer)
-		return;
+    //FBSystem& mSystem = FBSystem::TheOne();
+	//FBRenderer* pRenderer = mSystem.Renderer;
+    //if (!pRenderer)
+	//	return;
 
     systemTime = systemTime - mStartSystemTime;
 
@@ -81,10 +83,10 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
 
     // for all post processing view panes, evaluate their effect chains
 
-    for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
+    for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
     {
-        SPaneData& pane = mPaneSettings[nPane];
-        FBCamera* pCamera = pRenderer->GetCameraInPane(nPane);
+        const SPaneData& pane = mEvaluatePanes[nPane];
+        FBCamera* pCamera = pane.camera; // pRenderer->GetCameraInPane(nPane);
 
         if (!pane.data || pane.data->IsNeedToReloadShaders() || !pCamera)
             continue;
@@ -105,8 +107,17 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
 		contextParameters.w = viewportWidth;
 		contextParameters.h = viewportHeight;
 
-        const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, pEvaluteInfoIn, contextParameters);
-        pane.effectChain.Evaluate(effectContext, standardEffectsCollection);
+        auto iter = mPostFXContextsMap.find(pane.data);
+        if (iter == end(mPostFXContextsMap))
+        {
+            // create new context
+            auto effectContext = new PostEffectContextMoBu(pCamera, nullptr, pane.data, pEvaluteInfoIn, contextParameters);
+            mPostFXContextsMap.emplace(pane.data, effectContext);
+            iter = mPostFXContextsMap.find(pane.data);
+		}
+
+		PostEffectContextMoBu* fxContext = iter->second.get();
+		fxContext->Evaluate(pEvaluteInfoIn, pCamera, standardEffectsCollection, contextParameters);
     }
 }
 
@@ -114,20 +125,29 @@ void PostProcessContextData::Synchronize()
 {
     isReadyToEvaluate = false;
 
-    for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
-    {
-        SPaneData& pane = mPaneSettings[nPane];
+    // sync mEvaluatePanes with mRenderPanes
+    mEvaluatePaneCount = mRenderPaneCount;
 
-        if (!pane.data)
+    for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
+    {
+        SPaneData& evalPane = mEvaluatePanes[nPane];
+        evalPane = mRenderPanes[nPane];
+
+        if (!evalPane.data || !evalPane.camera)
             continue;
 
-        if (pane.data->IsNeedToReloadShaders())
+        if (evalPane.data->IsNeedToReloadShaders())
         {
             isReadyToEvaluate = false;
             break;
 		}
 
-        pane.effectChain.Synchronize();
+        auto iter = mPostFXContextsMap.find(evalPane.data);
+        if (iter != end(mPostFXContextsMap))
+        {
+            PostEffectContextMoBu* fxContext = iter->second.get();
+            fxContext->Synchronize();
+		}
         isReadyToEvaluate = true;
     }
 }
@@ -142,17 +162,18 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
     if (processCompositions)
     {
         FBSystem& mSystem = FBSystem::TheOne();
-        // let's run compression threads
+        FBRenderer* renderer = mSystem.Renderer;
 
-        for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
+        for (int nPane = 0; nPane < mRenderPaneCount; ++nPane)
         {
-            FBCamera *pCamera = mSystem.Renderer->GetCameraInPane(nPane);
+            FBCamera *pCamera = renderer->GetCameraInPane(nPane);
             if (nullptr == pCamera || true == pCamera->SystemCamera
                 || true == mVideoRendering || true == mSchematicView[nPane])
             {
+                mRenderPanes[nPane].camera = nullptr;
                 continue;
             }
-
+            mRenderPanes[nPane].camera = pCamera;
 
             PostEffectBuffers *currBuffers = nullptr;
             switch (nPane)
@@ -170,8 +191,6 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
                 currBuffers = mEffectBuffers3.get();
                 break;
             }
-
-            //mEffectChain.BeginFrame(currBuffers);
         }
 
         // it will use attached dimentions, if any external buffer is exist
@@ -184,7 +203,6 @@ void PostProcessContextData::RenderBeforeRender(const bool processCompositions, 
         glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
 
         glEnable(GL_DEPTH_TEST);
-        
     }
 }
 
@@ -200,10 +218,10 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
     if (mEnterId <= 0)
         return lStatus;
 
-    FBSystem& mSystem = FBSystem::TheOne();
-	FBRenderer* pRenderer = mSystem.Renderer;
-	if (!pRenderer)
-		return lStatus;
+    //FBSystem& mSystem = FBSystem::TheOne();
+	//FBRenderer* pRenderer = mSystem.Renderer;
+	//if (!pRenderer)
+	//	return lStatus;
 
     /////////////
     // !!!
@@ -245,9 +263,10 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
         contextParameters.localTime = localTimeSecs;
         contextParameters.localTimeDT = localTimeDT;
 
-        for (int nPane = 0; nPane < mLastPaneCount; ++nPane)
+        for (int nPane = 0; nPane < mRenderPaneCount; ++nPane)
         {
-            FBCamera* pCamera = pRenderer->GetCameraInPane(nPane);
+            SPaneData& pane = mRenderPanes[nPane];
+            FBCamera* pCamera = pane.camera;
             if (!pCamera)
                 continue;
 
@@ -288,17 +307,18 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
             // not in schematic view
             if (localViewport[2] > 0 && nullptr != currBuffers
                 && localViewport[2] == currBuffers->GetWidth()
-                && mPaneSettings[nPane].data)
+                && pane.data)
             {
-                SPaneData& pane = mPaneSettings[nPane];
+                auto iter = mPostFXContextsMap.find(pane.data);
+                if (iter == end(mPostFXContextsMap))
+                {
+                    continue;
+                }
+                PostEffectContextMoBu* fxContext = iter->second.get();
 
-                // TODO: let's pass input framebuffer to effect chain ?!
                 // 1. blit part of a main screen
 
-                DoubleFramebufferRequestScope doubleFramebufferRequest(&pane.effectChain, currBuffers);
-
-                //doubleFramebufferRequest->GetWriteAttachment
-                //const GLuint postBufferObj = currBuffers->PrepAndGetBufferObject();
+                DoubleFramebufferRequestScope doubleFramebufferRequest(fxContext->GetFXChain(), currBuffers);
 
                 if (!mMainFrameBuffer.isFboAttached())
                 {
@@ -319,22 +339,21 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 contextParameters.w = localViewport[2];
                 contextParameters.h = localViewport[3];
 
-                const PostEffectContextMoBu effectContext(pCamera, nullptr, pane.data, pEvaluateInfoIn, contextParameters);
-
-                // TODO: reload shaders requested, stop evaluation, prep shaders, continue evaluation
-
+				fxContext->UpdateEvaluateInfo(pEvaluateInfoIn);
+				fxContext->UpdateContextParameters(pCamera, contextParameters);
+                
                 if (!isReadyToEvaluate && pane.data->IsNeedToReloadShaders())
                 {
                     standardEffectsCollection.ChangeContext();
-                    pane.effectChain.ChangeContext();
+                    fxContext->ChangeContext();
                     pane.data->SetReloadShadersState(false);
                 }
 
                 bool isReadyToRender = true;
                 isReadyToRender &= standardEffectsCollection.Prep(pane.data);
-                isReadyToRender &= pane.effectChain.Prep(pane.data, effectContext);
+                isReadyToRender &= fxContext->Prep();
 
-                if (isReadyToRender && pane.effectChain.Process(currBuffers, sysTimeSecs, effectContext, standardEffectsCollection))
+                if (isReadyToRender && fxContext->Process(currBuffers, standardEffectsCollection))
                 {
                     CHECK_GL_ERROR();
 
@@ -477,18 +496,19 @@ void PostProcessContextData::PreRenderFirstEntry()
     if (schematic >= 0)
         mSchematicView[schematic] = true;
 
-    mLastPaneCount = pRenderer->GetPaneCount();
+    mRenderPaneCount = pRenderer->GetPaneCount();
 
     // DONE: this is strict post effect pane index, should we choose another one ?!
 
-    for (int i = 0; i < mLastPaneCount; ++i)
+    for (int i = 0; i < mRenderPaneCount; ++i)
     {
         FBCamera *pCamera = pRenderer->GetCameraInPane(i);
-        if (nullptr == pCamera)
+        mRenderPanes[i].camera = pCamera;
+        if (!pCamera)
             continue;
 
         bool paneSharesCamera = false;
-        for (int j = 0; j < mLastPaneCount; ++j)
+        for (int j = 0; j < mRenderPaneCount; ++j)
         {
             if (i != j)
             {
@@ -542,17 +562,17 @@ void PostProcessContextData::PreRenderFirstEntry()
     PrepPaneSettings();
 
     //
-    for (int i = 0; i < mLastPaneCount; ++i)
+    for (int i = 0; i < mRenderPaneCount; ++i)
     {
-        if (!mPaneSettings[i].data)
+        if (!mRenderPanes[i].data)
             continue;
 
-        FBCamera *pCamera = pRenderer->GetCameraInPane(i);
-        if (nullptr == pCamera)
+        FBCamera *pCamera = mRenderPanes[i].camera;
+        if (!pCamera)
             continue;
 
         bool paneSharesCamera = false;
-        for (int j = 0; j < mLastPaneCount; ++j)
+        for (int j = 0; j < mRenderPaneCount; ++j)
         {
             if (i != j)
             {
@@ -573,8 +593,8 @@ void PostProcessContextData::PreRenderFirstEntry()
 
         // next line could change current fbo
 
-        bool usePreview = mPaneSettings[i].data->OutputPreview;
-        double scaleF = mPaneSettings[i].data->OutputScaleFactor;
+        bool usePreview = mRenderPanes[i].data->OutputPreview;
+        double scaleF = mRenderPanes[i].data->OutputScaleFactor;
 
         switch (i)
         {
@@ -729,11 +749,12 @@ void PostProcessContextData::FreeBuffers()
 
 void PostProcessContextData::ResetPaneSettings()
 {
-    mLastPaneCount = 0;
+    mRenderPaneCount = 0;
     isReadyToEvaluate = false;
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
     {
-        mPaneSettings[i].data = nullptr;
+        mRenderPanes[i].data = nullptr;
+        mRenderPanes[i].camera = nullptr;
     }
 }
 
@@ -744,8 +765,11 @@ bool PostProcessContextData::PrepPaneSettings()
     FBRenderer *pRenderer = mSystem.Renderer;
 
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
-        mPaneSettings[i].data = nullptr;
-
+    {
+        mRenderPanes[i].data = nullptr;
+        mRenderPanes[i].camera = nullptr;
+    }
+    
     // find a global settings (without camera attachments)
 
     PostPersistentData *pGlobalData = nullptr;
@@ -782,7 +806,8 @@ bool PostProcessContextData::PrepPaneSettings()
 
                     if (pData->Active && pData->UseCameraObject)
                     {
-                        mPaneSettings[i].data = pData;
+                        mRenderPanes[i].data = pData;
+                        mRenderPanes[i].camera = pPaneCamera;
                         break;
                     }
                 }
@@ -790,9 +815,10 @@ bool PostProcessContextData::PrepPaneSettings()
         }
 
         // if exclusive pane settings is not assign, then try to assign global one
-        if (!mPaneSettings[i].data)
+        if (!mRenderPanes[i].data)
         {
-            mPaneSettings[i].data = pGlobalData;
+            mRenderPanes[i].data = pGlobalData;
+            mRenderPanes[i].camera = pPaneCamera;
         }
     }
 

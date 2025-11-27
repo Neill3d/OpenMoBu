@@ -33,6 +33,7 @@ public:
 	int GetNumberOfPasses() const override;
 
 	[[nodiscard]] const char* GetName() const noexcept override { return SHADER_NAME; }
+	uint32_t GetNameHash() const override { return SHADER_NAME_HASH; }
 	[[nodiscard]] const char* GetVertexFname(const int shaderIndex) const noexcept override { return SHADER_VERTEX; }
 	[[nodiscard]] const char* GetFragmentFname(const int shaderIndex) const noexcept override 
 	{
@@ -44,11 +45,12 @@ public:
 		}
 	}
 
-	bool OnRenderPassBegin(int pass, int width, int height) override;
+	bool OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext) override;
 
 private:
 	static const int NUMBER_OF_SHADERS{ 3 };
 	static constexpr const char* SHADER_NAME = "Lens Flare";
+	static uint32_t SHADER_NAME_HASH;
 	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/lensFlare.fsh";
 	static constexpr const char* SHADER_BUBBLE_FRAGMENT = "/GLSL/lensFlareBubble.fsh";
@@ -64,7 +66,7 @@ protected:
 		return false;
 	}
 
-	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
 
 private:
 
@@ -95,11 +97,11 @@ private:
 		std::vector<float>		m_LightAlpha;
 
 		void Init();
-		bool CollectUIValues(int shaderIndex, const IPostEffectContext* effectContext, int maskIndex);
+		bool CollectUIValues(int shaderIndex, IPostEffectContext* effectContext, int maskIndex);
 		
 	private:
-		void ProcessLightObjects(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
-		void ProcessSingleLight(const IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
+		void ProcessLightObjects(IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, int w, int h, double dt, FBTime systemTime, double* flarePos);
+		void ProcessSingleLight(IPostEffectContext* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos);
 	};
 
 	SubShader	subShaders[NUMBER_OF_SHADERS];

@@ -12,7 +12,7 @@
 #include <Windows.h>
 #include <filesystem>
 #include "postprocessingmanager.h"
-
+#include "posteffectcontextmobu.h"
 #include "postprocessing_helper.h"
 
 //--- Registration defines
@@ -529,9 +529,9 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 	PostProcessContextData* pContextData = iter->second;
 	bool usePostProcessing = false;
 
-	for (int i = 0; i<pContextData->mLastPaneCount; ++i)
+	for (int i = 0; i<pContextData->mRenderPaneCount; ++i)
 	{
-		if (pContextData->mPaneSettings[i].data)
+		if (pContextData->mRenderPanes[i].data)
 		{
 			usePostProcessing = true;
 			break;

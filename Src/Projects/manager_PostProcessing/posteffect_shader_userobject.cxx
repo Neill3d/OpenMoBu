@@ -20,6 +20,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "postpersistentdata.h"
 #include "posteffectbuffers.h"
+#include <hashUtils.h>
 
 // custom assets inserting
 
@@ -171,7 +172,7 @@ void EffectShaderUserObject::DefaultValues()
 
 FBProperty* EffectShaderUserObject::MakePropertyInt(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_int, ANIMATIONNODE_TYPE_INTEGER, false, false, nullptr);
+	FBProperty* newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_int, ANIMATIONNODE_TYPE_INTEGER, false, false, nullptr);
 	PropertyAdd(newProp);
 	return newProp;
 }
@@ -180,15 +181,15 @@ FBProperty* EffectShaderUserObject::MakePropertyFloat(const UserBufferShader::Sh
 {
 	FBProperty* newProp = nullptr;
 
-	if (strstr(prop.uniformName, "_flag") != nullptr)
+	if (strstr(prop.GetUniformName(), "_flag") != nullptr)
 	{
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_bool, ANIMATIONNODE_TYPE_BOOL, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_bool, ANIMATIONNODE_TYPE_BOOL, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, false, nullptr);
 
-		if (strstr(prop.uniformName, "_slider") != nullptr)
+		if (strstr(prop.GetUniformName(), "_slider") != nullptr)
 		{
 			newProp->SetMinMax(0.0, 100.0);
 		}
@@ -202,14 +203,14 @@ FBProperty* EffectShaderUserObject::MakePropertyVec2(const UserBufferShader::Sha
 {
 	FBProperty* newProp = nullptr;
 	
-	if (strstr(prop.uniformName, "_wstoss") != nullptr)
+	if (strstr(prop.GetUniformName(), "_wstoss") != nullptr)
 	{
 		// a property for world position that is going to be converted into screen space position
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	}
 	
 	PropertyAdd(newProp);
@@ -220,13 +221,13 @@ FBProperty* EffectShaderUserObject::MakePropertyVec3(const UserBufferShader::Sha
 {
 	FBProperty* newProp = nullptr;
 
-	if (strstr(prop.uniformName, "_color") != nullptr)
+	if (strstr(prop.GetUniformName(), "_color") != nullptr)
 	{
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_ColorRGB, ANIMATIONNODE_TYPE_COLOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_ColorRGB, ANIMATIONNODE_TYPE_COLOR, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	}
 
 	PropertyAdd(newProp);
@@ -237,13 +238,13 @@ FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::Sha
 {
 	FBProperty* newProp = nullptr;
 
-	if (strstr(prop.uniformName, "_color") != nullptr)
+	if (strstr(prop.GetUniformName(), "_color") != nullptr)
 	{
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_ColorRGBA, ANIMATIONNODE_TYPE_COLOR_RGBA, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_ColorRGBA, ANIMATIONNODE_TYPE_COLOR_RGBA, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_Vector4D, ANIMATIONNODE_TYPE_VECTOR_4, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector4D, ANIMATIONNODE_TYPE_VECTOR_4, true, false, nullptr);
 	}
 
 	PropertyAdd(newProp);
@@ -252,7 +253,7 @@ FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::Sha
 
 FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* newProp = PropertyCreate(prop.uniformName, FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
+	FBProperty* newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
 	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
 	{
 		//listObjProp->SetFilter(FBTexture::GetInternalClassId() | EffectShaderUserObject::GetInternalClassId());
@@ -266,7 +267,7 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::
 
 FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* fbProperty = PropertyList.Find(prop.uniformName);
+	FBProperty* fbProperty = PropertyList.Find(prop.GetUniformName());
 	const FBPropertyType fbPropertyType = IEffectShaderConnections::ShaderPropertyToFBPropertyType(prop);
 
 	// NOTE: check not only user property, but also a property type !
@@ -275,7 +276,7 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::Sh
 		// base on type, make a custom property
 		fbProperty = nullptr;
 
-		switch (prop.type)
+		switch (prop.GetType())
 		{
 		case IEffectShaderConnections::EPropertyType::INT:
 			fbProperty = MakePropertyInt(prop);
@@ -296,7 +297,7 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::Sh
 			fbProperty = MakePropertySampler(prop);
 			break;
 		default:
-			LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.uniformName);
+			LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.GetUniformName());
 		}
 	}
 	return fbProperty;
@@ -304,6 +305,8 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::Sh
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // UserBufferShader
+
+uint32_t UserBufferShader::SHADER_NAME_HASH = xxhash32(UserBufferShader::SHADER_NAME);
 
 UserBufferShader::UserBufferShader(EffectShaderUserObject* UserObject)
 	: PostEffectBufferShader(UserObject)
@@ -317,7 +320,7 @@ int UserBufferShader::GetNumberOfPasses() const
 	return mUserObject->NumberOfPasses;
 }
 //! initialize a specific path for drawing
-bool UserBufferShader::OnRenderPassBegin(const int pass, int w, int h)
+bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext)
 {
 	// TODO: define iPass value for the shader
 	
@@ -328,10 +331,10 @@ void UserBufferShader::RemoveShaderProperties()
 {
 	for (auto& shaderProperty : mProperties)
 	{
-		if (shaderProperty.second.fbProperty != nullptr)
+		if (shaderProperty.second.GetFBProperty() != nullptr)
 		{
-			mUserObject->PropertyRemove(shaderProperty.second.fbProperty);
-			shaderProperty.second.fbProperty = nullptr;
+			mUserObject->PropertyRemove(shaderProperty.second.GetFBProperty());
+			shaderProperty.second.SetFBProperty(nullptr);
 		}
 	}
 
@@ -349,14 +352,14 @@ bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
 
 void UserBufferShader::OnPropertyAdded(ShaderProperty& prop)
 {
-	prop.fbProperty = mUserObject->GetOrMakeProperty(prop);
+	prop.SetFBProperty(mUserObject->GetOrMakeProperty(prop));
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool UserBufferShader::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool UserBufferShader::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	GLSLShaderProgram* shader = GetShaderPtr();
-	if (shader == nullptr)
+	if (!shader)
 		return false;
 
 	FBVector4d v;
@@ -489,10 +492,11 @@ std::vector<PostEffectBufferShader*> UserBufferShader::GetConnectedShaders()
 	for (auto& prop : mProperties)
 	{
 		auto& shaderProperty = prop.second;
+		EffectShaderUserObject* shaderUserObject = shaderProperty.GetShaderUserObject();// GetReadValue().shaderUserObject;
 
-		if (shaderProperty.value.shaderUserObject && shaderProperty.value.shaderUserObject->GetUserShaderPtr())
+		if (shaderUserObject && shaderUserObject->GetUserShaderPtr())
 		{
-			result.push_back(shaderProperty.value.shaderUserObject->GetUserShaderPtr());
+			result.push_back(shaderUserObject->GetUserShaderPtr());
 		}
 	}
 	return result;

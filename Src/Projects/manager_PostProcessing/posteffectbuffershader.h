@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include "effectshaderconnections.h"
+#include "posteffect_rendercontext.h"
 #include <memory>
 #include <unordered_map>
 
@@ -17,6 +18,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 class FrameBuffer;
 class PostEffectBuffers;
 class GLSLShaderProgram;
+class ShaderPropertyStorage;
 
 /// <summary>
 /// effect with one or more gpu shaders (number of variations, mostly 1)
@@ -39,6 +41,7 @@ public:
 
 	//! an effect public name
 	virtual const char* GetName() const abstract;
+	virtual uint32_t GetNameHash() const abstract;
 	//! get a filename of vertex shader, for this effect. returns a relative filename
 	virtual const char* GetVertexFname(const int variationIndex) const abstract;
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
@@ -70,7 +73,7 @@ public:
 	/// that could trigger render of connected effects to have their result textures ready
 	/// @see AutoUploadUniforms, BindSystemUniforms, OnUploadUniforms
 	/// </summary>
-	void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
+	//void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
 
 	//! get a pointer to a (current variance) shader program
 	GLSLShaderProgram* GetShaderPtr();
@@ -82,7 +85,7 @@ public:
 	/// @param colorAttachment defines which color attachment of the dstBuffer to render into
 	/// @param inputTextureId defines the input texture to process
 	/// </summary>
-	void Render(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
+	void Render(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext);
 
 	// means that processing will use smaller size of a buffer
 	void SetDownscaleMode(const bool value);
@@ -115,13 +118,13 @@ public:
 	* then in this procedure we are going to trigger the render of that effect to have the texture ready
 	* @param skipTextureProperties can be useful for multipass uniform update, when textures are already bound
 	*/
-	void AutoUploadUniforms(PostEffectBuffers* buffers, const GLuint inputTextureId, int w, int h, bool generateMips, 
+	void AutoUploadUniforms(const PostEffectRenderContext& renderContext,
 		const IPostEffectContext* effectContext, bool skipTextureProperties);
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	bool CollectUIValues(const IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
+	bool CollectUIValues(IPostEffectContext* effectContext, int maskIndex) override;		//!< grab main UI values for the effect
 
-	bool CollectUIValues(FBComponent* component, const IPostEffectContext* effectContext, int maskIndex);
+	bool CollectUIValues(FBComponent* component, IPostEffectContext* effectContext, int maskIndex);
 
 	bool ReloadPropertyShaders();
 
@@ -148,6 +151,10 @@ protected:
 	bool	IsInternalGLSLUniform(const char* uniformName);
 	void	BindSystemUniforms(const IPostEffectContext* effectContext) const;
 
+	inline GLint GetSystemUniformLoc(ShaderSystemUniform u) const noexcept {
+		return mSystemUniformLocations[static_cast<uint32_t>(u)];
+	}
+
 protected:
 
 	// variances of post effect
@@ -160,6 +167,8 @@ protected:
 	int GetCurrentShader() const { return mCurrentShader; }
 	void FreeShaders();
 
+	friend class ShaderPropertyWriter;
+
 protected:
 
 	FBComponent* mOwner{ nullptr }; //!< scene component which used to communicate with a user and a scene
@@ -167,7 +176,6 @@ protected:
 	bool isDownscale{ false };
 	int version{ 0 }; //!< keep track of resolution modifications, inc version everytime we change resolution
 	
-
 	//!< TODO: masking property in the UI, should we move it into input connection ?!
 	virtual const char* GetUseMaskingPropertyName() const = 0;
 	virtual const char* GetMaskingChannelPropertyName() const = 0;
@@ -175,16 +183,16 @@ protected:
 	virtual bool DoPopulatePropertiesFromUniforms() const = 0;
 
 	virtual bool OnPrepareUniforms(const int variationIndex) { return true; }
-	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) { return true; }
-	virtual void OnUniformsUploaded() {}
+	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) { return true; }
+	virtual void OnUniformsUploaded(int passIndex) {}
 
 	//! bind effect shader program
-	virtual void Bind();
+	virtual bool Bind();
 	//! unbind effect shader program
 	virtual void UnBind();
 
 	//! derived classes could have own preparation steps before each pass
-	virtual bool OnRenderPassBegin(int pass, int width, int height) { return true; }
+	virtual bool OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext) { return true; }
 	
-	virtual void RenderPass(int passIndex, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips);
+	virtual void RenderPass(int passIndex, const PostEffectRenderContext& renderContext);
 };

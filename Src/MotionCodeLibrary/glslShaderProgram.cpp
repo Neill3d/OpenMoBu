@@ -389,10 +389,14 @@ bool GLSLShaderProgram::LoadLog( GLhandleARB object, const char* debugName ) con
 	return status;
 }
 
-void GLSLShaderProgram::Bind() const
+bool GLSLShaderProgram::Bind() const
 {
-  if (programObj)
-    glUseProgramObjectARB( programObj );
+	if (programObj)
+	{
+		glUseProgramObjectARB(programObj);
+		return true;
+	}
+	return false;
 }
 
 void GLSLShaderProgram::UnBind() const

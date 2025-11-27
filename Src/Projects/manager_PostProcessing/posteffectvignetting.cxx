@@ -11,10 +11,12 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectvignetting.h"
 #include "postpersistentdata.h"
-
+#include "shaderpropertywriter.h"
 #include "postprocessing_helper.h"
+#include <hashUtils.h>
 
-//! a constructor
+uint32_t EffectShaderVignetting::SHADER_NAME_HASH = xxhash32(EffectShaderVignetting::SHADER_NAME);
+
 EffectShaderVignetting::EffectShaderVignetting(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
 {
@@ -23,7 +25,7 @@ EffectShaderVignetting::EffectShaderVignetting(FBComponent* ownerIn)
 	AddProperty(ShaderProperty("color", "colorSampler"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetValue(CommonEffect::ColorSamplerSlot);
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 	
 	mAmount = &AddProperty(ShaderProperty(PostPersistentData::VIGN_AMOUNT, "amount", nullptr))
 		.SetFlag(PropertyFlag::ShouldSkip, true)
@@ -48,7 +50,7 @@ const char* EffectShaderVignetting::GetMaskingChannelPropertyName() const noexce
 	return PostPersistentData::VIGN_MASKING_CHANNEL;
 }
 
-bool EffectShaderVignetting::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderVignetting::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* data = effectContext->GetPostProcessData();
 	if (!data)
@@ -59,9 +61,17 @@ bool EffectShaderVignetting::OnCollectUI(const IPostEffectContext* effectContext
 	const double vignin = data->VignIn;
 	const double vignfade = data->VignFade;
 
+	ShaderPropertyWriter writer(this, effectContext);
+
+	writer(mAmount, static_cast<float>(amount))
+		(VignOut, static_cast<float>(vignout))
+		(VignIn, static_cast<float>(vignin))
+		(VignFade, static_cast<float>(vignfade));
+	/*
 	mAmount->SetValue(static_cast<float>(amount));
 	VignOut->SetValue(static_cast<float>(vignout));
 	VignIn->SetValue(static_cast<float>(vignin));
 	VignFade->SetValue(static_cast<float>(vignfade));
+	*/
 	return true;
 }

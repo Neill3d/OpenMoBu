@@ -11,6 +11,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "posteffectcontext.h"
 #include "posteffectbuffershader.h"
+#include "posteffect_rendercontext.h"
 
 // forward
 class FrameBuffer;
@@ -18,6 +19,7 @@ class PostEffectBuffers;
 class PostPersistentData;
 class ScopedEffectBind;
 class EffectShaderUserObject;
+class ShaderPropertyStorage;
 
 //////////////////////////////
 
@@ -87,7 +89,9 @@ public:
 	virtual bool IsReadyAndActive() const;
 
 	// TODO: should it be a general FBComponent instead of pre-defined PostPersistentData user object ?!
-	virtual bool CollectUIValues(const IPostEffectContext* effectContext);
+	// @param effectContext to get access to fx chain, shader property storage
+	//  if we want custom rules to read from UI, we should write into shader property storage
+	virtual bool CollectUIValues(IPostEffectContext* effectContext);
 
 	// TODO: mask index is like a pre-defined input connection
 	//! define internal mask channel index or -1 for default, it comes from a user input (UI)
@@ -100,25 +104,7 @@ public:
 	virtual bool IsMaskSamplerUsed() const;
 	virtual bool IsWorldNormalSamplerUsed() const;
 
-	struct RenderEffectContext
-	{
-		PostEffectBuffers* buffers{ nullptr };
-
-		// INPUT: input in the effects chain for this effect
-		GLuint srcTextureId{ 0 };
-		GLuint depthTextureId{ 0 };
-
-		int width{ 1 };
-		int height{ 1 };
-
-		// OUTPUT: write an effect composition to a given frame buffer
-		FrameBuffer* targetFramebuffer{ nullptr };
-		int colorAttachment{ 0 }; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
-	
-		bool generateMips{ false };
-	};
-
-	virtual void Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext);
+	virtual void Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext);
 
 	virtual int GetNumberOfBufferShaders() const abstract;
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) abstract;

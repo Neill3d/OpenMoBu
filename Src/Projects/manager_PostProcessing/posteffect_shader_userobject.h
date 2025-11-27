@@ -99,7 +99,8 @@ public:
 	}
 
 	//! an effect public name
-	virtual const char* GetName() const override { return "User Effect"; }
+	virtual const char* GetName() const override { return SHADER_NAME; }
+	uint32_t GetNameHash() const override { return SHADER_NAME_HASH; }
 	//! get a filename of vertex shader, for this effect. returns a relative filename
 	virtual const char* GetVertexFname(const int variationIndex) const override { return "simple.vsh"; }
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
@@ -109,7 +110,11 @@ public:
 	virtual int GetNumberOfPasses() const override;
 
 	//! initialize a specific path for drawing
-	virtual bool OnRenderPassBegin(const int pass, int w, int h) override;
+	virtual bool OnRenderPassBegin(const int pass, PostEffectRenderContext& renderContext) override;
+
+private:
+	static constexpr const char* SHADER_NAME = "User Effect";
+	static uint32_t SHADER_NAME_HASH;
 
 protected:
 	friend class EffectShaderUserObject;
@@ -148,7 +153,7 @@ protected:
 	virtual bool OnPrepareUniforms(const int variationIndex) override;
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertyAdded(ShaderProperty& property) override;

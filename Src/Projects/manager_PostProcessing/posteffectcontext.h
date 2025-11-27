@@ -5,7 +5,8 @@
 
 // forward
 class PostPersistentData;
-
+class PostEffectChain;
+class ShaderPropertyStorage;
 
 class IPostEffectContext
 {
@@ -14,9 +15,7 @@ public:
 
 	struct Parameters
 	{
-		int w{ 1 }; //!< viewport width
-		int h{ 1 }; //!< viewport height
-		int localFrame{ 0 }; //!< playback frame number
+		FBMatrix prevModelViewProjMatrix; //!< modelview-projection matrix of the previous frame
 
 		double sysTime{ 0.0 }; //!< system time (in seconds)
 		double sysTimeDT{ 0.0 };
@@ -24,7 +23,10 @@ public:
 		double localTime{ 0.0 }; //!< playback time (in seconds)
 		double localTimeDT{ 0.0 };
 
-		FBMatrix prevModelViewProjMatrix; //!< modelview-projection matrix of the previous frame
+		int w{ 1 }; //!< viewport width
+		int h{ 1 }; //!< viewport height
+		int localFrame{ 0 }; //!< playback frame number
+		int padding{ 0 }; //!< padding for alignment
 	};
 
 	// interface to query the needed data
@@ -65,6 +67,10 @@ public:
 	[[nodiscard]] virtual FBComponent* GetComponent() const = 0;
 	[[nodiscard]] virtual PostPersistentData* GetPostProcessData() const = 0;
 	[[nodiscard]] virtual FBEvaluateInfo* GetEvaluateInfo() const = 0;
+	[[nodiscard]] virtual const PostEffectChain* GetFXChain() const = 0;
+	[[nodiscard]] virtual PostEffectChain* GetFXChain() = 0;
+	[[nodiscard]] virtual const ShaderPropertyStorage* GetShaderPropertyStorage() const = 0;
+	[[nodiscard]] virtual ShaderPropertyStorage* GetShaderPropertyStorage() = 0;
 
 	virtual void OverrideComponent(FBComponent* component) const = 0;
 

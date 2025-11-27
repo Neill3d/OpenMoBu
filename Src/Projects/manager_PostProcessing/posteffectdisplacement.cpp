@@ -9,14 +9,16 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "posteffectdisplacement.h"
 #include "postpersistentdata.h"
+#include "shaderpropertywriter.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "postprocessing_helper.h"
+#include <hashUtils.h>
 
+uint32_t EffectShaderDisplacement::SHADER_NAME_HASH = xxhash32(EffectShaderDisplacement::SHADER_NAME);
 
-//! a constructor
 EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
 {
@@ -27,7 +29,7 @@ EffectShaderDisplacement::EffectShaderDisplacement(FBComponent* ownerIn)
 	AddProperty(ShaderProperty("color", "inputSampler"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetValue(CommonEffect::ColorSamplerSlot);
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 	mTime = &AddProperty(ShaderProperty("time", "iTime", nullptr))
 		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
 	mUseQuakeEffect = &AddProperty(ShaderProperty(PostPersistentData::DISP_USE_QUAKE_EFFECT, "useQuakeEffect", nullptr))
@@ -50,7 +52,7 @@ const char* EffectShaderDisplacement::GetMaskingChannelPropertyName() const noex
 	return PostPersistentData::DISP_MASKING_CHANNEL;
 }
 
-bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderDisplacement::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* postProcess = effectContext->GetPostProcessData();
 	if (!postProcess)
@@ -62,7 +64,9 @@ bool EffectShaderDisplacement::OnCollectUI(const IPostEffectContext* effectConte
 	const double timerMult = postProcess->Disp_Speed;
 	const double _timer = 0.01 * timerMult * time;
 
-	mTime->SetValue(static_cast<float>(_timer));
+	ShaderPropertyWriter writer(this, effectContext);
+	writer(mTime, static_cast<float>(_timer));
+	//mTime->SetValue(static_cast<float>(_timer));
 
 	return true;
 }

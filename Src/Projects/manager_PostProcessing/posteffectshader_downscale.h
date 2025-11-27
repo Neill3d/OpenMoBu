@@ -34,6 +34,7 @@ public:
 	int GetNumberOfPasses() const override { return 1; }	
 
 	const char* GetName() const override { return SHADER_NAME; }
+	uint32_t GetNameHash() const override { return SHADER_NAME_HASH; }
 	const char* GetVertexFname(const int variationIndex) const override { return SHADER_VERTEX; }
 	const char* GetFragmentFname(const int variationIndex) const override { return SHADER_FRAGMENT; }
 
@@ -54,10 +55,11 @@ protected:
 	}
 
 	//! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
 
 private:
 	static constexpr const char* SHADER_NAME = "Downscale";
+	static uint32_t SHADER_NAME_HASH;
 	static constexpr const char* SHADER_VERTEX = "/GLSL/downscale.vsh";
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/downscale.fsh";
 };

@@ -38,9 +38,9 @@ public:
 
 	virtual bool Load(const char* shaderLocation) override;
 
-	virtual bool CollectUIValues(const IPostEffectContext* effectContext) override;
+	virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
 
-	virtual void Process(const RenderEffectContext& renderContext, const IPostEffectContext* effectContext) override;
+	virtual void Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext) override;
 
 protected:
 
@@ -62,11 +62,13 @@ public:
 	[[nodiscard]] int GetNumberOfVariations() const noexcept override { return 1; }
 
 	[[nodiscard]] const char* GetName() const noexcept override { return SHADER_NAME; }
+	[[nodiscard]] uint32_t GetNameHash() const noexcept override { return SHADER_NAME_HASH; }
 	[[nodiscard]] const char* GetVertexFname(const int shaderIndex) const noexcept override { return SHADER_VERTEX; }
 	[[nodiscard]] const char* GetFragmentFname(const int shaderIndex) const noexcept override { return SHADER_FRAGMENT; }
 
 private:
 	static constexpr const char* SHADER_NAME = "SSAO";
+	static uint32_t SHADER_NAME_HASH;
 	static constexpr const char* SHADER_VERTEX = "/GLSL/simple130.glslv";
 	static constexpr const char* SHADER_FRAGMENT = "/GLSL/ssao.fsh";
 
@@ -80,10 +82,10 @@ protected:
 		return false;
 	}
 
-	virtual bool OnCollectUI(const IPostEffectContext* effectContext, int maskIndex) override;
+	virtual bool OnCollectUI(IPostEffectContext* effectContext, int maskIndex) override;
 
 	//! bind effect shader program
-	void Bind() override;
+	bool Bind() override;
 	//! unbind effect shader program
 	void UnBind() override;
 

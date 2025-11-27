@@ -11,7 +11,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectshader_mix.h"
 #include "postpersistentdata.h"
+#include "shaderpropertywriter.h"
 #include "mobu_logging.h"
+#include <hashUtils.h>
 
 //--- FiLMBOX Registration & Implementation.
 FBClassImplementation(EffectShaderMixUserObject);
@@ -24,6 +26,8 @@ PostEffectFBElementClassImplementation(EffectShaderMixUserObject, "Mix Shader", 
 /////////////////////////////////////////////////////////////////////////
 // PostEffectShaderMix
 
+uint32_t EffectShaderMix::SHADER_NAME_HASH = xxhash32(EffectShaderMix::SHADER_NAME);
+
 EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
 	, mUIComponent(uiComponent)
@@ -34,12 +38,12 @@ EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 
 		ShaderProperty texturePropertyA(EffectShaderMixUserObject::INPUT_TEXTURE_LABEL, "sampler0", EPropertyType::TEXTURE, &userObject->InputTexture);
 		mColorSamplerA = &AddProperty(std::move(texturePropertyA))
-			.SetValue(CommonEffect::ColorSamplerSlot)
+			.SetDefaultValue(CommonEffect::ColorSamplerSlot)
 			.SetFlag(PropertyFlag::ShouldSkip, true);
 
 		ShaderProperty texturePropertyB(EffectShaderMixUserObject::INPUT_TEXTURE_2_LABEL, "sampler1", EPropertyType::TEXTURE, &userObject->SecondTexture);
 		mColorSamplerB = &AddProperty(std::move(texturePropertyB))
-			.SetValue(CommonEffect::UserSamplerSlot)
+			.SetDefaultValue(CommonEffect::UserSamplerSlot)
 			.SetFlag(PropertyFlag::ShouldSkip, true);
 	}
 	else
@@ -47,11 +51,11 @@ EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 		mColorSamplerA = &AddProperty(ShaderProperty("color", "sampler0"))
 			.SetType(EPropertyType::TEXTURE)
 			.SetFlag(PropertyFlag::ShouldSkip, true)
-			.SetValue(CommonEffect::ColorSamplerSlot);
+			.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 		mColorSamplerB = &AddProperty(ShaderProperty("color", "sampler1"))
 			.SetType(EPropertyType::TEXTURE)
 			.SetFlag(PropertyFlag::ShouldSkip, true)
-			.SetValue(CommonEffect::UserSamplerSlot);
+			.SetDefaultValue(CommonEffect::UserSamplerSlot);
 	}
 
 	mBloom = &AddProperty(ShaderProperty("bloom", "gBloom"))
@@ -60,8 +64,10 @@ EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 }
 
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
-bool EffectShaderMix::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderMix::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
+	ShaderPropertyWriter writer(this, effectContext);
+
 	if (!mUIComponent)
 	{
 		// collect from the main post process user object
@@ -69,14 +75,20 @@ bool EffectShaderMix::OnCollectUI(const IPostEffectContext* effectContext, int m
 		PostPersistentData* data = effectContext->GetPostProcessData();
 		if (data && data->Bloom)
 		{
-			mBloom->SetValue(static_cast<float>(0.01 * data->BloomTone),
+			writer(mBloom,
+				static_cast<float>(0.01 * data->BloomTone),
 				static_cast<float>(0.01 * data->BloomStretch),
-				0.0f, 
+				0.0f,
 				1.0f);
+			//mBloom->SetValue(static_cast<float>(0.01 * data->BloomTone),
+			//	static_cast<float>(0.01 * data->BloomStretch),
+			//	0.0f, 
+			//	1.0f);
 		}
 		else
 		{
-			mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f);
+			writer(mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
+			//mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 	else
@@ -85,19 +97,24 @@ bool EffectShaderMix::OnCollectUI(const IPostEffectContext* effectContext, int m
 		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(mUIComponent);
 		if (userObject && userObject->Bloom)
 		{
-			mBloom->SetValue(static_cast<float>(0.01 * userObject->BloomTone),
+			writer(mBloom,
+				static_cast<float>(0.01 * userObject->BloomTone),
 				static_cast<float>(0.01 * userObject->BloomStretch),
 				0.0f,
 				1.0f);
+			//mBloom->SetValue(static_cast<float>(0.01 * userObject->BloomTone),
+			//	static_cast<float>(0.01 * userObject->BloomStretch),
+			//	0.0f,
+			//	1.0f);
 		}
 		else
 		{
-			mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f);
+			writer(mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
+			//mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 	return true;
 }
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////////

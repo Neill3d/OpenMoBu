@@ -11,13 +11,16 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectfisheye.h"
 #include "postpersistentdata.h"
+#include "shaderpropertywriter.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "postprocessing_helper.h"
+#include <hashUtils.h>
 
-//! a constructor
+uint32_t EffectShaderFishEye::SHADER_NAME_HASH = xxhash32(EffectShaderFishEye::SHADER_NAME);
+
 EffectShaderFishEye::EffectShaderFishEye(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
 {
@@ -26,7 +29,7 @@ EffectShaderFishEye::EffectShaderFishEye(FBComponent* ownerIn)
 	AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetValue(CommonEffect::ColorSamplerSlot);
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 	mAmount = &AddProperty(ShaderProperty(PostPersistentData::FISHEYE_AMOUNT, "amount", nullptr))
 		.SetScale(0.01f)
@@ -48,7 +51,7 @@ const char* EffectShaderFishEye::GetMaskingChannelPropertyName() const noexcept
 	return PostPersistentData::FISHEYE_MASKING_CHANNEL;
 }
 
-bool EffectShaderFishEye::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderFishEye::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
@@ -58,9 +61,14 @@ bool EffectShaderFishEye::OnCollectUI(const IPostEffectContext* effectContext, i
 	const double lensradius = pData->FishEyeLensRadius;
 	const double signcurvature = pData->FishEyeSignCurvature;
 
+	ShaderPropertyWriter writer(this, effectContext);
+	writer(mAmount, static_cast<float>(amount))
+		(mLensRadius, static_cast<float>(lensradius))
+		(mSignCurvature, static_cast<float>(signcurvature));
+	/*
 	mAmount->SetValue(static_cast<float>(amount));
 	mLensRadius->SetValue(static_cast<float>(lensradius));
 	mSignCurvature->SetValue(static_cast<float>(signcurvature));
-	
+	*/
 	return true;
 }

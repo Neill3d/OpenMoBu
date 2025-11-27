@@ -16,6 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectbuffers.h"
 #include "posteffect_userobject.h"
 #include "posteffectbase.h"
+#include "posteffectcontextmobu.h"
 
 #include "mobu_logging.h"
 #include "hashUtils.h"
@@ -50,12 +51,12 @@ void PostEffectChain::ChangeContext()
 	mRenderData[2].mChain.clear();
 }
 
-bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoBu& effectContext)
+bool PostEffectChain::Prep(PostPersistentData *pData, const PostEffectContextMoBu* effectContext)
 {
 	bool lSuccess = true;
 
 	mSettings = pData;
-	mLastCamera = effectContext.GetCamera();
+	mLastCamera = effectContext->GetCamera();
 
 	if (!mSettings.Ok() || !mLastCamera)
 		return false;
@@ -350,7 +351,7 @@ void PostEffectChain::SendPreview(PostEffectBuffers* buffers, double systime)
 	*/
 }
 
-void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBase* effect, const GLuint depthId, bool makeDownscale, const PostEffectContextMoBu& effectContext)
+void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBase* effect, const GLuint depthId, bool makeDownscale, PostEffectContextMoBu& effectContext)
 {
 	if (!buffers || !effect || depthId == 0)
 		return;
@@ -375,7 +376,7 @@ void PostEffectChain::RenderLinearDepth(PostEffectBuffers* buffers, PostEffectBa
 		return;
 	}
 	
-	PostEffectBase::RenderEffectContext renderContext;
+	PostEffectRenderContext renderContext;
 	renderContext.depthTextureId = depthId;
 	renderContext.width = outWidth;
 	renderContext.height = outHeight;
@@ -452,7 +453,7 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 	const int w = maskRequest->GetWidth();
 	const int h = maskRequest->GetHeight();
 
-	PostEffectBase::RenderEffectContext renderContext;
+	PostEffectRenderContext renderContext;
 	renderContext.srcTextureId = texid;
 	renderContext.width = w;
 	renderContext.height = h;
@@ -461,9 +462,12 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 
 	effect->SetMaskIndex(maskIndex);
 	
-	const FBVector2d value = mSettings->GetMaskScale(maskIndex);
-	effect->GetBufferShaderTypedPtr()->BlurScale->SetValue(static_cast<float>(value[0]), static_cast<float>(value[1]));
-
+	if (const IEffectShaderConnections::ShaderProperty* BlurProp = effect->GetBufferShaderTypedPtr()->BlurScale)
+	{
+		const FBVector2d value = mSettings->GetMaskScale(maskIndex);
+		renderContext.OverrideUniform(*BlurProp, static_cast<float>(value[0]), static_cast<float>(value[1]));
+	}
+	
 	effect->Process(renderContext, &effectContext);
 
 	BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), w, h, PostPersistentData::NUMBER_OF_MASKS,
@@ -505,7 +509,8 @@ void PostEffectChain::MixMasksPass(GLSLShaderProgram* shader, const int maskInde
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
-void PostEffectChain::Evaluate(const PostEffectContextMoBu& effectContext, StandardEffectCollection& effectCollection)
+void PostEffectChain::Evaluate(StandardEffectCollection& effectCollection, 
+	PostEffectContextMoBu* effectContext)
 {
 	constexpr std::uint8_t kBufferCount = 2;
 
@@ -591,7 +596,7 @@ void PostEffectChain::Evaluate(const PostEffectContextMoBu& effectContext, Stand
 			continue;
 		}
 
-		effect->CollectUIValues(&effectContext);
+		effect->CollectUIValues(effectContext);
 	}
 }
 
@@ -602,8 +607,11 @@ void PostEffectChain::Synchronize()
 	gActiveData.fetch_xor(1, std::memory_order_acq_rel);
 }
 
-bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime, 
-	const PostEffectContextMoBu& effectContext, const StandardEffectCollection& effectCollection)
+bool PostEffectChain::Process(
+	PostEffectBuffers* buffers, 
+	double systime, 
+	PostEffectContextMoBu* effectContext, 
+	const StandardEffectCollection& effectCollection)
 {
 	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
 	RenderData& data = mRenderData[activeIndex];
@@ -642,7 +650,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime,
 		{
 			if (data.maskRenderFlags[i] && mSettings->Masks[i].BlurMask)
 			{
-				BlurMasksPass(i, buffers, effectCollection.mEffectBilateralBlur.get(), effectContext);
+				BlurMasksPass(i, buffers, effectCollection.mEffectBilateralBlur.get(), *effectContext);
 			}
 		}
 	}
@@ -712,7 +720,7 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime,
 			if (depthId != 0)
 			{
 				constexpr bool makeDownscale = false;
-				RenderLinearDepth(buffers, depthEffect, depthId, makeDownscale, effectContext);
+				RenderLinearDepth(buffers, depthEffect, depthId, makeDownscale, *effectContext);
 			}
 		}
 	}
@@ -771,20 +779,17 @@ bool PostEffectChain::Process(PostEffectBuffers* buffers, double systime,
 			const GLuint srcTex = doubleBuffer->GetColorObject(doubleBufferRequest->GetReadAttachment());
 			const GLuint depthTex = doubleBuffer->GetDepthObject();
 			
-			const PostEffectBase::RenderEffectContext renderContext{
-				buffers,
-				// INPUT
-				srcTex, // src texture id
-				depthTex, // depth texture id
-				w,
-				h,
-				// OUTPUT
-				doubleBuffer, // dst frame buffer
-				doubleBufferRequest->GetWriteAttachment(),
-				generateMips
-			};
-
-			effect->Process(renderContext, &effectContext);
+			PostEffectRenderContext renderContext;
+			renderContext.buffers = buffers;
+			renderContext.srcTextureId = srcTex;
+			renderContext.depthTextureId = depthTex;
+			renderContext.width = w;
+			renderContext.height = h;
+			renderContext.targetFramebuffer = doubleBuffer;
+			renderContext.colorAttachment = doubleBufferRequest->GetWriteAttachment();
+			renderContext.generateMips = generateMips;
+			
+			effect->Process(renderContext, effectContext);
 
 			// if local masking index was used, switch back to global mask for next effect
 			if (customMaskBinded)

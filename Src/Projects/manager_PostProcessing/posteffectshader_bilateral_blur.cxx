@@ -12,6 +12,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectshader_bilateral_blur.h"
 #include "postpersistentdata.h"
 #include "mobu_logging.h"
+#include <hashUtils.h>
 
 //--- FiLMBOX Registration & Implementation.
 FBClassImplementation(EffectShaderBilateralBlurUserObject);
@@ -24,6 +25,8 @@ PostEffectFBElementClassImplementation(EffectShaderBilateralBlurUserObject, "Blu
 /////////////////////////////////////////////////////////////////////////
 // PostEffectShaderBilateralBlur
 
+uint32_t PostEffectShaderBilateralBlur::SHADER_NAME_HASH = xxhash32(PostEffectShaderBilateralBlur::SHADER_NAME);
+
 PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
 	, mUIComponent(uiComponent)
@@ -34,7 +37,7 @@ PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComp
 
 		ShaderProperty textureProperty(EffectShaderBilateralBlurUserObject::INPUT_TEXTURE_LABEL, "colorSampler", EPropertyType::TEXTURE, &userObject->InputTexture);
 		ColorTexture = &AddProperty(std::move(textureProperty))
-			.SetValue(CommonEffect::ColorSamplerSlot);
+			.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 		ShaderProperty blurScaleProperty(EffectShaderBilateralBlurUserObject::BLUR_SCALE_LABEL, "scale", EPropertyType::VEC2, &userObject->BlurScale);
 		BlurScale = &AddProperty(std::move(blurScaleProperty));
@@ -43,7 +46,7 @@ PostEffectShaderBilateralBlur::PostEffectShaderBilateralBlur(FBComponent* uiComp
 	{
 		ColorTexture = &AddProperty(ShaderProperty("color", "colorSampler"))
 			.SetType(EPropertyType::TEXTURE)
-			.SetValue(CommonEffect::ColorSamplerSlot);
+			.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 		BlurScale = &AddProperty(ShaderProperty("scale", "scale"))
 			.SetType(EPropertyType::VEC2)

@@ -10,8 +10,11 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectshader_lineardepth.h"
+#include "shaderpropertywriter.h"
 #include "mobu_logging.h"
+#include <hashUtils.h>
 
+const uint32_t PostEffectShaderLinearDepth::SHADER_NAME_HASH = xxhash32(PostEffectShaderLinearDepth::SHADER_NAME);
 
 PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponent)
 	: PostEffectBufferShader(uiComponent)
@@ -21,7 +24,7 @@ PostEffectShaderLinearDepth::PostEffectShaderLinearDepth(FBComponent* uiComponen
 		.SetFlag(PropertyFlag::ShouldSkip, true);
 }
 
-bool PostEffectShaderLinearDepth::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool PostEffectShaderLinearDepth::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	const float znear = effectContext->GetCameraNearDistance();
 	const float zfar = effectContext->GetCameraFarDistance();	
@@ -35,6 +38,9 @@ bool PostEffectShaderLinearDepth::OnCollectUI(const IPostEffectContext* effectCo
 		perspective
 	};
 
-	mClipInfo->SetValue(newClipInfo[0], newClipInfo[1], newClipInfo[2], newClipInfo[3]);
+	ShaderPropertyWriter writer(this, effectContext);
+	writer(mClipInfo, newClipInfo[0], newClipInfo[1], newClipInfo[2], newClipInfo[3]);
+
+	//mClipInfo->SetValue(newClipInfo[0], newClipInfo[1], newClipInfo[2], newClipInfo[3]);
 	return true;
 }

@@ -20,7 +20,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 FBPropertyType IEffectShaderConnections::ShaderPropertyToFBPropertyType(const IEffectShaderConnections::ShaderProperty& prop)
 {
-	switch (prop.type)
+	switch (prop.GetType())
 	{
 	case IEffectShaderConnections::EPropertyType::FLOAT:
 		return (prop.HasFlag(IEffectShaderConnections::PropertyFlag::IsFlag)) ? FBPropertyType::kFBPT_bool : FBPropertyType::kFBPT_double;
@@ -94,12 +94,22 @@ IEffectShaderConnections::EPropertyType IEffectShaderConnections::UniformTypeToS
 /////////////////////////////////////////////////////////////////////////
 // ShaderProperty
 
+IEffectShaderConnections::ShaderProperty::ShaderProperty(const IEffectShaderConnections::ShaderProperty& other)
+{
+	strcpy_s(name, sizeof(char) * MAX_NAME_LENGTH, other.name);
+	strcpy_s(uniformName, sizeof(char) * MAX_NAME_LENGTH, other.uniformName);
+	
+	flags = other.flags;
+	fbProperty = other.fbProperty;
+	mDefaultValue = other.mDefaultValue;
+}
+
 IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn)
 {
 	if (nameIn)
-		strcpy_s(name, sizeof(char) * 64, nameIn);
+		strcpy_s(name, sizeof(char) * MAX_NAME_LENGTH, nameIn);
 	if (uniformNameIn)
-		strcpy_s(uniformName, sizeof(char) * 64, uniformNameIn);
+		strcpy_s(uniformName, sizeof(char) * MAX_NAME_LENGTH, uniformNameIn);
 	if (fbPropertyIn)
 	{
 		const auto propertyType = FBPropertyToShaderPropertyType(fbPropertyIn->GetPropertyType());
@@ -107,8 +117,8 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, con
 		fbProperty = fbPropertyIn;
 	}
 
-	key = xxhash32(name, HASH_SEED);
-	value.key = key;
+	const uint32_t nameHash = xxhash32(name, HASH_SEED);
+	mDefaultValue.SetNameHash(nameHash);
 }
 
 IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, const char* uniformNameIn, IEffectShaderConnections::EPropertyType typeIn, FBProperty* fbPropertyIn)
@@ -123,102 +133,114 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, con
 	if (fbPropertyIn)
 		fbProperty = fbPropertyIn;
 
-	key = xxhash32(name, HASH_SEED);
-	value.key = key;
+	const uint32_t nameHash = xxhash32(name, HASH_SEED);
+	mDefaultValue.SetNameHash(nameHash);
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetType(IEffectShaderConnections::EPropertyType newType) 
 {
-	type = newType;
-	value.SetType(newType);
+	mDefaultValue.SetType(newType);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetRequired(bool isRequired)
 {
-	bIsLocationRequired = isRequired;
+	mDefaultValue.SetRequired(isRequired);
 	return *this;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(int valueIn)
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetDefaultValue(int valueIn)
 {
 	assert((type == IEffectShaderConnections::EPropertyType::INT)
 		|| (type == IEffectShaderConnections::EPropertyType::FLOAT)
 		|| (type == IEffectShaderConnections::EPropertyType::TEXTURE));
 
-	value.SetValue(valueIn);
+	mDefaultValue.SetValue(valueIn);
 	return *this;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(bool valueIn)
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetDefaultValue(bool valueIn)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::BOOL);
-	value.SetValue(valueIn);
+	mDefaultValue.SetValue(valueIn);
 	return *this;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float valueIn)
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetDefaultValue(float valueIn)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::FLOAT);
-	value.SetValue(valueIn);
+	mDefaultValue.SetValue(valueIn);
 	return *this;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(double valueIn)
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetDefaultValue(double valueIn)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::FLOAT);
-	value.SetValue(valueIn);
+	mDefaultValue.SetValue(valueIn);
 	return *this;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float x, float y)
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetDefaultValue(float x, float y)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::VEC2);
-	value.SetValue(x, y);
+	mDefaultValue.SetValue(x, y);
 	return *this;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float x, float y, float z)
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetDefaultValue(float x, float y, float z)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::VEC3);
-	value.SetValue(x, y, z);
+	mDefaultValue.SetValue(x, y, z);
 	return *this;
 }
 
-IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetValue(float x, float y, float z, float w)
+IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetDefaultValue(float x, float y, float z, float w)
 {
 	assert(type == IEffectShaderConnections::EPropertyType::VEC4);
-	value.SetValue(x, y, z, w);
+	mDefaultValue.SetValue(x, y, z, w);
 	return *this;
+}
+const float* IEffectShaderConnections::ShaderProperty::GetDefaultFloatData() const {
+	return mDefaultValue.GetFloatData();
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetFlag(PropertyFlag testFlag, bool setValue) {
 	flags.set(static_cast<size_t>(testFlag), setValue);
+	if (testFlag == PropertyFlag::INVERT_VALUE)
+		mDefaultValue.SetInvertValue(setValue);
 	return *this;
 }
 
 IEffectShaderConnections::ShaderProperty& IEffectShaderConnections::ShaderProperty::SetScale(float scaleIn)
 {
-	scale = scaleIn;
+	mDefaultValue.SetScale(scaleIn);
 	return *this;
 }
 
 float IEffectShaderConnections::ShaderProperty::GetScale() const
 {
-	return scale;
-}
-
-const float* IEffectShaderConnections::ShaderProperty::GetFloatData() const {
-	return value.GetFloatData();
+	return mDefaultValue.GetScale();
 }
 
 bool IEffectShaderConnections::ShaderProperty::HasFlag(PropertyFlag testFlag) const {
 	return flags.test(static_cast<size_t>(testFlag));
 }
 
-void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(ShaderPropertyValue& value, FBProperty* fbProperty, 
-	const ShaderProperty& shaderProperty, const IPostEffectContext* effectContext, int maskIndex)
+void IEffectShaderConnections::ShaderProperty::SwapValueBuffers()
 {
+	//const int writeIndex = 1 - mReadIndex.load(std::memory_order_relaxed);
+	
+	// Atomic swap
+	//mReadIndex.store(writeIndex, std::memory_order_release);
+}
+
+void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
+	ShaderPropertyValue& value, 
+	const ShaderProperty& shaderProperty, 
+	const IPostEffectContext* effectContext, 
+	int maskIndex)
+{
+	FBProperty* fbProperty = shaderProperty.fbProperty;
 	if (fbProperty == nullptr)
 		return;
 
@@ -310,7 +332,8 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(ShaderPropert
 	case FBPropertyType::kFBPT_object:
 	{
 		assert(value.type == IEffectShaderConnections::EPropertyType::TEXTURE);
-		value.ReadTextureConnections(fbProperty);
+		// TODO:
+		//ReadTextureConnections(fbProperty);
 
 		// TODO: queue the connected user shader to read values
 		/*
@@ -359,33 +382,40 @@ void IEffectShaderConnections::ShaderPropertyValue::SetType(IEffectShaderConnect
 	}
 }
 
-void IEffectShaderConnections::ShaderPropertyValue::ReadTextureConnections(FBProperty* fbProperty)
+void IEffectShaderConnections::ShaderProperty::ReadTextureConnections(FBProperty* fbProperty)
 {
-	texture = nullptr;
-	shaderUserObject = nullptr;
+	bool isFound = false;
 
 	if (FBIS(fbProperty, FBPropertyListObject))
 	{
 		if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(fbProperty))
 		{
-			if (listObjProp->GetCount() > 0)
+			FBComponent* firstObject = (listObjProp->GetCount() > 0) ? listObjProp->GetAt(0) : nullptr;
+
+			if (FBIS(firstObject, FBTexture))
 			{
-				if (FBIS(listObjProp->GetAt(0), FBTexture))
-				{
-					FBTexture* textureObj = FBCast<FBTexture>(listObjProp->GetAt(0));
-					assert(textureObj != nullptr);
-
-					texture = textureObj;
-				}
-				else if (FBIS(listObjProp->GetAt(0), EffectShaderUserObject))
-				{
-					EffectShaderUserObject* shaderObject = FBCast<EffectShaderUserObject>(listObjProp->GetAt(0));
-					assert(shaderObject != nullptr);
-
-					shaderUserObject = shaderObject;
-				}
+				FBTexture* textureObj = FBCast<FBTexture>(firstObject);
+				
+				SetType(EPropertyType::TEXTURE);
+				texture = textureObj;
+				isFound = true;
 			}
+			else if (FBIS(firstObject, EffectShaderUserObject))
+			{
+				EffectShaderUserObject* shaderObject = FBCast<EffectShaderUserObject>(firstObject);
+				
+				SetType(EPropertyType::SHADER_USER_OBJECT);
+				shaderUserObject = shaderObject;
+				isFound = true;
+			}			
 		}
+	}
+
+	if (!isFound)
+	{
+		texture = nullptr;
+		shaderUserObject = nullptr;
+		SetType(EPropertyType::NONE);
 	}
 }
 

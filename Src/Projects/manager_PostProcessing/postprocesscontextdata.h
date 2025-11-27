@@ -3,7 +3,7 @@
 
 /** \file   PostProcessContextData.h
 
-Sergei <Neill3d> Solokhin 2022
+Sergei <Neill3d> Solokhin 2022-2025
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -23,11 +23,11 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
-//#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
 #include "posteffectbuffers.h"
 #include "posteffectchain.h"
 #include "standardeffectcollection.h"
+#include "shaderpropertystorage.h"
 
 /// <summary>
 /// All post process render data for an ogl context
@@ -41,10 +41,12 @@ public:
 	double				mLastLocalTime{ std::numeric_limits<double>::max() };
 
 	//
-	int				mLastPaneCount{ 0 };
+	int				mEvaluatePaneCount{ 0 }; // @see mEvaluatePanes
+	int				mRenderPaneCount{ 0 }; // @see mRenderPanes
 	
 	bool			mSchematicView[4];
 	bool			mVideoRendering = false;
+	bool isReadyToEvaluate{ false };
 
 	int				mViewport[4];		// x, y, width, height
 	int				mViewerViewport[4];
@@ -64,12 +66,23 @@ public:
 
 	struct SPaneData
 	{
-		PostEffectChain			effectChain; // evaluation and render - prepared chain of effects and property values
 		PostPersistentData* data{ nullptr };
+		FBCamera* camera{ nullptr };
 	};
-
+	/*
+	struct SPostFXContext
+	{
+		PostEffectChain			effectChain; // evaluation and render - prepared chain of effects and property values
+		PostPersistentData*		persistentData{ nullptr }; // UI to build effects chain and read properties from
+		ShaderPropertyStorage	propertyStorage; // thread safe read/write between UI properties and shader uniforms
+	};
+	*/
 	static const int MAX_PANE_COUNT = 4;
-	SPaneData	mPaneSettings[MAX_PANE_COUNT];	//!< choose a propriate settings according to a pane camera
+	SPaneData	mEvaluatePanes[MAX_PANE_COUNT];	//!< choose a propriate settings according to a pane camera
+	SPaneData	mRenderPanes[MAX_PANE_COUNT];
+
+	// for each persistent data object we have a separate post fx context
+	std::unordered_map<PostPersistentData*, std::unique_ptr<PostEffectContextMoBu>>	mPostFXContextsMap;
 
 	// build-in effects collection to be re-used per effect chain
 	StandardEffectCollection standardEffectsCollection;
@@ -79,8 +92,6 @@ public:
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers1;
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers2;
 	std::unique_ptr<PostEffectBuffers> mEffectBuffers3;
-
-	bool isReadyToEvaluate{ false };
 
 	void    Init();
 	// once we load file, we should reset pane user object pointers 

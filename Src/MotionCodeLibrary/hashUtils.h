@@ -15,4 +15,10 @@
 
 #include <string>
 
-uint32_t xxhash32(const std::string& str, uint32_t seed = 0);
+
+uint32_t xxhash32(const char* str, size_t len, uint32_t seed = 0);
+
+inline uint32_t xxhash32(const std::string& str, uint32_t seed = 0)
+{
+	return xxhash32(str.c_str(), str.size(), seed);
+}

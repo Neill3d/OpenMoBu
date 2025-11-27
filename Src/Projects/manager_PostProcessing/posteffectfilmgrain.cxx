@@ -11,13 +11,16 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- Class declaration
 #include "posteffectfilmgrain.h"
 #include "postpersistentdata.h"
+#include "shaderpropertywriter.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "postprocessing_helper.h"
+#include <hashUtils.h>
 
-//! a constructor
+uint32_t EffectShaderFilmGrain::SHADER_NAME_HASH = xxhash32(EffectShaderFilmGrain::SHADER_NAME);
+
 EffectShaderFilmGrain::EffectShaderFilmGrain(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
 {
@@ -26,7 +29,7 @@ EffectShaderFilmGrain::EffectShaderFilmGrain(FBComponent* ownerIn)
 	AddProperty(ShaderProperty("color", "sampler0"))
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::ShouldSkip, true)
-		.SetValue(CommonEffect::ColorSamplerSlot);
+		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
 
 	mTimer = &AddProperty(ShaderProperty("time", "timer", EPropertyType::FLOAT))
 		.SetFlag(PropertyFlag::ShouldSkip, true); // NOTE: skip of automatic reading value and let it be done manually
@@ -56,7 +59,7 @@ const char* EffectShaderFilmGrain::GetMaskingChannelPropertyName() const noexcep
 	return PostPersistentData::GRAIN_MASKING_CHANNEL;
 }
 
-bool EffectShaderFilmGrain::OnCollectUI(const IPostEffectContext* effectContext, int maskIndex)
+bool EffectShaderFilmGrain::OnCollectUI(IPostEffectContext* effectContext, int maskIndex)
 {
 	const PostPersistentData* pData = effectContext->GetPostProcessData();
 	if (!pData)
@@ -73,11 +76,20 @@ bool EffectShaderFilmGrain::OnCollectUI(const IPostEffectContext* effectContext,
 	const double _grainsize = pData->FG_GrainSize;
 	const double _lumamount = pData->FG_LumAmount;
 
+	ShaderPropertyWriter writer(this, effectContext);
+	writer(mTimer, static_cast<float>(_timer))
+		(mGrainAmount, static_cast<float>(_grainamount))
+		(mColored, static_cast<float>(_colored))
+		(mColorAmount, static_cast<float>(_coloramount))
+		(mGrainSize, static_cast<float>(_grainsize))
+		(mLumAmount, static_cast<float>(_lumamount));
+	/*
 	mTimer->SetValue(static_cast<float>(_timer));
 	mGrainAmount->SetValue(static_cast<float>(_grainamount));
 	mColored->SetValue(static_cast<float>(_colored));
 	mColorAmount->SetValue(static_cast<float>(_coloramount));
 	mGrainSize->SetValue(static_cast<float>(_grainsize));
 	mLumAmount->SetValue(static_cast<float>(_lumamount));
+	*/
 	return true;
 }
