@@ -19,51 +19,58 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 namespace _PostEffectBufferShaderInternal
 {
-	std::string RemovePostfix(const std::string& uniformName, const std::string& postfix) {
-		const size_t pos = uniformName.rfind(postfix);
-		if (pos != std::string::npos && pos == uniformName.size() - postfix.size()) {
-			return uniformName.substr(0, pos);  // Remove postfix
+	inline std::string_view RemovePostfix(std::string_view name, std::string_view postfix) 
+	{
+		if (postfix.empty()) {
+			return name;  // No postfix to remove
 		}
-		return uniformName;
+
+		if (name.size() >= postfix.size() &&
+			name.compare(name.size() - postfix.size(), postfix.size(), postfix) == 0)
+		{
+			return name.substr(0, name.size() - postfix.size());  // Remove postfix
+		}
+
+		return name;
 	}
 
-	void ExtractNameAndFlagsFromUniformNameAndType(IEffectShaderConnections::ShaderProperty& prop, const char* uniformNameIn, GLenum type)
+	void SetNameAndFlagsFromUniformNameAndType(IEffectShaderConnections::ShaderProperty& prop, const char* uniformNameIn, GLenum type)
 	{
-		const std::string uniformName(uniformNameIn);
+		std::string_view name(uniformNameIn);
 
-		switch (type)
+		// TABLE OF POSTFIX RULES
+		struct Rule
 		{
-		case GL_FLOAT:
+			GLenum glType;
+			std::string_view postfix;
+			IEffectShaderConnections::PropertyFlag flag;
+		};
+
+		static constexpr Rule rules[] = {
+			{ GL_FLOAT,       "_flag",  IEffectShaderConnections::PropertyFlag::IsFlag },
+			{ GL_FLOAT_VEC2,  "_wstoss", IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace },
+			{ GL_FLOAT_VEC3,  "_color", IEffectShaderConnections::PropertyFlag::IsColor },
+			{ GL_FLOAT_VEC4,  "_color", IEffectShaderConnections::PropertyFlag::IsColor }
+		};
+
+		// default: no change
+		std::string_view finalName = name;
+
+		for (const Rule& r : rules)
 		{
-			const std::string name = RemovePostfix(uniformName, "_flag");
-			if (name.size() != uniformName.size())
+			if (r.glType == type)
 			{
-				prop.SetFlag(IEffectShaderConnections::PropertyFlag::IsFlag, true);
+				if (name.size() > r.postfix.size() &&
+					name.compare(name.size() - r.postfix.size(), r.postfix.size(), r.postfix) == 0)
+				{
+					prop.SetFlag(r.flag, true);
+					finalName = name.substr(0, name.size() - r.postfix.size());
+				}
+				break;
 			}
-			prop.SetName(name);
-		} break;
-		case GL_FLOAT_VEC2:
-		{
-			const std::string name = RemovePostfix(uniformName, "_wstoss");
-			if (name.size() != uniformName.size())
-			{
-				prop.SetFlag(IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace, true);
-			}
-			prop.SetName(name);
-		} break;
-		case GL_FLOAT_VEC3:
-		case GL_FLOAT_VEC4:
-		{
-			const std::string name = RemovePostfix(uniformName, "_color");
-			if (name.size() != uniformName.size())
-			{
-				prop.SetFlag(IEffectShaderConnections::PropertyFlag::IsColor, true);
-			}
-			prop.SetName(name);
-		} break;
-		default:
-			prop.SetName(uniformName);
 		}
+
+		prop.SetName(finalName);
 	}
 };
 
@@ -118,20 +125,24 @@ void PostEffectBufferShader::MakeCommonProperties()
 	AddProperty(IEffectShaderConnections::ShaderProperty("Mask Texture", "maskSampler", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
 		.SetType(IEffectShaderConnections::EPropertyType::TEXTURE)
+		.SetRequired(false)
 		.SetDefaultValue(CommonEffect::MaskSamplerSlot);
 
 	const char* maskingPropName = GetUseMaskingPropertyName();
 	assert(maskingPropName != nullptr);
 	UseMaskingProperty = &AddProperty(IEffectShaderConnections::ShaderProperty(maskingPropName, "useMasking", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
+		.SetRequired(false)
 		.SetType(IEffectShaderConnections::EPropertyType::BOOL);
 
 	AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::UPPER_CLIP, "upperClip", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
+		.SetRequired(false)
 		.SetScale(0.01f);
 
 	AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::LOWER_CLIP, "lowerClip", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
+		.SetRequired(false)
 		.SetFlag(IEffectShaderConnections::PropertyFlag::INVERT_VALUE, true)
 		.SetScale(0.01f);
 
@@ -220,19 +231,7 @@ bool PostEffectBufferShader::Load(const char* shadersLocation)
 	return true;
 }
 
-bool PostEffectBufferShader::InitializeUniforms(const int varianceIndex)
-{
-	// existing registered properties got their shader uniform locations
-	MakePropertyLocationsFromShaderUniforms();
 
-	if (!DoPopulatePropertiesFromUniforms())
-	{
-		// have a look which system uniforms we are using in the shader
-		MakeSystemLocationsFromShaderUniforms();
-	}
-
-	return OnPrepareUniforms(varianceIndex);
-}
 
 bool PostEffectBufferShader::CollectUIValues(FBComponent* component, IPostEffectContext* effectContext, int maskIndex)
 {
@@ -258,7 +257,7 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, IPostEffect
 		}
 
 		ShaderPropertyValue value(shaderProperty.GetDefaultValue());
-		assert(value.GetNameHash() != 0);
+		VERIFY(value.GetNameHash() != 0);
 
 		if (!shaderProperty.GetFBProperty())
 		{
@@ -280,6 +279,7 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, IPostEffect
 		&& effectContext->GetPostProcessData()->EnableMaskingForAllEffects)
 	{
 		ShaderPropertyValue value(UseMaskingProperty->GetDefaultValue());
+		VERIFY(value.GetNameHash() != 0);
 		value.SetValue(true);
 
 		writeMap.emplace_back(std::move(value));
@@ -302,11 +302,6 @@ bool PostEffectBufferShader::CollectUIValues(IPostEffectContext* effectContext, 
 
 	return OnCollectUI(effectContext, maskIndex);
 }
-
-//void PostEffectBufferShader::UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext)
-//{
-//	
-//}
 
 bool PostEffectBufferShader::ReloadPropertyShaders()
 {
@@ -372,8 +367,6 @@ void PostEffectBufferShader::Render(const PostEffectRenderContext& renderContext
 	if (GetNumberOfPasses() == 0)
 		return;
 
-	
-
 	if (bHasShaderChanged)
 	{
 		InitializeUniforms(GetCurrentShader());
@@ -386,15 +379,8 @@ void PostEffectBufferShader::Render(const PostEffectRenderContext& renderContext
 	}
 
 	PostEffectRenderContext renderContextPass = renderContext;
-
-	//GLuint texId = renderContext.srcTextureId;
 	PostEffectBuffers* buffers = renderContext.buffers;
-	//FrameBuffer* dstBuffer = renderContext.targetFramebuffer;
-	//const int colorAttachment = renderContext.colorAttachment;
-	//const int w = renderContext.width;
-	//const int h = renderContext.height;
-	//const bool generateMips = renderContext.generateMips;
-
+	
 	// system uniforms, properties uniforms, could trigger other effects to render
 	BindSystemUniforms(effectContext);
 
@@ -422,9 +408,12 @@ void PostEffectBufferShader::Render(const PostEffectRenderContext& renderContext
 		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, renderContext.width, renderContext.height, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 2, false);
 		PingPongData pingPongData;
 		FramebufferPingPongHelper pingPongHelper(buffer, &pingPongData);
-		
+		GLuint srcTextureId = renderContext.srcTextureId;
+
 		for (int passIndex = 0; passIndex < finalPassIndex; ++passIndex)
 		{
+			renderContextPass = renderContext;
+			renderContextPass.srcTextureId = srcTextureId;
 			renderContextPass.targetFramebuffer = pingPongHelper.GetPtr();
 			renderContextPass.colorAttachment = pingPongHelper.GetWriteAttachment();
 
@@ -432,7 +421,7 @@ void PostEffectBufferShader::Render(const PostEffectRenderContext& renderContext
 			OnRenderPassBegin(passIndex, renderContextPass);
 
 			const bool skipTextureUniforms = (passIndex > 0); // only for the first pass we use the original input texture
-			AutoUploadUniforms(renderContext, effectContext, skipTextureUniforms);
+			AutoUploadUniforms(renderContextPass, effectContext, skipTextureUniforms);
 			OnUniformsUploaded(passIndex);
 
 			RenderPass(passIndex, renderContextPass);
@@ -441,18 +430,20 @@ void PostEffectBufferShader::Render(const PostEffectRenderContext& renderContext
 			pingPongHelper.Swap();
 
 			// the input for the next pass
-			renderContextPass.srcTextureId = pingPongHelper.GetPtr()->GetColorObject(pingPongHelper.GetReadAttachment());
+			srcTextureId = pingPongHelper.GetPtr()->GetColorObject(pingPongHelper.GetReadAttachment());
 		}
 
 		buffers->ReleaseFramebuffer(bufferNameKey);
 
+		// final pass into the destination buffer
 		renderContextPass = renderContext;
+		renderContextPass.srcTextureId = srcTextureId;
 
 		OnRenderPassBegin(finalPassIndex, renderContextPass);
 		AutoUploadUniforms(renderContextPass, effectContext, false);
 		OnUniformsUploaded(finalPassIndex);
 
-		RenderPass(finalPassIndex, renderContext);
+		RenderPass(finalPassIndex, renderContextPass);
 	}
 
 	UnBind();
@@ -478,38 +469,42 @@ void PostEffectBufferShader::SetDownscaleMode(const bool value)
 
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::AddProperty(const ShaderProperty& property)
 {
-	const std::string uniformName(property.GetUniformName());
-	const uint32_t nameHash = xxhash32(uniformName, ShaderProperty::HASH_SEED);
+	const uint32_t nameHash = property.GetNameHash();
 	assert(nameHash != 0);
-	assert(mProperties.find(nameHash) == end(mProperties));
 
-	mProperties.emplace(nameHash, property);
-	return mProperties[nameHash];
+	auto [it, inserted] = mProperties.emplace(nameHash, property);
+	assert(inserted);
+	mPropertyOrder.push_back(nameHash);
+	OnPropertyAdded(it->second);
+
+	return it->second;
 }
 
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::AddProperty(ShaderProperty&& property)
 {
-	OnPropertyAdded(property);
-
-	const std::string uniformName(property.GetUniformName());
-	const uint32_t nameHash = xxhash32(uniformName, ShaderProperty::HASH_SEED);
+	const uint32_t nameHash = property.GetNameHash();
 	assert(nameHash != 0);
-	assert(mProperties.find(nameHash) == end(mProperties));
 
-	mProperties.emplace(nameHash, std::move(property));
-	return mProperties[nameHash];
+	auto [it, inserted] = mProperties.emplace(nameHash, std::move(property));
+	assert(inserted);
+	mPropertyOrder.push_back(nameHash);
+	OnPropertyAdded(it->second);
+
+	return it->second;
 }
 
-int PostEffectBufferShader::GetNumberOfProperties()
+int PostEffectBufferShader::GetNumberOfProperties() const
 {
 	return static_cast<int>(mProperties.size());
 }
 
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::GetProperty(int index)
 {
-	assert(index < GetNumberOfProperties());
-	auto it = std::next(begin(mProperties), index);
-	return it->second;
+	VERIFY(index < GetNumberOfProperties());
+	VERIFY(mPropertyOrder.size() == mProperties.size());
+	return mProperties[mPropertyOrder[index]];
+	//auto it = std::next(begin(mProperties), index);
+	//return it->second;
 }
 
 IEffectShaderConnections::ShaderProperty* PostEffectBufferShader::FindProperty(const std::string & name)
@@ -519,113 +514,135 @@ IEffectShaderConnections::ShaderProperty* PostEffectBufferShader::FindProperty(c
 	return (it != end(mProperties)) ? &it->second : nullptr;
 }
 
-int PostEffectBufferShader::MakePropertyLocationsFromShaderUniforms()
+IEffectShaderConnections::ShaderProperty* PostEffectBufferShader::FindPropertyByUniformName(const char* name) const
 {
-	if (!GetShaderPtr())
-		return 0;
-
-	const GLuint programId = GetShaderPtr()->GetProgramObj();
-	int count = 0;
-
-	for (auto& prop : mProperties)
+	for (auto& kv : mProperties)
 	{
-		GLint location = -1;
-
-		if (strnlen(prop.second.GetUniformName(), 64) > 0)
+		if (strcmp(kv.second.GetUniformName(), name) == 0)
 		{
-			location = glGetUniformLocation(programId, prop.second.GetUniformName());
-			count += 1;
+			return const_cast<ShaderProperty*>(&kv.second);
 		}
-		prop.second.SetLocation(location);
 	}
-	return count;
+	return nullptr;
 }
 
-int PostEffectBufferShader::MakeSystemLocationsFromShaderUniforms()
+void PostEffectBufferShader::ClearGeneratedByUniformProperties()
 {
-	ResetSystemUniformLocations();
-
-	if (!GetShaderPtr())
-		return 0;
-
-	const GLuint programId = GetShaderPtr()->GetProgramObj();
-
-	GLint numUniforms = 0;
-	glGetProgramiv(programId, GL_ACTIVE_UNIFORMS, &numUniforms);
-
-	int addedProperties = 0;
-	for (GLint i = 0; i < numUniforms; ++i)
+	for (auto it = mProperties.begin(); it != mProperties.end(); )
 	{
-		char uniformName[64]{ 0 };
-		GLsizei length{ 0 };
-		GLint size{ 0 };
-		GLenum type{ 0 };
-		glGetActiveUniform(programId, i, sizeof(uniformName), &length, &size, &type, uniformName);
-		
-		// NOTE: skip system properties, but track down the locations
-		const int systemUniformId = IsSystemUniform(uniformName);
-		if (systemUniformId >= 0)
+		if (it->second.IsGeneratedByUniform())
 		{
-			mSystemUniformLocations[systemUniformId] = glGetUniformLocation(programId, uniformName);
-			addedProperties += 1;
-			continue;
+			it = mProperties.erase(it);
+		}
+		else
+		{
+			++it;
 		}
 	}
 
-	return addedProperties;
+	mPropertyOrder.clear();
+	mPropertyOrder.reserve(mProperties.size());
+
+	for (auto& kv : mProperties)
+		mPropertyOrder.push_back(kv.first);
 }
 
-int PostEffectBufferShader::PopulatePropertiesFromShaderUniforms()
+int PostEffectBufferShader::ReflectUniforms()
 {
 	using namespace _PostEffectBufferShaderInternal;
 
 	ResetSystemUniformLocations();
-
+	// properties could contain manually initialized ones
+	ClearGeneratedByUniformProperties();
 	if (!GetShaderPtr())
 		return 0;
 
 	const GLuint programId = GetShaderPtr()->GetProgramObj();
 
-	GLint numUniforms = 0;
-	glGetProgramiv(programId, GL_ACTIVE_UNIFORMS, &numUniforms);
+	GLint count = 0;
+	glGetProgramiv(programId, GL_ACTIVE_UNIFORMS, &count);
 
-	GLsizei length{ 0 };
-	GLint size{ 0 };
-	GLenum type{ 0 };
+	GLint maxNameLen = 0;
+	glGetProgramiv(programId, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLen);
 
-	int addedProperties = 0;
-	for (GLint i = 0; i < numUniforms; ++i)
+	std::vector<char> name(maxNameLen);
+
+	int added = 0;
+
+	for (int i = 0; i < count; i++)
 	{
-		ShaderProperty prop;
-		glGetActiveUniform(programId, i, ShaderProperty::MAX_NAME_LENGTH, &length, &size, &type, prop.GetUniformNameAccess());
-		prop.SetLocation(glGetUniformLocation(programId, prop.GetUniformName()));
+		GLsizei length;
+		GLint size;
+		GLenum type;
 
-		// NOTE: skip system properties, but track down the locations
-		const int systemUniformId = IsSystemUniform(prop.GetUniformName());
-		if (systemUniformId >= 0)
-		{
-			mSystemUniformLocations[systemUniformId] = prop.GetLocation();
-			continue;
-		}
+		glGetActiveUniform(programId, i, maxNameLen, &length, &size, &type, name.data());
+		const char* uniformName = name.data();
 
-		// skip GLSL internal uniforms
-		if (IsInternalGLSLUniform(prop.GetUniformName()))
-		{
+		// Skip GLSL internal
+		if (IsInternalGLSLUniform(uniformName))
 			continue;
+
+		const GLint location = glGetUniformLocation(programId, name.data());
+		VERIFY(location >= 0);
+		
+		// System uniform?
+		const int sysId = FindSystemUniform(uniformName);
+		const bool isSystemUniform = (sysId >= 0);
+		if (isSystemUniform)
+		{
+			mSystemUniformLocations[sysId] = location;
 		}
 
 		const auto shaderType = UniformTypeToShaderPropertyType(type);
-		prop.SetType(shaderType);
 
-		// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
-		// metadata
-		ExtractNameAndFlagsFromUniformNameAndType(prop, prop.GetUniformName(), type);
+		// 3) Create ShaderProperty
+		if (auto prop = FindPropertyByUniformName(uniformName))
+		{
+			// already exists, update location
+			
+			assert(prop->GetType() == shaderType);
+			prop->SetLocation(location);
+		}
+		else if (!isSystemUniform)
+		{
+			ShaderProperty newProp;
+			newProp.SetGeneratedByUniform(true);
+			newProp.SetUniformName(uniformName);
+			newProp.SetLocation(location);
+			newProp.SetType(shaderType);
 
-		AddProperty(std::move(prop));
-		addedProperties += 1;
+			// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
+			// metadata
+			SetNameAndFlagsFromUniformNameAndType(newProp, newProp.GetUniformName(), type);
+			AddProperty(std::move(newProp));
+			added++;
+		}
 	}
 
-	return addedProperties;
+	return added;
+}
+
+bool PostEffectBufferShader::InitializeUniforms(const int varianceIndex)
+{
+	ReflectUniforms();
+	UploadDefaultValues();
+
+	return OnPrepareUniforms(varianceIndex);
+}
+
+void PostEffectBufferShader::UploadDefaultValues()
+{
+	if (!Bind())
+		return;
+
+	for (auto& [key, shaderProperty] : mProperties)
+	{
+		if (shaderProperty.IsGeneratedByUniform())
+			continue;
+
+		constexpr bool skipTextureProperties = false;
+		PostEffectRenderContext::UploadUniformValue(shaderProperty.GetDefaultValue(), skipTextureProperties);
+	}
 }
 
 void PostEffectBufferShader::AutoUploadUniforms(const PostEffectRenderContext& renderContext, 
@@ -647,17 +664,14 @@ void PostEffectBufferShader::AutoUploadUniforms(const PostEffectRenderContext& r
 
 void PostEffectBufferShader::ResetSystemUniformLocations()
 {
-	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
-	{
-		mSystemUniformLocations[i] = -1;
-	}
+	mSystemUniformLocations.fill(-1);
 }
 
-int PostEffectBufferShader::IsSystemUniform(const char* uniformName)
+int PostEffectBufferShader::FindSystemUniform(const char* uniformName)
 {
 	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
 	{
-		if (strncmp(uniformName, gSystemUniformNames[i], 256) == 0)
+		if (std::strcmp(uniformName, gSystemUniformNames[i]) == 0)
 			return i;
 	}
 	return -1;
@@ -665,10 +679,7 @@ int PostEffectBufferShader::IsSystemUniform(const char* uniformName)
 
 bool PostEffectBufferShader::IsInternalGLSLUniform(const char* uniformName)
 {
-	if (strncmp(uniformName, "gl_ModelViewProjectionMatrix", 64) == 0)
-		return true;
-
-	return false;
+	return std::strncmp(uniformName, "gl_", 3) == 0;
 }
 
 void PostEffectBufferShader::BindSystemUniforms(const IPostEffectContext* effectContext) const

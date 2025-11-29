@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib> // for std::abort
 
 /// <summary>
 /// a method to transfer shared library logs into motionbuilder logs output
@@ -45,3 +46,12 @@ extern void LOGV(const char* pFormatString, ...);
 extern void LOGI(const char* pFormatString, ...);
 // error line
 extern void LOGE(const char* pFormatString, ...);
+
+
+#define VERIFY(expr) \
+    do { \
+        if (!(expr)) { \
+        LOGE("Check failed: %s at %s:%d", #expr, __FILE__, __LINE__); \
+        std::abort(); \
+		} \
+    } while(0)

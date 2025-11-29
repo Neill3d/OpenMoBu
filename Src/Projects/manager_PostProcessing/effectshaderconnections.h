@@ -196,9 +196,15 @@ public:
 		ShaderProperty(const char* nameIn, const char* uniformNameIn, FBProperty* fbPropertyIn = nullptr);
 		ShaderProperty(const char* nameIn, const char* uniformNameIn, IEffectShaderConnections::EPropertyType typeIn, FBProperty* fbPropertyIn = nullptr);
 
-		void SetName(const std::string& nameIN) { strncpy_s(name, nameIN.c_str(), nameIN.size()); }
+		void SetGeneratedByUniform(bool isGenerated) { isGeneratedByUniform = isGenerated; }
+		bool IsGeneratedByUniform() const { return isGeneratedByUniform; }
+
+		uint32_t ComputeNameHash() const;
+
+		void SetName(std::string_view nameIN);
 		inline const char* GetName() const { return name; }
 		inline uint32_t GetNameHash() const { return mDefaultValue.GetNameHash(); }
+		void SetUniformName(std::string_view uniformNameIN) { strncpy_s(uniformName, uniformNameIN.data(), uniformNameIN.size()); }
 		inline const char* GetUniformName() const { return uniformName; }
 		inline char* GetUniformNameAccess() { return uniformName; }
 
@@ -262,7 +268,9 @@ public:
 		char name[MAX_NAME_LENGTH]{ 0 };
 		char uniformName[MAX_NAME_LENGTH]{ 0 };
 		
-		int32_t padding{ 0 };
+		bool isGeneratedByUniform{ false };
+
+		bool padding[3]{ false };
 
 		std::bitset<PROPERTY_BITSET_SIZE> flags;
 
@@ -281,11 +289,11 @@ public:
 	virtual ShaderProperty& AddProperty(const ShaderProperty& property) = 0;
 	virtual ShaderProperty& AddProperty(ShaderProperty&& property) = 0;
 
-	virtual int GetNumberOfProperties() = 0;
+	virtual int GetNumberOfProperties() const = 0;
 	virtual ShaderProperty& GetProperty(int index) = 0;
-
+	
 	virtual ShaderProperty* FindProperty(const std::string& name) = 0;
-
+	
 	//virtual int GetNumberOfOutputConnections() = 0;
 	//virtual void GetOutputConnectionType() = 0;
 	//virtual void GetOutputProperty(int index) = 0;

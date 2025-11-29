@@ -68,13 +68,6 @@ public:
 	//!  so we could initialized some property or system uniform locations
 	bool InitializeUniforms(const int variationIndex);
 
-	/// <summary>
-	/// upload system and properties uniforms to the shader
-	/// that could trigger render of connected effects to have their result textures ready
-	/// @see AutoUploadUniforms, BindSystemUniforms, OnUploadUniforms
-	/// </summary>
-	//void UploadUniforms(PostEffectBuffers* buffers, FrameBuffer* dstBuffer, int colorAttachment, const GLuint inputTextureId, int w, int h, bool generateMips, const IPostEffectContext* effectContext);
-
 	//! get a pointer to a (current variance) shader program
 	GLSLShaderProgram* GetShaderPtr();
 	const GLSLShaderProgram* GetShaderPtr() const;
@@ -100,18 +93,19 @@ public:
 	virtual ShaderProperty& AddProperty(const ShaderProperty& property) override;
 	virtual ShaderProperty& AddProperty(ShaderProperty&& property) override;
 
-	virtual int GetNumberOfProperties() override;
+	virtual int GetNumberOfProperties() const override;
 	virtual ShaderProperty& GetProperty(int index) override;
 	virtual ShaderProperty* FindProperty(const std::string& name) override;
+	ShaderProperty* FindPropertyByUniformName(const char* name) const;
 
-	// TODO: search for locations
+	void ClearGeneratedByUniformProperties();
 
 	void MakeCommonProperties();
 
-	int MakePropertyLocationsFromShaderUniforms();
-	int MakeSystemLocationsFromShaderUniforms();
+	int ReflectUniforms();
 
-	int PopulatePropertiesFromShaderUniforms();
+	// apply default values to a shader uniforms
+	void UploadDefaultValues();
 
 	/**
 	* When one of the uniforms is a texture which is connected to a result of another effect,
@@ -131,23 +125,23 @@ public:
 protected:
 
 	std::unordered_map<uint32_t, ShaderProperty>		mProperties;
+	std::vector<uint32_t> mPropertyOrder; // deterministic order
 
 	ShaderProperty* UseMaskingProperty{ nullptr };
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertyAdded(ShaderProperty& property)
-	{
-	}
+	{}
 
 protected:
 
 	// system uniforms
 
 	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
-	GLint mSystemUniformLocations[static_cast<int>(ShaderSystemUniform::COUNT)];
-
+	std::array<GLint, static_cast<int>(ShaderSystemUniform::COUNT)> mSystemUniformLocations;
+	
 	void	ResetSystemUniformLocations();
-	int		IsSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
+	int		FindSystemUniform(const char* uniformName); // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
 	bool	IsInternalGLSLUniform(const char* uniformName);
 	void	BindSystemUniforms(const IPostEffectContext* effectContext) const;
 

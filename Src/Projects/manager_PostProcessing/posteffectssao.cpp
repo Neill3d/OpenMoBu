@@ -142,7 +142,7 @@ void PostEffectSSAO::Process(const PostEffectRenderContext& renderContext, const
 		// disable bloom in mix shader
 		renderContextMix.OverrideUniform(*mShaderMix->mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
 
-		mShaderMix->Render(renderContext, effectContext);
+		mShaderMix->Render(renderContextMix, effectContext);
 
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);

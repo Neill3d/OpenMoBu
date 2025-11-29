@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_helper.h"
 #include "math3d.h"
 #include <hashUtils.h>
+#include <mobu_logging.h>
 
 uint32_t EffectShaderLensFlare::SHADER_NAME_HASH = xxhash32(EffectShaderLensFlare::SHADER_NAME);
 
@@ -96,8 +97,7 @@ bool EffectShaderLensFlare::OnCollectUI(IPostEffectContext* effectContext, int m
 	const double systemTime = (data->FlareUsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 	double timerMult = data->FlareTimeSpeed;
 	double flareTimer = 0.01 * timerMult * systemTime;
-	//mTime->SetValue(flareTimer);
-
+	
 	effectContext->GetShaderPropertyStorage()->WriteValue(GetNameHash(), *mTime, flareTimer);
 	
 	return subShaders[mCurrentShader].CollectUIValues(mCurrentShader, effectContext, maskIndex);
@@ -111,18 +111,16 @@ int EffectShaderLensFlare::GetNumberOfPasses() const
 bool EffectShaderLensFlare::OnRenderPassBegin(int passIndex, PostEffectRenderContext& renderContext)
 {
 	const int currentShader = GetCurrentShader();
-	assert(currentShader >= 0 && currentShader < GetNumberOfVariations());
+	VERIFY(currentShader >= 0 && currentShader < GetNumberOfVariations());
 	const SubShader& subShader = subShaders[currentShader];
 
 	if (passIndex >= 0 && passIndex < static_cast<int>(subShader.m_LightPositions.size()))
 	{
 		const FBVector3d pos(subShader.m_LightPositions[passIndex]);
 		renderContext.OverrideUniform(*mLightPos, static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
-		//mLightPos->SetValue(static_cast<float>(pos[0]), static_cast<float>(pos[1]), static_cast<float>(pos[2]), subShader.m_DepthAttenuation);
 		
 		const FBColor tint(subShader.m_LightColors[passIndex]);
 		renderContext.OverrideUniform(*mTint, static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
-		//mTint->SetValue(static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f);
 	}
 
 	return true;
@@ -141,15 +139,7 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, IPostEff
 	PostPersistentData* pData = effectContext->GetPostProcessData();
 
 	m_NumberOfPasses = 1;
-	/*
-	double seedValue = 30.0;
-	if (shaderIndex > 0 && pData->IsLazyLoadReady())
-	{
-		pData->FlareSeed.GetData(&seedValue, sizeof(double));
-	}
-	*/
 	
-
 	double flarePos[3] = { 0.01 * pData->FlarePosX, 0.01 * pData->FlarePosY, 1.0 };
 
 	m_DepthAttenuation = (pData->FlareDepthAttenuation) ? 1.0f : 0.0f;

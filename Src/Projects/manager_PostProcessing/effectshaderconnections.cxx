@@ -117,7 +117,7 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, con
 		fbProperty = fbPropertyIn;
 	}
 
-	const uint32_t nameHash = xxhash32(name, HASH_SEED);
+	const uint32_t nameHash = ComputeNameHash();
 	mDefaultValue.SetNameHash(nameHash);
 }
 
@@ -133,7 +133,19 @@ IEffectShaderConnections::ShaderProperty::ShaderProperty(const char* nameIn, con
 	if (fbPropertyIn)
 		fbProperty = fbPropertyIn;
 
-	const uint32_t nameHash = xxhash32(name, HASH_SEED);
+	const uint32_t nameHash = ComputeNameHash();
+	mDefaultValue.SetNameHash(nameHash);
+}
+
+uint32_t IEffectShaderConnections::ShaderProperty::ComputeNameHash() const
+{
+	return xxhash32(name, HASH_SEED);
+}
+
+void IEffectShaderConnections::ShaderProperty::SetName(std::string_view nameIN) 
+{ 
+	strncpy_s(name, nameIN.data(), nameIN.size()); 
+	const uint32_t nameHash = ComputeNameHash();
 	mDefaultValue.SetNameHash(nameHash);
 }
 

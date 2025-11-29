@@ -94,7 +94,7 @@ public:
     void WriteValue(uint32_t effectHash, IEffectShaderConnections::ShaderProperty& property, float valueIn)
     {
         PropertyValueMap& propertyMap = GetWritePropertyMap(effectHash);
-        IEffectShaderConnections::ShaderPropertyValue propValue(property.GetType());
+        IEffectShaderConnections::ShaderPropertyValue propValue(property.GetDefaultValue());
         propValue.SetValue(valueIn);
         propertyMap.emplace_back(std::move(propValue));
     }

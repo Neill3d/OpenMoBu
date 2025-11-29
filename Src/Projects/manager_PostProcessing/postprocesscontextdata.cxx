@@ -56,11 +56,6 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
         return;
     }
 
-    //FBSystem& mSystem = FBSystem::TheOne();
-	//FBRenderer* pRenderer = mSystem.Renderer;
-    //if (!pRenderer)
-	//	return;
-
     systemTime = systemTime - mStartSystemTime;
 
     const double sysTimeSecs = systemTime.GetSecondDouble();
@@ -86,7 +81,7 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
     for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
     {
         const SPaneData& pane = mEvaluatePanes[nPane];
-        FBCamera* pCamera = pane.camera; // pRenderer->GetCameraInPane(nPane);
+        FBCamera* pCamera = pane.camera;
 
         if (!pane.data || pane.data->IsNeedToReloadShaders() || !pCamera)
             continue;
@@ -217,11 +212,6 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
 
     if (mEnterId <= 0)
         return lStatus;
-
-    //FBSystem& mSystem = FBSystem::TheOne();
-	//FBRenderer* pRenderer = mSystem.Renderer;
-	//if (!pRenderer)
-	//	return lStatus;
 
     /////////////
     // !!!
@@ -357,9 +347,6 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                 {
                     CHECK_GL_ERROR();
 
-                    // TODO: get from effects chain
-                    //const GLuint finalFBO = currBuffers->GetFinalFBO();
-
                     // special test for an android device, send preview image by udp
 #if BROADCAST_PREVIEW == 1
                     if (true == mSendPreview)
@@ -381,12 +368,10 @@ bool PostProcessContextData::RenderAfterRender(bool processCompositions, bool re
                     {
                         // effect should be ended up with writing into target
                         doubleFramebufferRequest->Bind();
-                        //glBindFramebuffer(GL_FRAMEBUFFER, finalFBO);
-
+                        
                         DrawHUD(0, 0, localViewport[2], localViewport[3], mMainFrameBuffer.GetWidth(), mMainFrameBuffer.GetHeight());
 
                         doubleFramebufferRequest->UnBind();
-                        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
                     }
 
                     // 3. blit back a part of a screen
@@ -749,13 +734,17 @@ void PostProcessContextData::FreeBuffers()
 
 void PostProcessContextData::ResetPaneSettings()
 {
+    mEvaluatePaneCount = 0;
     mRenderPaneCount = 0;
     isReadyToEvaluate = false;
     for (int i = 0; i < MAX_PANE_COUNT; ++i)
     {
+        mEvaluatePanes[i].data = nullptr;
+        mEvaluatePanes[i].camera = nullptr;
         mRenderPanes[i].data = nullptr;
         mRenderPanes[i].camera = nullptr;
     }
+    mPostFXContextsMap.clear();
 }
 
 bool PostProcessContextData::PrepPaneSettings()

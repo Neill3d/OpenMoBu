@@ -112,7 +112,7 @@ void PostEffectColor::Process(const PostEffectRenderContext& renderContext, cons
 		renderContextColor.generateMips = false;
 
 		mShaderColor->Render(renderContextColor, effectContext);
-
+		
 		{
 			PostEffectRenderContext renderContextBlur;
 			renderContextBlur.buffers = buffers;
@@ -129,10 +129,10 @@ void PostEffectColor::Process(const PostEffectRenderContext& renderContext, cons
 
 			mShaderBlur->Render(renderContextBlur, effectContext);
 		}
-
+		
 		// mix src texture with color corrected image
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
-		const uint32_t ccTextureId = pBuffer->GetColorObject(1);
+		const uint32_t ccTextureId = pBuffer->GetColorObject(0);
 		glBindTexture(GL_TEXTURE_2D, ccTextureId);
 		glActiveTexture(GL_TEXTURE0);
 

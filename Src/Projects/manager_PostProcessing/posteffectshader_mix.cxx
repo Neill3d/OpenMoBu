@@ -48,11 +48,11 @@ EffectShaderMix::EffectShaderMix(FBComponent* uiComponent)
 	}
 	else
 	{
-		mColorSamplerA = &AddProperty(ShaderProperty("color", "sampler0"))
+		mColorSamplerA = &AddProperty(ShaderProperty("color0", "sampler0"))
 			.SetType(EPropertyType::TEXTURE)
 			.SetFlag(PropertyFlag::ShouldSkip, true)
 			.SetDefaultValue(CommonEffect::ColorSamplerSlot);
-		mColorSamplerB = &AddProperty(ShaderProperty("color", "sampler1"))
+		mColorSamplerB = &AddProperty(ShaderProperty("color1", "sampler1"))
 			.SetType(EPropertyType::TEXTURE)
 			.SetFlag(PropertyFlag::ShouldSkip, true)
 			.SetDefaultValue(CommonEffect::UserSamplerSlot);
@@ -113,6 +113,9 @@ bool EffectShaderMix::OnCollectUI(IPostEffectContext* effectContext, int maskInd
 			//mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
+
+	writer(mColorSamplerA, CommonEffect::ColorSamplerSlot,
+		(mColorSamplerB, CommonEffect::UserSamplerSlot));
 	return true;
 }
 

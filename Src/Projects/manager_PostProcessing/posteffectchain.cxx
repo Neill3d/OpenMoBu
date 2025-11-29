@@ -739,13 +739,13 @@ bool PostEffectChain::Process(
 	const std::vector<PostEffectBase*>& effectChain = data.mChain;
 	if (!effectChain.empty())
 	{
-		auto* doubleBuffer = doubleBufferRequest->GetPtr();
+		FrameBuffer* doubleBuffer = doubleBufferRequest->GetPtr();
 
-		// optional. generate mipmaps for the first target
 		GLuint texid = doubleBuffer->GetColorObject(doubleBufferRequest->GetReadAttachment());
 		const int w = doubleBuffer->GetWidth();
 		const int h = doubleBuffer->GetHeight();
 
+		// optional. generate mipmaps for the first target
 		if (generateMips && texid > 0)
 		{
 			glBindTexture(GL_TEXTURE_2D, texid);
@@ -753,7 +753,7 @@ bool PostEffectChain::Process(
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
-		// 6. render each effect in order
+		// render each effect in order
 		
 		for (const auto& effect : effectChain)
 		{

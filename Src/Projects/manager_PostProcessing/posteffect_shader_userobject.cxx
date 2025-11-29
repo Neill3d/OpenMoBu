@@ -346,7 +346,6 @@ bool UserBufferShader::OnPrepareUniforms(const int variationIndex)
 	if (!GetShaderPtr())
 		return false;
 
-	PopulatePropertiesFromShaderUniforms();
 	return true;
 }
 
