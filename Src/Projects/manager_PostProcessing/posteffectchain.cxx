@@ -179,7 +179,6 @@ void PostEffectChain::RenderSceneMaskToTexture(GLSLShaderProgram* shader, const 
 	static const nv::vec4 white(1.0f, 1.0f, 1.0f, 1.0f);
 	static const nv::vec4 black(0.0f, 0.0f, 0.0f, 1.0f);
 
-	const nv::vec4& baseColor = invert ? black : white;
 	const nv::vec4& rimColor = invert ? white : black;
 
 	shader->Bind();
@@ -188,11 +187,17 @@ void PostEffectChain::RenderSceneMaskToTexture(GLSLShaderProgram* shader, const 
 	const float rimFactor = static_cast<float>(maskProps.UseRimForMask) * PERCENT_TO_FACTOR;
 	const float rimPower = static_cast<float>(maskProps.MaskRimPower) * PERCENT_TO_FACTOR;
 
-	shader->setUniformVector("baseColor", baseColor.x, baseColor.y, baseColor.z, baseColor.w);
 	shader->setUniformVector("rimOptions", rimFactor, rimPower, 0.0f, 0.0f);
 	shader->setUniformVector("rimColor", rimColor.x, rimColor.y, rimColor.z, rimColor.w);
 
-	RenderMaskedModels(maskIndex, mLastCamera);
+	RenderMaskedModels(maskIndex, mLastCamera, [invert, shader](FBModel* renderModel, FXMaskingShader* maskingShader)
+		{
+			const bool isOcclusionRender = maskingShader->OcclusionRender;
+			bool finalInvert = isOcclusionRender ? !invert : invert;
+			
+			const nv::vec4& baseColor = finalInvert ? black : white;
+			shader->setUniformVector("baseColor", baseColor.x, baseColor.y, baseColor.z, baseColor.w);
+		});
 
 	shader->UnBind();
 
@@ -474,7 +479,7 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
-void PostEffectChain::MixMasksPass(GLSLShaderProgram* shader, const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers)
+void PostEffectChain::MixMasksPass(PostEffectMix* effect, const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext)
 {
 	MaskFramebufferRequestScope maskRequest(this, buffers);
 	
@@ -485,24 +490,33 @@ void PostEffectChain::MixMasksPass(GLSLShaderProgram* shader, const int maskInde
 	const int w = maskRequest->GetWidth();
 	const int h = maskRequest->GetHeight();
 
-	glActiveTexture(GL_TEXTURE3);
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, texid2);
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::ColorSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, texid);
 
+	PostEffectRenderContext renderContext;
+	renderContext.srcTextureId = texid;
+	renderContext.width = w;
+	renderContext.height = h;
+	renderContext.targetFramebuffer = maskRequest.GetFrameBufferPtr();
+	renderContext.colorAttachment = PostPersistentData::NUMBER_OF_MASKS; // last color attachment for processing
+
 	maskRequest->Bind(PostPersistentData::NUMBER_OF_MASKS);
-	shader->Bind();
 
-	shader->setUniformVector("gBloom", 0.0f, 0.0f, 1.0f, 0.0f);
+	if (const IEffectShaderConnections::ShaderProperty* BloomProp = effect->GetBufferShaderTypedPtr()->mBloom)
+	{
+		const FBVector2d value = mSettings->GetMaskScale(maskIndex);
+		renderContext.OverrideUniform(*BloomProp, 0.0f, 0.0f, 1.0f, 0.0f);
+	}
 
-	drawOrthoQuad2d(w, h);
+	effect->Process(renderContext, &effectContext);
 
-	shader->UnBind();
 	maskRequest->UnBind();
 
-	glActiveTexture(GL_TEXTURE3);
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::ColorSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	BlitFBOToFBOCustomAttachment(maskRequest->GetFrameBuffer(), w, h, PostPersistentData::NUMBER_OF_MASKS,
@@ -671,7 +685,7 @@ bool PostEffectChain::Process(
 				&& i != mask2
 				&& data.maskRenderFlags[mask2])
 			{
-				MixMasksPass(effectCollection.mShaderMix.get(), i, mask2, buffers);
+				MixMasksPass(effectCollection.mEffectMix.get(), i, mask2, buffers, *effectContext);
 			}
 		}
 	}

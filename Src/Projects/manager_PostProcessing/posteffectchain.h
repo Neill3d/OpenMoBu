@@ -23,6 +23,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "Framebuffer.h"
 
 #include "posteffectshader_bilateral_blur.h"
+#include "posteffectshader_mix.h"
 
 #include <atomic>
 #include <memory>
@@ -145,7 +146,7 @@ private:
 	/// mix masks = mask A * mask B
 	///  result is written back to mask A color attachment
 	/// </summary>
-	void MixMasksPass(GLSLShaderProgram* shader, const int maskindex, const int maskIndex2, PostEffectBuffers* buffers);
+	void MixMasksPass(PostEffectMix* shader, const int maskindex, const int maskIndex2, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext);
 
 	/// <summary>
 	/// send a packet with final post processed image

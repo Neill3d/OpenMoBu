@@ -35,10 +35,13 @@ bool FXMaskingShader::FBCreate()
 	FBPropertyPublish(this, CompositeMaskC, "Mask C", nullptr, nullptr);
 	FBPropertyPublish(this, CompositeMaskD, "Mask D", nullptr, nullptr);
 
+    FBPropertyPublish(this, OcclusionRender, "Occlusion Render", nullptr, nullptr);
+
     CompositeMaskA = false;
     CompositeMaskB = false;
     CompositeMaskC = false;
     CompositeMaskD = false;
+	OcclusionRender = false;
 
     return true;
 }

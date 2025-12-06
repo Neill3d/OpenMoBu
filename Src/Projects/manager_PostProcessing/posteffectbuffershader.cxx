@@ -651,14 +651,8 @@ void PostEffectBufferShader::AutoUploadUniforms(const PostEffectRenderContext& r
 	const IPostEffectContext* effectContext, bool skipTextureProperties)
 {
 	const ShaderPropertyStorage* propertyStorage = effectContext->GetShaderPropertyStorage();
-
-	if (!propertyStorage)
-		return;
-
-	if (const ShaderPropertyStorage::PropertyValueMap* readMap = propertyStorage->GetReadPropertyMap(GetNameHash()))
-	{
-		renderContext.UploadUniforms(*readMap, skipTextureProperties);
-	}
+	const ShaderPropertyStorage::PropertyValueMap* readMap = (propertyStorage) ? propertyStorage->GetReadPropertyMap(GetNameHash()) : nullptr;
+	renderContext.UploadUniforms(readMap, skipTextureProperties);
 }
 
 ///////////////////////////////////////////////////////////////////////////

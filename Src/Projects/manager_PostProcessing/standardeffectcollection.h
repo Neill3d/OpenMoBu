@@ -19,6 +19,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffectshader_lineardepth.h"
 #include "posteffectshader_bilateral_blur.h"
 #include "posteffectshader_blur_lineardepth.h"
+#include "posteffectshader_mix.h"
 
 #include "glslShaderProgram.h"
 
@@ -77,7 +78,7 @@ public:
 	std::unique_ptr<PostEffectBlurLinearDepth>	mEffectBlur;		//!< bilateral blur effect, for SSAO
 	//std::unique_ptr<GLSLShaderProgram>		mShaderImageBlur;	//!< for masking
 	std::unique_ptr<PostEffectBilateralBlur>	mEffectBilateralBlur; //!< for masking
-	std::unique_ptr<GLSLShaderProgram>			mShaderMix;			//!< multiplication result of two inputs, (for SSAO)
+	std::unique_ptr<PostEffectMix>				mEffectMix;			//!< multiplication result of two inputs, (for SSAO)
 	std::unique_ptr<PostEffectDownscale>		mEffectDownscale; // effect for downscaling the preview image (send to client)
 
 	std::unique_ptr<GLSLShaderProgram>			mShaderSceneMasked; //!< render models into mask with some additional filtering

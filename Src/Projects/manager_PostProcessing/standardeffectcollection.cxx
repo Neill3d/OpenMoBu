@@ -215,30 +215,12 @@ bool StandardEffectCollection::LoadShaders()
 
 		//
 		// MIX
-		std::unique_ptr<GLSLShaderProgram> pNewShader;
-		pNewShader.reset(new GLSLShaderProgram);
 
-		FBString vertex_path = FBString(shadersPath, SHADER_MIX_VERTEX);
-		FBString fragment_path = FBString(shadersPath, SHADER_MIX_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
+		mEffectMix.reset(new PostEffectMix());
+		if (!mEffectMix->Load(shadersPath))
 		{
-			throw std::exception("failed to load and prepare mix shader");
+			throw std::exception("failed to load and prepare mix effect");
 		}
-
-		// samplers and locations
-		pNewShader->Bind();
-
-		GLint loc = pNewShader->findLocation("sampler0");
-		if (loc >= 0)
-			glUniform1i(loc, 0);
-		loc = pNewShader->findLocation("sampler1");
-		if (loc >= 0)
-			glUniform1i(loc, 3);
-
-		pNewShader->UnBind();
-
-		mShaderMix.reset(pNewShader.release());
 
 		//
 		// DOWNSCALE
@@ -251,11 +233,11 @@ bool StandardEffectCollection::LoadShaders()
 
 		//
 		// SCENE MASKED
-
+		std::unique_ptr<GLSLShaderProgram> pNewShader;
 		pNewShader.reset(new GLSLShaderProgram);
 
-		vertex_path = FBString(shadersPath, SHADER_SCENE_MASKED_VERTEX);
-		fragment_path = FBString(shadersPath, SHADER_SCENE_MASKED_FRAGMENT);
+		FBString vertex_path = FBString(shadersPath, SHADER_SCENE_MASKED_VERTEX);
+		FBString fragment_path = FBString(shadersPath, SHADER_SCENE_MASKED_FRAGMENT);
 
 		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
 		{
@@ -290,6 +272,6 @@ void StandardEffectCollection::FreeShaders()
 	mEffectDepthLinearize.reset(nullptr);
 	mEffectBilateralBlur.reset(nullptr);
 	mEffectBlur.reset(nullptr);
-	mShaderMix.reset(nullptr);
+	mEffectMix.reset(nullptr);
 	mEffectDownscale.reset(nullptr);
 }

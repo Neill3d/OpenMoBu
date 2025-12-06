@@ -38,10 +38,13 @@ void PostEffectRenderContext::OverrideUniform(const IEffectShaderConnections::Sh
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
-void PostEffectRenderContext::UploadUniforms(const ShaderPropertyStorage::PropertyValueMap& uniformsMap, bool skipTextureProperties) const
+void PostEffectRenderContext::UploadUniforms(const ShaderPropertyStorage::PropertyValueMap* uniformsMap, bool skipTextureProperties) const
 {
 	// given uniforms
-	UploadUniformsInternal(uniformsMap, skipTextureProperties);
+	if (uniformsMap)
+	{
+		UploadUniformsInternal(*uniformsMap, skipTextureProperties);
+	}
 	// override uniforms if defined
 	UploadUniformsInternal(overrideUniforms, true);
 }
