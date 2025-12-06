@@ -227,6 +227,9 @@ public:
 		inline void SetFBProperty(FBProperty* fbPropertyIN) { fbProperty = fbPropertyIN; }
 		inline FBProperty* GetFBProperty() const { return fbProperty; }
 
+		inline void SetFBComponent(FBComponent* fbComponentIN) { fbComponent = fbComponentIN; }
+		inline FBComponent* GetFBComponent() const { return fbComponent; }
+
 		ShaderProperty& SetDefaultValue(int valueIn);
 		ShaderProperty& SetDefaultValue(bool valueIn);
 		ShaderProperty& SetDefaultValue(float valueIn);
@@ -275,6 +278,7 @@ public:
 		std::bitset<PROPERTY_BITSET_SIZE> flags;
 
 		FBProperty* fbProperty{ nullptr };
+		FBComponent* fbComponent{ nullptr }; // the owner of the property
 
 		// extracted value from reference object property
 		union

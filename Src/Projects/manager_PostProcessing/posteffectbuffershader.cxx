@@ -259,10 +259,12 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, IPostEffect
 		ShaderPropertyValue value(shaderProperty.GetDefaultValue());
 		VERIFY(value.GetNameHash() != 0);
 
-		if (!shaderProperty.GetFBProperty())
+		FBComponent* shaderPropertyComp = shaderProperty.GetFBComponent();
+		if (!shaderProperty.GetFBProperty() || component != shaderPropertyComp)
 		{
 			if (strnlen(shaderProperty.GetName(), ShaderProperty::MAX_NAME_LENGTH) > 0)
 			{
+				shaderProperty.SetFBComponent(component);
 				shaderProperty.SetFBProperty(component->PropertyList.Find(shaderProperty.GetName()));
 			}
 		}
