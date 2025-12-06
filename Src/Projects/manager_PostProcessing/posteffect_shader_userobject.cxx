@@ -14,6 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <vector>
 #include <limits>
 #include <ctime>
+#include <filesystem>
 
 #include "FileUtils.h"
 #include "mobu_logging.h"
@@ -64,6 +65,15 @@ void EffectShaderUserObject::ActionReloadShaders(HIObject pObject, bool value)
 	}
 }
 
+void EffectShaderUserObject::ActionOpenFolder(HIObject pObject, bool value)
+{
+	EffectShaderUserObject* p = FBCast<EffectShaderUserObject>(pObject);
+	if (p && value)
+	{
+		p->DoOpenFolderWithShader();
+	}
+}
+
 PostEffectBufferShader* EffectShaderUserObject::MakeANewClassInstance()
 {
 	return new UserBufferShader(this);
@@ -89,6 +99,7 @@ bool EffectShaderUserObject::FBCreate()
 
 	FBPropertyPublish(this, ShaderFile, "Shader File", nullptr, nullptr);
 	FBPropertyPublish(this, ReloadShaders, "Reload Shader", nullptr, ActionReloadShaders);
+	FBPropertyPublish(this, OpenFolder, "Open Folder", nullptr, ActionOpenFolder);
 
 	FBPropertyPublish(this, NumberOfPasses, "Number Of Passes", nullptr, nullptr);
 
@@ -166,13 +177,86 @@ bool EffectShaderUserObject::DoReloadShaders()
 	return true;
 }
 
+std::filesystem::path SanitizeRelative(const std::filesystem::path& rel)
+{
+	std::string s = rel.string();
+
+	// Remove any leading slashes or backslashes
+	while (!s.empty() && (s[0] == '/' || s[0] == '\\'))
+		s.erase(s.begin());
+
+	return std::filesystem::path(s);
+}
+
+std::filesystem::path ComputeFullShaderPath(
+	const char* fragment_shader_rpath,
+	const char* fragment_abs_path_only)
+{
+	namespace fs = std::filesystem;
+
+	fs::path base = fs::path(fragment_abs_path_only);
+	fs::path rel = SanitizeRelative(fs::path(fragment_shader_rpath));
+
+	fs::path full = fs::weakly_canonical(base / rel);
+
+	return full;
+}
+
+bool OpenExplorerFolder(const std::filesystem::path& path)
+{
+	if (!std::filesystem::exists(path))
+		return false;
+
+	// We open the folder, not the file
+	std::filesystem::path folder = path;
+	if (std::filesystem::is_regular_file(path))
+		folder = path.parent_path();
+
+#if defined(_WIN32)
+	std::string winPath = folder.string();
+	std::replace(winPath.begin(), winPath.end(), '/', '\\');
+	std::string cmd = "explorer \"" + winPath + "\"";
+#elif defined(__APPLE__)
+	std::string cmd = "open \"" + folder.string() + "\"";
+#else  // Linux / Unix
+	std::string cmd = "xdg-open \"" + folder.string() + "\"";
+#endif
+
+	return system(cmd.c_str()) == 0;
+}
+
+bool EffectShaderUserObject::DoOpenFolderWithShader()
+{
+	const char* fragment_shader_rpath = ShaderFile;
+	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
+	{
+		LOGE("[PostEffectUserObject] Fragment shader relative path is not defined!\n");
+		return false;
+	}
+
+	char fragment_abs_path_only[MAX_PATH];
+	if (!FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
+	{
+		LOGE("[PostEffectUserObject] Failed to find shaders location!\n");
+		return false;
+	}
+
+	const std::filesystem::path shaderPath = ComputeFullShaderPath(fragment_shader_rpath, fragment_abs_path_only);
+
+	if (!OpenExplorerFolder(shaderPath)) {
+		LOGE("Failed to open folder for %s\n", fragment_abs_path_only);
+		return false;
+	}
+
+	return true;
+}
 
 void EffectShaderUserObject::DefaultValues()
 {}
 
 FBProperty* EffectShaderUserObject::MakePropertyInt(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_int, ANIMATIONNODE_TYPE_INTEGER, false, false, nullptr);
+	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_int, ANIMATIONNODE_TYPE_INTEGER, false, false, nullptr);
 	PropertyAdd(newProp);
 	return newProp;
 }
@@ -183,11 +267,11 @@ FBProperty* EffectShaderUserObject::MakePropertyFloat(const UserBufferShader::Sh
 
 	if (strstr(prop.GetUniformName(), "_flag") != nullptr)
 	{
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_bool, ANIMATIONNODE_TYPE_BOOL, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_bool, ANIMATIONNODE_TYPE_BOOL, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_double, ANIMATIONNODE_TYPE_NUMBER, true, false, nullptr);
 
 		if (strstr(prop.GetUniformName(), "_slider") != nullptr)
 		{
@@ -206,11 +290,11 @@ FBProperty* EffectShaderUserObject::MakePropertyVec2(const UserBufferShader::Sha
 	if (strstr(prop.GetUniformName(), "_wstoss") != nullptr)
 	{
 		// a property for world position that is going to be converted into screen space position
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector2D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	}
 	
 	PropertyAdd(newProp);
@@ -223,11 +307,11 @@ FBProperty* EffectShaderUserObject::MakePropertyVec3(const UserBufferShader::Sha
 
 	if (strstr(prop.GetUniformName(), "_color") != nullptr)
 	{
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_ColorRGB, ANIMATIONNODE_TYPE_COLOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_ColorRGB, ANIMATIONNODE_TYPE_COLOR, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector3D, ANIMATIONNODE_TYPE_VECTOR, true, false, nullptr);
 	}
 
 	PropertyAdd(newProp);
@@ -240,11 +324,11 @@ FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::Sha
 
 	if (strstr(prop.GetUniformName(), "_color") != nullptr)
 	{
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_ColorRGBA, ANIMATIONNODE_TYPE_COLOR_RGBA, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_ColorRGBA, ANIMATIONNODE_TYPE_COLOR_RGBA, true, false, nullptr);
 	}
 	else
 	{
-		newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_Vector4D, ANIMATIONNODE_TYPE_VECTOR_4, true, false, nullptr);
+		newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_Vector4D, ANIMATIONNODE_TYPE_VECTOR_4, true, false, nullptr);
 	}
 
 	PropertyAdd(newProp);
@@ -253,7 +337,7 @@ FBProperty* EffectShaderUserObject::MakePropertyVec4(const UserBufferShader::Sha
 
 FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* newProp = PropertyCreate(prop.GetUniformName(), FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
+	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, false, nullptr);
 	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
 	{
 		//listObjProp->SetFilter(FBTexture::GetInternalClassId() | EffectShaderUserObject::GetInternalClassId());
@@ -267,7 +351,7 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const UserBufferShader::
 
 FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop)
 {
-	FBProperty* fbProperty = PropertyList.Find(prop.GetUniformName());
+	FBProperty* fbProperty = PropertyList.Find(prop.GetName());
 	const FBPropertyType fbPropertyType = IEffectShaderConnections::ShaderPropertyToFBPropertyType(prop);
 
 	// NOTE: check not only user property, but also a property type !
@@ -297,7 +381,7 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const UserBufferShader::Sh
 			fbProperty = MakePropertySampler(prop);
 			break;
 		default:
-			LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.GetUniformName());
+			LOGE("[PostEffectUserObject] not supported prop type for %s uniform\n", prop.GetName());
 		}
 	}
 	return fbProperty;

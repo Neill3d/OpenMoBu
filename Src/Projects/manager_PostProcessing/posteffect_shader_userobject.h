@@ -201,6 +201,7 @@ public: // PROPERTIES
 	FBPropertyString			ShaderFile; //!< fragment shader file to evaluate
 
 	FBPropertyAction			ReloadShaders;
+	FBPropertyAction			OpenFolder; // open a folder where the shader file is located (if found)
 	FBPropertyBool				GenerateMipMaps;
 	FBPropertyAction			ResetToDefault;
 
@@ -212,6 +213,7 @@ public: // PROPERTIES
 public:
 
 	bool DoReloadShaders();
+	bool DoOpenFolderWithShader();
 
 	bool IsNeedToReloadShaders();
 	void SetReloadShadersState(bool state);
@@ -253,5 +255,6 @@ protected:
 	FBProperty* GetOrMakeProperty(const UserBufferShader::ShaderProperty& prop);
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
+	static void ActionOpenFolder(HIObject pObject, bool value);
 
 };
