@@ -79,7 +79,7 @@ bool PostEffectSSAO::CollectUIValues(IPostEffectContext* effectContext)
 	return PostEffectBase::CollectUIValues(effectContext);
 }
 
-void PostEffectSSAO::Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext)
+void PostEffectSSAO::Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
 {
 	// render SSAO into its own buffer
 	constexpr const char* ssaoBufferName = "ssao";

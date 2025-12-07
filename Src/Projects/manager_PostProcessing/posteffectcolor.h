@@ -38,7 +38,7 @@ public:
 
 	virtual bool CollectUIValues(IPostEffectContext* effectContext) override;
 
-	virtual void Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext) override;
+	virtual void Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) override;
 
 protected:
 

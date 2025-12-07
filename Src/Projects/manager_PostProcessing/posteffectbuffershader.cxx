@@ -34,24 +34,45 @@ namespace _PostEffectBufferShaderInternal
 		return name;
 	}
 
-	void SetNameAndFlagsFromUniformNameAndType(IEffectShaderConnections::ShaderProperty& prop, const char* uniformNameIn, GLenum type)
+	// TABLE OF POSTFIX RULES
+	struct Rule
 	{
-		std::string_view name(uniformNameIn);
+		GLenum glType;
+		std::string_view postfix;
+		IEffectShaderConnections::PropertyFlag flag;
+	};
 
-		// TABLE OF POSTFIX RULES
-		struct Rule
-		{
-			GLenum glType;
-			std::string_view postfix;
-			IEffectShaderConnections::PropertyFlag flag;
-		};
-
-		static constexpr Rule rules[] = {
+	static constexpr Rule rules[] = {
 			{ GL_FLOAT,       "_flag",  IEffectShaderConnections::PropertyFlag::IsFlag },
+			{ GL_FLOAT,		  "_slider", IEffectShaderConnections::PropertyFlag::IsClamped100 },
 			{ GL_FLOAT_VEC2,  "_wstoss", IEffectShaderConnections::PropertyFlag::ConvertWorldToScreenSpace },
 			{ GL_FLOAT_VEC3,  "_color", IEffectShaderConnections::PropertyFlag::IsColor },
 			{ GL_FLOAT_VEC4,  "_color", IEffectShaderConnections::PropertyFlag::IsColor }
-		};
+	};
+
+	std::string_view GetNameFromUniformName(std::string_view name, GLenum type)
+	{
+		std::string_view finalName = name;
+
+		for (const Rule& r : rules)
+		{
+			if (r.glType == type)
+			{
+				if (name.size() > r.postfix.size() &&
+					name.compare(name.size() - r.postfix.size(), r.postfix.size(), r.postfix) == 0)
+				{
+					finalName = name.substr(0, name.size() - r.postfix.size());
+					break;
+				}
+			}
+		}
+
+		return finalName;
+	}
+
+	void SetNameAndFlagsFromUniformNameAndType(IEffectShaderConnections::ShaderProperty& prop, const char* uniformNameIn, GLenum type)
+	{
+		std::string_view name(uniformNameIn);
 
 		// default: no change
 		std::string_view finalName = name;
@@ -65,8 +86,8 @@ namespace _PostEffectBufferShaderInternal
 				{
 					prop.SetFlag(r.flag, true);
 					finalName = name.substr(0, name.size() - r.postfix.size());
+					break;
 				}
-				break;
 			}
 		}
 
@@ -129,11 +150,12 @@ void PostEffectBufferShader::MakeCommonProperties()
 		.SetDefaultValue(CommonEffect::MaskSamplerSlot);
 
 	const char* maskingPropName = GetUseMaskingPropertyName();
-	assert(maskingPropName != nullptr);
+	VERIFY(maskingPropName != nullptr);
 	UseMaskingProperty = &AddProperty(IEffectShaderConnections::ShaderProperty(maskingPropName, "useMasking", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
+		.SetFlag(IEffectShaderConnections::PropertyFlag::IsFlag, true)
 		.SetRequired(false)
-		.SetType(IEffectShaderConnections::EPropertyType::BOOL);
+		.SetType(IEffectShaderConnections::EPropertyType::FLOAT);
 
 	AddProperty(IEffectShaderConnections::ShaderProperty(PostPersistentData::UPPER_CLIP, "upperClip", nullptr))
 		.SetFlag(IEffectShaderConnections::PropertyFlag::SYSTEM, true)
@@ -231,8 +253,6 @@ bool PostEffectBufferShader::Load(const char* shadersLocation)
 	return true;
 }
 
-
-
 bool PostEffectBufferShader::CollectUIValues(FBComponent* component, IPostEffectContext* effectContext, int maskIndex)
 {
 	if (!component || mProperties.empty())
@@ -244,7 +264,7 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, IPostEffect
 		return false;
 
 	ShaderPropertyStorage::PropertyValueMap& writeMap = propertyStorage->GetWritePropertyMap(GetNameHash());
-
+	
 	writeMap.clear();
 	writeMap.reserve(mProperties.size());
 	
@@ -269,8 +289,24 @@ bool PostEffectBufferShader::CollectUIValues(FBComponent* component, IPostEffect
 			}
 		}
 
-		if (shaderProperty.GetFBProperty())
+		if (FBProperty* fbProperty = shaderProperty.GetFBProperty())
 		{
+			const FBPropertyType fbType = fbProperty->GetPropertyType();
+			if (fbType == FBPropertyType::kFBPT_object)
+			{
+				shaderProperty.ReadTextureConnections(value, fbProperty);
+				if (value.GetType() == IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT
+					&& value.shaderUserObject)
+				{
+					EffectShaderUserObject* shaderUserObject = value.shaderUserObject;
+
+					FBComponent* tempComponent = effectContext->GetComponent();
+					effectContext->OverrideComponent(shaderUserObject);
+					shaderUserObject->GetUserShaderPtr()->CollectUIValues(effectContext, maskIndex);
+					effectContext->OverrideComponent(tempComponent);
+				}
+			}
+
 			ShaderProperty::ReadFBPropertyValue(value, shaderProperty, effectContext, maskIndex);
 		}
 
@@ -309,21 +345,128 @@ bool PostEffectBufferShader::ReloadPropertyShaders()
 {
 	// TODO: move this to evaluation thread and shader property storage access
 	/*
-	for (auto& prop : mProperties)
+	for (auto& [key, shaderProperty] : mProperties)
 	{
-		auto& shaderProperty = prop.second;
+		if (!shaderProperty.GetFBProperty())
+			continue;
 
-		if (shaderProperty.type == IEffectShaderConnections::EPropertyType::TEXTURE)
-			shaderProperty.GetReadValue().ReadTextureConnections(shaderProperty.fbProperty);
-
-		EffectShaderUserObject* shaderUserObject = shaderProperty.GetReadValue().shaderUserObject;
-		if (shaderUserObject && !shaderUserObject->DoReloadShaders())
+		if (shaderProperty.GetType() == IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT
+			&& shaderProperty.GetShaderUserObject())
 		{
-			return false;
+			EffectShaderUserObject* shaderUserObject = shaderProperty.GetShaderUserObject();
+			if (!shaderUserObject->DoReloadShaders())
+			{
+				return false;
+			}
 		}
 	}
 	*/
 	return true;
+}
+
+int PostEffectBufferShader::GetNumberOfSourceShaders(const IPostEffectContext* effectContext) const
+{
+	const ShaderPropertyStorage* propertyStorage = effectContext->GetShaderPropertyStorage();
+	const ShaderPropertyStorage::PropertyValueMap* readMap = (propertyStorage) ? propertyStorage->GetReadPropertyMap(GetNameHash()) : nullptr;
+
+	if (!readMap)
+		return 0;
+
+	int count = 0;
+	for (const IEffectShaderConnections::ShaderPropertyValue& value : *readMap)
+	{
+		if (value.GetType() == IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT
+			&& value.shaderUserObject)
+		{
+			++count;
+		}
+	}
+
+	return count;
+}
+
+bool PostEffectBufferShader::HasAnySourceShaders(const IPostEffectContext* effectContext) const
+{
+	const ShaderPropertyStorage* propertyStorage = effectContext->GetShaderPropertyStorage();
+	const ShaderPropertyStorage::PropertyValueMap* readMap = (propertyStorage) ? propertyStorage->GetReadPropertyMap(GetNameHash()) : nullptr;
+
+	if (!readMap)
+		return false;
+
+	for (const IEffectShaderConnections::ShaderPropertyValue& value : *readMap)
+	{
+		if (value.GetType() == IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT
+			&& value.shaderUserObject)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool PostEffectBufferShader::HasAnySourceTextures(const IPostEffectContext* effectContext) const
+{
+	const ShaderPropertyStorage* propertyStorage = effectContext->GetShaderPropertyStorage();
+	const ShaderPropertyStorage::PropertyValueMap* readMap = (propertyStorage) ? propertyStorage->GetReadPropertyMap(GetNameHash()) : nullptr;
+
+	if (!readMap)
+		return false;
+
+	for (const IEffectShaderConnections::ShaderPropertyValue& value : *readMap)
+	{
+		if (value.GetType() == IEffectShaderConnections::EPropertyType::TEXTURE
+			&& value.texture)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+PostEffectBufferShader::SourceShadersMap PostEffectBufferShader::GetSourceShaders(IPostEffectContext* effectContext) const
+{
+	SourceShadersMap sourceShaders;
+
+	ShaderPropertyStorage* propertyStorage = effectContext->GetShaderPropertyStorage();
+	ShaderPropertyStorage::PropertyValueMap* readMap = (propertyStorage) ? propertyStorage->GetReadPropertyMap(GetNameHash()) : nullptr;
+
+	if (!readMap)
+		return sourceShaders;
+
+	for (IEffectShaderConnections::ShaderPropertyValue& value : *readMap)
+	{
+		if (value.GetType() == IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT
+			&& value.shaderUserObject)
+		{
+			sourceShaders.emplace_back(&value);
+		}
+	}
+
+	return sourceShaders;
+}
+
+PostEffectBufferShader::SourceTexturesMap PostEffectBufferShader::GetSourceTextures(IPostEffectContext* effectContext) const
+{
+	SourceTexturesMap sourceTextures;
+
+	ShaderPropertyStorage* propertyStorage = effectContext->GetShaderPropertyStorage();
+	ShaderPropertyStorage::PropertyValueMap* readMap = (propertyStorage) ? propertyStorage->GetReadPropertyMap(GetNameHash()) : nullptr;
+
+	if (!readMap)
+		return sourceTextures;
+
+	for (IEffectShaderConnections::ShaderPropertyValue& value : *readMap)
+	{
+		if (value.GetType() == IEffectShaderConnections::EPropertyType::TEXTURE
+			&& value.texture)
+		{
+			sourceTextures.emplace_back(&value);
+		}
+	}
+
+	return sourceTextures;
 }
 
 GLSLShaderProgram* PostEffectBufferShader::GetShaderPtr() {
@@ -472,10 +615,10 @@ void PostEffectBufferShader::SetDownscaleMode(const bool value)
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::AddProperty(const ShaderProperty& property)
 {
 	const uint32_t nameHash = property.GetNameHash();
-	assert(nameHash != 0);
+	VERIFY(nameHash != 0);
 
 	auto [it, inserted] = mProperties.emplace(nameHash, property);
-	assert(inserted);
+	VERIFY(inserted);
 	mPropertyOrder.push_back(nameHash);
 	OnPropertyAdded(it->second);
 
@@ -485,10 +628,10 @@ IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::AddProperty(co
 IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::AddProperty(ShaderProperty&& property)
 {
 	const uint32_t nameHash = property.GetNameHash();
-	assert(nameHash != 0);
+	VERIFY(nameHash != 0);
 
 	auto [it, inserted] = mProperties.emplace(nameHash, std::move(property));
-	assert(inserted);
+	VERIFY(inserted);
 	mPropertyOrder.push_back(nameHash);
 	OnPropertyAdded(it->second);
 
@@ -509,9 +652,9 @@ IEffectShaderConnections::ShaderProperty& PostEffectBufferShader::GetProperty(in
 	//return it->second;
 }
 
-IEffectShaderConnections::ShaderProperty* PostEffectBufferShader::FindProperty(const std::string & name)
+IEffectShaderConnections::ShaderProperty* PostEffectBufferShader::FindProperty(const std::string_view name)
 {
-	const uint32_t nameHash = xxhash32(name, ShaderProperty::HASH_SEED);
+	const uint32_t nameHash = xxhash32(name.data(), name.size(), ShaderProperty::HASH_SEED);
 	auto it = mProperties.find(nameHash);
 	return (it != end(mProperties)) ? &it->second : nullptr;
 }
@@ -596,28 +739,34 @@ int PostEffectBufferShader::ReflectUniforms()
 		}
 
 		const auto shaderType = UniformTypeToShaderPropertyType(type);
+		//std::string_view propNameView = GetNameFromUniformName(uniformName, type);
 
 		// 3) Create ShaderProperty
 		if (auto prop = FindPropertyByUniformName(uniformName))
 		{
 			// already exists, update location
-			
-			assert(prop->GetType() == shaderType);
+			VERIFY((prop->GetType() == shaderType)
+			 || (prop->GetType() == IEffectShaderConnections::EPropertyType::BOOL && shaderType == IEffectShaderConnections::EPropertyType::FLOAT));
 			prop->SetLocation(location);
 		}
 		else if (!isSystemUniform)
 		{
-			ShaderProperty newProp;
-			newProp.SetGeneratedByUniform(true);
-			newProp.SetUniformName(uniformName);
-			newProp.SetLocation(location);
-			newProp.SetType(shaderType);
+			VERIFY(DoPopulatePropertiesFromUniforms());
 
-			// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
-			// metadata
-			SetNameAndFlagsFromUniformNameAndType(newProp, newProp.GetUniformName(), type);
-			AddProperty(std::move(newProp));
-			added++;
+			if (DoPopulatePropertiesFromUniforms())
+			{
+				ShaderProperty newProp;
+				newProp.SetGeneratedByUniform(true);
+				newProp.SetUniformName(uniformName);
+				newProp.SetLocation(location);
+				newProp.SetType(shaderType);
+
+				// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
+				// metadata
+				SetNameAndFlagsFromUniformNameAndType(newProp, newProp.GetUniformName(), type);
+				AddProperty(std::move(newProp));
+				added++;
+			}
 		}
 	}
 

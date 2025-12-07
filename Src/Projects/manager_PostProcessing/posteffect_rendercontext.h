@@ -40,6 +40,8 @@ struct PostEffectRenderContext
 	FrameBuffer* targetFramebuffer{ nullptr };
 	int colorAttachment{ 0 }; //!< a way to define a color attachment in the dstFrameBuffer where we should render into
 
+	GLint userTextureSlot{ 0 }; //!< slot to bind next free user texture
+
 	bool generateMips{ false };
 
 	void ClearOverrideUniforms() {

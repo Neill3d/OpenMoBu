@@ -14,6 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <memory>
 #include <unordered_map>
 #include <map>
+#include <mobu_logging.h>
 
 /**
  * Lock-free double buffering 
@@ -86,7 +87,7 @@ public:
      */
     PropertyValueMap& GetWritePropertyMap(uint32_t effectHash)
     {
-        assert(effectHash != 0);
+        VERIFY(effectHash != 0);
         const int writeIndex = 1 - mReadIndex.load(std::memory_order_relaxed);
         return mBuffers[writeIndex][effectHash];
     }
@@ -101,7 +102,15 @@ public:
 
     const PropertyValueMap* GetReadPropertyMap(uint32_t effectHash) const
     {
-        assert(effectHash != 0);
+        VERIFY(effectHash != 0);
+        const int readIndex = mReadIndex.load(std::memory_order_relaxed);
+        auto it = mBuffers[readIndex].find(effectHash);
+        return (it != end(mBuffers[readIndex])) ? &it->second : nullptr;
+    }
+
+    PropertyValueMap* GetReadPropertyMap(uint32_t effectHash)
+    {
+        VERIFY(effectHash != 0);
         const int readIndex = mReadIndex.load(std::memory_order_relaxed);
         auto it = mBuffers[readIndex].find(effectHash);
         return (it != end(mBuffers[readIndex])) ? &it->second : nullptr;
@@ -110,7 +119,7 @@ public:
     IEffectShaderConnections::ShaderPropertyValue& GetWriteValue(
         uint32_t effectHash, IEffectShaderConnections::ShaderProperty& property)
     {
-        assert(propertyHash != 0);
+        VERIFY(effectHash != 0);
         auto& writeMap = GetWritePropertyMap(effectHash);
         writeMap.emplace_back(property.GetDefaultValue());
 

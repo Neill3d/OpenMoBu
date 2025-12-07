@@ -79,7 +79,7 @@ bool PostEffectColor::CollectUIValues(IPostEffectContext* effectContext)
 	return PostEffectBase::CollectUIValues(effectContext);
 }
 
-void PostEffectColor::Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext)
+void PostEffectColor::Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext)
 {
 	// render SSAO into its own buffer
 	constexpr const char* bufferName = "color_correction";

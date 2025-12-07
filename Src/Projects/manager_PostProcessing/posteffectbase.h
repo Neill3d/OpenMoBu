@@ -104,7 +104,17 @@ public:
 	virtual bool IsMaskSamplerUsed() const;
 	virtual bool IsWorldNormalSamplerUsed() const;
 
-	virtual void Process(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext);
+	// render context can be modified to provide next free user texture slot
+	// effect context can be modified by updating shader property texture slot values
+	virtual void Process(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext);
+
+	bool HasAnySourceShaders(const IPostEffectContext* effectContext) const;
+	bool HasAnySourceTextures(const IPostEffectContext* effectContext) const;
+
+	// render context can be modified to provide next free user texture slot
+	// effect context is for read/write, we modify user texture slots based on connected source shaders/textures
+	bool PreProcessSourceShaders(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) const;
+	bool PreProcessSourceTextures(PostEffectRenderContext& renderContext, IPostEffectContext* effectContext) const;
 
 	virtual int GetNumberOfBufferShaders() const abstract;
 	virtual PostEffectBufferShader* GetBufferShaderPtr(const int bufferShaderIndex) abstract;
@@ -112,24 +122,7 @@ public:
 
 protected:
 
-	std::vector<std::unique_ptr<FrameBuffer>>	mFrameBuffers; // in case buffer shader is used to render it into texture
-	std::vector<int> mBufferShaderVersions; // keep last processing buffer shader version, every resolution change is going to inc the version
-
 	int mMaskIndex{ -1 }; //!< which mask channel the effect is use (-1 for a default, globally defined mask channel)
-
-	// in case of render to texture
-	void InitializeFrameBuffers(int w, int h);
-
-	void BindFrameBuffer(int bufferIndex);
-
-	void UnBindFrameBuffer(int bufferIndex, bool generateMips);
-
-	GLuint GetTextureTextureId(int bufferIndex) const;
-
-	FrameBuffer* GetFrameBufferForBufferShader(const int shaderIndex);
-
-	bool DoNeedIntermediateBuffers();
-
 };
 
 

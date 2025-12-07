@@ -121,6 +121,7 @@ void PostEffectRenderContext::UploadUniformValue(const IEffectShaderConnections:
 		break;
 
 	case IEffectShaderConnections::EPropertyType::TEXTURE:
+	case IEffectShaderConnections::EPropertyType::SHADER_USER_OBJECT:
 	{
 
 		// designed to be used with multi-pass rendering, when textures are bound from the first pass

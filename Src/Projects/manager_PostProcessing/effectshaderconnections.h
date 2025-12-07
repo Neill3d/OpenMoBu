@@ -85,9 +85,9 @@ public:
 		SYSTEM = 1,	// flag that the property is a system one, like masking, upper/lower clip, etc.
 		IsClamped100 = 1,
 		IsClamped1 = 2,
-		IsFlag = 3,
+		IsFlag = 3, // when bool UI value is converted into float [0; 1] uniform
 		IsColor = 4,
-		ConvertWorldToScreenSpace = 5,
+		ConvertWorldToScreenSpace = 5, // this is when world space vector3 is converted into screen space vector2 uniform
 		ShouldSkip = 6, //!< this is for manual processing of property (like manual reading and setting value)
 		INVERT_VALUE = 7 //!< a given property value is going to be written as 1.0 - value to the uniform
 	};
@@ -163,6 +163,13 @@ public:
 
 		inline void SetInvertValue(bool doInvertValueIn) { doInvertValue = doInvertValueIn; }
 		inline bool IsInvertValue() const { return doInvertValue; }
+
+		// extracted value from reference object property
+		union
+		{
+			FBTexture* texture{ nullptr };
+			EffectShaderUserObject* shaderUserObject;
+		};
 
 	private:
 
@@ -253,16 +260,7 @@ public:
 		
 		// when shader property comes from FBPropertyListObject
 		//  we read first object in the list and can have either texture of shader user object type from it
-		void ReadTextureConnections(FBProperty* fbProperty);
-
-		FBTexture* GetTexturePtr() { 
-			assert(GetType() == EPropertyType::TEXTURE);
-			return texture; 
-		}
-		EffectShaderUserObject* GetShaderUserObject() { 
-			assert(GetType() == EPropertyType::SHADER_USER_OBJECT);
-			return shaderUserObject; 
-		}
+		static void ReadTextureConnections(ShaderPropertyValue& value, FBProperty* fbProperty);
 
 	private:
 		
@@ -280,12 +278,6 @@ public:
 		FBProperty* fbProperty{ nullptr };
 		FBComponent* fbComponent{ nullptr }; // the owner of the property
 
-		// extracted value from reference object property
-		union
-		{
-			FBTexture* texture{ nullptr };
-			EffectShaderUserObject* shaderUserObject;
-		};
 	};
 
 	virtual ~IEffectShaderConnections() = default;
@@ -296,12 +288,8 @@ public:
 	virtual int GetNumberOfProperties() const = 0;
 	virtual ShaderProperty& GetProperty(int index) = 0;
 	
-	virtual ShaderProperty* FindProperty(const std::string& name) = 0;
+	virtual ShaderProperty* FindProperty(const std::string_view name) = 0;
 	
-	//virtual int GetNumberOfOutputConnections() = 0;
-	//virtual void GetOutputConnectionType() = 0;
-	//virtual void GetOutputProperty(int index) = 0;
-
 	// look for a UI interface, and read properties and its values
 	// we should write values into effectContext's shaderPropertyStorage
 	virtual bool CollectUIValues(IPostEffectContext* effectContext, int maskIndex) = 0;

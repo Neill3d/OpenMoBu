@@ -80,15 +80,10 @@ bool EffectShaderMix::OnCollectUI(IPostEffectContext* effectContext, int maskInd
 				static_cast<float>(0.01 * data->BloomStretch),
 				0.0f,
 				1.0f);
-			//mBloom->SetValue(static_cast<float>(0.01 * data->BloomTone),
-			//	static_cast<float>(0.01 * data->BloomStretch),
-			//	0.0f, 
-			//	1.0f);
 		}
 		else
 		{
 			writer(mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
-			//mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 	else
@@ -102,15 +97,10 @@ bool EffectShaderMix::OnCollectUI(IPostEffectContext* effectContext, int maskInd
 				static_cast<float>(0.01 * userObject->BloomStretch),
 				0.0f,
 				1.0f);
-			//mBloom->SetValue(static_cast<float>(0.01 * userObject->BloomTone),
-			//	static_cast<float>(0.01 * userObject->BloomStretch),
-			//	0.0f,
-			//	1.0f);
 		}
 		else
 		{
 			writer(mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
-			//mBloom->SetValue(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 

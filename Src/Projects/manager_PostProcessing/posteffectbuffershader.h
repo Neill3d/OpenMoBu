@@ -80,6 +80,19 @@ public:
 	/// </summary>
 	void Render(const PostEffectRenderContext& renderContext, const IPostEffectContext* effectContext);
 
+	// number of shaders in properties that are used as sources for this effect
+	int GetNumberOfSourceShaders(const IPostEffectContext* effectContext) const;
+	bool HasAnySourceShaders(const IPostEffectContext* effectContext) const;
+
+	bool HasAnySourceTextures(const IPostEffectContext* effectContext) const;
+
+	// get a source effect by index
+	using SourceShadersMap = std::vector<IEffectShaderConnections::ShaderPropertyValue*>;
+	SourceShadersMap GetSourceShaders(IPostEffectContext* effectContext) const;
+
+	using SourceTexturesMap = std::vector<IEffectShaderConnections::ShaderPropertyValue*>;
+	SourceTexturesMap GetSourceTextures(IPostEffectContext* effectContext) const;
+
 	// means that processing will use smaller size of a buffer
 	void SetDownscaleMode(const bool value);
 	bool IsDownscaleMode() const { return isDownscale; }
@@ -95,7 +108,7 @@ public:
 
 	virtual int GetNumberOfProperties() const override;
 	virtual ShaderProperty& GetProperty(int index) override;
-	virtual ShaderProperty* FindProperty(const std::string& name) override;
+	virtual ShaderProperty* FindProperty(const std::string_view name) override;
 	ShaderProperty* FindPropertyByUniformName(const char* name) const;
 
 	void ClearGeneratedByUniformProperties();

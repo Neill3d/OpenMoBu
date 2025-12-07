@@ -50,7 +50,8 @@ EffectShaderLensFlare::EffectShaderLensFlare(FBComponent* ownerIn)
 		.SetScale(0.01f);
 
 	mFadeToBorders = &AddProperty(ShaderProperty(PostPersistentData::FLARE_FADE_TO_BORDERS, "fadeToBorders", nullptr))
-		.SetType(EPropertyType::BOOL);
+		.SetFlag(PropertyFlag::IsFlag, true)
+		.SetType(EPropertyType::FLOAT);
 	mBorderWidth = &AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_WIDTH, "borderWidth", nullptr));
 	mFeather = &AddProperty(ShaderProperty(PostPersistentData::FLARE_BORDER_FEATHER, "feather", nullptr))
 		.SetScale(0.01f);

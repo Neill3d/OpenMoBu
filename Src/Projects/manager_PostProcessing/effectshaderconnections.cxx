@@ -343,20 +343,7 @@ void IEffectShaderConnections::ShaderProperty::ReadFBPropertyValue(
 
 	case FBPropertyType::kFBPT_object:
 	{
-		assert(value.type == IEffectShaderConnections::EPropertyType::TEXTURE);
-		// TODO:
-		//ReadTextureConnections(fbProperty);
-
-		// TODO: queue the connected user shader to read values
-		/*
-		if (shaderUserObject)
-		{
-			FBComponent* tempComponent = effectContext->GetComponent();
-			effectContext->OverrideComponent(shaderUserObject);
-			shaderUserObject->GetUserShaderPtr()->CollectUIValues(effectContext, maskIndex);
-			effectContext->OverrideComponent(tempComponent);
-		}
-		*/
+		// processed in PostEffectBufferShader::CollectUIValues
 	} break;
 
 	default:
@@ -394,7 +381,7 @@ void IEffectShaderConnections::ShaderPropertyValue::SetType(IEffectShaderConnect
 	}
 }
 
-void IEffectShaderConnections::ShaderProperty::ReadTextureConnections(FBProperty* fbProperty)
+void IEffectShaderConnections::ShaderProperty::ReadTextureConnections(ShaderPropertyValue& value, FBProperty* fbProperty)
 {
 	bool isFound = false;
 
@@ -408,16 +395,16 @@ void IEffectShaderConnections::ShaderProperty::ReadTextureConnections(FBProperty
 			{
 				FBTexture* textureObj = FBCast<FBTexture>(firstObject);
 				
-				SetType(EPropertyType::TEXTURE);
-				texture = textureObj;
+				value.SetType(EPropertyType::TEXTURE);
+				value.texture = textureObj;
 				isFound = true;
 			}
 			else if (FBIS(firstObject, EffectShaderUserObject))
 			{
 				EffectShaderUserObject* shaderObject = FBCast<EffectShaderUserObject>(firstObject);
 				
-				SetType(EPropertyType::SHADER_USER_OBJECT);
-				shaderUserObject = shaderObject;
+				value.SetType(EPropertyType::SHADER_USER_OBJECT);
+				value.shaderUserObject = shaderObject;
 				isFound = true;
 			}			
 		}
@@ -425,9 +412,9 @@ void IEffectShaderConnections::ShaderProperty::ReadTextureConnections(FBProperty
 
 	if (!isFound)
 	{
-		texture = nullptr;
-		shaderUserObject = nullptr;
-		SetType(EPropertyType::NONE);
+		value.texture = nullptr;
+		value.shaderUserObject = nullptr;
+		value.SetType(EPropertyType::NONE);
 	}
 }
 

@@ -140,13 +140,13 @@ private:
 	/// <summary>
 	/// when a blur is used in any of masks
 	/// </summary>
-	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, PostEffectBilateralBlur* effect, const PostEffectContextMoBu& effectContext);
+	void BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, PostEffectBilateralBlur* effect, PostEffectContextMoBu& effectContext);
 
 	/// <summary>
 	/// mix masks = mask A * mask B
 	///  result is written back to mask A color attachment
 	/// </summary>
-	void MixMasksPass(PostEffectMix* shader, const int maskindex, const int maskIndex2, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext);
+	void MixMasksPass(PostEffectMix* shader, const int maskindex, const int maskIndex2, PostEffectBuffers* buffers, PostEffectContextMoBu& effectContext);
 
 	/// <summary>
 	/// send a packet with final post processed image

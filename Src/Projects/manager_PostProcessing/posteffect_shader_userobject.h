@@ -121,27 +121,7 @@ protected:
 
 	//!< scene object, data container and interaction with the end user
 	EffectShaderUserObject* mUserObject;
-	/*
-	struct ShaderProperty
-	{
-		GLchar uniformName[256]{ 0 };
-		GLsizei length{ 0 };
-		GLint size{ 0 };
-		GLenum type{ 0 };
-
-		GLint location{ -1 };
-		FBProperty* property{ nullptr }; //!< property associated with the given shader uniform
-
-		// extracted connections from a property
-		FBTexture* texture{ nullptr };
-		EffectShaderUserObject* shaderUserObject{ nullptr };
-		float value[4];
-	};
-
-	//!< list all shader uniforms and a connection with ui user property
-	std::unordered_map<std::string, ShaderProperty> mShaderProperties;
-	*/
-
+	
 	virtual const char* GetUseMaskingPropertyName() const override { return "Use Masking"; }
 	virtual const char* GetMaskingChannelPropertyName() const override { return "Masking Channel"; }
 	//!< if true, once shader is loaded, let's inspect all the uniforms and make properties from them
@@ -157,10 +137,6 @@ protected:
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertyAdded(ShaderProperty& property) override;
-
-private:
-
-	std::vector<PostEffectBufferShader*> GetConnectedShaders();
 
 };
 
@@ -242,8 +218,6 @@ protected:
 	void	DefaultValues();
 	void	LoadFromConfig(const char *sessionFilter=nullptr);
 	void	LoadFarValueFromConfig();
-
-	//void	CheckUniforms();
 
 	FBProperty* MakePropertyInt(const UserBufferShader::ShaderProperty& prop);
 	FBProperty* MakePropertyFloat(const UserBufferShader::ShaderProperty& prop);

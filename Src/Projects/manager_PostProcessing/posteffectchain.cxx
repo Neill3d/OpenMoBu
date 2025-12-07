@@ -444,7 +444,7 @@ void PostEffectChain::ReleaseDoubleFrameBuffer(PostEffectBuffers* buffers)
 	buffers->ReleaseFramebuffer(DOUBLE_BUFFER_NAME_KEY);
 }
 
-void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, PostEffectBilateralBlur* effect, const PostEffectContextMoBu& effectContext)
+void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buffers, PostEffectBilateralBlur* effect, PostEffectContextMoBu& effectContext)
 {
 	assert(maskIndex < PostPersistentData::NUMBER_OF_MASKS);
 	if (!effect)
@@ -479,7 +479,7 @@ void PostEffectChain::BlurMasksPass(const int maskIndex, PostEffectBuffers* buff
 		maskRequest->GetFrameBuffer(), w, h, maskIndex);
 }
 
-void PostEffectChain::MixMasksPass(PostEffectMix* effect, const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers, const PostEffectContextMoBu& effectContext)
+void PostEffectChain::MixMasksPass(PostEffectMix* effect, const int maskIndex, const int maskIndex2, PostEffectBuffers* buffers, PostEffectContextMoBu& effectContext)
 {
 	MaskFramebufferRequestScope maskRequest(this, buffers);
 	
@@ -802,7 +802,8 @@ bool PostEffectChain::Process(
 			renderContext.targetFramebuffer = doubleBuffer;
 			renderContext.colorAttachment = doubleBufferRequest->GetWriteAttachment();
 			renderContext.generateMips = generateMips;
-			
+			renderContext.userTextureSlot = CommonEffect::UserSamplerSlot;
+
 			effect->Process(renderContext, effectContext);
 
 			// if local masking index was used, switch back to global mask for next effect
