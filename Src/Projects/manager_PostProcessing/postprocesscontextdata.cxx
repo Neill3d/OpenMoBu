@@ -24,6 +24,36 @@
 #define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
 
 
+//////////////////////////////////////////////////////////////////////////////////
+// RenderFrameGate
+void RenderFrameGate::Enter()
+{
+    mEnterId++;
+
+    if (mEnterId == 1)
+    {
+        mFrameId++;
+    }
+}
+
+void RenderFrameGate::Leave()
+{
+    mEnterId--;
+}
+
+void RenderFrameGate::Reset()
+{
+    mEnterId = 0;
+}
+
+bool RenderFrameGate::IsFirstEnter() const
+{
+    return mEnterId == 1;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// PostProcessContextData
+
 void PostProcessContextData::Init()
 {
     mStartSystemTime = FBSystem::TheOne().SystemTime;
@@ -80,6 +110,10 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
 
 void PostProcessContextData::Synchronize()
 {
+    const int enterId = mFrameGate.GetEnterId();
+    VERIFY(enterId == 0);
+    mFrameGate.Reset();
+
     if (IsNeedToResetPaneSettings())
     {
         // reset all pane settings
@@ -184,23 +218,176 @@ void PostProcessContextData::VideoRenderingEnd()
 	mVideoRendering = false;
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// RenderBeforeRender
-void PostProcessContextData::RenderBeforeRender(bool processCompositions)
+void PostProcessContextData::UpdatePostProcessingFlag()
 {
-    mEnterId++;
-    
-    // attachment point
-    if (processCompositions)
+    mHasPostProcessing = false;
+
+    for (int i = 0; i < mRenderPaneCount; ++i)
     {
-        // it will use attached dimentions, if any external buffer is exist
-        
-        mViewerViewport[2] = mMainFrameBuffer.GetBufferWidth();
-        mViewerViewport[3] = mMainFrameBuffer.GetBufferHeight();
+        if (mRenderPanes[i].data)
+        {
+            mHasPostProcessing = true;
+            break;
+        }
+    }
+
+    //if (pContextData->mViewerViewport[2] <= 1 || pContextData->mViewerViewport[3] <= 1)
+    //{
+    //    usePostProcessing = false;
+    //}
+}
+
+void PostProcessContextData::PrepareCameraPerPane()
+{
+    // grab the whole viewer
+
+    mViewerViewport[0] = mViewerViewport[1] = 0;
+    mViewerViewport[2] = mViewerViewport[3] = 0;
+
+    FBSystem& system = FBSystem::TheOne();
+    FBRenderer* pRenderer = system.Renderer;
+
+    mSchematicViewIndex = pRenderer->GetSchematicViewPaneIndex();
+    mRenderPaneCount = pRenderer->GetPaneCount();
+
+    // DONE: this is a strict post effect pane index, should we choose another one ?!
+
+    for (int i = 0; i < mRenderPaneCount; ++i)
+    {
+        FBCamera* pCamera = pRenderer->GetCameraInPane(i);
+        const bool useCamera = (i != mSchematicViewIndex && pCamera && !pCamera->SystemCamera);
+        mRenderPanes[i].camera = (useCamera) ? pCamera : nullptr;
+        mRenderPanes[i].paneIndex = i;
+    }
+
+    for (int i = 0; i < mRenderPaneCount; ++i)
+    {
+        FBCamera* pCamera = mRenderPanes[i].camera;
+        if (!pCamera)
+            continue;
+
+        bool paneSharesCamera = false;
+        for (int j = 0; j < mRenderPaneCount; ++j)
+        {
+            if (i != j)
+            {
+                FBCamera* pOtherCamera = mRenderPanes[j].camera;
+                if (pCamera == pOtherCamera)
+                {
+                    paneSharesCamera = true;
+                    break;
+                }
+            }
+        }
+
+        int x = pCamera->CameraViewportX;
+        int y = pCamera->CameraViewportY;
+        int w = pCamera->CameraViewportWidth;
+        int h = pCamera->CameraViewportHeight;
+
+        if (w <= 0 || h <= 0)
+            continue;
+
+        //
+        FBCameraFrameSizeMode cameraFrameSizeMode;
+        pCamera->FrameSizeMode.GetData(&cameraFrameSizeMode, sizeof(FBCameraFrameSizeMode), FBGetDisplayInfo());
+        const bool bIsFrameSizeWindow = kFBFrameSizeWindow == cameraFrameSizeMode;
+
+        w += (bIsFrameSizeWindow) ? x : 2 * x;
+        h += (bIsFrameSizeWindow) ? y : 2 * y;
+
+        if (paneSharesCamera)
+        {
+            w *= 2;
+            h *= 2;
+        }
+
+        mViewerViewport[2] = (w > mViewerViewport[2]) ? w : mViewerViewport[2];
+        mViewerViewport[3] = (h > mViewerViewport[3]) ? h : mViewerViewport[3];
+    }
+}
+
+void PostProcessContextData::PreparePaneBuffers()
+{
+    // enterid is 1 and attach index is 0
+    const int enterId = mFrameGate.GetEnterId() - 1;
+    VERIFY(enterId >= 0 && enterId < MAX_ATTACH_STACK);
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[enterId]);
+
+    //
+    // resize, alloc shaders, etc.
+    LoadSimpleBlitShader();
+
+    // resize each pane framebuffer
+    for (int i = 0; i < mRenderPaneCount; ++i)
+    {
+        if (!mRenderPanes[i].data)
+            continue;
+
+        FBCamera* pCamera = mRenderPanes[i].camera;
+        if (!pCamera)
+            continue;
+
+        const int w = pCamera->CameraViewportWidth;
+        const int h = pCamera->CameraViewportHeight;
+
+        if (w <= 0 || h <= 0)
+            continue;
+
+        // next line could change current fbo
+
+        bool usePreview = mRenderPanes[i].data->OutputPreview;
+        double scaleF = mRenderPanes[i].data->OutputScaleFactor;
+
+        mPaneEffectBuffers[i]->ReSize(w, h, usePreview, scaleF);
+    }
+
+    if (mAttachedFBO[enterId] == 0 && mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
+    {
+        VERIFY(mViewerViewport[2] > 0 && mViewerViewport[3] > 0);
+        mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
 
         mMainFrameBuffer.BeginRender();
 
-        //glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+        glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        mMainFrameBuffer.EndRender();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// RenderBeforeRender
+void PostProcessContextData::RenderBeforeRender()
+{
+    mFrameGate.Enter();
+
+    if (mFrameGate.IsFirstEnter())
+    {
+        PrepareCameraPerPane();
+        PrepPersistanceDataForEachPane();
+        UpdatePostProcessingFlag();
+
+        if (HasPostProcessing())
+        {
+            PreparePaneBuffers();
+        }
+    }
+
+    // attachment point
+    if (HasPostProcessing())
+    {
+        const int enterId = mFrameGate.GetEnterId() - 1; // enter id 1 has attached index 0
+        VERIFY(enterId >= 0 && enterId < MAX_ATTACH_STACK);
+        if (mAttachedFBO[enterId] > 0)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[enterId]);
+        }
+        else
+        {
+            mMainFrameBuffer.BeginRender();
+        }
 
         glEnable(GL_DEPTH_TEST);
     }
@@ -209,55 +396,84 @@ void PostProcessContextData::RenderBeforeRender(bool processCompositions)
 /////////////////////////////////////////////////////////////////////////////////////
 // RenderAfterRender - post processing work after main scene rendering is finished
 
-void PostProcessContextData::PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const
+
+bool PostProcessContextData::RenderAfterRender(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
 {
-    systemTime = systemTime - mStartSystemTime;
-    const double sysTimeSecs = systemTime.GetSecondDouble();
-    const double localTimeSecs = localTime.GetSecondDouble();
+    const bool isFirstEnter = mFrameGate.IsFirstEnter();
+    mFrameGate.Leave();
 
-    const double systemTimeDT = (mIsTimeInitialized) ? sysTimeSecs - mLastSystemTime : 0.0;
-    const double localTimeDT = (mIsTimeInitialized) ? localTimeSecs - mLastLocalTime : 0.0;
-
-    contextParametersOut.localFrame = static_cast<int>(localTime.GetFrame());
-    contextParametersOut.sysTime = sysTimeSecs;
-    contextParametersOut.sysTimeDT = systemTimeDT;
-    contextParametersOut.localTime = localTimeSecs;
-    contextParametersOut.localTimeDT = localTimeDT;
-}
-
-void PostProcessContextData::PrepareContextParametersForCamera(PostEffectContextProxy::Parameters& contextParametersOut, FBCamera* pCamera, int nPane) const
-{
-    if (!pCamera)
-		return;
-
-    int viewportX = pCamera->CameraViewportX;
-    int viewportY = pCamera->CameraViewportY;
-    int viewportWidth = pCamera->CameraViewportWidth;
-    int viewportHeight = pCamera->CameraViewportHeight;
-
-    bool isSkipFrame = false;
-    if (pCamera->SystemCamera)
+    // we dicrement enterid, so enterid is equal to attached index
+    const int enterId = mFrameGate.GetEnterId();
+    if (enterId < 0)
     {
-        viewportWidth = 0;
-        isSkipFrame = true;
+        // we leave the frame from the manipulator, don't need to process the frame once again
+        // NOTE: manipulator calls external renderAfterRender for each pane!
+        mFrameGate.Reset();
+        return false;
     }
-    else if (!mVideoRendering || nPane > 0)
+    
+    if (HasPostProcessing() && isFirstEnter)
     {
-        if (nPane == mSchematicViewIndex)
+        glDisable(GL_MULTISAMPLE);
+        glDisable(GL_DEPTH_TEST);
+
+        mMainFrameBuffer.EndRender(); // unbind any framebuffer
+        
+        const GLuint fboInOut = (mAttachedFBO[enterId] > 0) ? mAttachedFBO[enterId] : mMainFrameBuffer.GetFinalFBO();
+
+        // this is a hack for Reflection shader (to avoid error overhead on glReadBuffers(GL_BACK) )
+#ifndef OGL_DEBUG
+        EmptyGLErrorStack();
+#endif
+        PostEffectContextProxy::Parameters params;
+		PrepareContextParameters(params, systemTime, localTime);
+        
+        // NOTE: at the moment only first pane could do effect processing, no need to render more panes than that
+        constexpr const int RENDER_PANE_LIMIT{ 1 };
+        for (int nPane = 0; nPane < mRenderPaneCount && nPane < RENDER_PANE_LIMIT; ++nPane)
         {
-            viewportWidth = 0;
-			isSkipFrame = true;
+            SPaneData& pane = mRenderPanes[nPane];
+			RenderPane(pEvaluateInfoIn, pane, mPaneEffectBuffers[nPane].get(), params, fboInOut);
         }
+
+		BuffersPoolCollection();
+
+        if (mAttachedFBO[enterId] > 0)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[enterId]);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        }
+        else
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // DONE: draw a resulted rect
+            // render background
+            if (!mMainFrameBuffer.isFboAttached() && mShaderSimple.get())
+            {
+                mShaderSimple->Bind();
+
+                glBindTexture(GL_TEXTURE_2D, mMainFrameBuffer.GetFinalColorObject());
+                drawOrthoQuad2d(mViewerViewport[2], mViewerViewport[3]);
+
+                mShaderSimple->UnBind();
+            }
+        }
+
+        mLastSystemTime = systemTime.GetSecondDouble();
+        mLastLocalTime = localTime.GetSecondDouble();
+		mIsTimeInitialized = true;
     }
 
-	contextParametersOut.x = viewportX;
-	contextParametersOut.y = viewportY;
-    contextParametersOut.w = viewportWidth;
-    contextParametersOut.h = viewportHeight;
-	contextParametersOut.isSkipFrame = isSkipFrame;
+    return true;
 }
 
-void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn, SPaneData& pane, PostEffectBuffers* paneBuffers, PostEffectContextProxy::Parameters& params)
+
+void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn, 
+    SPaneData& pane, 
+    PostEffectBuffers* paneBuffers, 
+    PostEffectContextProxy::Parameters& params,
+    GLuint fboInOut)
 {
     if (!pane.IsValid() || !paneBuffers)
         return;
@@ -266,10 +482,10 @@ void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn, SPaneDa
     PostEffectContextMoBu* fxContext = pane.fxContext;
 
     PrepareContextParametersForCamera(params, pCamera, pane.paneIndex);
-    
+
     // not in schematic view
     if (params.w <= 0 || params.w > paneBuffers->GetWidth())
-		return;
+        return;
 
     if (!IsReadyToEvaluate() && fxContext->IsAnyReloadShadersRequested())
     {
@@ -277,28 +493,19 @@ void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn, SPaneDa
     }
 
     const bool isReadyToRender = standardEffectsCollection.IsOk()
-                                && fxContext->IsReadyToRender()
-                                && !fxContext->IsAnyReloadShadersRequested();
+        && fxContext->IsReadyToRender()
+        && !fxContext->IsAnyReloadShadersRequested();
 
     if (!isReadyToRender)
-		return;
+        return;
 
     // 1. blit a pane area of a main buffer into a pane buffer
 
     DoubleFramebufferRequestScope doubleFramebufferRequest(fxContext->GetFXChain(), paneBuffers);
-
-    if (!mMainFrameBuffer.isFboAttached())
-    {
-        BlitFBOToFBOOffset(mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
-            doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-            true, false, false, false); // copy depth and no any other attachments
-    }
-    else
-    {
-        BlitFBOToFBOOffset(mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
-            doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-            true, false, false, false); // copy depth and no any other attachments
-    }
+    
+    BlitFBOToFBOOffset(fboInOut, params.x, params.y, params.w, params.h, 0,
+        doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+        true, false, false, false); // copy depth and no any other attachments
 
     // 2. process it
 
@@ -333,20 +540,59 @@ void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn, SPaneDa
     }
 
     // 3. blit back a pane area into a full main buffer
-
-    if (!mMainFrameBuffer.isFboAttached())
-    {
-        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-            mMainFrameBuffer.GetFinalFBO(), params.x, params.y, params.w, params.h, 0,
-            false, false, false, false); // don't copy depth or any other color attachment
-    }
-    else
-    {
-        BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
-            mMainFrameBuffer.GetAttachedFBO(), params.x, params.y, params.w, params.h, 0,
-            false, false, false, false); // don't copy depth or any other color attachment
-    }
+    BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
+        fboInOut, params.x, params.y, params.w, params.h, 0,
+        false, false, false, false); // don't copy depth or any other color attachment
 }
+
+void PostProcessContextData::PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const
+{
+    systemTime = systemTime - mStartSystemTime;
+    const double sysTimeSecs = systemTime.GetSecondDouble();
+    const double localTimeSecs = localTime.GetSecondDouble();
+
+    const double systemTimeDT = (mIsTimeInitialized) ? sysTimeSecs - mLastSystemTime : 0.0;
+    const double localTimeDT = (mIsTimeInitialized) ? localTimeSecs - mLastLocalTime : 0.0;
+
+    contextParametersOut.localFrame = static_cast<int>(localTime.GetFrame());
+    contextParametersOut.sysTime = sysTimeSecs;
+    contextParametersOut.sysTimeDT = systemTimeDT;
+    contextParametersOut.localTime = localTimeSecs;
+    contextParametersOut.localTimeDT = localTimeDT;
+}
+
+void PostProcessContextData::PrepareContextParametersForCamera(PostEffectContextProxy::Parameters& contextParametersOut, FBCamera* pCamera, int nPane) const
+{
+    if (!pCamera)
+        return;
+
+    int viewportX = pCamera->CameraViewportX;
+    int viewportY = pCamera->CameraViewportY;
+    int viewportWidth = pCamera->CameraViewportWidth;
+    int viewportHeight = pCamera->CameraViewportHeight;
+
+    bool isSkipFrame = false;
+    if (pCamera->SystemCamera)
+    {
+        viewportWidth = 0;
+        isSkipFrame = true;
+    }
+    else if (!mVideoRendering || nPane > 0)
+    {
+        if (nPane == mSchematicViewIndex)
+        {
+            viewportWidth = 0;
+            isSkipFrame = true;
+        }
+    }
+
+    contextParametersOut.x = viewportX;
+    contextParametersOut.y = viewportY;
+    contextParametersOut.w = viewportWidth;
+    contextParametersOut.h = viewportHeight;
+    contextParametersOut.isSkipFrame = isSkipFrame;
+}
+
 
 void PostProcessContextData::BuffersPoolCollection()
 {
@@ -359,91 +605,6 @@ void PostProcessContextData::BuffersPoolCollection()
     }
 }
 
-bool PostProcessContextData::RenderAfterRender(bool processCompositions, FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
-{
-    bool lStatus = false;
-
-    if (mEnterId <= 0)
-        return lStatus;
-
-    /////////////
-    // !!!
-    if (processCompositions && 1 == mEnterId)
-    {
-        glDisable(GL_MULTISAMPLE);
-        glDisable(GL_DEPTH_TEST);
-
-        mMainFrameBuffer.EndRender(); // unbind any framebuffer
-        //constexpr bool drawToBack{ false };
-        //mMainFrameBuffer.PrepForPostProcessing(drawToBack);	// blit attached fbo into main framebuffer fbo
-
-        // this is a hack for Reflection shader (to avoid error overhead on glReadBuffers(GL_BACK) )
-#ifndef OGL_DEBUG
-        EmptyGLErrorStack();
-#endif
-        PostEffectContextProxy::Parameters params;
-		PrepareContextParameters(params, systemTime, localTime);
-        
-        for (int nPane = 0; nPane < mRenderPaneCount; ++nPane)
-        {
-            SPaneData& pane = mRenderPanes[nPane];
-			RenderPane(pEvaluateInfoIn, pane, mPaneEffectBuffers[nPane].get(), params);
-        }
-
-		BuffersPoolCollection();
-
-        if (mAttachedFBO[mEnterId - 1] > 0)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId - 1]);
-            glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        }
-        else
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        }
-
-        //}
-
-        // DONE: draw a resulted rect
-        // render background
-        if (!mMainFrameBuffer.isFboAttached() && mShaderSimple.get())
-        {
-            mShaderSimple->Bind();
-
-            glBindTexture(GL_TEXTURE_2D, mMainFrameBuffer.GetFinalColorObject());
-            drawOrthoQuad2d(mViewerViewport[2], mViewerViewport[3]);
-
-            mShaderSimple->UnBind();
-
-            lStatus = true;
-        }
-
-        mLastSystemTime = systemTime.GetSecondDouble();
-        mLastLocalTime = localTime.GetSecondDouble();
-		mIsTimeInitialized = true;
-    }
-    
-    mEnterId--;
-    
-    if (mEnterId < 0)
-    {
-        LOGE("ERROR: wrong entering id!\n");
-        mEnterId = 0;
-    }
-    else
-    {
-        // offline render
-        if (mAttachedFBO[mEnterId] > 0)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[mEnterId]);
-            glReadBuffer(GL_COLOR_ATTACHMENT0);
-        }
-
-    }
-
-    return lStatus;
-}
-
 bool PostProcessContextData::EmptyGLErrorStack()
 {
     bool wasError = false;
@@ -454,129 +615,6 @@ bool PostProcessContextData::EmptyGLErrorStack()
     return wasError;
 }
 
-void PostProcessContextData::PreRenderFirstEntry()
-{
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[mEnterId]);
-
-    //mPaneId = 0;
-    mFrameId++;
-
-    // grab the whole viewer
-
-    mViewerViewport[0] = mViewerViewport[1] = 0;
-    mViewerViewport[2] = mViewerViewport[3] = 0;
-
-    FBSystem& system = FBSystem::TheOne();
-    FBRenderer *pRenderer = system.Renderer;
-
-    mSchematicViewIndex = pRenderer->GetSchematicViewPaneIndex();
-    mRenderPaneCount = pRenderer->GetPaneCount();
-
-    // DONE: this is strict post effect pane index, should we choose another one ?!
-
-    for (int i = 0; i < mRenderPaneCount; ++i)
-    {
-        FBCamera* pCamera = pRenderer->GetCameraInPane(i);
-        const bool useCamera = (i != mSchematicViewIndex && pCamera && !pCamera->SystemCamera);
-        mRenderPanes[i].camera = (useCamera) ? pCamera : nullptr;
-        mRenderPanes[i].paneIndex = i;
-    }
-
-    for (int i = 0; i < mRenderPaneCount; ++i)
-    {
-        FBCamera* pCamera = mRenderPanes[i].camera;
-        if (!pCamera)
-            continue;
-
-        bool paneSharesCamera = false;
-        for (int j = 0; j < mRenderPaneCount; ++j)
-        {
-            if (i != j)
-            {
-                FBCamera *pOtherCamera = mRenderPanes[j].camera;
-                if (pCamera == pOtherCamera)
-                {
-                    paneSharesCamera = true;
-                    break;
-                }
-            }
-        }
-
-        int x = pCamera->CameraViewportX;
-        int y = pCamera->CameraViewportY;
-        int w = pCamera->CameraViewportWidth;
-        int h = pCamera->CameraViewportHeight;
-
-        if (w <= 0 || h <= 0)
-            continue;
-        
-        //
-        FBCameraFrameSizeMode cameraFrameSizeMode;
-        pCamera->FrameSizeMode.GetData(&cameraFrameSizeMode, sizeof(FBCameraFrameSizeMode), FBGetDisplayInfo());
-        const bool bIsFrameSizeWindow = kFBFrameSizeWindow == cameraFrameSizeMode;
-        
-        w += (bIsFrameSizeWindow) ? x : 2 * x;
-        h += (bIsFrameSizeWindow) ? y : 2 * y;
-        
-        if (paneSharesCamera)
-        {
-            w *= 2;
-            h *= 2;
-        }
-
-        mViewerViewport[2] = (w > mViewerViewport[2]) ? w : mViewerViewport[2];
-        mViewerViewport[3] = (h > mViewerViewport[3]) ? h : mViewerViewport[3];
-    }
-
-    //
-    // resize, alloc shaders, etc.
-    LoadSimpleBlitShader();
-    PrepPersistanceDataForEachPane();
-
-    // resize each pane framebuffer
-    for (int i = 0; i < mRenderPaneCount; ++i)
-    {
-        if (!mRenderPanes[i].data)
-            continue;
-
-        FBCamera *pCamera = mRenderPanes[i].camera;
-        if (!pCamera)
-            continue;
-
-        const int w = pCamera->CameraViewportWidth;
-        const int h = pCamera->CameraViewportHeight;
-
-        if (w <= 0 || h <= 0)
-            continue;
-
-        // next line could change current fbo
-
-        bool usePreview = mRenderPanes[i].data->OutputPreview;
-        double scaleF = mRenderPanes[i].data->OutputScaleFactor;
-
-		mPaneEffectBuffers[i]->ReSize(w, h, usePreview, scaleF);
-    }
-
-    //
-
-    if (mAttachedFBO[mEnterId] > 0)
-        mMainFrameBuffer.AttachFBO(mAttachedFBO[mEnterId]);
-    else
-        mMainFrameBuffer.DetachFBO();
-    
-    if (mAttachedFBO[mEnterId] == 0 && mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
-    {
-        mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
-
-        mMainFrameBuffer.BeginRender();
-
-        glViewport(0, 0, mViewerViewport[2], mViewerViewport[3]);
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        mMainFrameBuffer.EndRender();
-    }
-}
 
 const bool PostProcessContextData::CheckShadersPath(const char* path) const
 {
@@ -683,7 +721,6 @@ void PostProcessContextData::ResetPaneSettings()
         mRenderPanes[i].Clear();
 		mFXContexts[i].reset(nullptr);
     }
-    //mPostFXContextsMap.clear();
 }
 
 bool PostProcessContextData::PrepPersistanceDataForEachPane()

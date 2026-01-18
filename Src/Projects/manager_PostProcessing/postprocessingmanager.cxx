@@ -80,9 +80,6 @@ bool PostProcessingManager::FBCreate()
 	//
 	FBProfiling_SetupTaskCycle(PostProcessRenderer);
 
-	mEnterId = 0;
-	mFrameId = 0;
-	
 	gManager = this;
 
 	mLastSendTimeSecs = 0.0;
@@ -434,6 +431,10 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 	FBEventEvalGlobalCallback lFBEvent(pEvent);
 	if (lFBEvent.GetTiming() == kFBGlobalEvalCallbackSyn)
 	{
+		const int enterId = mFrameGate.GetEnterId();
+		VERIFY(enterId == 0);
+		mFrameGate.Reset();
+
 		///
 		// This callback occurs when both rendering and evaluation pipeline are stopped,
 		// plugin developer could add some lightweight scene modification tasks here
@@ -496,18 +497,6 @@ void PostProcessingManager::CheckForAContextChange()
 	}
 }
 
-
-void PostProcessingManager::PreRenderFirstEntry()
-{
-	CheckForAContextChange();
-
-	if (PostProcessContextData* pContextData = GetCurrentContextData())
-	{
-		pContextData->PreRenderFirstEntry();
-	}
-}
-
-
 void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent)
 {
 	if (skipRender)
@@ -516,61 +505,43 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 	FBEventEvalGlobalCallback lFBEvent(pEvent);
 
 	// check for a context change here
-	if (mEnterId < 1 && lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender)
+	if (lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender)
 	{
-		PreRenderFirstEntry();
+		mFrameGate.Enter();
+	}
+	else if (lFBEvent.GetTiming() == kFBGlobalEvalCallbackAfterRender)
+	{
+		mFrameGate.Leave();
+	}
+	if (mFrameGate.IsFirstEnter())
+	{
+		CheckForAContextChange();
 	}
 
 	PostProcessContextData* pContextData = GetCurrentContextData();
 	if (!pContextData)
 		return;
-	bool usePostProcessing = false;
-
-	for (int i = 0; i<pContextData->mRenderPaneCount; ++i)
-	{
-		if (pContextData->mRenderPanes[i].data)
-		{
-			usePostProcessing = true;
-			break;
-		}
-	}
-
 	
 	switch (lFBEvent.GetTiming())
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
-			if (pContextData->mViewerViewport[2] <= 1 || pContextData->mViewerViewport[3] <= 1)
-			{
-				usePostProcessing = false;
-			}
-
-			mLastProcessCompositions = usePostProcessing;
-			pContextData->RenderBeforeRender(usePostProcessing);
+			pContextData->RenderBeforeRender();
 			
-			if (true == mDoVideoClipTimewrap)
+			if (mDoVideoClipTimewrap)
 			{
 				PrepVideoClipsTimeWrap();
 			}
-			
 		} break;
 	case kFBGlobalEvalCallbackAfterRender:
 		{
-			//
-			// This callback occurs just before swapping GL back/front buffers. 
-			// User could do some special effect, HUD or buffer download (via PBO) here. 
-			//
-			
-			//
-			// Start PostProcessRenderer task cycle profiling, 
-			//
 			FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
 
 			FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
 			FBTime systemTime = evalInfo->GetSystemTime();
 			FBTime localTime = evalInfo->GetLocalTime();
 
-			pContextData->RenderAfterRender(usePostProcessing, systemTime, localTime, evalInfo);
+			pContextData->RenderAfterRender(systemTime, localTime, evalInfo);
 		} break;
 
 	default:
@@ -589,7 +560,7 @@ bool PostProcessingManager::ExternalRenderAfterRender()
 		FBTime systemTime = system.SystemTime;
 		FBTime localTime = system.LocalTime;
 
-		return pContextData->RenderAfterRender(mLastProcessCompositions, systemTime, localTime, FBGetDisplayInfo());
+		return pContextData->RenderAfterRender(systemTime, localTime, FBGetDisplayInfo());
 	}
 	return false;
 }
@@ -600,8 +571,8 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 
 	if (levent.GetState() == FBEventVideoFrameRendering::eBeginRendering)
 	{
-		PreRenderFirstEntry();
-
+		CheckForAContextChange();
+		
 		if (PostProcessContextData* pContextData = GetCurrentContextData())
 		{
 			pContextData->VideoRenderingBegin();

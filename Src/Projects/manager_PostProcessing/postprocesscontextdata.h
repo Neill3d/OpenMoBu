@@ -30,6 +30,22 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "standardeffectcollection.h"
 #include "shaderproperty_storage.h"
 
+// keep track of begining / end render and recursive renders
+struct RenderFrameGate
+{
+public:
+
+	void Enter();
+	void Leave();
+	void Reset();
+
+	bool IsFirstEnter() const;
+	int GetEnterId() const { return mEnterId; }
+
+	size_t mFrameId{ 0 };
+	int mEnterId{ 0 };
+};
+
 /// <summary>
 /// All post process render data for an ogl context
 /// </summary>
@@ -50,14 +66,14 @@ public:
 	
 	int				mSchematicViewIndex{ -1 }; // -1 in case there is no pane with schematic view
 	bool			mVideoRendering = false;
+	bool			mHasPostProcessing = false;
 	std::atomic<bool> isReadyToEvaluate{ false };
 	std::atomic<bool> isNeedToResetPaneSettings{ false };
 
 	int				mViewport[4];		// x, y, width, height
 	int				mViewerViewport[4];
 
-	int				mEnterId = 0;
-	size_t			mFrameId = 0;
+	RenderFrameGate mFrameGate;
 
 	// number of entering in render callback
 	constexpr static int MAX_ATTACH_STACK = 10;
@@ -107,14 +123,16 @@ public:
 	void VideoRenderingBegin();
 	void VideoRenderingEnd();
 
-	void	PreRenderFirstEntry();
+	bool HasPostProcessing() const { return mHasPostProcessing; }
+	void UpdatePostProcessingFlag();
+	
 
 	// run in custom thread to evaluate the processing data
 	void	Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
 	void	Synchronize();
 
-	void	RenderBeforeRender(bool processCompositions);
-	bool	RenderAfterRender(bool processCompositions, FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
+	void	RenderBeforeRender();
+	bool	RenderAfterRender(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn);
 
 	// thread-safe, atomic read the ready to evaluate flag
 	bool IsReadyToEvaluate() const;
@@ -131,7 +149,9 @@ public:
 private:
     bool EmptyGLErrorStack();
 
+	void PrepareCameraPerPane();
 	bool PrepPersistanceDataForEachPane();
+	void PreparePaneBuffers();
 
 	// manager shaders
 	bool	LoadSimpleBlitShader();
@@ -143,7 +163,11 @@ private:
 	void PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const;
 	void PrepareContextParametersForCamera(PostEffectContextProxy::Parameters& contextParametersOut, FBCamera* pCamera, int nPane) const;
 
-	void RenderPane(FBEvaluateInfo* pEvaluateInfoIn, SPaneData& pane, PostEffectBuffers* paneBuffers, PostEffectContextProxy::Parameters& params);
+	void RenderPane(FBEvaluateInfo* pEvaluateInfoIn, 
+		SPaneData& pane, 
+		PostEffectBuffers* paneBuffers, 
+		PostEffectContextProxy::Parameters& params,
+		GLuint fboInOut);
 	void BuffersPoolCollection();
 
 	// once we load file, we should reset pane user object pointers 

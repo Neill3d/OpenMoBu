@@ -97,9 +97,7 @@ private:
 	PostProcessContextData* mEvaluateContextData{ nullptr };
 	static std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	gContextMap;
 
-
-	int				mEnterId{ 0 };
-	size_t			mFrameId{ 0 };
+	RenderFrameGate mFrameGate;
 
 	// Tango device experiment
 	double				mLastSendTimeSecs{ 0.0 };
@@ -135,11 +133,8 @@ private:
 	void	LoadShaderTextInsertions();
 
 public:
-	bool			mLastProcessCompositions{ false };
-
+	
 	bool skipRender{ false };
-
-	void	PreRenderFirstEntry();
 
 	bool ExternalRenderAfterRender();
 

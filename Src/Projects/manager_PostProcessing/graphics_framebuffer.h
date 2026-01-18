@@ -51,8 +51,7 @@ protected:
 		int			bufh{ 0 };
 
 	public:
-		buffer_info()
-		{}
+		buffer_info() = default;
 
 		bool NotEqual(double _scaleFactor, int _depthSamples, int _coverageSamples,
 			int _width, int _height) const
@@ -241,33 +240,15 @@ public:
 
 	void InitTextureInternalFormat();
 	
-	const GLenum getDepthInternalFormat() const{
-		return depthInternalFormat;
-	}
-	const GLenum getDepthFormat() const {
-		return depthFormat;
-	}
-	const GLenum getDepthType() const {
-		return depthType;
-	}
-	const GLenum getNormalInternalFormat() const {
-		return normalInternalFormat;
-	}
-	const GLenum getNormalFormat() const {
-		return normalFormat;
-	}
-	const GLenum getNormalType() const {
-		return normalType;
-	}
-	const GLenum getMaskInternalFormat() const {
-		return maskInternalFormat;
-	}
-	const GLenum getMaskFormat() const {
-		return maskFormat;
-	}
-	const GLenum getMaskType() const {
-		return maskType;
-	}
+	inline GLenum getDepthInternalFormat() const noexcept { return depthInternalFormat; }
+	inline GLenum getDepthFormat() const noexcept { return depthFormat; }
+	inline GLenum getDepthType() const noexcept { return depthType; }
+	inline GLenum getNormalInternalFormat() const noexcept { return normalInternalFormat; }
+	inline GLenum getNormalFormat() const noexcept { return normalFormat; }
+	inline GLenum getNormalType() const noexcept { return normalType; }
+	inline GLenum getMaskInternalFormat() const noexcept { return maskInternalFormat; }
+	inline GLenum getMaskFormat() const noexcept { return maskFormat; }
+	inline GLenum getMaskType() const noexcept { return maskType; }
 
 	static const GLuint createFBO()
 	{
@@ -276,21 +257,21 @@ public:
 		return fbo;
 	}
 
-	static void bindFBO(const GLuint fbo)
+	static void bindFBO(const GLuint fboIn)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboIn);
 	}
 	static void unbindFBO()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	static bool checkFboStatus(const GLuint fbo)
+	static bool checkFboStatus(const GLuint fboIn)
 	{
-		if (fbo == 0)
+		if (fboIn == 0)
 			return false;
 
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboIn);
 		GLenum status = glCheckFramebufferStatus ( GL_FRAMEBUFFER );
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -346,7 +327,8 @@ public:
 		if (fbo_attached != _fbo)
 		{
 			fbo_attached = _fbo;
-			extendedInfo.Set(1.0, 0, 0, 0, 0);
+			const int numSamples = extendedInfo.GetNumberOfSamples();
+			extendedInfo.Set(1.0, numSamples, 0, 0, 0);
 		}
 		PrepAttachedFBO();
 	}
@@ -359,14 +341,14 @@ public:
 		}
 		fbo_attached = 0;
 	}
-	bool isFboAttached() const { return (fbo_attached > 0); }
-	const GLuint GetAttachedFBO() const { return fbo_attached; }
+	inline bool isFboAttached() const noexcept { return fbo_attached > 0; }
+	inline GLuint GetAttachedFBO() const noexcept { return fbo_attached; }
 	
 	void PrepAttachedFBO();
 	
-	const GLuint GetFBOMS() const { return fboms; }
-	const GLuint GetFBOBIG() const { return fbobig; }
-	const GLuint GetFinalFBO() const { return fbo; }
+	inline GLuint GetFBOMS() const noexcept { return fboms; }
+	inline GLuint GetFBOBIG() const noexcept { return fbobig; }
+	inline GLuint GetFinalFBO() const noexcept { return fbo; }
 
 	const int getNumberOfDepthSamples() const
 	{
@@ -393,10 +375,14 @@ public:
 	}
 	const int GetBufferWidth() const
 	{
+		if (isFboAttached())
+			return extendedInfo.GetBufferWidth();
 		return mainInfo.GetBufferWidth();
 	}
 	const int GetBufferHeight() const
 	{
+		if (isFboAttached())
+			return extendedInfo.GetBufferHeight();
 		return mainInfo.GetBufferHeight();
 	}
 
@@ -418,7 +404,9 @@ public:
 
 	void PrepForPostProcessing(bool drawToBack);
 
-	void PrepForPostProcessingExtended(bool drawToBack);
+	void CopyFromFramebuffer(GLuint fboIn, int widthIn, int heightIn, int depthSamplesIn);
+
+	void PrepForPostProcessingExternal(bool drawToBack);
 	void PrepForPostProcessingInternal(bool drawToBack);
 
 	void ChangeContext();
