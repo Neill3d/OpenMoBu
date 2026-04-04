@@ -4,9 +4,9 @@
 
 /**	\file	BoxRBF.h
 *	Declaration of a RBF box class.
-*	Port of Maya's jsRadial
+*	Based on jsRadial - https://github.com/scorza/jsRadial
 *
-*	Sergei Solokhin (Neill3d) 2018
+*	Sergei Solokhin (Neill3d) 2018-2026
 */
 
 //--- SDK include
@@ -16,10 +16,6 @@
 #include <chrono>
 #include <vector>
 
-// Eigen
-#include <Eigen/Dense>
-
-
 //--- Registration defines
 #define	BOXRBF3__CLASSNAME		BoxRBF3
 #define BOXRBF3__CLASSSTR		"BoxRBF3"
@@ -28,10 +24,11 @@
 #define BOXRBF4__CLASSSTR		"BoxRBF4"
 
 #define MIN_NUMBER_OF_TARGETS	6
-#define MAX_NUMBER_OF_TARGETS	36
+#define MAX_NUMBER_OF_TARGETS	24
 
 enum EFunctionType
 {
+	eLinear,
 	eGaussian,
 	eMultiquadratic,
 	eInverseMultiquadratic
@@ -46,46 +43,55 @@ class BoxRBF3 : public FBBox
 	FBBoxDeclare(BoxRBF3, FBBox);
 
 public:
-	virtual bool FBCreate();		//!< creation function.
-	virtual void FBDestroy();		//!< destruction function.
-
+	virtual bool FBCreate() override;		//!< creation function.
+	
 	//! Overloaded FBBox real-time evaluation function.
-	virtual bool AnimationNodeNotify(FBAnimationNode* pAnimationNode,FBEvaluateInfo* pEvaluateInfo);
+	virtual bool AnimationNodeNotify(FBAnimationNode* pAnimationNode,FBEvaluateInfo* pEvaluateInfo) override;
 
 public:
 
 	FBPropertyBaseEnum<EFunctionType>	FunctionType;
 	FBPropertyAnimatableDouble			Height;
 	FBPropertyAnimatableDouble			Sigma;
-	FBPropertyAnimatableDouble			RotationMultiply;
+	FBPropertyAnimatableDouble			Scale;
 
-private:
+	FBPropertyBool 					UseGlobalSigma; // switch between global sigma or local sigma (radii) for each target
 
-	FBAnimationNode*	m_Pose;
-	FBAnimationNode*	m_Targets[MAX_NUMBER_OF_TARGETS];
+protected:
 
-	FBAnimationNode*	m_OutScale[MAX_NUMBER_OF_TARGETS];
-	FBAnimationNode*	m_OutInterpolate;
+	FBAnimationNode* m_Pose{ nullptr };
+	FBAnimationNode* m_Targets[MAX_NUMBER_OF_TARGETS]{ nullptr };
 
-	double RBF(const double r, const double height, const double sigma, const short ftype);
+	FBAnimationNode* m_Radii[MAX_NUMBER_OF_TARGETS]{ nullptr };
+
+	FBAnimationNode* m_OutScale[MAX_NUMBER_OF_TARGETS]{ nullptr };
+	FBAnimationNode* m_OutInterpolate{ nullptr };
+
+	double RBF(double input, double height, double sigma, int ftype) const;
+
+	int ReadCountFromConfig() const;
 
 protected:
 
 	int								m_NumberOfTargets;
-
-	std::vector<Eigen::VectorXd>	vecs_;
+	std::vector<double>				m_Vecs;
 
 	virtual const int GetPlugDim() const { return 3; }
 
 };
 
-/**	RBF Interpolator of 4 parameters.
+/**	RBF Interpolator of quaternions.
 *	Box for a relation constraint
 */
 class BoxRBF4 : public BoxRBF3
 {
 	//--- box declaration.
 	FBBoxDeclare(BoxRBF4, BoxRBF3);
+
+public:
+
+	//! Overloaded FBBox real-time evaluation function.
+	virtual bool AnimationNodeNotify(FBAnimationNode* pAnimationNode, FBEvaluateInfo* pEvaluateInfo) override;
 
 protected:
 	const int GetPlugDim() const override { return 4; }
