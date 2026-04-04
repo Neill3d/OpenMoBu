@@ -246,9 +246,7 @@ bool Manip_LockCamera::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, 
 		{
 			FBRenderer *pRenderer = mSystem.Renderer;
 			unsigned int currPane = pRenderer->GetSelectedPaneIndex();
-			pRenderer->GetPaneCount();
-
-
+			
 			// Mouse button clicked.
 			
 			FBCamera* lCamera = pRenderer->GetCameraInPane(currPane);
