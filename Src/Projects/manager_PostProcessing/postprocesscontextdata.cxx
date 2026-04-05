@@ -399,6 +399,8 @@ void PostProcessContextData::RenderBeforeRender()
 
 bool PostProcessContextData::RenderAfterRender(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
 {
+    systemTime -= mStartSystemTime;
+
     const bool isFirstEnter = mFrameGate.IsFirstEnter();
     mFrameGate.Leave();
 
@@ -547,7 +549,6 @@ void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn,
 
 void PostProcessContextData::PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const
 {
-    systemTime = systemTime - mStartSystemTime;
     const double sysTimeSecs = systemTime.GetSecondDouble();
     const double localTimeSecs = localTime.GetSecondDouble();
 
