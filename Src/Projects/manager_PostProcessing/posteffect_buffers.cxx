@@ -422,15 +422,19 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(uint32_t nameKey, bool addRef
 	if (it == end(framebufferPool))
 	{
 		auto framebuffer = std::make_unique<FrameBuffer>(mWidth, mHeight);
-		framebufferPool[nameKey] = { std::move(framebuffer) };
-		it = framebufferPool.find(nameKey);
+		auto [new_it, inserted] = framebufferPool.emplace(
+			nameKey, 
+			FramebufferEntry{ std::move(framebuffer) }
+		);
+		it = new_it;
 	}
 
-	// increment reference count and return framebuffer
+	// increment a use count
 	if (addReference)
 	{
 		it->second.AddReference();
 	}
+	it->second.MarkUsed();
 	return it->second.framebuffer.get();
 }
 
@@ -445,32 +449,44 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 	bool addReference)
 {
 	auto it = framebufferPool.find(nameKey);
-	if (it == end(framebufferPool) || width != it->second.width || height != it->second.height)
+	bool needsRecreate =
+		(it == framebufferPool.end()) ||
+		(width != it->second.width) ||
+		(height != it->second.height) ||
+		(flags != it->second.flags) ||
+		(numColorAttachments != it->second.numColorAttachments);
+
+	if (needsRecreate)
 	{
-		if (it == end(framebufferPool))
+		auto framebuffer = std::make_unique<FrameBuffer>(width, height, flags, numColorAttachments);
+		if (onInit)
 		{
-			auto framebuffer = std::make_unique<FrameBuffer>(width, height, flags, numColorAttachments);
-			if (onInit)
-			{
-				onInit(framebuffer.get());
-			}
-			framebuffer->ReSize(width, height);
-			framebufferPool[nameKey] = { std::move(framebuffer), width, height, isAutoResize };
+			onInit(framebuffer.get());
+		}
+		framebuffer->ReSize(width, height);
+
+		if (it == end(framebufferPool))
+		{	
+			auto [new_it, inserted] = framebufferPool.emplace(
+				nameKey, 
+				FramebufferEntry{ 
+					std::move(framebuffer), 
+					width, 
+					height,
+					flags,
+					numColorAttachments,
+					isAutoResize }
+			);
+			it = new_it;
 		}
 		else
 		{
-			it->second.framebuffer.reset(new FrameBuffer(width, height, flags, numColorAttachments));
-			if (onInit)
-			{
-				onInit(it->second.framebuffer.get());
-			}
+			it->second.framebuffer = std::move(framebuffer);
 			it->second.width = width;
 			it->second.height = height;
 			it->second.framebuffer->ReSize(width, height);
 			it->second.isAutoResize = isAutoResize;
 		}
-
-		it = framebufferPool.find(nameKey);
 	}
 
 	// increment reference count and return framebuffer
@@ -478,6 +494,7 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 	{
 		it->second.AddReference();
 	}
+	it->second.MarkUsed();
 	return it->second.framebuffer.get();
 }
 

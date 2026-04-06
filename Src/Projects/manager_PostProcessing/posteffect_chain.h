@@ -69,6 +69,7 @@ public:
 		mSettings = pData;
 	}
 	
+	PingPongData& GetPingPongData() { return mDoubleBufferPingPongData; }
 	PingPongData* GetPingPongDataPtr() { return &mDoubleBufferPingPongData; }
 
 protected:
@@ -241,25 +242,22 @@ public:
 	DoubleFramebufferRequestScope(PostEffectChain* effectChainIn, PostEffectBuffers* buffersIn)
 		: effectChain(effectChainIn)
 		, buffers(buffersIn)
-	{
-		doubleFB = effectChain->RequestDoubleFrameBuffer(buffers);
-		pingPongHelper = new FramebufferPingPongHelper(doubleFB, effectChain->GetPingPongDataPtr());
-	}
+		, doubleFB(*effectChain->RequestDoubleFrameBuffer(buffers))
+		, pingPongHelper(doubleFB, effectChain->GetPingPongData())
+	{}
 
-	FramebufferPingPongHelper* GetPtr() { return pingPongHelper; }
+	FramebufferPingPongHelper* GetPtr() { return &pingPongHelper; }
 
 	FramebufferPingPongHelper* operator->() {
-		return pingPongHelper;
+		return &pingPongHelper;
 	}
 
 	FramebufferPingPongHelper& operator*() {
-		return *pingPongHelper;
+		return pingPongHelper;
 	}
 
 	virtual ~DoubleFramebufferRequestScope()
 	{
-		delete pingPongHelper;
-		pingPongHelper = nullptr;
 		effectChain->ReleaseDoubleFrameBuffer(buffers);
 	}
 
@@ -267,6 +265,6 @@ private:
 	PostEffectChain* effectChain;
 	PostEffectBuffers* buffers;
 
-	FrameBuffer* doubleFB;
-	FramebufferPingPongHelper* pingPongHelper;
+	FrameBuffer& doubleFB;
+	FramebufferPingPongHelper pingPongHelper;
 };

@@ -23,20 +23,18 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <bitset>
 #include <string>
 
-
+// swap indices between 0 and 1
 class PingPongData
 {
 private:
-	int readAttachment; //!< index of the current read attachment
-	int writeAttachment; //!< index of the current write attachment
+	int readAttachment = 0; //!< index of the current read attachment
+	int writeAttachment = 1; //!< index of the current write attachment
 
 public:
-	PingPongData()
-		: readAttachment(0), writeAttachment(1)
-	{}
+	PingPongData() noexcept = default;
 
-	int GetReadAttachment() const { return readAttachment; }
-	int GetWriteAttachment() const { return writeAttachment; }
+	int GetReadAttachment() const noexcept { return readAttachment; }
+	int GetWriteAttachment() const noexcept { return writeAttachment; }
 
 	void Swap() { std::swap(readAttachment, writeAttachment); }
 };
@@ -45,28 +43,29 @@ public:
 class FramebufferPingPongHelper
 {
 private:
-	FrameBuffer* fb;
-	PingPongData* data;
+	FrameBuffer& fb;
+	PingPongData& data;
 
 public:
-	FramebufferPingPongHelper(FrameBuffer* framebufferIn, PingPongData* dataIn)
+	FramebufferPingPongHelper(FrameBuffer& framebufferIn, PingPongData& dataIn)
 		: fb(framebufferIn), data(dataIn)
 	{}
 
-	int GetReadAttachment() const { return data->GetReadAttachment(); }
-	int GetWriteAttachment() const { return data->GetWriteAttachment(); }
+	inline int GetReadAttachment() const { return data.GetReadAttachment(); }
+	inline int GetWriteAttachment() const { return data.GetWriteAttachment(); }
 
-	FrameBuffer* GetPtr() { return fb; }
+	FrameBuffer* GetPtr() { return &fb; }
 
-	void Swap() { data->Swap(); }
+	// swap attachment indices
+	void Swap() { data.Swap(); }
 
-	GLuint GetReadColorObject() const { return fb->GetColorObject(data->GetReadAttachment()); }
+	GLuint GetReadColorObject() const { return fb.GetColorObject(GetReadAttachment()); }
 
 	void Bind() const {
-		fb->Bind(data->GetWriteAttachment());
+		fb.Bind(GetWriteAttachment());
 	}
 	void UnBind(bool generateMips=false) const {
-		fb->UnBind(generateMips);
+		fb.UnBind(generateMips);
 	}
 };
 
@@ -180,11 +179,14 @@ private:
 		//std::string name;
 		int width{ 1 };
 		int height{ 1 };
+		int flags{ 0 };
+		int numColorAttachments{ 1 };
 		bool isAutoResize{ true };
 		int referenceCount{ 0 };
 		mutable int lazyEraseCounter{ 15 };
-		
-		void AddReference() { ++referenceCount; lazyEraseCounter = 15; }
+
+		void MarkUsed() { lazyEraseCounter = 15; }
+		void AddReference() { ++referenceCount; }
 		void RemoveReference() { if (referenceCount > 0) --referenceCount; }
 		int GetReferenceCount() const { return referenceCount; }
 

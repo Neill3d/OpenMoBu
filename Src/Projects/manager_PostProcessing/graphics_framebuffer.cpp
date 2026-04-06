@@ -615,7 +615,6 @@ void MainFrameBuffer::PrepForPostProcessingInternal(bool drawToBack)
 
 void MainFrameBuffer::ChangeContext()
 {
-	
 	DeleteTextures();
 	DeleteFBO();
 

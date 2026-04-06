@@ -496,7 +496,8 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 		userObject->RecalculateWidthAndHeight(effectW, effectH);
 
 		PostEffectBuffers* buffers = renderContext.buffers;
-		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, effectW, effectH, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 1, false);
+		constexpr bool autoResize = false;
+		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, effectW, effectH, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 1, autoResize);
 
 		PostEffectRenderContext renderContext(renderContext);
 
@@ -573,6 +574,7 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 
 		constexpr bool skipTextureUniforms = false;
 		AutoUploadUniforms(renderContextPass, effectContext, skipTextureUniforms);
+		TryUseGlobalMasking(effectContext);
 		OnUniformsUploaded(passIndex);
 
 		// last one goes into dst buffer
@@ -587,10 +589,11 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 		const std::string bufferName = std::string(GetName()) + "_passes";
 		const uint32_t bufferNameKey = xxhash32(bufferName);
 
-		constexpr const int numberOfColorAttachments = 2;
-		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, renderContext.width, renderContext.height, PostEffectBuffers::GetFlagsForSingleColorBuffer(), numberOfColorAttachments, false);
+		constexpr int numberOfColorAttachments = 2;
+		constexpr bool autoResize = false;
+		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, renderContext.width, renderContext.height, PostEffectBuffers::GetFlagsForSingleColorBuffer(), numberOfColorAttachments, autoResize);
 		PingPongData pingPongData;
-		FramebufferPingPongHelper pingPongHelper(buffer, &pingPongData);
+		FramebufferPingPongHelper pingPongHelper(*buffer, pingPongData);
 		GLuint srcTextureId = renderContext.srcTextureId;
 
 		for (int passIndex = 0; passIndex < finalPassIndex; ++passIndex)
@@ -605,6 +608,7 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 
 			const bool skipTextureUniforms = (passIndex > 0); // only for the first pass we use the original input texture
 			AutoUploadUniforms(renderContextPass, effectContext, skipTextureUniforms);
+			TryUseGlobalMasking(effectContext);
 			OnUniformsUploaded(passIndex);
 
 			RenderPass(passIndex, renderContextPass, effectContext);
@@ -622,6 +626,7 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 
 		OnRenderPassBegin(finalPassIndex, renderContextPass, effectContext);
 		AutoUploadUniforms(renderContextPass, effectContext, false);
+		TryUseGlobalMasking(effectContext);
 		OnUniformsUploaded(finalPassIndex);
 
 		RenderPass(finalPassIndex, renderContextPass, effectContext);
@@ -715,7 +720,7 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 		return;
 
 	// prepare use masking value
-
+	/*
 	bool useMasking = false;
 
 	auto fn_lookForMaskingFlag = [](FBComponent* component, const char* propertyName) -> bool {
@@ -730,13 +735,20 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 	
 	if (GetOwner())
 	{
-		//useMasking |= fn_lookForMaskingFlag(GetOwner(), GetUseMaskingPropertyName());
+		useMasking |= fn_lookForMaskingFlag(GetOwner(), GetUseMaskingPropertyName());
 	}
 	else if (effectContext->GetPostProcessData())
 	{
-		//useMasking |= fn_lookForMaskingFlag(effectContext->GetPostProcessData(), GetUseMaskingPropertyName());
+		if (effectContext->GetPostProcessData()->EnableMaskingForAllEffects)
+		{
+			useMasking = true;
+		}
+		else
+		{
+			useMasking |= fn_lookForMaskingFlag(effectContext->GetPostProcessData(), GetUseMaskingPropertyName());
+		}
 	}
-	
+	*/
 	// bind uniforms
 	// TODO: should we replace glProgramUniform with glUniform ?!
 
@@ -766,11 +778,12 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 	{
 		glProgramUniform1i(programId, loc, CommonEffect::MaskSamplerSlot);
 	}
+	/*
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::USE_MASKING); loc >= 0)
 	{
 		glProgramUniform1f(programId, loc, (useMasking) ? 1.0f : 0.0f);
 	}
-
+	*/
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::UPPER_CLIP); loc >= 0)
 	{
 		const double value = effectContext->GetPostProcessData()->UpperClip;
@@ -839,6 +852,22 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::ZFAR); loc >= 0)
 	{
 		glProgramUniform1f(programId, loc, effectContext->GetCameraFarDistance());
+	}
+}
+
+void PostEffectBufferShader::TryUseGlobalMasking(const PostEffectContextProxy* effectContext) const
+{
+	if (!GetShaderPtr())
+		return;
+	const GLuint programId = GetShaderPtr()->GetProgramObj();
+
+	if (effectContext->GetPostProcessData()
+		&& effectContext->GetPostProcessData()->EnableMaskingForAllEffects)
+	{
+		if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::USE_MASKING); loc >= 0)
+		{
+			glProgramUniform1f(programId, loc, 1.0f);
+		}
 	}
 }
 

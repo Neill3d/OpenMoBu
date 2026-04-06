@@ -189,6 +189,7 @@ public:
 protected:
 
 	void	BindSystemUniforms(const PostEffectContextProxy* effectContext) const;
+	void	TryUseGlobalMasking(const PostEffectContextProxy* effectContext) const;
 
 	inline GLint GetSystemUniformLoc(ShaderSystemUniform u) const noexcept {
 		return mRenderPropertyScheme->GetSystemUniformLoc(u);

@@ -78,7 +78,7 @@ void FrameBuffer::RemoveFlag(const int flag)
 	mFlags &= ~(flag);
 }
 
-bool FrameBuffer::IsFlag(const int flag)
+bool FrameBuffer::IsFlag(const int flag) const
 {
 	return ( (mFlags & flag) != 0);
 }
