@@ -432,7 +432,7 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 	if (lFBEvent.GetTiming() == kFBGlobalEvalCallbackSyn)
 	{
 		const int enterId = mFrameGate.GetEnterId();
-		VERIFY(enterId == 0);
+		ENSURE(enterId == 0);
 		mFrameGate.Reset();
 
 		///

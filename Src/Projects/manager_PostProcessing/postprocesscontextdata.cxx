@@ -111,7 +111,7 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
 void PostProcessContextData::Synchronize()
 {
     const int enterId = mFrameGate.GetEnterId();
-    VERIFY(enterId == 0);
+    ENSURE(enterId == 0);
     mFrameGate.Reset();
 
     if (IsNeedToResetPaneSettings())
@@ -209,12 +209,12 @@ void PostProcessContextData::ReloadShaders(PostPersistentData* data, PostEffectC
 
 void PostProcessContextData::VideoRenderingBegin()
 {
-	VERIFY(!mVideoRendering);
+	ENSURE(!mVideoRendering);
 	mVideoRendering = true;
 }
 void PostProcessContextData::VideoRenderingEnd()
 {
-	VERIFY(mVideoRendering);
+	ENSURE(mVideoRendering);
 	mVideoRendering = false;
 }
 
@@ -311,7 +311,7 @@ void PostProcessContextData::PreparePaneBuffers()
 {
     // enterid is 1 and attach index is 0
     const int enterId = mFrameGate.GetEnterId() - 1;
-    VERIFY(enterId >= 0 && enterId < MAX_ATTACH_STACK);
+    ENSURE(enterId >= 0 && enterId < MAX_ATTACH_STACK);
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mAttachedFBO[enterId]);
 
     //
@@ -344,7 +344,7 @@ void PostProcessContextData::PreparePaneBuffers()
 
     if (mAttachedFBO[enterId] == 0 && mViewerViewport[2] > 1 && mViewerViewport[3] > 1)
     {
-        VERIFY(mViewerViewport[2] > 0 && mViewerViewport[3] > 0);
+        ENSURE(mViewerViewport[2] > 0 && mViewerViewport[3] > 0);
         mMainFrameBuffer.ReSize(mViewerViewport[2], mViewerViewport[3], 1.0, 0, 0);
 
         mMainFrameBuffer.BeginRender();
@@ -379,7 +379,7 @@ void PostProcessContextData::RenderBeforeRender()
     if (HasPostProcessing())
     {
         const int enterId = mFrameGate.GetEnterId() - 1; // enter id 1 has attached index 0
-        VERIFY(enterId >= 0 && enterId < MAX_ATTACH_STACK);
+        ENSURE(enterId >= 0 && enterId < MAX_ATTACH_STACK);
         if (mAttachedFBO[enterId] > 0)
         {
             glBindFramebuffer(GL_FRAMEBUFFER, mAttachedFBO[enterId]);

@@ -47,6 +47,19 @@ extern void LOGI(const char* pFormatString, ...);
 // error line
 extern void LOGE(const char* pFormatString, ...);
 
+#define ENSURE(expr) \
+    do { \
+        if (!(expr)) { \
+        LOGE("Check failed: %s at %s:%d\n", #expr, __FILE__, __LINE__); \
+		} \
+    } while(0)
+
+#define ENSURE_MSG(expr, fmt, ...) \
+    do { \
+        if (!(expr)) { \
+            LOGE("Check failed: %s at %s:%d | " fmt, #expr, __FILE__, __LINE__, ##__VA_ARGS__); \
+        } \
+    } while(0)
 
 #define VERIFY(expr) \
     do { \
