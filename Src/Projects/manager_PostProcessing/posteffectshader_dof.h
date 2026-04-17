@@ -92,4 +92,5 @@ private:
 
     // Debug utilities
     ShaderPropertyProxy mDebugBlurValue;
+    ShaderPropertyProxy mDebugShowFocus;
 };

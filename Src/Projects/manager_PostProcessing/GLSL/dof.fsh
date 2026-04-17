@@ -36,19 +36,14 @@ uniform vec2 texelSize;
 uniform float 		zNear;
 uniform float 		zFar;
 
-#define PI  3.14159265
+const float PI = 3.14159265;
 
-float width = gResolution.x; //texture width
-float height = gResolution.y; //texture height
-
-//uniform variables from external script
-
-float focalDepth = focalDistance;  //focal distance value in meters, but you may use autofocus option below
-float focalLength = focalRange; //focal length in mm
 uniform float fstop; // = 0.5; //f-stop value
-bool showFocus = false; //show debug focus point and focal range (red = focal point, green = focal range)
 
+//-- debug variables
 uniform float debugBlurValue;
+uniform float debugShowFocus; //show debug focus point and focal range (red = focal point, green = focal range)
+//--
 
 uniform vec4 focusPoint;
 
@@ -142,7 +137,7 @@ float bdepth(vec2 coords) //blurring depth
 	
 	offset[0] = vec2(-wh.x,-wh.y);
 	offset[1] = vec2( 0.0, -wh.y);
-	offset[2] = vec2( wh.x -wh.y);
+	offset[2] = vec2( wh.x, -wh.y);
 	
 	offset[3] = vec2(-wh.x,  0.0);
 	offset[4] = vec2( 0.0,   0.0);
@@ -159,7 +154,7 @@ float bdepth(vec2 coords) //blurring depth
 	
 	for( int i=0; i<9; i++ )
 	{
-		float tmp = texture2D(depthSampler, coords + offset[i]).r;
+		float tmp = texture(depthSampler, coords + offset[i]).r;
 		d += tmp * kernel[i];
 	}
 	
@@ -171,17 +166,22 @@ vec3 color(vec2 coords,float blur) //processing the sample
 {
 	vec3 col = vec3(0.0);
 	
-	col.r = texture2D(colorSampler,coords + vec2(0.0,1.0)*texelSize*fringe*blur).r;
-	col.g = texture2D(colorSampler,coords + vec2(-0.866,-0.5)*texelSize*fringe*blur).g;
-	col.b = texture2D(colorSampler,coords + vec2(0.866,-0.5)*texelSize*fringe*blur).b;
+	col.r = texture(colorSampler,coords + vec2(0.0,1.0)*texelSize*fringe*blur).r;
+	col.g = texture(colorSampler,coords + vec2(-0.866,-0.5)*texelSize*fringe*blur).g;
+	col.b = texture(colorSampler,coords + vec2(0.866,-0.5)*texelSize*fringe*blur).b;
 	
 	vec3 lumcoeff = vec3(0.299,0.587,0.114);
-	float lum = dot(col.rgb, lumcoeff);
-	float thresh = max((lum-threshold)*gain, 0.0);
-	return col+mix(vec3(0.0),col,thresh*blur);
+	float lum = dot(col, lumcoeff);
+	//float thresh = max((lum-threshold)*gain, 0.0);
+	//return col+mix(vec3(0.0),col,thresh*blur);
+
+	float highlight = smoothstep(threshold, threshold + 0.2, lum);
+    float boost = 1.0 + 0.25 * gain * highlight * blur;
+
+    return col * boost;
 }
 
-vec2 rand(vec2 coord) //generating noise/pattern texture for dithering
+vec2 rand(vec2 coord, float width, float height) //generating noise/pattern texture for dithering
 {
 	float noiseX = ((fract(1.0-coord.s*(width/2.0))*0.25)+(fract(coord.t*(height/2.0))*0.75))*2.0-1.0;
 	float noiseY = ((fract(1.0-coord.s*(width/2.0))*0.75)+(fract(coord.t*(height/2.0))*0.25))*2.0-1.0;
@@ -211,36 +211,34 @@ float linearize(float depth)
 	return -zFar * zNear / (depth * (zFar - zNear) - zFar);
 }
 
-void ComputeDepth(out float depth, in vec2 texCoord)
+float LinearizeDepth(float depthSample)
 {
-	float d = texture2D(depthSampler, texCoord).x;
-	
-	float C = 1.0;
-	float z = (exp(d*log(C*zFar+1.0)) - 1.0)/C;
-	
-	float n = zNear;
-	float f = zFar;
-	float lz = d;
-	
-	// nvidia depth range doesn't need that !
-	lz = 2.0 * d - 1.0; 
-	lz = (2.0 * n) / (f + n - lz * (f - n));	
-	
-	depth = lz;
+    float z = depthSample * 2.0 - 1.0;
+    return (2.0 * zNear * zFar) / (zNear + zFar - z * (zFar - zNear));
+}
+
+float ComputeDepth(in vec2 texCoord)
+{
+	float d = texture(depthSampler, texCoord).x;
+	return LinearizeDepth(d);
 }
 
 void main() 
 {
+	float width = gResolution.x; //texture width
+	float height = gResolution.y; //texture height
+	float focalDepth = focalDistance;  //focal distance value in meters, but you may use autofocus option below
+	float focalLength = focalRange; //focal length in mm
+
 	if (texCoord.y < upperClip || texCoord.y > lowerClip)
 	{
-		FragColor = texture2D(colorSampler, texCoord);
+		FragColor = texture(colorSampler, texCoord);
 		return;
 	}
 
 	//scene depth calculation
 	
-	float depth = 0.0;
-	ComputeDepth(depth, texCoord);
+	float depth = ComputeDepth(texCoord);
 	
 	//focal plane calculation
 	
@@ -248,13 +246,13 @@ void main()
 	
 	if (focusPoint.w > 0.0)
 	{
-		ComputeDepth(fDepth, focusPoint.xy);
+		fDepth = ComputeDepth(focusPoint.xy);
 	}
 	
 	/*
 	if (autofocus)
 	{
-		fDepth = linearize(texture2D(depthSampler,focus).x);
+		fDepth = linearize(texture(depthSampler,focus).x);
 	}
 	*/
 	//dof blur factor calculation
@@ -271,8 +269,8 @@ void main()
 	else
 	{
 		float f = focalLength * 0.05; //focal length in mm
-		float d = fDepth *1000.0; //focal plane in mm
-		float o = depth *1000.0; //depth in mm
+		float d = fDepth * 1000.0; //focal plane in mm
+		float o = depth * 1000.0; //depth in mm
 		
 		float a = (o*f)/(o-f); 
 		float b = (d*f)/(d-f); 
@@ -297,7 +295,7 @@ void main()
 	
 	// calculation of pattern for ditering
 	
-	vec2 noise = rand(texCoord.xy)*namount*blur;
+	vec2 noise = rand(texCoord.xy, width, height)*namount*blur;
 	
 	// getting blur x and y step factor
 	
@@ -306,7 +304,7 @@ void main()
 	
 	// calculation of final color
 	
-	vec3 inputColor = texture2D(colorSampler, texCoord).rgb;
+	vec3 inputColor = texture(colorSampler, texCoord).rgb;
 	vec3 col = inputColor;
 	
 	if(blur > 0.05) //some optimization thingy
@@ -335,7 +333,7 @@ void main()
 		col /= s; //divide by sample count
 	}
 	
-	if (showFocus)
+	if (debugShowFocus > 0.0)
 	{
 		col = debugFocus(col, blur, depth);
 	}
@@ -343,7 +341,7 @@ void main()
 	vec4 mask = vec4(0.0);
 	if (useMasking > 0.0)
 	{
-		mask = texture2D(maskSampler, texCoord);
+		mask = texture(maskSampler, texCoord);
 	}
 
 	FragColor.rgb = mix(col, inputColor, mask.r * useMasking);

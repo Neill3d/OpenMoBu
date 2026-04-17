@@ -327,7 +327,8 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	AddPropertyView("Use Camera DOF Properties", "Depth Of Field Setup");
 	AddPropertyView("Reset DOF", "Depth Of Field Setup");
-	AddPropertyView("Debug Blur Value", "Depth Of Field Setup");
+	AddPropertyView(DOF_DEBUG_BLUR_VALUE, "Depth Of Field Setup");
+	AddPropertyView(DOF_DEBUG_SHOW_FOCUS, "Depth Of Field Setup");
 	AddPropertyView("Debug Camera Far Dist", "Depth Of Field Setup");
 	AddPropertyView("Fix Camera Settings", "Depth Of Field Setup");
 
@@ -587,6 +588,7 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, UseCameraDOFProperties, USE_CAMERA_DOF_PROPS, nullptr, nullptr);
 	FBPropertyPublish(this, ResetDOF, RESET_DOF, nullptr, ActionResetDOF);
 	FBPropertyPublish(this, DebugBlurValue, DOF_DEBUG_BLUR_VALUE, nullptr, nullptr);
+	FBPropertyPublish(this, DebugShowFocus, DOF_DEBUG_SHOW_FOCUS, nullptr, nullptr);
 	FBPropertyPublish(this, DebugFarDistance, DOF_DEBUG_FAR_DIST, nullptr, ActionDebugFarDist);
 	FBPropertyPublish(this, FixCameraSettings, DOF_FIX_CAM_SETTINGS, nullptr, ActionFixCameraSettings);
 
@@ -1016,6 +1018,7 @@ void PostPersistentData::DefaultValues()
 
 	UseCameraDOFProperties = false;
 	DebugBlurValue = false;
+	DebugShowFocus = false;
 
 	FocalDistance = 40.0;
 	FocalRange = 4.0;
@@ -1584,6 +1587,7 @@ void PostPersistentData::DoResetDOF()
 	// DONE:
 	UseCameraDOFProperties = false;
 	DebugBlurValue = false;
+	DebugShowFocus = false;
 
 	FocalDistance = 40.0;
 	FocalRange = 4.0;

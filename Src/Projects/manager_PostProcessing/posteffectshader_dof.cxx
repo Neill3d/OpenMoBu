@@ -45,6 +45,7 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 
 	// Core depth of field parameters
 	mFocalDistance = scheme->AddProperty(PostPersistentData::DOF_FOCAL_DISTANCE, "focalDistance", EPropertyType::FLOAT)
+		.SetScale(100.0f)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
@@ -57,6 +58,7 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.GetProxy();
 
 	mCoC = scheme->AddProperty(PostPersistentData::DOF_COC, "CoC", EPropertyType::FLOAT)
+		.SetScale(0.01f)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
@@ -110,6 +112,7 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.GetProxy();
 
 	mGain = scheme->AddProperty(PostPersistentData::DOF_GAIN, "gain", EPropertyType::FLOAT)
+		.SetScale(0.01f)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
@@ -141,6 +144,10 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 	mDebugBlurValue = scheme->AddProperty(PostPersistentData::DOF_DEBUG_BLUR_VALUE, "debugBlurValue", EPropertyType::BOOL)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
+
+	mDebugShowFocus = scheme->AddProperty(PostPersistentData::DOF_DEBUG_SHOW_FOCUS, "debugShowFocus", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
+		.GetProxy();
 }
 
 bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
@@ -150,6 +157,8 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 		return false;
 
 	FBCamera* camera = effectContext->GetCamera();
+	if (!camera)
+		return false;
 
 	double _focalDistance = pData->FocalDistance;
 	double _focalRange = pData->FocalRange;
@@ -171,25 +180,13 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 	double _feather = pData->PentagonFeather;
 
 	const bool _debugBlurValue = pData->DebugBlurValue;
+	const bool _debugShowFocus = pData->DebugShowFocus;
 
-	if (pData->UseCameraDOFProperties)
-	{
-		_focalDistance = camera->FocusSpecificDistance;
-		_focalRange = camera->FocusAngle;
-
-		FBModel *pInterest = nullptr;
-		FBCameraFocusDistanceSource cameraFocusDistanceSource;
-		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
-		if (kFBFocusDistanceCameraInterest == cameraFocusDistanceSource)
-			pInterest = camera->Interest;
-		else if (kFBFocusDistanceModel == cameraFocusDistanceSource)
-			pInterest = camera->FocusModel;
-		
-		if (nullptr != pInterest)
+	auto fn_calcFocalDistance = [](FBModel* camera, FBModel* pInterest)
 		{
 			FBMatrix modelView, modelViewI;
 
-			((FBModel*)camera)->GetMatrix(modelView);
+			static_cast<FBModel*>(camera)->GetMatrix(modelView);
 			FBMatrixInverse(modelViewI, modelView);
 
 			FBVector3d lPos;
@@ -197,32 +194,43 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 
 			FBTVector p(lPos[0], lPos[1], lPos[2], 1.0);
 			FBVectorMatrixMult(p, modelViewI, p);
-			double dist = p[0];
+			
+			return p[0];
+		};
 
+	if (pData->UseCameraDOFProperties)
+	{
+		_focalDistance = camera->FocusSpecificDistance;
+		_focalRange = camera->FocusAngle;
+
+		FBCameraFocusDistanceSource cameraFocusDistanceSource;
+		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
+		
+		FBModel* pInterest = nullptr;
+		switch (cameraFocusDistanceSource)
+		{
+		case kFBFocusDistanceCameraInterest: pInterest = camera->Interest;
+			break;
+		case kFBFocusDistanceModel: pInterest = camera->FocusModel;
+			break;
+		default:
+			break;
+		}
+		
+
+		if (pInterest)
+		{
 			// Dont write to property
 			// FocalDistance = dist;
-			_focalDistance = dist;
+			_focalDistance = fn_calcFocalDistance(camera, pInterest);
 		}
 	}
-	else
-	if (pData->AutoFocus && pData->FocusObject.GetCount() > 0)
+	else if (pData->AutoFocus && pData->FocusObject.GetCount() > 0)
 	{
-		FBMatrix modelView, modelViewI;
-
-		((FBModel*)camera)->GetMatrix(modelView);
-		FBMatrixInverse(modelViewI, modelView);
-
-		FBVector3d lPos;
-		FBModel *pModel = (FBModel*)pData->FocusObject.GetAt(0);
-		pModel->GetVector(lPos);
-
-		FBTVector p(lPos[0], lPos[1], lPos[2]);
-		FBVectorMatrixMult(p, modelViewI, p);
-		double dist = p[0];
-
 		// Dont write to property
 		// FocalDistance = dist;
-		_focalDistance = dist;
+		FBModel* pModel = (FBModel*)pData->FocusObject.GetAt(0);
+		_focalDistance = fn_calcFocalDistance(camera, pModel);
 	}
 
 	ShaderPropertyWriter writer(this, effectContext);
@@ -245,6 +253,7 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 		(mFringe, static_cast<float>(_fringe))
 		(mFeather, static_cast<float>(_feather))
 		(mDebugBlurValue, _debugBlurValue)
+		(mDebugShowFocus, _debugShowFocus)
 		(mNoise, pData->Noise)
 		(mPentagon, pData->Pentagon)
 		(mFocusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);

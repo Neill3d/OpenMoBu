@@ -86,6 +86,7 @@ public:
 	static constexpr const char* USE_CAMERA_DOF_PROPS = "Use Camera DOF Properties";
 	static constexpr const char* RESET_DOF = "Reset DOF";
 	static constexpr const char* DOF_DEBUG_BLUR_VALUE = "Debug Blur Value";
+	static constexpr const char* DOF_DEBUG_SHOW_FOCUS = "Debug Show Focus";
 	static constexpr const char* DOF_DEBUG_FAR_DIST = "Debug Camera Far Dist";
 	static constexpr const char* DOF_FIX_CAM_SETTINGS = "Fix Camera Settings";
 
@@ -416,6 +417,7 @@ public: // PROPERTIES
 	FBPropertyAction			ResetDOF;
 
 	FBPropertyBool				DebugBlurValue; //!< output only computed blur gradient
+	FBPropertyBool				DebugShowFocus; //!< visualize focal distance in the viewport with a color gradient
 	FBPropertyAction			DebugFarDistance; //!< check if camera far distance is too big for glsl float
 	FBPropertyAction			FixCameraSettings; //!< update camera far plane, and turns off real-time camera effects
 
