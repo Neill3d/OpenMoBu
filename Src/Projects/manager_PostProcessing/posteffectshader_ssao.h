@@ -52,8 +52,6 @@ protected:
 
 	virtual void RenderPass(int passIndex, PostEffectRenderContext& renderContext, PostEffectContextProxy* effectContext) override;
 
-	//virtual void OnRenderEnd(PostEffectRenderContext& renderContextParent, PostEffectContextProxy* effectContext) override;
-
 	//! bind effect shader program
 	bool Bind() override;
 	//! unbind effect shader program

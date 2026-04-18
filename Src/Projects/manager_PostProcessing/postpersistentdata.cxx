@@ -853,7 +853,7 @@ bool PostPersistentData::FBCreate()
 
 	Samples.SetMinMax(1, 12, true, true);
 	Rings.SetMinMax(1, 32, true, true);
-	PentagonFeather.SetMinMax(0.0, 1.0, true, true);
+	PentagonFeather.SetMinMax(0.0, 100.0, true, true);
 
 	// SSAO
 	SSAO_Intensity.SetMinMax(0.0, 100.0);

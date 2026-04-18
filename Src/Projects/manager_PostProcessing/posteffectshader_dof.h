@@ -9,6 +9,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include "posteffect_shader.h"
+#include <random>
 
 // forward
 class EffectShaderDOF;
@@ -29,7 +30,7 @@ class EffectShaderDOF : public PostEffectBufferShader
 public:
 
 	explicit EffectShaderDOF(FBComponent* ownerIn);
-	virtual ~EffectShaderDOF() = default;
+    virtual ~EffectShaderDOF();
 
 	int GetNumberOfVariations() const override { return 1; }
 
@@ -48,6 +49,11 @@ protected:
     virtual void OnPopulateProperties(ShaderPropertyScheme* scheme) override;
 
 	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
+
+    //! bind effect shader program
+    bool Bind() override;
+    //! unbind effect shader program
+    void UnBind() override;
 
 private:
 	static constexpr const char* SHADER_NAME = "Depth Of Field";
@@ -93,4 +99,14 @@ private:
     // Debug utilities
     ShaderPropertyProxy mDebugBlurValue;
     ShaderPropertyProxy mDebugShowFocus;
+
+    std::random_device					rd;
+    std::mt19937						e2;		// engine
+    std::uniform_real_distribution<>	dist;	// distribution
+
+    // texture Id for random noise jitter sample in the shader
+    GLuint	randomTexId{ 0 };
+
+    void InitTexture();
+	void DeleteTexture();
 };

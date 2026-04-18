@@ -92,8 +92,8 @@ float Falloff(float DistanceSquare)
 float ComputeAO(vec3 P, vec3 N, vec3 S)
 {
   vec3 V = S - P;
-  float VdotV = dot(V, V);
-  float NdotV = dot(N, V) * 1.0/sqrt(VdotV);
+  float VdotV = max(dot(V, V), 1e-6);
+	float NdotV = dot(N, V) * inversesqrt(VdotV);
 
   // Use saturate(x) instead of max(x,0.f) because that is faster on Kepler
   return clamp(NdotV - NDotVBias,0,1) * clamp(Falloff(VdotV),0,1);
@@ -124,7 +124,7 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 
   const float Alpha = 2.0 * M_PI / NUM_DIRECTIONS;
   float AO = 0;
-
+  
   for (float DirectionIndex = 0; DirectionIndex < NUM_DIRECTIONS; ++DirectionIndex)
   {
     float Angle = Alpha * DirectionIndex;
@@ -137,17 +137,21 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 
     for (float StepIndex = 0; StepIndex < NUM_STEPS; ++StepIndex)
     {
-      vec2 SnappedUV = round(RayPixels * Direction) * InvFullResolution + FullResUV;
+      vec2 SnappedUV = clamp(round(RayPixels * Direction) * InvFullResolution + FullResUV, 0.0, 1.0);
+      if (SnappedUV.x < 0.0 || SnappedUV.x > 1.0 || SnappedUV.y < 0.0 || SnappedUV.y > 1.0)
+    		continue;
       vec3 S = FetchViewPos(SnappedUV);
 
       RayPixels += StepSizePixels;
 
-      AO += ComputeAO(ViewPosition, ViewNormal, S);
+			AO += ComputeAO(ViewPosition, ViewNormal, S);
     }
   }
 
-  AO *= AOMultiplier / (NUM_DIRECTIONS * NUM_STEPS);
-  return clamp(1.0 - AO * 2.0,0,1);
+  AO = clamp(AO / (NUM_DIRECTIONS * NUM_STEPS), 0.0, 1.0);
+	AO = 1.0 - 2.0 * AOMultiplier * AO;
+	AO = clamp(AO, 0.0, 1.0);
+	return AO;
 }
 
 // -----------------------------------------------------------------------
@@ -169,7 +173,7 @@ void main()
 	vec3 ViewNormal = -ReconstructNormal(uv, ViewPosition);
 
 	// Compute projection of disk of radius control.R into screen space
-	float RadiusPixels = RadiusToScreen / (projOrtho != 0 ? 1.0 : ViewPosition.z);
+	float RadiusPixels = RadiusToScreen / max(abs(ViewPosition.z), 1e-4);
 
 	// Get jitter vector for the current full-res pixel
 	vec4 Rand = GetJitter();

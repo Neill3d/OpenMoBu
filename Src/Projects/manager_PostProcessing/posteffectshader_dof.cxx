@@ -23,7 +23,14 @@ uint32_t EffectShaderDOF::SHADER_NAME_HASH = xxhash32(EffectShaderDOF::SHADER_NA
 
 EffectShaderDOF::EffectShaderDOF(FBComponent* ownerIn)
 	: PostEffectBufferShader(ownerIn)
+	, e2(rd())
+	, dist(0, 1.0)
 {}
+
+EffectShaderDOF::~EffectShaderDOF()
+{
+	DeleteTexture();
+}
 
 const char* EffectShaderDOF::GetUseMaskingPropertyName() const noexcept
 {
@@ -42,6 +49,12 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
+
+	scheme->AddProperty("random", "randomSampler")
+		.SetType(EPropertyType::TEXTURE)
+		.SetFlag(PropertyFlag::SKIP)
+		.SetDefaultValue(CommonEffect::UserSamplerSlot);
+
 
 	// Core depth of field parameters
 	mFocalDistance = scheme->AddProperty(PostPersistentData::DOF_FOCAL_DISTANCE, "focalDistance", EPropertyType::FLOAT)
@@ -125,9 +138,9 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	mNoise = scheme->AddProperty(PostPersistentData::DOF_NOISE, "noise", EPropertyType::BOOL)
-		.SetFlag(PropertyFlag::SKIP)
-		.GetProxy();
+	//mNoise = scheme->AddProperty(PostPersistentData::DOF_NOISE, "noise", EPropertyType::BOOL)
+	//	.SetFlag(PropertyFlag::SKIP)
+	//	.GetProxy();
 
 	// Experimental bokeh shape parameters
 	mPentagon = scheme->AddProperty(PostPersistentData::DOF_PENTAGON, "pentagon", EPropertyType::BOOL)
@@ -252,9 +265,75 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 		(mFeather, static_cast<float>(_feather))
 		(mDebugBlurValue, _debugBlurValue)
 		(mDebugShowFocus, _debugShowFocus)
-		(mNoise, pData->Noise)
+		//(mNoise, pData->Noise)
 		(mPentagon, pData->Pentagon)
 		(mFocusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
 	
 	return true;
+}
+
+bool EffectShaderDOF::Bind()
+{
+	if (randomTexId == 0)
+	{
+		InitTexture();
+	}
+
+	// bind a random texture
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
+	glBindTexture(GL_TEXTURE_2D, randomTexId);
+	glActiveTexture(GL_TEXTURE0);
+
+	return PostEffectBufferShader::Bind();
+}
+
+void EffectShaderDOF::UnBind()
+{
+	// bind a random texture
+	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+
+	PostEffectBufferShader::UnBind();
+}
+
+void EffectShaderDOF::InitTexture()
+{
+	constexpr int DOF_NOISE_SIZE = 8;
+	float dofNoise[DOF_NOISE_SIZE][DOF_NOISE_SIZE][2];
+
+	for (int y = 0; y < DOF_NOISE_SIZE; ++y)
+	{
+		for (int x = 0; x < DOF_NOISE_SIZE; ++x)
+		{
+			float angle = 2.0f * float(M_PI) * float(dist(e2));
+			float radius = std::sqrt(float(dist(e2))); // uniform disk
+
+			dofNoise[y][x][0] = std::cos(angle) * radius;
+			dofNoise[y][x][1] = std::sin(angle) * radius;
+		}
+	}
+
+	DeleteTexture();
+	glGenTextures(1, &randomTexId);
+
+	glBindTexture(GL_TEXTURE_2D, randomTexId);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, DOF_NOISE_SIZE, DOF_NOISE_SIZE, 0, GL_RG, GL_FLOAT, dofNoise);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void EffectShaderDOF::DeleteTexture()
+{
+	if (randomTexId > 0)
+	{
+		glDeleteTextures(1, &randomTexId);
+		randomTexId = 0;
+	}
 }
