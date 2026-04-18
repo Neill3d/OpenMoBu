@@ -45,7 +45,6 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 
 	// Core depth of field parameters
 	mFocalDistance = scheme->AddProperty(PostPersistentData::DOF_FOCAL_DISTANCE, "focalDistance", EPropertyType::FLOAT)
-		.SetScale(100.0f)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
@@ -217,7 +216,6 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 			break;
 		}
 		
-
 		if (pInterest)
 		{
 			// Dont write to property

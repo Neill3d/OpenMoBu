@@ -404,7 +404,8 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 		if (auto prop = FindPropertyByUniform(uniformName))
 		{
 			// already exists, update location
-			VERIFY((prop->GetType() == shaderType)
+			VERIFY(prop
+				|| (prop->GetType() == shaderType)
 				|| (prop->GetType() == EPropertyType::BOOL && shaderType == EPropertyType::FLOAT));
 			prop->SetLocation(location);
 		}

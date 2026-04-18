@@ -332,6 +332,7 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Debug Camera Far Dist", "Depth Of Field Setup");
 	AddPropertyView("Fix Camera Settings", "Depth Of Field Setup");
 
+
 	AddPropertyView("Focal Distance", "Depth Of Field Setup");
 	AddPropertyView("Focal Range", "Depth Of Field Setup");
 	AddPropertyView("F-Stop", "Depth Of Field Setup");

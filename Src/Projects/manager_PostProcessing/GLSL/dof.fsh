@@ -1,4 +1,4 @@
-
+﻿
 //
 // Fragment Shader - Depth Of Field
 //
@@ -11,9 +11,7 @@
 //
 //	Special for Les Androids Associes
 //
-
-// DoF with bokeh GLSL shader v2.4
-// by Martins Upitis (martinsh) (devlog-martinsh.blogspot.com)
+// based on the original work of Martin Upitis (martinsh) (devlog-martinsh.blogspot.com)
 
 #version 140
 
@@ -161,22 +159,25 @@ float bdepth(vec2 coords) //blurring depth
 	return d;
 }
 
+const vec2 kFringeDirR = vec2(0.0, 1.0);
+const vec2 kFringeDirG = vec2(-0.8660254, -0.5);
+const vec2 kFringeDirB = vec2(0.8660254, -0.5);
+const vec3 kLumCoeff = vec3(0.2126, 0.7152, 0.0722);
+const float kHighlightKnee = 0.2;
 
-vec3 color(vec2 coords,float blur) //processing the sample
+vec3 sampleDOFColor(vec2 coords, float blur) //processing the sample
 {
 	vec3 col = vec3(0.0);
 	
-	col.r = texture(colorSampler,coords + vec2(0.0,1.0)*texelSize*fringe*blur).r;
-	col.g = texture(colorSampler,coords + vec2(-0.866,-0.5)*texelSize*fringe*blur).g;
-	col.b = texture(colorSampler,coords + vec2(0.866,-0.5)*texelSize*fringe*blur).b;
+	vec2 offset = texelSize * fringe * blur;
+	col.r = texture(colorSampler, coords + offset * kFringeDirR).r;
+	col.g = texture(colorSampler, coords + offset * kFringeDirG).g;
+	col.b = texture(colorSampler, coords + offset * kFringeDirB).b;
 	
-	vec3 lumcoeff = vec3(0.299,0.587,0.114);
-	float lum = dot(col, lumcoeff);
-	//float thresh = max((lum-threshold)*gain, 0.0);
-	//return col+mix(vec3(0.0),col,thresh*blur);
-
-	float highlight = smoothstep(threshold, threshold + 0.2, lum);
-    float boost = 1.0 + 0.25 * gain * highlight * blur;
+	float lum = dot(col, kLumCoeff);
+	
+	float highlight = smoothstep(threshold, threshold + kHighlightKnee, lum);
+    float boost = 1.0 + 0.15 * gain * highlight * blur;
 
     return col * boost;
 }
@@ -227,7 +228,6 @@ void main()
 {
 	float width = gResolution.x; //texture width
 	float height = gResolution.y; //texture height
-	float focalDepth = focalDistance;  //focal distance value in meters, but you may use autofocus option below
 	float focalLength = focalRange; //focal length in mm
 
 	if (texCoord.y < upperClip || texCoord.y > lowerClip)
@@ -242,7 +242,7 @@ void main()
 	
 	//focal plane calculation
 	
-	float fDepth = focalDepth / zFar;
+	float fDepth = focalDistance;// / zFar;
 	
 	if (focusPoint.w > 0.0)
 	{
@@ -255,36 +255,48 @@ void main()
 		fDepth = linearize(texture(depthSampler,focus).x);
 	}
 	*/
+	
+	//
 	//dof blur factor calculation
 	
 	float blur = 0.0;
-	
+	float delta = depth - fDepth;
+
 	if (manualdof)
-	{    
-		float a = depth-fDepth; //focal plane
-		float b = (a-fdofstart)/fdofdist; //far DoF
-		float c = (-a-ndofstart)/ndofdist; //near Dof
-		blur = (a>0.0)?b:c;
+	{
+		float nearBlur = max((-delta) - ndofstart, 0.0) / max(ndofdist, 1e-5);
+		float farBlur  = max(( delta) - fdofstart, 0.0) / max(fdofdist, 1e-5);
+		blur = (delta < 0.0) ? nearBlur : farBlur;
 	}
 	else
 	{
-		float f = focalLength * 0.05; //focal length in mm
-		float d = fDepth * 1000.0; //focal plane in mm
-		float o = depth * 1000.0; //depth in mm
-		
-		float a = (o*f)/(o-f); 
-		float b = (d*f)/(d-f); 
-		float c = (d-f)/(d*fstop*CoC); 
-		
-		blur = 10.0 * abs(a-b)*c;
-		
-		a = depth - fDepth; // focal plane
-		if (blurForeground == 0.0 && a < 0.0)
-			blur = 0.0;
-		//if (blurForeground==false) blur = (a>0.0)?blur:0.0;
+		float absDelta = abs(delta);
+
+		// focalRange controls the width of the in-focus zone
+		float focusBand = max(focalRange, 1e-4);
+
+		// outside this band blur starts increasing
+		blur = max(absDelta - focusBand, 0.0) / focusBand;
+
+		// optional: slightly gentler background blur growth
+		if (delta > 0.0)
+		{
+			blur *= 0.85;
+		}
+
+		float apertureScale = 1.0 / max(fstop, 1e-4);
+		float cocScale = max(CoC / 0.03, 0.01);
+
+		blur *= apertureScale * cocScale;
+		blur = pow(clamp(blur, 0.0, 1.0), 1.35);
 	}
-	
-	blur = clamp(blur,0.0,1.0);
+
+	if (blurForeground == 0.0 && delta < 0.0)
+	{
+		blur = 0.0;
+	}
+
+	blur = clamp(blur, 0.0, 1.0);
 	
 	if (debugBlurValue > 0.0)
 	{
@@ -295,13 +307,12 @@ void main()
 	
 	// calculation of pattern for ditering
 	
-	vec2 noise = rand(texCoord.xy, width, height)*namount*blur;
+	vec2 noise = rand(texCoord.xy, width, height) * namount * blur;
 	
 	// getting blur x and y step factor
 	
-	float w = (1.0/width)*blur*maxblur+noise.x;
-	float h = (1.0/height)*blur*maxblur+noise.y;
-	
+	vec2 blurStep = vec2(1.0/width, 1.0/height) * blur * maxblur + noise;
+
 	// calculation of final color
 	
 	vec3 inputColor = texture(colorSampler, texCoord).rgb;
@@ -314,20 +325,35 @@ void main()
 		
 		for (int i = 1; i <= rings; i += 1)
 		{   
+			float fi = float(i);
 			ringsamples = i * samples;
 			
+			float step = PI * 2.0 / float(ringsamples);
+			float cs = cos(step);
+			float sn = sin(step);
+
+			float x = 1.0;
+			float y = 0.0;
+
 			for (int j = 0 ; j < ringsamples ; j += 1)   
 			{
-				float step = PI*2.0 / float(ringsamples);
-				float pw = (cos(float(j)*step)*float(i));
-				float ph = (sin(float(j)*step)*float(i));
+				vec2 pOffset = vec2(x * fi, y * fi) * blurStep;
 				float p = 1.0;
 				if (pentagon)
 				{ 
-					p = penta(vec2(pw,ph));
+					p = penta(pOffset);
 				}
-				col += color(texCoord.xy + vec2(pw*w,ph*h),blur)*mix(1.0,(float(i))/(float(rings)),bias)*p;  
-				s += 1.0*mix(1.0,(float(i))/(float(rings)),bias)*p;   
+				float sampleBias = mix(1.0, fi / float(rings), bias) * p;
+
+				vec3 sampleCol = sampleDOFColor(texCoord + pOffset, blur) * sampleBias;
+				col += sampleCol;
+				s += sampleBias;   
+
+				// rotate (x, y)
+				float nx = x * cs - y * sn;
+				float ny = x * sn + y * cs;
+				x = nx;
+				y = ny;
 			}
 		}
 		col /= s; //divide by sample count
@@ -347,5 +373,3 @@ void main()
 	FragColor.rgb = mix(col, inputColor, mask.r * useMasking);
 	FragColor.a = 1.0;
 }
-// end of a shader
-
