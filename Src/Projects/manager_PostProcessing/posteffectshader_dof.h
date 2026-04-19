@@ -72,17 +72,8 @@ private:
     ShaderPropertyProxy mRings;
 
     // Focus control
-    ShaderPropertyProxy mAutoFocus;    // Use autofocus in shader
-    ShaderPropertyProxy mFocus;        // Autofocus point on screen (0.0,0.0 - bottom-left, 1.0,1.0 - top-right)
-    ShaderPropertyProxy mFocusPoint;
-    ShaderPropertyProxy mManualDOF;    // Manual DOF calculation toggle
-
-    // Near and far DOF blur parameters
-    ShaderPropertyProxy mNDOFStart;    // Near DOF blur start distance
-    ShaderPropertyProxy mNDOFDist;     // Near DOF blur falloff distance
-    ShaderPropertyProxy mFDOFStart;    // Far DOF blur start distance  
-    ShaderPropertyProxy mFDOFDist;     // Far DOF blur falloff distance
-
+    ShaderPropertyProxy mFocusPoint;   // vec4 with x,y point in screen and w as flag (0.0 - 1.0)
+    
     // Visual enhancement parameters
     ShaderPropertyProxy mBlurForeground;
     ShaderPropertyProxy mThreshold;    // Highlight threshold

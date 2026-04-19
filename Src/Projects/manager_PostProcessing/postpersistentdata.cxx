@@ -607,14 +607,7 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, PreviewBlurAmount, "Preview Blur Amount", nullptr, nullptr);
 
 	FBPropertyPublish(this, BlurForeground, DOF_BLUR_FOREGROUND, nullptr, nullptr);
-	/*
-	FBPropertyPublish(this, ManualFocus, "Manual mode", nullptr, nullptr);
-	FBPropertyPublish(this, ManualNear, "Manual Near Distance", nullptr, nullptr);
-	FBPropertyPublish(this, ManualNearFalloff, "Manual Near Falloff", nullptr, nullptr);
-	FBPropertyPublish(this, ManualFar, "Manual Far Distance", nullptr, nullptr);
-	FBPropertyPublish(this, ManualFarFalloff, "Manual Far Falloff", nullptr, nullptr);
-	*/
-
+	
 	FBPropertyPublish(this, UseFocusPoint, DOF_USE_FOCUS_POINT, nullptr, nullptr);
 	FBPropertyPublish(this, FocusPoint, DOF_FOCUS_POINT, nullptr, nullptr);
 
@@ -1026,13 +1019,6 @@ void PostPersistentData::DefaultValues()
 	FStop = 0.5;
 
 	BlurForeground = true;
-	/*
-	ManualFocus = false;
-	ManualNear = 1.0;
-	ManualNearFalloff = 2.0;
-	ManualFar = 1.0;
-	ManualFarFalloff = 3.0;
-	*/
 	AutoFocus = false;
 
 	UseFocusPoint = false;
@@ -1046,8 +1032,8 @@ void PostPersistentData::DefaultValues()
 	PreviewQuality.SetData(&defaultBlurQuality);
 	PreviewBlurAmount = 100.0;
 
-	Samples = 3;
-	Rings = 12;
+	Samples = 4;
+	Rings = 4;
 
 	CoC = 3.0;
 	Threshold = 50.0;

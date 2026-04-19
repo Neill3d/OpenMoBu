@@ -433,12 +433,6 @@ public: // PROPERTIES
 	
 	FBPropertyBool					BlurForeground;	//!< flag to make everything clean in foreground
 
-	FBPropertyBool					ManualFocus;
-	FBPropertyAnimatableDouble		ManualNear;
-	FBPropertyAnimatableDouble		ManualNearFalloff;
-	FBPropertyAnimatableDouble		ManualFar;
-	FBPropertyAnimatableDouble		ManualFarFalloff;
-
 	FBPropertyBool					UseFocusPoint;
 	FBPropertyAnimatableVector2d	FocusPoint;		//!< relative screen coord to grab a depth distance from
 

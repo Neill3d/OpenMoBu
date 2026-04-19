@@ -85,32 +85,8 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.GetProxy();
 
 	// Focus control
-	mAutoFocus = scheme->AddProperty(PostPersistentData::DOF_AUTO_FOCUS, "autoFocus", EPropertyType::BOOL)
-		.SetRequired(false)
-		.GetProxy();
-
-	mFocus = scheme->AddProperty(PostPersistentData::DOF_USE_FOCUS_POINT, "focus", EPropertyType::BOOL)
-		.SetRequired(false)
-		.GetProxy();
-
 	mFocusPoint = scheme->AddProperty(PostPersistentData::DOF_FOCUS_POINT, "focusPoint", EPropertyType::VEC4)
 		.SetFlag(PropertyFlag::SKIP)
-		.GetProxy();
-
-	mManualDOF = scheme->AddProperty("manualdof", "manualdof", EPropertyType::BOOL)
-		.SetFlag(PropertyFlag::SKIP)
-		.GetProxy();
-	// Near and far DOF blur parameters
-	mNDOFStart = scheme->AddProperty("ndofstart", "ndofstart", EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::SKIP)
-		.GetProxy();
-	mNDOFDist = scheme->AddProperty("ndofdist", "ndofdist", EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::SKIP)
-		.GetProxy();
-	mFDOFStart = scheme->AddProperty("fdofstart", "fdofstart", EPropertyType::FLOAT)
-		.SetFlag(PropertyFlag::SKIP)
-		.GetProxy();
-	mFDOFDist = scheme->AddProperty("fdofdist", "fdofdist", EPropertyType::FLOAT)
 		.GetProxy();
 
 	// Visual enhancement parameters
@@ -138,9 +114,9 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
-	//mNoise = scheme->AddProperty(PostPersistentData::DOF_NOISE, "noise", EPropertyType::BOOL)
-	//	.SetFlag(PropertyFlag::SKIP)
-	//	.GetProxy();
+	mNoise = scheme->AddProperty(PostPersistentData::DOF_NOISE, "useNoise", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
+		.GetProxy();
 
 	// Experimental bokeh shape parameters
 	mPentagon = scheme->AddProperty(PostPersistentData::DOF_PENTAGON, "pentagon", EPropertyType::BOOL)
@@ -249,11 +225,6 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 	writer(mFocalDistance, static_cast<float>(_focalDistance))
 		(mFocalRange, static_cast<float>(_focalRange))
 		(mFStop, static_cast<float>(_fstop))
-		(mManualDOF, false)
-		(mNDOFStart, 1.0f)
-		(mNDOFDist, 2.0f)
-		(mFDOFStart, 1.0f)
-		(mFDOFDist, 3.0f)
 		(mSamples, _samples)
 		(mRings, _rings)
 		(mCoC, static_cast<float>(_CoC))
@@ -265,10 +236,11 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 		(mFeather, static_cast<float>(_feather))
 		(mDebugBlurValue, _debugBlurValue)
 		(mDebugShowFocus, _debugShowFocus)
-		//(mNoise, pData->Noise)
+		(mNoise, pData->Noise)
 		(mPentagon, pData->Pentagon)
 		(mFocusPoint, 0.01f * (float)_focusPoint[0], 0.01f * (float)_focusPoint[1], 0.0f, _useFocusPoint);
 	
+
 	return true;
 }
 
