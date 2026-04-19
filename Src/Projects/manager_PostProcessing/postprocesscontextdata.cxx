@@ -149,17 +149,6 @@ void PostProcessContextData::Synchronize()
         evalPane.fxContext = mFXContexts[nPane].get();
         mRenderPanes[nPane].fxContext = evalPane.fxContext;
 		
-        /*
-        // Get or create fx context
-        //auto [it, inserted] = mPostFXContextsMap.try_emplace(evalPane.data, nullptr);
-
-        if (inserted || !it->second.get())
-        {
-            static const PostEffectContextProxy::Parameters emptyParameters{};
-            it->second = std::make_unique<PostEffectContextMoBu>(evalPane.camera, nullptr, evalPane.data, nullptr,
-				&standardEffectsCollection, emptyParameters);
-        }
-        */
         if (evalPane.fxContext->IsAnyReloadShadersRequested())
         {
             isReady = false;
@@ -167,8 +156,6 @@ void PostProcessContextData::Synchronize()
 		}
 
 		evalPane.fxContext->Synchronize();
-        //it->second->Synchronize();
-		//evalPane.fxContext = it->second.get();
 		isReady = true;
     }
 	SetReadyToEvaluate(isReady);
@@ -230,11 +217,6 @@ void PostProcessContextData::UpdatePostProcessingFlag()
             break;
         }
     }
-
-    //if (pContextData->mViewerViewport[2] <= 1 || pContextData->mViewerViewport[3] <= 1)
-    //{
-    //    usePostProcessing = false;
-    //}
 }
 
 void PostProcessContextData::PrepareCameraPerPane()

@@ -43,7 +43,11 @@ uniform float fstop; // = 0.5; //f-stop value
 
 //-- debug variables
 uniform float debugBlurValue;
-uniform float debugShowFocus; //show debug focus point and focal range (red = focal point, green = focal range)
+
+// Debug visualization of blur amount:
+// warm tint = low blur / near focus,
+// cool tint = transition region.
+uniform float debugShowFocus;
 //--
 
 uniform vec4 focusPoint; // where x,y screen space focus point on screen and w is a flag to use it (0.0 - 1.0)
