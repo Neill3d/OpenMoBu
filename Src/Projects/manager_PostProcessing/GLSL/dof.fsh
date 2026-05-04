@@ -4,7 +4,7 @@
 //
 //	Post Processing Toolkit
 //
-//	Sergei <Neill3d> Solokhin 2018
+//	Sergei <Neill3d> Solokhin 2018-2026
 //
 //	GitHub page - https://github.com/Neill3d/OpenMoBu
 //	Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -164,6 +164,12 @@ void main()
 	
 	float depth = ComputeDepth(texCoord);
 	
+	if (depth < 0.001)
+	{
+		FragColor = texture(colorSampler, texCoord);
+		return;
+	}
+
 	//focal plane calculation
 	
 	float fDepth = focalDistance;// / zFar;
@@ -195,7 +201,7 @@ void main()
 	}
 
 	float apertureScale = 1.0 / max(fstop, 1e-4);
-	float cocScale = max(CoC / 0.03, 0.01);
+	float cocScale = max(CoC / 0.03, 0.0);
 
 	blur *= apertureScale * cocScale;
 	blur = pow(clamp(blur, 0.0, 1.0), 1.35);

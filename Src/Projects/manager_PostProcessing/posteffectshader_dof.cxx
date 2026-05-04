@@ -186,10 +186,20 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 			return p[0];
 		};
 
+	auto fn_calcFocalRange = [](double focusDistance, double focusAngle)
+		{
+			// Simple approximation of focal range based on focus distance and angle
+			// This is not physically accurate but provides a reasonable artistic control
+			double range = 2.0f * focusDistance * std::tan(0.5 * (focusAngle * M_PI / 180.0));
+			return range;
+
+		};
+
+
 	if (pData->UseCameraDOFProperties)
 	{
 		_focalDistance = camera->FocusSpecificDistance;
-		_focalRange = camera->FocusAngle;
+		_CoC = camera->FocusAngle;
 
 		FBCameraFocusDistanceSource cameraFocusDistanceSource;
 		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
