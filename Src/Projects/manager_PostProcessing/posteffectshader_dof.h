@@ -66,6 +66,7 @@ private:
     ShaderPropertyProxy mFocalRange;
     ShaderPropertyProxy mFStop;
     ShaderPropertyProxy mCoC;  // Circle of confusion size in mm (35mm film = 0.03mm)
+    ShaderPropertyProxy mBlurRadius;
 
     // Rendering parameters
     ShaderPropertyProxy mSamples;

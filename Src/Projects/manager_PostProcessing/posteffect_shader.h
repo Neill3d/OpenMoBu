@@ -67,18 +67,18 @@ public:
 	void SetActive(const bool value) { isActive = value; }
 
 	/// number of variations of the same effect, but with a different algorithm (for instance, 3 ways of making a lens flare effect)
-	virtual int GetNumberOfVariations() const abstract;
+	virtual int GetNumberOfVariations() const = 0;
 
 	/// repeated call of the shader (define iPass uniform to distinguish)
 	virtual int GetNumberOfPasses() const { return 1; }
 
 	//! an effect public name
-	virtual const char* GetName() const abstract;
-	virtual uint32_t GetNameHash() const abstract;
+	virtual const char* GetName() const = 0;
+	virtual uint32_t GetNameHash() const = 0;
 	//! get a filename of vertex shader, for this effect. returns a relative filename
-	virtual const char* GetVertexFname(const int variationIndex) const abstract;
+	virtual const char* GetVertexFname(const int variationIndex) const = 0;
 	//! get a filename of a fragment shader, for this effect, returns a relative filename
-	virtual const char* GetFragmentFname(const int variationIndex) const abstract;
+	virtual const char* GetFragmentFname(const int variationIndex) const = 0;
 
 	// does shader uses the scene depth sampler (part of a system input)
 	virtual bool IsDepthSamplerUsed() const;

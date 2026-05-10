@@ -333,9 +333,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Fix Camera Settings", "Depth Of Field Setup");
 
 
-	AddPropertyView("Focal Distance", "Depth Of Field Setup");
-	AddPropertyView("Focal Range", "Depth Of Field Setup");
-	AddPropertyView("F-Stop", "Depth Of Field Setup");
+	AddPropertyView(DOF_FOCAL_DISTANCE, "Depth Of Field Setup");
+	AddPropertyView(DOF_FOCAL_RANGE, "Depth Of Field Setup");
+	AddPropertyView(DOF_FSTOP, "Depth Of Field Setup");
 
 	AddPropertyView("Auto Focus", "Depth Of Field Setup");
 	AddPropertyView("Focus Object", "Depth Of Field Setup");
@@ -349,10 +349,11 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	AddPropertyView("Blur Foreground", "Depth Of Field Setup");
 
-	AddPropertyView("Samples", "Depth Of Field Setup");
-	AddPropertyView("Ring count", "Depth Of Field Setup");
+	AddPropertyView(DOF_SAMPLES, "Depth Of Field Setup");
+	AddPropertyView(DOF_RINGS, "Depth Of Field Setup");
 
-	AddPropertyView("Circle of confusion", "Depth Of Field Setup");
+	AddPropertyView(DOF_COC, "Depth Of Field Setup");
+	AddPropertyView(DOF_BLUR_RADIUS, "Depth Of Field Setup");
 
 	AddPropertyView("Highlight Threshold", "Depth Of Field Setup");
 	AddPropertyView("Highlight Gain", "Depth Of Field Setup");
@@ -615,6 +616,7 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, Rings, DOF_RINGS, nullptr, nullptr);
 
 	FBPropertyPublish(this, CoC, DOF_COC, nullptr, nullptr);
+	FBPropertyPublish(this, BlurRadius, DOF_BLUR_RADIUS, nullptr, nullptr);
 
 	FBPropertyPublish(this, Threshold, DOF_THRESHOLD, nullptr, nullptr);
 	FBPropertyPublish(this, Gain, DOF_GAIN, nullptr, nullptr);
@@ -847,6 +849,7 @@ bool PostPersistentData::FBCreate()
 	Samples.SetMinMax(1, 12, true, true);
 	Rings.SetMinMax(1, 32, true, true);
 	PentagonFeather.SetMinMax(0.0, 100.0, true, true);
+	FStop.SetMinMax(1.0, 22.0, true, true);
 
 	// SSAO
 	SSAO_Intensity.SetMinMax(0.0, 100.0);
@@ -1016,7 +1019,7 @@ void PostPersistentData::DefaultValues()
 
 	FocalDistance = 40.0;
 	FocalRange = 4.0;
-	FStop = 0.5;
+	FStop = 1.4; // full blur
 
 	BlurForeground = true;
 	AutoFocus = false;
@@ -1036,6 +1039,7 @@ void PostPersistentData::DefaultValues()
 	Rings = 4;
 
 	CoC = 3.0;
+	BlurRadius = 15.0;
 	Threshold = 50.0;
 	Gain = 200.0;
 	Bias = 50.0;
@@ -1578,7 +1582,7 @@ void PostPersistentData::DoResetDOF()
 
 	FocalDistance = 40.0;
 	FocalRange = 4.0;
-	FStop = 0.5;
+	FStop = 1.4; // full blur
 
 	BlurForeground = true;
 	/*
@@ -1602,6 +1606,7 @@ void PostPersistentData::DoResetDOF()
 	Rings = 12;
 
 	CoC = 3.0;
+	BlurRadius = 15.0;
 	Threshold = 50.0;
 	Gain = 200.0;
 	Bias = 50.0;

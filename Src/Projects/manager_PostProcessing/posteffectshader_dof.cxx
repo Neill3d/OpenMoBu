@@ -49,12 +49,12 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::ColorSamplerSlot);
-
+	/*
 	scheme->AddProperty("random", "randomSampler")
 		.SetType(EPropertyType::TEXTURE)
 		.SetFlag(PropertyFlag::SKIP)
 		.SetDefaultValue(CommonEffect::UserSamplerSlot);
-
+	*/
 
 	// Core depth of field parameters
 	mFocalDistance = scheme->AddProperty(PostPersistentData::DOF_FOCAL_DISTANCE, "focalDistance", EPropertyType::FLOAT)
@@ -71,6 +71,10 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 
 	mCoC = scheme->AddProperty(PostPersistentData::DOF_COC, "CoC", EPropertyType::FLOAT)
 		.SetScale(0.01f)
+		.SetFlag(PropertyFlag::SKIP)
+		.GetProxy();
+	
+	mBlurRadius = scheme->AddProperty(PostPersistentData::DOF_BLUR_RADIUS, "blurRadius", EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
@@ -151,6 +155,7 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 	double _focalDistance = pData->FocalDistance;
 	double _focalRange = pData->FocalRange;
 	double _fstop = pData->FStop;
+
 	int _samples = pData->Samples;
 	int _rings = pData->Rings;
 
@@ -160,6 +165,7 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 	const bool _blurForeground = pData->BlurForeground;
 
 	double _CoC = pData->CoC;
+	double _blurRadius = pData->BlurRadius;
 	double _threshold = pData->Threshold;
 	
 	double _gain = pData->Gain;
@@ -186,20 +192,21 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 			return p[0];
 		};
 
-	auto fn_calcFocalRange = [](double focusDistance, double focusAngle)
+	auto fn_calcBlurRadius = [](double focusAngle, double focalDistance, double screenHeight) -> float
 		{
-			// Simple approximation of focal range based on focus distance and angle
-			// This is not physically accurate but provides a reasonable artistic control
-			double range = 2.0f * focusDistance * std::tan(0.5 * (focusAngle * M_PI / 180.0));
-			return range;
-
+			double halfAngle = focusAngle * 0.5 * M_PI / 180.0;
+			
+			// radius is in world-space units — project to screen pixels
+			// divide by focalDistance to get normalized, then multiply by pixels
+			// this simplifies to: tan(halfAngle) * screenHeight * 0.5
+			return static_cast<float>(std::tan(halfAngle) * screenHeight * 0.5);
 		};
 
 
 	if (pData->UseCameraDOFProperties)
 	{
 		_focalDistance = camera->FocusSpecificDistance;
-		_CoC = camera->FocusAngle;
+		_blurRadius = fn_calcBlurRadius(camera->FocusAngle, _focalDistance, effectContext->GetViewHeight()); // height from resolution
 
 		FBCameraFocusDistanceSource cameraFocusDistanceSource;
 		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
@@ -238,6 +245,7 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 		(mSamples, _samples)
 		(mRings, _rings)
 		(mCoC, static_cast<float>(_CoC))
+		(mBlurRadius, static_cast<float>(_blurRadius))
 		(mBlurForeground, _blurForeground)
 		(mThreshold, static_cast<float>(_threshold))
 		(mGain, static_cast<float>(_gain))
@@ -256,6 +264,7 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 
 bool EffectShaderDOF::Bind()
 {
+	/*
 	if (randomTexId == 0)
 	{
 		InitTexture();
@@ -265,17 +274,18 @@ bool EffectShaderDOF::Bind()
 	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, randomTexId);
 	glActiveTexture(GL_TEXTURE0);
-
+	*/
 	return PostEffectBufferShader::Bind();
 }
 
 void EffectShaderDOF::UnBind()
 {
+	/*
 	// bind a random texture
 	glActiveTexture(GL_TEXTURE0 + CommonEffect::UserSamplerSlot);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
-
+	*/
 	PostEffectBufferShader::UnBind();
 }
 

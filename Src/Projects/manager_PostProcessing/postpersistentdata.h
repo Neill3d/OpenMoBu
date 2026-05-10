@@ -103,6 +103,7 @@ public:
 	static constexpr const char* DOF_SAMPLES = "Samples";
 	static constexpr const char* DOF_RINGS = "Ring count";
 	static constexpr const char* DOF_COC = "Circle of confusion";
+	static constexpr const char* DOF_BLUR_RADIUS = "Blur Radius";
 	static constexpr const char* DOF_THRESHOLD = "Highlight Threshold";
 	static constexpr const char* DOF_GAIN = "Highlight Gain";
 	static constexpr const char* DOF_BIAS = "Bokeh Bias";
@@ -444,6 +445,8 @@ public: // PROPERTIES
 	FBPropertyInt					Rings;		//!< ring count
 
 	FBPropertyAnimatableDouble		CoC;	//!< circle of confusion size in mm (35 mm film = 0.03mm)
+
+	FBPropertyAnimatableDouble		BlurRadius;	//!< max blur radius in pixels
 
 	FBPropertyAnimatableDouble		Threshold;	//!< highlight threshold
 	FBPropertyAnimatableDouble		Gain;		//!< highlight gain

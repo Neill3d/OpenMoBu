@@ -20,11 +20,10 @@ out vec4 FragColor;
 
 const float PI = 3.14159265;
 const float namount = 0.0001; //dither amount
-const float maxblur = 1.0; //clamp value of max blur (0.0 = no blur,1.0 default)
 
 uniform	sampler2D	colorSampler;
 uniform sampler2D	depthSampler;
-uniform sampler2D	blurSampler;
+//uniform sampler2D	blurSampler; // TODO: do a CoC pre-pass (half res)
 uniform sampler2D	maskSampler;
 uniform sampler2D	randomSampler;
 
@@ -39,7 +38,7 @@ uniform vec2 texelSize;
 uniform float 		zNear;
 uniform float 		zFar;
 
-uniform float fstop; // = 0.5; //f-stop value
+uniform float fstop; // = 1.4; // f/1.4 full blur
 
 //-- debug variables
 uniform float debugBlurValue;
@@ -61,6 +60,7 @@ uniform int rings; // = 3; //ring count
 uniform float blurForeground;
 
 uniform float CoC; // = 0.03;//circle of confusion size in mm (35mm film = 0.03mm)
+uniform float blurRadius;
 
 uniform float threshold; // = 0.5; //highlight threshold;
 uniform float gain; // = 2.0; //highlight gain;
@@ -188,11 +188,18 @@ void main()
 
 	float absDelta = abs(delta);
 
+	// CoC scales the in-focus zone width.
+	// 0.03mm is standard 35mm film — at that value focusBand is unchanged.
+	// Larger CoC (looser tolerance) → wider in-focus zone → blur starts further out.
+	// Smaller CoC (tighter tolerance) → narrower in-focus zone → blur starts sooner.
+
 	// focalRange controls the width of the in-focus zone
-	float focusBand = max(focalRange, 1e-4);
+	float cocFactor = max(CoC / 0.03, 1e-4);
+	float focusBand = max(focalRange * cocFactor, 1e-4);
 
 	// outside this band blur starts increasing
-	blur = max(absDelta - focusBand, 0.0) / focusBand;
+	float rawBlur = max(absDelta - focusBand, 0.0) / focusBand;
+	blur = smoothstep(0.0, 1.0, rawBlur);
 
 	// optional: slightly gentler background blur growth
 	if (delta > 0.0)
@@ -200,10 +207,10 @@ void main()
 		blur *= 0.85;
 	}
 
-	float apertureScale = 1.0 / max(fstop, 1e-4);
-	float cocScale = max(CoC / 0.03, 0.0);
-
-	blur *= apertureScale * cocScale;
+	float refAperture = 1.4;
+	float apertureScale = refAperture / max(fstop, 1e-4);
+	
+	blur *= apertureScale;
 	blur = pow(clamp(blur, 0.0, 1.0), 1.35);
 
 	if (blurForeground == 0.0 && delta < 0.0)
@@ -220,24 +227,44 @@ void main()
 		return;
 	}
 	
-	// calculation of pattern for ditering
-	vec2 noise = vec2(0.0);
-	if (useNoise)
-	{
-		vec2 noiseUV = texCoord * gResolution / 8.0; // assuming 8x8 texture
-		noise = texture(randomSampler, noiseUV).rg * namount * blur;
-	}
-	
 	// getting blur x and y step factor
 	
-	vec2 blurStep = vec2(1.0/width, 1.0/height) * blur * maxblur + noise;
+	// after computing blur for the center pixel, before the blur > 0.05 check:
+	float maxNeighborBlur = blur;
+	float probeRadius = 3.0; //max(blurRadius * 0.25, 3.0);
+	vec2 probeOffsets[4] = vec2[4](
+	    vec2(texelSize.x * probeRadius, 0.0),
+		vec2(-texelSize.x * probeRadius, 0.0),
+		vec2(0.0, texelSize.y * probeRadius),
+		vec2(0.0, -texelSize.y * probeRadius)
+	);
+	for (int k = 0; k < 4; ++k)
+	{
+	    float nd = ComputeDepth(texCoord + probeOffsets[k]);
+	    float na = abs(nd - fDepth);
+	    float nb = max(na - focusBand, 0.0) / focusBand * apertureScale;
+	    maxNeighborBlur = max(maxNeighborBlur, clamp(nb, 0.0, 1.0));
+	}
 
+	float spreadBlur = blur + (maxNeighborBlur - blur) * 0.15;
+	vec2 blurStep = texelSize * spreadBlur * blurRadius;
+
+	// calculation of pattern for ditering
+	if (useNoise)
+	{
+		vec2 p = gl_FragCoord.xy;
+	    vec2 noiseVec;
+	    noiseVec.x = fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453) * 2.0 - 1.0;
+	    noiseVec.y = fract(sin(dot(p, vec2(269.5, 183.3))) * 43758.5453) * 2.0 - 1.0;
+	    blurStep += noiseVec * blurStep * 0.25;
+	}
+	
 	// calculation of final color
 	
 	vec3 inputColor = texture(colorSampler, texCoord).rgb;
 	vec3 col = inputColor;
 	
-	if(blur > 0.05) //some optimization thingy
+	if(maxNeighborBlur > 0.01)
 	{
 		float s = 1.0;
 		int ringsamples;
@@ -257,7 +284,7 @@ void main()
 			for (int j = 0 ; j < ringsamples ; j += 1)   
 			{
 				vec2 ringCoord = vec2(x, y) * fi;          // ring-space
-				vec2 shapeCoord = 2.0 * ringCoord / float(rings);
+				vec2 shapeCoord = ringCoord / float(rings);
 				vec2 pOffset = ringCoord * blurStep;        // UV/sample offset
 				float aperture = 1.0;
 
@@ -279,10 +306,22 @@ void main()
 			        aperture = pow(aperture, 3.0);
 			    }
 
-			    float ringBias = mix(1.0, fi / float(rings), bias);
-			    float sampleBias = ringBias * aperture;
+			    vec2 sampleCoord = texCoord + pOffset;
 
-			    vec3 sampleCol = sampleDOFColor(texCoord + pOffset, blur) * sampleBias;
+			    float sampleDepth = ComputeDepth(sampleCoord);
+			    float sampleAbsDelta = abs(sampleDepth - fDepth);
+			    float sampleBlur = max(sampleAbsDelta - focusBand, 0.0) / focusBand * apertureScale;
+			    
+			    // only suppress when sample is sharper than center (background leaking into blur)
+				// allow when sample is more blurred than center (foreground trying to spread outward)
+				float blurWeight = (sampleBlur < blur)
+				    ? clamp(sampleBlur / max(blur, 0.01), 0.0, 1.0)
+				    : 1.0;
+
+			    float ringBias = mix(1.0, fi / float(rings), bias);
+			    float sampleBias = ringBias * aperture * blurWeight;
+
+			    vec3 sampleCol = sampleDOFColor(sampleCoord, blur) * sampleBias;
 			    col += sampleCol;
 			    s += sampleBias;
 
