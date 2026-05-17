@@ -27,7 +27,8 @@ PostEffectContextMoBu::PostEffectContextMoBu(FBCamera* cameraIn,
 		, standardEffects(effectCollectionIn)
 		, effectChain(postProcessDataIn)
 {
-	UpdateContextParameters(cameraIn, parametersIn);
+	UpdateContextParameters(mCache[0], cameraIn, parametersIn);
+	mCache[1] = mCache[0];
 }
 
 StandardEffectCollection* PostEffectContextMoBu::GetEffectCollection() const noexcept
@@ -72,12 +73,11 @@ ShaderPropertyStorage* PostEffectContextMoBu::GetShaderPropertyStorage()
 	return &shaderPropertyStorage; 
 }
 
-void PostEffectContextMoBu::UpdateContextParameters(FBCamera* cameraIn, const PostEffectContextProxy::Parameters& parametersIn)
+void PostEffectContextMoBu::UpdateContextParameters(PostEffectContextProxy::Cache& cacheOut, FBCamera* cameraIn, const PostEffectContextProxy::Parameters& parametersIn)
 {
-	PostEffectContextProxy::Cache& writeCache = GetWriteCache();
-	writeCache.camera = cameraIn;
-	writeCache.parameters = parametersIn;
-	PrepareCache(writeCache, cameraIn);
+	cacheOut.camera = cameraIn;
+	cacheOut.parameters = parametersIn;
+	PrepareCache(cacheOut, cameraIn);
 }
 
 void PostEffectContextMoBu::Evaluate(
@@ -85,7 +85,7 @@ void PostEffectContextMoBu::Evaluate(
 	FBCamera* cameraIn, 
 	const PostEffectContextProxy::Parameters& parametersIn)
 {
-	UpdateContextParameters(cameraIn, parametersIn);
+	UpdateContextParameters(GetWriteCache(), cameraIn, parametersIn);
 
 	PostEffectContextProxy proxy(
 		cameraIn,
@@ -180,16 +180,18 @@ bool PostEffectContextMoBu::Render(FBEvaluateInfo* pEvaluateInfoIn, PostEffectBu
 	{
 		return false;
 	}
-	const double time = GetReadCache().parameters.localTime;
+
+	const PostEffectContextProxy::Cache& cache = GetReadCache();
+	const double time = cache.parameters.localTime;
 
 	PostEffectContextProxy proxy(
-		GetReadCache().camera,
+		cache.camera,
 		pEvaluateInfoIn,
 		standardEffects,
 		postProcessData,
 		&effectChain,
 		&shaderPropertyStorage.GetReadEffectMap(),
-		GetReadCache());
+		cache);
 
 	return effectChain.Render(buffers, time, &proxy);
 }

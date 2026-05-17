@@ -92,6 +92,10 @@ public:
 		FBCamera* camera{ nullptr };
 		int paneIndex{ -1 };
 
+		bool hasValidCamera = false;
+		bool isCameraChanged = false;
+		bool hasPostProcess = false;
+
 		bool IsValid() const
 		{
 			return (fxContext != nullptr) && (data != nullptr) && (camera != nullptr);
@@ -102,6 +106,21 @@ public:
 			fxContext = nullptr;
 			data = nullptr;
 			camera = nullptr;
+			paneIndex = -1;
+			hasValidCamera = false;
+			isCameraChanged = false;
+			hasPostProcess = false;
+		}
+
+		void CopyFrom(const SPaneData& other)
+		{
+			fxContext = other.fxContext;
+			data = other.data;
+			camera = other.camera;
+			paneIndex = other.paneIndex;
+			hasValidCamera = other.hasValidCamera;
+			isCameraChanged = other.isCameraChanged;
+			hasPostProcess = other.hasPostProcess;
 		}
 	};
 	
@@ -149,8 +168,9 @@ public:
 private:
     bool EmptyGLErrorStack();
 
-	void PrepareCameraPerPane();
-	bool PrepPersistanceDataForEachPane();
+	void PrepareEachPaneCamera();
+	bool PrepareEachPanePersistanceData();
+	void PrepareEachPaneContext();
 	void PreparePaneBuffers();
 
 	// manager shaders
