@@ -240,9 +240,9 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 				{
 					shaderProperty.ReadTextureConnections(value, fbProperty);
 					if (value.GetType() == EPropertyType::SHADER_USER_OBJECT
-						&& value.shaderUserObject)
+						&& value.GetShaderUserObject<EffectShaderUserObject>())
 					{
-						EffectShaderUserObject* shaderUserObject = value.shaderUserObject;
+						EffectShaderUserObject* shaderUserObject = value.GetShaderUserObject<EffectShaderUserObject>();
 
 						if (shaderUserObject && shaderUserObject->GetUserShaderPtr())
 						{
@@ -285,7 +285,7 @@ int PostEffectBufferShader::GetNumberOfSourceShaders(const PostEffectContextProx
 		for (const ShaderPropertyValue& value : *readMap)
 		{
 			if (value.GetType() == EPropertyType::SHADER_USER_OBJECT
-				&& value.shaderUserObject)
+				&& value.GetShaderUserObject<EffectShaderUserObject>())
 			{
 				++count;
 			}
@@ -303,7 +303,7 @@ bool PostEffectBufferShader::HasAnySourceShaders(const PostEffectContextProxy* e
 		for (const ShaderPropertyValue& value : *readMap)
 		{
 			if (value.GetType() == EPropertyType::SHADER_USER_OBJECT
-				&& value.shaderUserObject)
+				&& value.GetShaderUserObject<EffectShaderUserObject>())
 			{
 				return true;
 			}
@@ -321,7 +321,7 @@ bool PostEffectBufferShader::HasAnySourceTextures(const PostEffectContextProxy* 
 		for (const ShaderPropertyValue& value : *readMap)
 		{
 			if (value.GetType() == EPropertyType::TEXTURE
-				&& value.texture)
+				&& value.GetTexture<FBTexture>())
 			{
 				return true;
 			}
@@ -341,7 +341,7 @@ const PostEffectBufferShader::SourceShadersMapConst PostEffectBufferShader::GetS
 		for (const ShaderPropertyValue& value : *readMap)
 		{
 			if (value.GetType() == EPropertyType::SHADER_USER_OBJECT
-				&& value.shaderUserObject)
+				&& value.GetShaderUserObject<EffectShaderUserObject>())
 			{
 				sourceShaders.emplace_back(&value);
 			}
@@ -361,7 +361,7 @@ PostEffectBufferShader::SourceShadersMap PostEffectBufferShader::GetSourceShader
 		for (ShaderPropertyValue& value : *readMap)
 		{
 			if (value.GetType() == EPropertyType::SHADER_USER_OBJECT
-				&& value.shaderUserObject)
+				&& value.GetShaderUserObject<EffectShaderUserObject>())
 			{
 				sourceShaders.emplace_back(&value);
 			}
@@ -381,7 +381,7 @@ PostEffectBufferShader::SourceTexturesMap PostEffectBufferShader::GetSourceTextu
 		for (ShaderPropertyValue& value : *readMap)
 		{
 			if (value.GetType() == EPropertyType::TEXTURE
-				&& value.texture)
+				&& value.GetTexture<FBTexture>())
 			{
 				sourceTextures.emplace_back(&value);
 			}
@@ -438,7 +438,7 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 	// bind sampler from a media resource texture
 	for (ShaderPropertyValue* propValue : sourceTextures)
 	{
-		FBTexture* texture = propValue->texture;
+		FBTexture* texture = propValue->GetTexture<FBTexture>();
 		if (!texture)
 			continue;
 
@@ -474,7 +474,7 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 
 	for (ShaderPropertyValue* propValue : sourceShaders)
 	{
-		EffectShaderUserObject* userObject = propValue->shaderUserObject;
+		EffectShaderUserObject* userObject = propValue->GetShaderUserObject<EffectShaderUserObject>();
 		PostEffectBufferShader* bufferShader = userObject->GetUserShaderPtr();
 		if (!bufferShader)
 			continue;

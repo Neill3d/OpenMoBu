@@ -9,9 +9,6 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 */
 
-//--- SDK include
-#include <fbsdk/fbsdk.h>
-
 #include <GL/glew.h>
 
 #include <array>
@@ -20,21 +17,14 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <variant>
 #include <vector>
 
-// DLL export macro for Windows
-#ifndef MANAGER_POSTPROCESSING_API
-# if defined(_WIN32) || defined(_WIN64)
-#  if defined(manager_PostProcessing_EXPORTS)
-#   define MANAGER_POSTPROCESSING_API __declspec(dllexport)
-#  else
-#   define MANAGER_POSTPROCESSING_API __declspec(dllimport)
-#  endif
-# else
-#  define MANAGER_POSTPROCESSING_API
-# endif
-#endif
+#include "Logger.h"
 
-// forward
-class EffectShaderUserObject;
+// shader_property_core is a static library — dllexport/dllimport do not apply.
+// Define an empty macro so the struct declaration compiles cleanly in all
+// three contexts: the static lib, the plugin DLL, and the test executable.
+#ifndef SHADER_PROPERTY_CORE_API
+#define SHADER_PROPERTY_CORE_API
+#endif
 
 constexpr size_t PROPERTY_BITSET_SIZE = 8;
 
@@ -55,8 +45,7 @@ enum class EPropertyType : uint8_t
 enum class PropertyFlag : uint8_t
 {
 	SYSTEM = 1,	// flag that the property is a system one, like masking, upper/lower clip, etc.
-	IsClamped100 = 1,
-	IsClamped1 = 2,
+	IsClamped100 = 2,
 	IsFlag = 3, // when bool UI value is converted into float [0; 1] uniform
 	IsColor = 4,
 	ConvertWorldToScreenSpace = 5, // this is when world space vector3 is converted into screen space vector2 uniform
@@ -66,7 +55,7 @@ enum class PropertyFlag : uint8_t
 
 
 // a generic value holder for different property types
-struct MANAGER_POSTPROCESSING_API ShaderPropertyValue
+struct SHADER_PROPERTY_CORE_API ShaderPropertyValue
 {
 	ShaderPropertyValue() = default;
 
@@ -124,27 +113,61 @@ struct MANAGER_POSTPROCESSING_API ShaderPropertyValue
 	inline void SetInvertValue(bool doInvertValueIn) { doInvertValue = doInvertValueIn; }
 	inline bool IsInvertValue() const { return doInvertValue; }
 
+	template<typename T>
+	inline T* GetTexture() const {
+		if (type == EPropertyType::TEXTURE)
+			return static_cast<T*>(objectValue);
+		LOGE("Trying to get texture value from a property of type %d\n", static_cast<int>(type));
+		return nullptr;
+	}
+
+	template<typename T>
+	inline T* GetShaderUserObject() const {
+		if (type == EPropertyType::SHADER_USER_OBJECT)
+			return static_cast<T*>(objectValue);
+		LOGE("Trying to get shader user object value from a property of type %d\n", static_cast<int>(type));
+		return nullptr;
+	}
+
+	template<typename T>
+	inline void SetTexture(T* textureIn) {
+		if (type == EPropertyType::TEXTURE)
+			objectValue = textureIn;
+		else
+			LOGE("Trying to set texture value to a property of type %d\n", static_cast<int>(type));
+	}
+
+	template<typename T>
+	inline void SetShaderUserObject(T* shaderUserObjectIn) {
+		if (type == EPropertyType::SHADER_USER_OBJECT)
+			objectValue = shaderUserObjectIn;
+		else
+			LOGE("Trying to set shader user object value to a property of type %d\n", static_cast<int>(type));
+	}
+
+private:
 	// extracted value from reference object property
-	union
-	{
-		FBTexture* texture{ nullptr };
-		EffectShaderUserObject* shaderUserObject;
-	};
+	//union
+	//{
+	//	FBTexture* texture{ nullptr };
+	//	EffectShaderUserObject* shaderUserObject;
+	//};
+
+	void* objectValue{ nullptr };
 
 private:
 
 	// Type-safe dynamic storage for float values
-	std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value;
+	std::variant<std::array<float, 1>, std::array<float, 2>, std::array<float, 3>, std::array<float, 4>, std::vector<float>> value{ std::array<float,1>{ 0.0f } };
 
 	uint32_t	key = 0; //!< unique key to identify property
+
+	GLint location{ -1 }; //!< GLSL shader location holder
+	float scale{ 1.0f };
 
 	EPropertyType type{ EPropertyType::FLOAT };
 
 	bool bIsLocationRequired{ true }; //!< should we treat missing location as an error or not
-	GLshort location{ -1 }; //!< GLSL shader location holder
-
-	float scale{ 1.0f };
-
 	bool doInvertValue{ false };
 
 };

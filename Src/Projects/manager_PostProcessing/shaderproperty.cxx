@@ -311,7 +311,7 @@ void ShaderProperty::ReadTextureConnections(ShaderPropertyValue& value, FBProper
 				FBTexture* textureObj = FBCast<FBTexture>(firstObject);
 
 				value.SetType(EPropertyType::TEXTURE);
-				value.texture = textureObj;
+				value.SetTexture(textureObj);
 				isFound = true;
 			}
 			else if (FBIS(firstObject, EffectShaderUserObject))
@@ -319,7 +319,7 @@ void ShaderProperty::ReadTextureConnections(ShaderPropertyValue& value, FBProper
 				EffectShaderUserObject* shaderObject = FBCast<EffectShaderUserObject>(firstObject);
 
 				value.SetType(EPropertyType::SHADER_USER_OBJECT);
-				value.shaderUserObject = shaderObject;
+				value.SetShaderUserObject(shaderObject);
 				isFound = true;
 			}
 		}
@@ -328,9 +328,8 @@ void ShaderProperty::ReadTextureConnections(ShaderPropertyValue& value, FBProper
 	if (!isFound)
 	{
 		// not assigned object, which could be just a procedural applied current source buffer's texture
-		value.texture = nullptr;
-		value.shaderUserObject = nullptr;
 		value.SetType(EPropertyType::TEXTURE);
+		value.SetTexture<FBTexture*>(nullptr);
 	}
 }
 

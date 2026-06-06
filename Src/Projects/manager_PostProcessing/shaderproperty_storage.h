@@ -65,7 +65,7 @@ public:
 		return iter != cend(valuesMap);
 	}
 
-    const PropertyValueMap* GetReadPropertyMap(uint32_t effectHash) const
+    [[nodiscard]] const PropertyValueMap* GetReadPropertyMap(uint32_t effectHash) const
     {
         VERIFY(effectHash != 0);
         const int readIndex = mReadIndex.load(std::memory_order_relaxed);
@@ -73,13 +73,13 @@ public:
         return (it != end(mBuffers[readIndex])) ? &it->second : nullptr;
     }
 
-    EffectMap& GetReadEffectMap()
+    [[nodiscard]] EffectMap& GetReadEffectMap()
     {
         const int readIndex = mReadIndex.load(std::memory_order_relaxed);
         return mBuffers[readIndex];
     }
 
-    PropertyValueMap* GetReadPropertyMap(uint32_t effectHash)
+    [[nodiscard]] PropertyValueMap* GetReadPropertyMap(uint32_t effectHash)
     {
         VERIFY(effectHash != 0);
         const int readIndex = mReadIndex.load(std::memory_order_relaxed);
@@ -87,8 +87,7 @@ public:
         return (it != end(mBuffers[readIndex])) ? &it->second : nullptr;
     }
     
-    ShaderPropertyValue& GetWriteValue(
-        uint32_t effectHash, const ShaderPropertyValue& defaultPropertyValue)
+    [[nodiscard]] ShaderPropertyValue& GetWriteValue(uint32_t effectHash, const ShaderPropertyValue& defaultPropertyValue)
     {
         VERIFY(effectHash != 0);
         auto& writeMap = GetWritePropertyMap(effectHash);
@@ -103,11 +102,12 @@ public:
      */
     void CommitWrite(uint64_t timestamp)
     {
-        int writeIndex = 1 - mReadIndex.load(std::memory_order_relaxed);
-        mTimestamps[writeIndex] = timestamp;
+        const int newReadIndex = 1 - mReadIndex.load(std::memory_order_relaxed);
+        mTimestamps[newReadIndex] = timestamp;
+        mReadIndex.store(newReadIndex, std::memory_order_release);
 
-        // Atomic swap
-        mReadIndex.store(writeIndex, std::memory_order_release);
+        const int newWriteIndex = 1 - newReadIndex;
+        mBuffers[newWriteIndex].clear();
     }
 
     void Clear()

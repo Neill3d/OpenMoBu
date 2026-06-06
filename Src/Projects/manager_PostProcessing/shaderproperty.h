@@ -9,6 +9,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 */
 
+//--- SDK include
+#include <fbsdk/fbsdk.h>
+
 #include <GL/glew.h>
 #include "shaderproperty_value.h"
 #include <array>
