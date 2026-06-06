@@ -324,20 +324,18 @@ void PostProcessContextData::PrepareEachPaneContext()
 
         if (!mFXContexts[i] || pane.isCameraChanged)
         {
-            mFXContexts[i] = std::make_unique<PostEffectContextMoBu>(
-                pane.camera,
-                nullptr,
-                pane.data,
-                nullptr,
-                &standardEffectsCollection,
-                emptyParameters);
+            // Don't destroy old context here - eval thread may still be using it.
+            // Stage the new context; Synchronize will commit it when eval is stopped.
+            mPendingFXContexts[i] = std::make_unique<PostEffectContextMoBu>(
+                pane.camera, nullptr, pane.data, nullptr,
+                &standardEffectsCollection, emptyParameters);
+            pane.fxContext = mPendingFXContexts[i].get();
         }
         else
         {
             mFXContexts[i]->SetPostProcessData(pane.data);
+            pane.fxContext = mFXContexts[i].get();
         }
-
-        pane.fxContext = mFXContexts[i].get();
     }
 }
 
@@ -398,6 +396,13 @@ void PostProcessContextData::Synchronize()
     ENSURE(enterId == 0);
     mFrameGate.Reset();
 
+    // Both pipelines are stopped here — safe to destroy old contexts
+    for (int i = 0; i < MAX_PANE_COUNT; ++i)
+    {
+        if (mPendingFXContexts[i])
+            mFXContexts[i] = std::move(mPendingFXContexts[i]);
+    }
+
     if (IsNeedToResetPaneSettings())
     {
         // reset all pane settings
@@ -415,7 +420,7 @@ void PostProcessContextData::Synchronize()
     {
         SPaneData& evalPane = mEvaluatePanes[nPane];
         SPaneData& renderPane = mRenderPanes[nPane];
-        evalPane.CopyFrom(renderPane);
+        evalPane = renderPane;
 
         if (!renderPane.hasPostProcess)
         {
@@ -805,6 +810,7 @@ void PostProcessContextData::ResetPaneSettings()
         mEvaluatePanes[i].Clear();
         mRenderPanes[i].Clear();
 		mFXContexts[i].reset(nullptr);
+        mPendingFXContexts[i].reset(nullptr);
     }
 }
 
@@ -1091,9 +1097,11 @@ void PostProcessContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
     // get number of characters
 
     FBString content(pRect->Content);
+	const char* contextStr = content;
     FBString refString("");
 
-    char buffer[64] = { 0 };
+	constexpr int32_t maxBufferSize = 64;
+    char buffer[maxBufferSize] = { 0 };
     FBProperty *pRefProperty = nullptr;
 
     for (int nprop = 0; nprop < pRect->PropertyList.GetCount(); ++nprop)
@@ -1119,7 +1127,7 @@ void PostProcessContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
 
     if (nullptr == pRefProperty)
     {
-        sprintf_s(buffer, sizeof(char) * 64, content);
+        snprintf(buffer, maxBufferSize, "%s", contextStr);
     }
     else
     {
@@ -1130,26 +1138,26 @@ void PostProcessContextData::DrawHUDText(FBHUDTextElement *pRect, CFont *pFont, 
             pRefProperty->GetData(&time, sizeof(FBTime));
             refString = time.GetTimeString(kFBTimeModeDefault, FBTime::eSMPTE);
 
-            sprintf_s(buffer, sizeof(char) * 64, content, refString);
+            snprintf(buffer, maxBufferSize, contextStr, refString);
         }
         else if (kFBPT_double == pRefProperty->GetPropertyType())
         {
             double value = 0.0;
             pRefProperty->GetData(&value, sizeof(double));
 
-            sprintf_s(buffer, sizeof(char) * 64, content, value);
+            snprintf(buffer, maxBufferSize, contextStr, value);
         }
         else if (kFBPT_int == pRefProperty->GetPropertyType())
         {
             int value = 0.0;
             pRefProperty->GetData(&value, sizeof(int));
 
-            sprintf_s(buffer, sizeof(char) * 64, content, value);
+            snprintf(buffer, maxBufferSize, contextStr, value);
         }
         else
         {
             refString = pRefProperty->AsString();
-            sprintf_s(buffer, sizeof(char) * 64, content, refString);
+            snprintf(buffer, maxBufferSize, contextStr, refString);
         }
 
     }

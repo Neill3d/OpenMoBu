@@ -27,7 +27,7 @@ PostEffectContextMoBu::PostEffectContextMoBu(FBCamera* cameraIn,
 		, standardEffects(effectCollectionIn)
 		, effectChain(postProcessDataIn)
 {
-	UpdateContextParameters(mCache[0], cameraIn, parametersIn);
+	UpdateContextParameters(mCache[0], cameraIn, pEvaluateInfoIn, parametersIn);
 	mCache[1] = mCache[0];
 }
 
@@ -48,8 +48,7 @@ PostEffectContextProxy::Cache& PostEffectContextMoBu::GetWriteCache()
 }
 void PostEffectContextMoBu::SwapCacheIndices()
 {
-	const uint32_t writeIndex = 1 - mReadIndex.load(std::memory_order_acquire);
-	mReadIndex.store(writeIndex, std::memory_order_release);
+	mReadIndex.fetch_xor(1, std::memory_order_acq_rel);
 }
 
 PostPersistentData* PostEffectContextMoBu::GetPostProcessData() const
@@ -73,11 +72,11 @@ ShaderPropertyStorage* PostEffectContextMoBu::GetShaderPropertyStorage()
 	return &shaderPropertyStorage; 
 }
 
-void PostEffectContextMoBu::UpdateContextParameters(PostEffectContextProxy::Cache& cacheOut, FBCamera* cameraIn, const PostEffectContextProxy::Parameters& parametersIn)
+void PostEffectContextMoBu::UpdateContextParameters(PostEffectContextProxy::Cache& cacheOut, FBCamera* cameraIn, FBEvaluateInfo* pEvaluateInfoIn, const PostEffectContextProxy::Parameters& parametersIn)
 {
 	cacheOut.camera = cameraIn;
 	cacheOut.parameters = parametersIn;
-	PrepareCache(cacheOut, cameraIn);
+	PrepareCache(cacheOut, cameraIn, pEvaluateInfoIn);
 }
 
 void PostEffectContextMoBu::Evaluate(
@@ -85,8 +84,8 @@ void PostEffectContextMoBu::Evaluate(
 	FBCamera* cameraIn, 
 	const PostEffectContextProxy::Parameters& parametersIn)
 {
-	UpdateContextParameters(GetWriteCache(), cameraIn, parametersIn);
-
+	UpdateContextParameters(GetWriteCache(), cameraIn, pEvaluateInfoIn, parametersIn);
+	
 	PostEffectContextProxy proxy(
 		cameraIn,
 		pEvaluateInfoIn,
@@ -197,7 +196,7 @@ bool PostEffectContextMoBu::Render(FBEvaluateInfo* pEvaluateInfoIn, PostEffectBu
 }
 
 
-void PostEffectContextMoBu::PrepareCache(PostEffectContextProxy::Cache& cacheOut, FBCamera* camera)
+void PostEffectContextMoBu::PrepareCache(PostEffectContextProxy::Cache& cacheOut, FBCamera* camera, FBEvaluateInfo* pEvaluateInfoIn)
 {
 	if (!camera)
 		return;
@@ -207,13 +206,13 @@ void PostEffectContextMoBu::PrepareCache(PostEffectContextProxy::Cache& cacheOut
 		
 	cacheOut.isCameraOrtho = (camera->Type == FBCameraType::kFBCameraTypeOrthogonal);
 
-	camera->GetVector(cacheOut.cameraPosition, kModelTranslation, true);
+	camera->GetVector(cacheOut.cameraPosition, kModelTranslation, true, pEvaluateInfoIn);
 	for (int i = 0; i < 3; ++i)
 		cacheOut.cameraPositionF[i] = static_cast<float>(cacheOut.cameraPosition[i]);
 
-	camera->GetCameraMatrix(cacheOut.modelView, FBCameraMatrixType::kFBModelView);
-	camera->GetCameraMatrix(cacheOut.projection, FBCameraMatrixType::kFBProjection);
-	camera->GetCameraMatrix(cacheOut.modelViewProj, FBCameraMatrixType::kFBModelViewProj);
+	camera->GetCameraMatrix(cacheOut.modelView, FBCameraMatrixType::kFBModelView, pEvaluateInfoIn);
+	camera->GetCameraMatrix(cacheOut.projection, FBCameraMatrixType::kFBProjection, pEvaluateInfoIn);
+	camera->GetCameraMatrix(cacheOut.modelViewProj, FBCameraMatrixType::kFBModelViewProj, pEvaluateInfoIn);
 	FBMatrixInverse(cacheOut.invModelViewProj, cacheOut.modelViewProj);
 	cacheOut.prevModelViewProj = cacheOut.parameters.prevModelViewProjMatrix;
 

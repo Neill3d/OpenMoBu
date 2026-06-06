@@ -79,6 +79,8 @@ public:
 	constexpr static int MAX_ATTACH_STACK = 10;
 	GLint			mAttachedFBO[MAX_ATTACH_STACK]{ 0 };
 
+	std::atomic<uint64_t> mSyncFrameStamp{ 0 };
+	uint64_t mRenderFrameStamp{ 0 };
 
 	//
 	MainFrameBuffer						mMainFrameBuffer;
@@ -111,22 +113,12 @@ public:
 			isCameraChanged = false;
 			hasPostProcess = false;
 		}
-
-		void CopyFrom(const SPaneData& other)
-		{
-			fxContext = other.fxContext;
-			data = other.data;
-			camera = other.camera;
-			paneIndex = other.paneIndex;
-			hasValidCamera = other.hasValidCamera;
-			isCameraChanged = other.isCameraChanged;
-			hasPostProcess = other.hasPostProcess;
-		}
 	};
 	
 	SPaneData	mEvaluatePanes[MAX_PANE_COUNT];	//!< choose a propriate settings according to a pane camera
 	SPaneData	mRenderPanes[MAX_PANE_COUNT];
 	std::array<std::unique_ptr<PostEffectContextMoBu>, MAX_PANE_COUNT> mFXContexts; //!< temporary contexts for each pane
+	std::array<std::unique_ptr<PostEffectContextMoBu>, MAX_PANE_COUNT> mPendingFXContexts;
 
 	// for each persistent data object we have a separate post fx context
 	//std::unordered_map<PostPersistentData*, std::unique_ptr<PostEffectContextMoBu>>	mPostFXContextsMap;

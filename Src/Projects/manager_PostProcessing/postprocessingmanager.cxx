@@ -11,6 +11,7 @@
 //--- Class declaration
 #include <Windows.h>
 #include <filesystem>
+#include <shared_mutex>
 #include "postprocessingmanager.h"
 #include "posteffect_contextmobu.h"
 #include "postprocessing_helper.h"
@@ -28,6 +29,7 @@ FBRegisterCustomManager(POSTPROCESSING_MANAGER__CLASS);         // Manager class
 
 // track the state of OpenGL viewport context
 std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	PostProcessingManager::gContextMap;
+static std::shared_mutex gContextMapMutex;
 
 PostProcessingManager *gManager = nullptr;
 
@@ -112,6 +114,7 @@ bool PostProcessingManager::FBCreate()
 void PostProcessingManager::FBDestroy()
 {
     // Free any user memory here.
+	gManager = nullptr;
 }
 
 
@@ -358,7 +361,7 @@ bool PostProcessingManager::Close()
 void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 {
 	// clear all pointers (start point)
-
+	std::unique_lock wlock(gContextMapMutex);
 	for (auto& contextPair : gContextMap)
 	{
 		PostProcessContextData& contextData = *contextPair.second; 
@@ -369,6 +372,7 @@ void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
 	skipRender = true;
+	std::unique_lock wlock(gContextMapMutex);
 	for (auto& contextPair : gContextMap)
 	{
 		PostProcessContextData& contextData = *contextPair.second;
@@ -389,6 +393,7 @@ void PostProcessingManager::EventFileMerge(HISender pSender, HKEvent pEvent)
 void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEvent)
 {
 	skipRender = false;
+	std::unique_lock wlock(gContextMapMutex);
 	for (auto& contextPair : gContextMap)
 	{
 		PostProcessContextData& contextData = *contextPair.second;
@@ -419,11 +424,9 @@ PostProcessContextData* PostProcessingManager::GetCurrentContextData()
 	if (!hContext)
 		return nullptr;
 
-	auto iter = gContextMap.find(hContext);
-	if (iter == end(gContextMap))
-		return nullptr;
-
-	return iter->second.get();
+	std::shared_lock lock(gContextMapMutex); // many readers allowed concurrently
+	auto it = gContextMap.find(hContext);
+	return it != gContextMap.end() ? it->second.get() : nullptr;
 }
 
 void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, HKEvent pEvent)
@@ -440,10 +443,11 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 		// plugin developer could add some lightweight scene modification tasks here
 		// and no need to worry complicated thread issues. 
 		//
-		if (PostProcessContextData* pContextData = GetCurrentContextData())
+		if (PostProcessContextData* pContextData =
+			mSyncContextData.load(std::memory_order_acquire))
 		{
 			pContextData->Synchronize();
-			mEvaluateContextData = pContextData;
+			mEvaluateContextData.store(pContextData, std::memory_order_release);
 		}
 	}
 }
@@ -458,13 +462,13 @@ void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSende
 	{
 		// TODO: this is not context based, we have to evaluate once
 		// and reuse in every context !
-		if (mEvaluateContextData)
+		if (PostProcessContextData* evalContext = mEvaluateContextData.load(std::memory_order_acquire))
 		{
 			FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
 			FBTime systemTime = evalInfo->GetSystemTime();
 			FBTime localTime = evalInfo->GetLocalTime();
 
-			mEvaluateContextData->Evaluate(systemTime, localTime, evalInfo);
+			evalContext->Evaluate(systemTime, localTime, evalInfo);
 		}
 	}
 }
@@ -480,20 +484,21 @@ void PostProcessingManager::CheckForAContextChange()
 	if (!hContext)
 		return;
 
+	// fast path: context already exists (the common case every frame)
+	{
+		std::shared_lock rlock(gContextMapMutex);
+		if (gContextMap.count(hContext))
+			return;
+	}
+
+	// slow path: new context, take exclusive lock and insert
+	std::unique_lock wlock(gContextMapMutex);
 	auto& entry = gContextMap.try_emplace(hContext, nullptr).first->second;
-	if (!entry)
+	if (!entry) // double-check after acquiring exclusive lock
 	{
 		entry = std::make_unique<PostProcessContextData>();
 		entry->Init();
 		LOGI("PostProcessing: created context data for HGLRC=%p\n", (void*)hContext);
-	}
-
-	// Track last context per thread
-	static thread_local HGLRC lastContext = nullptr;
-	if (hContext != lastContext)
-	{
-		lastContext = hContext;
-		LOGI("PostProcessing: context changed to HGLRC=%p\n", (void*)hContext);
 	}
 }
 
@@ -526,6 +531,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
+			mSyncContextData.store(pContextData, std::memory_order_release);
 			pContextData->RenderBeforeRender();
 			
 			if (mDoVideoClipTimewrap)

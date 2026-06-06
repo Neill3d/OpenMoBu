@@ -43,7 +43,7 @@ void PostEffectChain::ChangeContext()
 {
 	mIsCompressedDataReady = false;
 	mLastCompressTime = 0.0;
-
+	mDoubleBufferPingPongData = PingPongData{}; // reset to read=0, write=1
 	for (size_t i = 0; i < mRenderData.size(); ++i)
 	{
 		mRenderData[i].Reset();
@@ -54,10 +54,16 @@ bool PostEffectChain::IsReadyToRender() const
 {
 	bool lSuccess = true;
 
-	if (!mSettings.Ok() || !mLastCamera)
+	if (!mSettings.Ok())
 		return false;
 	
-	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
+	if (!mLastCamera)
+	{
+		LOGE("[PostEffectChain] IsReadyToRender: mLastCamera is null, frame skipped");
+		return false;
+	}
+	
+	const uint8_t activeIndex = mActiveDataIndex.load(std::memory_order_acquire);
 	const RenderData& data = mRenderData[activeIndex];
 
 	if (!data.isReady)
@@ -539,7 +545,7 @@ void PostEffectChain::Evaluate(PostEffectContextProxy* effectContextProxy)
 	mLastCamera = effectContextProxy->GetCamera();
 	constexpr std::uint8_t kBufferCount = 2;
 
-	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
+	const uint8_t activeIndex = mActiveDataIndex.load(std::memory_order_acquire);
 	const uint8_t writeIndex = (activeIndex + 1) % kBufferCount;
 
 	RenderData& data = mRenderData[writeIndex];
@@ -559,7 +565,7 @@ void PostEffectChain::Evaluate(PostEffectContextProxy* effectContextProxy)
 	}
 
 	data.isReady = true;
-	data.isMaskTextureBinded = false;
+	data.isMaskTextureBound = false;
 	data.isMaskBlurRequested = false;
 	data.isMaskMixRequested = false;
 
@@ -588,34 +594,34 @@ void PostEffectChain::Evaluate(PostEffectContextProxy* effectContextProxy)
 				}
 
 				data.maskRenderFlags[i] = true;
-				data.isMaskTextureBinded = true;
+				data.isMaskTextureBound = true;
 			}
 		}
 	}
 
-	data.isDepthSamplerBinded = false;
-	data.isLinearDepthSamplerBinded = false;
-	data.isWorldNormalSamplerBinded = false;
+	data.isDepthSamplerBound = false;
+	data.isLinearDepthSamplerBound = false;
+	data.isWorldNormalSamplerBound = false;
 
 	for (const auto* effect : effectChain)
 	{
 		if (!effect || !effect->IsActive())
 			continue;
 
-		data.isDepthSamplerBinded |= effect->IsDepthSamplerUsed();
-		data.isLinearDepthSamplerBinded |= effect->IsLinearDepthSamplerUsed();
-		data.isWorldNormalSamplerBinded |= effect->IsWorldNormalSamplerUsed();
+		data.isDepthSamplerBound |= effect->IsDepthSamplerUsed();
+		data.isLinearDepthSamplerBound |= effect->IsLinearDepthSamplerUsed();
+		data.isWorldNormalSamplerBound |= effect->IsWorldNormalSamplerUsed();
 
-		if (data.isDepthSamplerBinded &&
-			data.isLinearDepthSamplerBinded &&
-			data.isWorldNormalSamplerBinded)
+		if (data.isDepthSamplerBound &&
+			data.isLinearDepthSamplerBound &&
+			data.isWorldNormalSamplerBound)
 		{
 			break; // nothing more to gain
 		}
 	}
 
 	EffectShaderPropertyProcessor propertyProcessor;
-	if (data.isLinearDepthSamplerBinded)
+	if (data.isLinearDepthSamplerBound)
 	{
 		const PostEffectShaderLinearDepth* shaderLinearDepth = effectContextProxy->GetEffectCollection()->GetShaderLinearDepth();
 		propertyProcessor.CollectUIValues(effectContextProxy->GetPostProcessData(), effectContextProxy, shaderLinearDepth, shaderLinearDepth->GetMaskIndex());
@@ -638,7 +644,7 @@ void PostEffectChain::Synchronize()
 {
 	// swap
 	// uint8_t oldIndex =
-	gActiveData.fetch_xor(1, std::memory_order_acq_rel);
+	mActiveDataIndex.fetch_xor(1, std::memory_order_acq_rel);
 }
 
 bool PostEffectChain::Render(
@@ -646,7 +652,7 @@ bool PostEffectChain::Render(
 	double systime, 
 	PostEffectContextProxy* effectContextProxy)
 {
-	const uint8_t activeIndex = gActiveData.load(std::memory_order_acquire);
+	const uint8_t activeIndex = mActiveDataIndex.load(std::memory_order_acquire);
 	RenderData& data = mRenderData[activeIndex];
 
 	if (!data.isReady)
@@ -655,7 +661,7 @@ bool PostEffectChain::Render(
 	//
 	// Start PostEffectChain task cycle profiling, 
 	//
-	FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostEffectChain), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
+	FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostEffectChain), effectContextProxy->GetEvaluateInfo(), FBGetRenderingTaskCycle());
 
 	mIsCompressedDataReady = false;
 
@@ -725,7 +731,7 @@ bool PostEffectChain::Render(
 
 	// 5. bind textures of mask and depth for effects
 
-	if (data.isMaskTextureBinded)
+	if (data.isMaskTextureBound)
 	{
 		const GLuint maskTextureId = maskRequest->GetColorObject(globalMaskingIndex);
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
@@ -733,7 +739,7 @@ bool PostEffectChain::Render(
 		glActiveTexture(GL_TEXTURE0);
 	}
 
-	if (data.isDepthSamplerBinded)
+	if (data.isDepthSamplerBound)
 	{
 		const GLuint depthId = doubleBufferRequest->GetPtr()->GetDepthObject();
 
@@ -744,7 +750,7 @@ bool PostEffectChain::Render(
 
 	// 6. in case of SSAO active, render a linear depth texture
 
-	if (data.isLinearDepthSamplerBinded)
+	if (data.isLinearDepthSamplerBound)
 	{
 		auto* doubleBuffer = doubleBufferRequest->GetPtr();
 		auto* depthEffect = effectCollection->mEffectDepthLinearize.get();
@@ -759,7 +765,7 @@ bool PostEffectChain::Render(
 		}
 	}
 
-	if (data.isWorldNormalSamplerBinded)
+	if (data.isWorldNormalSamplerBound)
 	{
 		RenderWorldNormals(buffers);
 	}
@@ -847,22 +853,22 @@ bool PostEffectChain::Render(
 
 	// unbind additional texture slots (from depth, masks)
 
-	if (data.isDepthSamplerBinded)
+	if (data.isDepthSamplerBound)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::DepthSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	if (data.isLinearDepthSamplerBinded)
+	if (data.isLinearDepthSamplerBound)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::LinearDepthSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	if (data.isWorldNormalSamplerBinded)
+	if (data.isWorldNormalSamplerBound)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::WorldNormalSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	if (data.isMaskTextureBinded)
+	if (data.isMaskTextureBound)
 	{
 		glActiveTexture(GL_TEXTURE0 + CommonEffect::MaskSamplerSlot);
 		glBindTexture(GL_TEXTURE_2D, 0);

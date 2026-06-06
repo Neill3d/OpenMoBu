@@ -98,7 +98,7 @@ private:
 	void SwapCacheIndices();
 
 	// update parameters for write cache
-	void UpdateContextParameters(PostEffectContextProxy::Cache& cacheOut, FBCamera* cameraIn, const PostEffectContextProxy::Parameters& parametersIn);
+	void UpdateContextParameters(PostEffectContextProxy::Cache& cacheOut, FBCamera* cameraIn, FBEvaluateInfo* pEvaluateInfoIn, const PostEffectContextProxy::Parameters& parametersIn);
 
-	void PrepareCache(PostEffectContextProxy::Cache& cacheOut, FBCamera* camera);
+	void PrepareCache(PostEffectContextProxy::Cache& cacheOut, FBCamera* camera, FBEvaluateInfo* pEvaluateInfoIn);
 };

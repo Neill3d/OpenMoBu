@@ -91,7 +91,7 @@ public:
 		bool isSkipFrame{ false }; //!< in case of system camera or schematic view for the given pane
 	};
 
-	struct alignas(16) Cache
+	struct Cache
 	{
 		// playback and viewport parameters
 		Parameters parameters;
@@ -190,15 +190,8 @@ public:
 
 	ShaderPropertyStorage::PropertyValueMap* GetEffectPropertyValueMap(uint32_t effectHash)
 	{
-		if (effectPropertyMap)
-		{
-			auto it = effectPropertyMap->find(effectHash);
-			if (it != effectPropertyMap->end())
-			{
-				return &it->second;
-			}
-		}
-		return nullptr;
+		return const_cast<ShaderPropertyStorage::PropertyValueMap*>(
+			std::as_const(*this).GetEffectPropertyValueMap(effectHash));
 	}
 
 	const ShaderPropertyStorage::PropertyValueMap* GetEffectPropertyValueMap(uint32_t effectHash) const

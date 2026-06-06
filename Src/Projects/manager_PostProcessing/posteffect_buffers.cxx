@@ -12,6 +12,24 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffect_buffers.h"
 #include "hashUtils.h"
 
+namespace _internal
+{
+	static unsigned int nearestPowerOf2(unsigned int value)
+	{
+		unsigned int v = value; // compute the next highest power of 2 of 32-bit v
+
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		v++;
+
+		return v;
+	}
+};
+
 ////////////////////////////////////////////////////////////////////////////////////
 // post effect buffers
 
@@ -52,21 +70,6 @@ void PostEffectBuffers::ChangeContext()
 	FreeTextures();
 
 	OnContextChanged();
-}
-
-unsigned int nearestPowerOf2(unsigned int value)
-{
-	unsigned int v = value; // compute the next highest power of 2 of 32-bit v
-
-	v--;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	v++;
-
-	return v;
 }
 
 int PostEffectBuffers::GetFlagsForMainColorBuffer()
@@ -484,7 +487,6 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 			it->second.framebuffer = std::move(framebuffer);
 			it->second.width = width;
 			it->second.height = height;
-			it->second.framebuffer->ReSize(width, height);
 			it->second.isAutoResize = isAutoResize;
 		}
 	}
@@ -498,7 +500,7 @@ FrameBuffer* PostEffectBuffers::RequestFramebuffer(
 	return it->second.framebuffer.get();
 }
 
-void PostEffectBuffers::ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmidiately)
+void PostEffectBuffers::ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmediately)
 {
 	auto it = framebufferPool.find(nameKey);
 	if (it != end(framebufferPool))
@@ -507,7 +509,7 @@ void PostEffectBuffers::ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmidi
 		it->second.RemoveReference();
 
 		// if not forced, then delay for n-frame with removal, lazy erase
-		if (doRemoveImmidiately && it->second.GetReferenceCount() == 0) 
+		if (doRemoveImmediately && it->second.GetReferenceCount() == 0)
 		{
 			framebufferPool.erase(it);
 		}

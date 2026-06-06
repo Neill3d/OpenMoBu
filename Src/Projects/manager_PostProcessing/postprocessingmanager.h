@@ -73,17 +73,7 @@ public: // CALLBACKS
 	void OnUIIdle(HISender pSender, HKEvent pEvent);
 	
 	void OnVideoFrameRendering(HISender pSender, HKEvent pEvent);
-	/*
-	const PostEffectChain* GetCurrentEffectChain() const 
-	{ 
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter != end(gContextMap))
-		{
-			return &gContextMap[gCurrentContext]->GetEffectChain();
-		}
-		return nullptr;
-	}
-	*/
+	
 private:
 
 	bool				mFirstRun{ true };
@@ -94,7 +84,8 @@ private:
 	bool		mDoVideoClipTimewrap{ false };
 
 	//
-	PostProcessContextData* mEvaluateContextData{ nullptr };
+	std::atomic<PostProcessContextData*> mSyncContextData{ nullptr };
+	std::atomic<PostProcessContextData*> mEvaluateContextData{ nullptr };
 	static std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	gContextMap;
 
 	RenderFrameGate mFrameGate;
@@ -134,7 +125,7 @@ private:
 
 public:
 	
-	bool skipRender{ false };
+	std::atomic<bool> skipRender{ false };
 
 	bool ExternalRenderAfterRender();
 

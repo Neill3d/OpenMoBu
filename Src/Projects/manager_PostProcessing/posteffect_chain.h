@@ -75,7 +75,7 @@ public:
 protected:
 
 	HdlFBPlugTemplate<PostPersistentData>	mSettings;
-	FBCamera* mLastCamera{ nullptr };
+	std::atomic<FBCamera*> mLastCamera{ nullptr };
 
 	// shaders to evaluate
 	struct RenderData
@@ -85,15 +85,15 @@ protected:
 		
 		bool isReady = false;
 
-		bool isMaskTextureBinded = false;
+		bool isMaskTextureBound = false;
 		bool isMaskBlurRequested = false;
 		bool isMaskMixRequested = false;
 
 		bool maskRenderFlags[PostPersistentData::NUMBER_OF_MASKS] = { false, false, false, false };
 
-		bool isDepthSamplerBinded = false;
-		bool isLinearDepthSamplerBinded = false;
-		bool isWorldNormalSamplerBinded = false;
+		bool isDepthSamplerBound = false;
+		bool isLinearDepthSamplerBound = false;
+		bool isWorldNormalSamplerBound = false;
 
 		void Reset()
 		{
@@ -105,7 +105,7 @@ protected:
 	std::array<RenderData, 2> mRenderData; // thread-safe double buffered from evaluation thread
 
 	// 0 or 1, which buffer is currently “active”
-	std::atomic<uint8_t>					gActiveData{ 0 };
+	std::atomic<uint8_t>					mActiveDataIndex{ 0 };
 
 	
 	bool							mIsCompressedDataReady{ false };
