@@ -6,7 +6,6 @@ lRefName = 'test'
 lSystem = FBSystem()
 lScene = lSystem.Scene
 
-
 if len(lRefName) > 0:
     
     for ns in lScene.Namespaces:

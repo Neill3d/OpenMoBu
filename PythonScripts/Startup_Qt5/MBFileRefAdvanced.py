@@ -13,8 +13,13 @@
 
 from pyfbsdk import *
 from pyfbsdk_additions import *
-from PySide2 import QtWidgets, shiboken2
-import sys, inspect, os
+try:
+    from PySide2 import QtWidgets
+    import shiboken2 as shiboken
+except ImportError:
+    from PySide6 import QtWidgets
+    import shiboken6 as shiboken
+import sys, inspect, os, importlib
 
 # Add temp sys.path
 lCurFilePath = inspect.currentframe().f_code.co_filename
@@ -27,12 +32,12 @@ import FbxShadersGraphBake
 import FbxShadersGraphMisc
 import NamespaceTableModel
 
-reload(ReferencingSample)
-reload(ReferencingSampleUI2)
-reload(FbxShadersGraphImport)
-reload(FbxShadersGraphBake)
-reload(FbxShadersGraphMisc)
-reload(NamespaceTableModel)
+importlib.reload(ReferencingSample)
+importlib.reload(ReferencingSampleUI2)
+importlib.reload(FbxShadersGraphImport)
+importlib.reload(FbxShadersGraphBake)
+importlib.reload(FbxShadersGraphMisc)
+importlib.reload(NamespaceTableModel)
 
 #
 # Subclass FBWidgetHolder and override its WidgetCreate function
@@ -56,20 +61,19 @@ class NativeWidgetHolder(FBWidgetHolder):
         #
         # Only a single widget is allowed to be the *direct* child of the IN parent widget. 
         #
-        self.mNativeQtWidget = ReferencingSample.MainForm(shiboken2.wrapInstance(pWidgetParent, QtWidgets.QWidget))
+        self.mNativeQtWidget = ReferencingSample.MainForm(shiboken.wrapInstance(pWidgetParent, QtWidgets.QWidget))
        
         #
         # return the memory address of the *single direct* child QWidget. 
         #
-        return shiboken2.getCppPointer(self.mNativeQtWidget)[0]
+        return shiboken.getCppPointer(self.mNativeQtWidget)[0]
     
     def ShowEvent(self, shown):
-
-    	if self.mNativeQtWidget != None:
-	        if True == shown:
-	            self.mNativeQtWidget.OnShow()
-	        else:
-	            self.mNativeQtWidget.OnHide()
+        if self.mNativeQtWidget != None:
+            if True == shown:
+                self.mNativeQtWidget.OnShow()
+            else:
+                self.mNativeQtWidget.OnHide()
     
 class FileReferenceTool(FBTool):
     def BuildLayout(self):

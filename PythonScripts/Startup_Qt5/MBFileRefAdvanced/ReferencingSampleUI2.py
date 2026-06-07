@@ -7,7 +7,10 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 
 class Ui_ReferencingSample(object):
     def setupUi(self, ReferencingSample):
@@ -200,33 +203,33 @@ class Ui_ReferencingSample(object):
         self.verticalLayout.addWidget(self.groupBox_2)
 
         self.retranslateUi(ReferencingSample)
-        QtCore.QObject.connect(self.uiBtnBrowsePath, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnBrowsePathClicked)
-        QtCore.QObject.connect(self.uiBtnLoad, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnLoadClicked)
-        QtCore.QObject.connect(self.uiBtnUnload, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnUnloadClicked)
-        QtCore.QObject.connect(self.uiBtnReload, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnReloadClicked)
-        QtCore.QObject.connect(self.uiBtnDelete, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnDeleteClicked)
-        QtCore.QObject.connect(self.uiBtnInstance, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnInstanceClicked)
-        QtCore.QObject.connect(self.uiBtnRestore, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnRestoreClicked)
-        QtCore.QObject.connect(self.uiBtnShowEdits, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnShowEditsClicked)
-        QtCore.QObject.connect(self.uiBtnShowShadersEdits, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnShowShaderEditsClicked)
-        QtCore.QObject.connect(self.uiBtnRestoreShaders, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnShaderRestoreClicked)
-        QtCore.QObject.connect(self.uiBtnBakeShaders, QtCore.SIGNAL("clicked()"), ReferencingSample.OnBtnShaderBakeClicked)
+        self.uiBtnBrowsePath.clicked.connect(ReferencingSample.OnBtnBrowsePathClicked)
+        self.uiBtnLoad.clicked.connect(ReferencingSample.OnBtnLoadClicked)
+        self.uiBtnUnload.clicked.connect(ReferencingSample.OnBtnUnloadClicked)
+        self.uiBtnReload.clicked.connect(ReferencingSample.OnBtnReloadClicked)
+        self.uiBtnDelete.clicked.connect(ReferencingSample.OnBtnDeleteClicked)
+        self.uiBtnInstance.clicked.connect(ReferencingSample.OnBtnInstanceClicked)
+        self.uiBtnRestore.clicked.connect(ReferencingSample.OnBtnRestoreClicked)
+        self.uiBtnShowEdits.clicked.connect(ReferencingSample.OnBtnShowEditsClicked)
+        self.uiBtnShowShadersEdits.clicked.connect(ReferencingSample.OnBtnShowShaderEditsClicked)
+        self.uiBtnRestoreShaders.clicked.connect(ReferencingSample.OnBtnShaderRestoreClicked)
+        self.uiBtnBakeShaders.clicked.connect(ReferencingSample.OnBtnShaderBakeClicked)
         QtCore.QMetaObject.connectSlotsByName(ReferencingSample)
 
     def retranslateUi(self, ReferencingSample):
-        ReferencingSample.setWindowTitle(QtWidgets.QApplication.translate("ReferencingSample", "Referencing Sample", None, -1))
-        self.groupBox.setTitle(QtWidgets.QApplication.translate("ReferencingSample", "Reference a File", None, -1))
-        self.uiBtnBrowsePath.setText(QtWidgets.QApplication.translate("ReferencingSample", "...", None, -1))
-        self.uiBtnLoad.setText(QtWidgets.QApplication.translate("ReferencingSample", "Load", None, -1))
-        self.groupBox_2.setTitle(QtWidgets.QApplication.translate("ReferencingSample", "Namespaces", None, -1))
-        self.uiTreeNamespace.headerItem().setText(0, QtWidgets.QApplication.translate("ReferencingSample", "Name", None, -1))
-        self.uiTreeNamespace.headerItem().setText(1, QtWidgets.QApplication.translate("ReferencingSample", "Type", None, -1))
-        self.uiBtnUnload.setText(QtWidgets.QApplication.translate("ReferencingSample", "Unload", None, -1))
-        self.uiBtnReload.setText(QtWidgets.QApplication.translate("ReferencingSample", "Reload", None, -1))
-        self.uiBtnDelete.setText(QtWidgets.QApplication.translate("ReferencingSample", "Delete", None, -1))
-        self.uiBtnInstance.setText(QtWidgets.QApplication.translate("ReferencingSample", "Instance", None, -1))
-        self.uiBtnRestore.setText(QtWidgets.QApplication.translate("ReferencingSample", "Restore to load state", None, -1))
-        self.uiBtnRestoreShaders.setText(QtWidgets.QApplication.translate("ReferencingSample", "Restore a Shader Graph", None, -1))
-        self.uiBtnBakeShaders.setText(QtWidgets.QApplication.translate("ReferencingSample", "Bake a Shader Graph", None, -1))
-        self.uiBtnShowEdits.setText(QtWidgets.QApplication.translate("ReferencingSample", "Show Edits in Popup", None, -1))
-        self.uiBtnShowShadersEdits.setText(QtWidgets.QApplication.translate("ReferencingSample", "Shader Edits in Popup", None, -1))
+        ReferencingSample.setWindowTitle(QtWidgets.QApplication.translate("ReferencingSample", "Referencing Sample"))
+        self.groupBox.setTitle(QtWidgets.QApplication.translate("ReferencingSample", "Reference a File"))
+        self.uiBtnBrowsePath.setText(QtWidgets.QApplication.translate("ReferencingSample", "..."))
+        self.uiBtnLoad.setText(QtWidgets.QApplication.translate("ReferencingSample", "Load"))
+        self.groupBox_2.setTitle(QtWidgets.QApplication.translate("ReferencingSample", "Namespaces"))
+        self.uiTreeNamespace.headerItem().setText(0, QtWidgets.QApplication.translate("ReferencingSample", "Name"))
+        self.uiTreeNamespace.headerItem().setText(1, QtWidgets.QApplication.translate("ReferencingSample", "Type"))
+        self.uiBtnUnload.setText(QtWidgets.QApplication.translate("ReferencingSample", "Unload"))
+        self.uiBtnReload.setText(QtWidgets.QApplication.translate("ReferencingSample", "Reload"))
+        self.uiBtnDelete.setText(QtWidgets.QApplication.translate("ReferencingSample", "Delete"))
+        self.uiBtnInstance.setText(QtWidgets.QApplication.translate("ReferencingSample", "Instance"))
+        self.uiBtnRestore.setText(QtWidgets.QApplication.translate("ReferencingSample", "Restore to load state"))
+        self.uiBtnRestoreShaders.setText(QtWidgets.QApplication.translate("ReferencingSample", "Restore a Shader Graph"))
+        self.uiBtnBakeShaders.setText(QtWidgets.QApplication.translate("ReferencingSample", "Bake a Shader Graph"))
+        self.uiBtnShowEdits.setText(QtWidgets.QApplication.translate("ReferencingSample", "Show Edits in Popup"))
+        self.uiBtnShowShadersEdits.setText(QtWidgets.QApplication.translate("ReferencingSample", "Shader Edits in Popup"))

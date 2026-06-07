@@ -1,4 +1,7 @@
-from PySide import QtCore, QtGui
+try:
+    from PySide2 import QtCore, QtGui
+except ImportError:
+    from PySide6 import QtCore, QtGui
 
 class node:
     def __init__( self, nodeData = '', parentNode = None ):
@@ -33,7 +36,7 @@ class node:
         return 1
 
     def row( self ):
-        if self.parentNode <> None:
+        if self.parentNode != None:
             return self.parentNode.indexOf( self )
         return -1
 
@@ -45,8 +48,8 @@ class node:
 
     def printNodes( self, level = 0 ):
         for index in range( 0, level ):
-            print ' ',
-        print self.nodeData
+            print(' ', end='')
+        print(self.nodeData)
         for childNode in self.childNodes:
             childNode.printNodes( level + 1 )
 
@@ -68,7 +71,7 @@ class NamespaceTreeModel( QtCore.QAbstractItemModel ):
         #print '::index(%d,%d,%s)' % ( rowNum, columnNum, parentNode.data() )
 
         lChildNode = parentNode.child( rowNum )
-        if lChildNode <> None:
+        if lChildNode != None:
             #print '(%d,%d,%s)' % ( rowNum, columnNum, lChildNode.data() )
             return self.createIndex( rowNum, columnNum, lChildNode )
         else:
@@ -110,7 +113,7 @@ class NamespaceTreeModel( QtCore.QAbstractItemModel ):
         if not index.isValid():
             return None
 
-        if role <> QtCore.Qt.DisplayRole:
+        if role != QtCore.Qt.DisplayRole:
             return None
 
         return index.internalPointer().data( index.column() )

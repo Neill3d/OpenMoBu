@@ -1,7 +1,10 @@
 from pyfbsdk import *
 from pyfbsdk_additions import *
 
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 import NamespaceUpgradeDialog
 import DialogSwapRefFile
 import os
@@ -62,10 +65,10 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
         self.mRefFileReload = {}
 
     def Connect( self ):
-        QtCore.QObject.connect(self.mWatcher, QtCore.SIGNAL("fileChanged(const QString&)"), self.OnFileChanged )
+        self.mWatcher.fileChanged.connect( self.OnFileChanged )
 
     def Disconnect( self ):
-        QtCore.QObject.disconnect( self.mWatcher, QtCore.SIGNAL("fileChanged(const QString&)"), self.OnFileChanged )
+        self.mWatcher.fileChanged.disconnect( self.OnFileChanged )
 
     def removeRows( self, pRow, pCount, pParentIndex = QtCore.QModelIndex() ):
         if pCount <= 0 or pRow < 0 or pRow + pCount > self.rowCount( pParentIndex ):
@@ -107,21 +110,37 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
         self.UpdateFileWatcher()
 
     def UpdateFileWatcher( self ):
-        self.mWatcher.removePaths( self.mWatcher.files() )
+        # Compute the desired set of watched paths
+        wanted = set( self.mRefFilePath.keys() )
 
-        if len( self.mRefFilePath.keys() ) == 0: return
+        # Remove paths we no longer want to watch
+        current = set( self.mWatcher.files() )
+        to_remove = current - wanted
+        if to_remove:
+            self.mWatcher.removePaths( list(to_remove) )
 
-        for lFilePath in self.mRefFilePath.keys():
-            self.mWatcher.addPath( lFilePath )
+        # Re-add only paths the watcher has dropped (e.g. after a file was replaced on
+        # disk, Windows stops sending notifications for it).  Do NOT remove-then-readd
+        # paths that are already being watched — that triggers spurious fileChanged
+        # signals on Windows when the file was recently accessed or reloaded.
+        still_watching = set( self.mWatcher.files() )
+        for lFilePath in wanted:
+            if lFilePath not in still_watching:
+                self.mWatcher.addPath( lFilePath )
 
     def OnFileChanged( self, pFile ):
         self.mRefFileReload[str(pFile)] = True
+        # On Windows, QFileSystemWatcher stops watching a file after it is deleted/
+        # replaced on disk.  Re-add it here so subsequent saves are detected too.
+        if str(pFile) in self.mRefFilePath:
+            self.mWatcher.addPath( str(pFile) )
     
     def Refresh( self, pIndex = QtCore.QModelIndex() ):
         if pIndex.isValid():
             self.dataChanged.emit( pIndex, pIndex )
         else:
-            self.reset()
+            self.beginResetModel()
+            self.endResetModel()
 
     def rowCount( self, pIndex = QtCore.QModelIndex() ):
         if not pIndex.isValid():
@@ -199,7 +218,7 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
                     return QtCore.Qt.Unchecked
 
     def headerData( self, pSection, pOrientation, pRole = QtCore.Qt.DisplayRole ):
-        if pRole <> QtCore.Qt.DisplayRole:
+        if pRole != QtCore.Qt.DisplayRole:
             return None
 
         if pOrientation == QtCore.Qt.Horizontal:
@@ -265,8 +284,8 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
                 if lFileToLoad == '':
                     lFileToLoad, strFilter = QtWidgets.QFileDialog.getOpenFileName( self.mParentDialog, "Pick FBX to reference", self.mParentDialog.mDefaultPath, "*.fbx" )
 
-                if lFileToLoad <> '':
-                    lQFileInfo = QtCore.QFileInfo( unicode(lFileToLoad) )
+                if lFileToLoad != '':
+                    lQFileInfo = QtCore.QFileInfo( str(lFileToLoad) )
                     
                     if not lQFileInfo.exists() or not lQFileInfo.suffix().lower() == 'fbx':
                         return False
@@ -283,7 +302,7 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
             '''
             if pIndex.column() == 1:
                 lNSObj = self.mSys.Scene.Namespaces[pIndex.row()]
-                print lNSObj
+                print(lNSObj)
                 if lNSObj.TypeInfo == FBFileReference.TypeInfo:
                     if pValue == QtCore.Qt.Unchecked:
                         lMsgBox = QtGui.QMessageBox( QtGui.QMessageBox.Question, 'Namespace Downgrading', 'File Reference will be downgraded. Do you want to proceed?', QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, self.mParentDialog )

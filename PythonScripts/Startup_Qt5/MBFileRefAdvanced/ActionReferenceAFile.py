@@ -1,7 +1,7 @@
 
 # Internal action for reference manager
 #
-# Sergey <Neill3d> Solokhin 2018
+# Sergey <Neill3d> Solokhin 2018-2026
 
 from pyfbsdk import *
 
@@ -12,8 +12,8 @@ import os
 mSys = FBSystem()
 
 lCurFilePath = inspect.currentframe().f_code.co_filename
-sys.path.append( os.path.dirname(lCurFilePath) )
-#sys.path.append( os.path.join( os.path.dirname(lCurFilePath), 'MBFileRefAdvanced' ) )
+path = os.path.dirname(lCurFilePath)
+sys.path.append(path)
 
 import FbxShadersGraphImport as imp
 import FbxShadersGraphMisc as misc
@@ -24,7 +24,7 @@ def PickRefName():
     if lBtnClicked == 2: return lBtnClicked, lFileRefName
 
     lFileRefName = lFileRefName.replace(' ','')
-    while lFileRefName is '':
+    while lFileRefName == '':
         FBMessageBox('File Reference', 'Error, please enter a file reference name', "OK")
         lBtnClicked, lFileRefName = PickRefName()
         if lBtnClicked == 2: break
@@ -33,7 +33,6 @@ def PickRefName():
 
 def AddAReference():
     
-
     lDialog = FBFilePopup()
     lDialog.Style = FBFilePopupStyle.kFBFilePopupOpen
     lDialog.Filter = '*.fbx'
@@ -78,9 +77,9 @@ def AddAReference():
 
 
 # main
+try:
+    AddAReference()
 
-AddAReference()
-
-# Remove temp sys.path
-#sys.path.remove( os.path.join( os.path.dirname(lCurFilePath), 'MBFileRefAdvanced' ) )
-sys.path.remove( os.path.dirname(lCurFilePath) )
+finally:
+    # Remove temp sys.path
+    sys.path.remove( os.path.dirname(lCurFilePath) )

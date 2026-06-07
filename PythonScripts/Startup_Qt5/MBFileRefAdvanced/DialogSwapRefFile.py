@@ -1,5 +1,8 @@
 import os
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 from DialogSwapRefFileUI import Ui_DialogSwapRefFile
 
 class DialogSwapRefFile( QtWidgets.QDialog, Ui_DialogSwapRefFile ):

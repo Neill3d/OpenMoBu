@@ -3,7 +3,10 @@ import os
 from pyfbsdk import *
 from pyfbsdk_additions import *
 
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
 from ReferencingSampleUI2 import Ui_ReferencingSample
 
 import NamespaceTableModel
@@ -20,7 +23,7 @@ def PickRefName():
     if lBtnClicked == 2: return lBtnClicked, lFileRefName
 
     lFileRefName = lFileRefName.replace(' ','')
-    while lFileRefName is '':
+    while lFileRefName == '':
         FBMessageBox('File Reference', 'Error, please enter a file reference name', "OK")
         lBtnClicked, lFileRefName = PickRefName()
         if lBtnClicked == 2: break
@@ -59,9 +62,9 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
         self.mNSModel.namespaceFilePathSwapped.connect( self.OnNamespaceFilePathSwapped )
         
         lSelectionModel = self.uiTableNamespace.selectionModel()
-        QtCore.QObject.connect( lSelectionModel, QtCore.SIGNAL( 'selectionChanged(const QItemSelection&, const QItemSelection&)' ), self.OnTableNamespaceSelectionChanged )
-        
-        QtCore.QObject.connect( self.mTimer, QtCore.SIGNAL( 'timeout()' ), self.OnTimer )
+        lSelectionModel.selectionChanged.connect( self.OnTableNamespaceSelectionChanged )
+
+        self.mTimer.timeout.connect( self.OnTimer )
         self.mTimer.start( 2000 )
         self.UpdateUI()
 
@@ -70,11 +73,11 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
     def Fini( self ):
         # disconnecting the update timer
         self.mTimer.stop()
-        QtCore.QObject.disconnect( self.mTimer, QtCore.SIGNAL( 'timeout()' ), self.OnTimer )
-        
+        self.mTimer.timeout.disconnect( self.OnTimer )
+
         # disconnecting the selectionChanged signal
         lSelectionModel = self.uiTableNamespace.selectionModel()
-        QtCore.QObject.disconnect( lSelectionModel, QtCore.SIGNAL( 'selectionChanged(const QItemSelection&, const QItemSelection&)' ), self.OnTableNamespaceSelectionChanged )
+        lSelectionModel.selectionChanged.disconnect( self.OnTableNamespaceSelectionChanged )
         
         self.mNSModel.namespaceRenamed.disconnect( self.OnNamespaceRenamed )
         self.mNSModel.namespaceFilePathSwapped.disconnect( self.OnNamespaceFilePathSwapped )
@@ -176,7 +179,7 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
             lNameList.Add( lName )
         else:
             for lCount in range( 0, lLoadCount ):
-                if self.mSys.Scene.NamespaceGet( lName + str(lCount+1) ) <> None:
+                if self.mSys.Scene.NamespaceGet( lName + str(lCount+1) ) != None:
                     lMsgBox = QtWidgets.QMessageBox( QtWidgets.QMessageBox.Information, 'Loading', 'Creation of file reference %s will be skipped as it is already there.' % ( lName + str(lCount+1) ), QtWidgets.QMessageBox.Ok, self )
                     lMsgBox.exec_()
                 else:
@@ -184,7 +187,7 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
         
         lStatus = self.mSys.Scene.NamespaceImportToMultiple( lNameList, str(self.uiEditFilePath.text()), True )
         # import shaders graph
-        if True == lStatus:
+        if lStatus:
             
             # create a description holder
             descHolder = FBCreateObject(misc.gDescAssetPath, misc.gDescTitle, lName + '_DescHolder')
@@ -192,7 +195,6 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
             
             if descHolder is not None:
                 descProp = descHolder.PropertyList.Find('Reference Model')
-                    
             
             # we do shaders graph copies
             for name in lNameList:
@@ -238,73 +240,57 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
         for lIndex in lIndexes:
             if lIndex.column() == 0:
                 lNSObj = self.mNSModel.GetNamespace(lIndex.row())
-                '''
-                filename = lNSObj.ReferenceFilePath
-                if False == os.path.isfile(filename):
-                    FBMessageBox(self.DialogTitle, 'Reference file is not found!\n Please enter a new file path', 'Ok')
-                else:
-                    
-                    isUpdated = imp.HasReferenceNewUpdate(lNSObj)
-                    lOption = 3
-                    
-                    if isUpdated:
-                        # ask user to reload a shaders graph
-                        lOption = FBMessageBox( "External File Changed", "Please choose the following action for Reference: %s!" % ( filename ), "Load", "Merge", "Ignore" )                        
-                    
-                    if lOption <> 3:
-                        lUndo = FBUndoManager()
-                        lUndo.Clear()
-                        
-                        diff = []
-                        
-                        edits = ''
-                        misc.DisconnectAllShaders(lNSObj)
-                        if lNSObj.GetContentModified( FBPlugModificationFlag.kFBContentAllModifiedMask ):
-                            edits = lNSObj.GetRefEdit()
-                        
-                        lNSObj.IsLoaded = False
-                        lNSObj.IsLoaded = True
-                        
-                        filename = lNSObj.ReferenceFilePath
-                    
-                        base = os.path.splitext(filename)[0]
-                        xmlname = base + '.xml'
-                        
-                        if lOption == 2:
-                            #if lNSObj.GetContentModified( FBPlugModificationFlag.kFBContentAllModifiedMask ):
-                            #edits = lNSObj.GetRefEdit()
-                            imp.DoFbxShadersGraphImport(True, 2, lNSObj, diff)
-                            #imp.LoadShaderGraphResources(xmlname, xmlname, lNSObj, True, True)
-                            if len(edits) > 0:
-                                lNSObj.RevertRefEdit()
-                                lNSObj.ApplyRefEditPyScriptFromString( edits )
-                                
-                            
-                            imp.LoadShaderGraphConnections(xmlname, xmlname, lNSObj, True)
-                                
-                            # TODO: process shader graph for the new added models
-                            # diff
-                            
-                        else:
-                            modelsMask = []
-                            lNSObj.RevertRefEdit()
-                            imp.DoFbxShadersGraphImport(True, 2, lNSObj, modelsMask)
-                        
-                        # store new xml data
-                        misc.DescriptionStore(lNSObj)
 
+                filename = lNSObj.ReferenceFilePath
+                if not os.path.isfile(filename):
+                    FBMessageBox(self.DialogTitle,
+                                 'Reference file is not found!\n Please enter a new file path', 'Ok')
+                else:
+                    lUndo = FBUndoManager()
+                    lUndo.Clear()
+
+                    # Preserve any user edits so they survive the reload
+                    edits = ''
+                    if lNSObj.IsLoaded:
+                        misc.DisconnectAllShaders(lNSObj)
+                        if lNSObj.GetContentModified(FBPlugModificationFlag.kFBContentAllModifiedMask):
+                            edits = lNSObj.GetRefEdit()
+
+                    # Pause file watching for the duration of the reload.
+                    # fileChanged is a queued Qt signal — it fires asynchronously when
+                    # control returns to the event loop.  If we leave the watcher active
+                    # while MoBu reads/writes the FBX, the signal fires AFTER this
+                    # callback ends (after any flag-reset we do here), which re-arms the
+                    # "External File Changed" loop.  Removing the path breaks that cycle;
+                    # re-adding it afterward establishes a fresh baseline.
+                    was_monitored = filename in self.mNSModel.mRefFilePath
+                    if was_monitored:
+                        self.mNSModel.mWatcher.removePath(filename)
+
+                    # Unload then load — works whether the reference was loaded or not
+                    lNSObj.IsLoaded = False
+                    lNSObj.IsLoaded = True
+
+                    # Resume watching and clear any flag that may have been set
+                    if was_monitored:
+                        self.mNSModel.mWatcher.addPath(filename)
+                        self.mNSModel.mRefFileReload[filename] = False
+
+                    if lNSObj.IsLoaded:
+                        # Re-apply edits that existed before the reload
+                        if len(edits) > 0:
+                            lNSObj.RevertRefEdit()
+                            lNSObj.ApplyRefEditPyScriptFromString(edits)
+
+                        # Import shader graph on first load (marked by FirstTime property)
+                        prop = lNSObj.PropertyList.Find('FirstTime')
+                        if prop is not None:
+                            modelsMask = []
+                            imp.DoFbxShadersGraphImport(True, 2, lNSObj, modelsMask)
+                            lNSObj.PropertyRemove(prop)
                     else:
-                        lNSObj.IsLoaded = True
-                    
-                        if True == lNSObj.IsLoaded:
-                            prop = lNSObj.PropertyList.Find('FirstTime')
-                            if prop is not None:
-                                modelsMask = []
-                                imp.DoFbxShadersGraphImport(True, 2, lNSObj, modelsMask)
-                                lNSObj.PropertyRemove(prop)
-                        else:
-                            FBMessageBox(self.DialogTitle, 'Failed to reload a reference', 'Ok')
-                '''    
+                        FBMessageBox(self.DialogTitle, 'Failed to reload a reference', 'Ok')
+
                 self.mNSModel.Refresh( lIndex )
         self.UpdateUI()
         self.UpdateTreeNamespace()
@@ -363,9 +349,24 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
 
         lStatus = lNSObj.DuplicateFileRef( lNameList, lApplyRefEdits )
 
-        if True == lStatus:
+        if lStatus:
             misc.DescriptionConnectModels(lNSObj, lNameList)
-                    
+
+            # DuplicateFileRef creates namespace copies but does NOT copy scene-level
+            # shader connections (shaders are not inside the reference file).
+            # DescriptionConnectModels wires the new namespaces to the DescriptionHolder,
+            # but the DescriptionHolder C++ plugin only auto-applies the last shader.
+            # Explicitly import the full shader graph for every new instance, the same
+            # way OnBtnLoadClicked does for freshly loaded references.
+            for name in lNameList:
+                newNS = lSystem.Scene.NamespaceGet(str(name))
+                if newNS is not None and newNS.IsLoaded:
+                    # Clear any partial shader state left by the auto-apply so we get
+                    # a clean slate before the full import.
+                    misc.DisconnectAllShaders(newNS)
+                    modelsMask = []
+                    imp.DoFbxShadersGraphImport(True, 2, newNS, modelsMask)
+
         self.mNSModel.Refresh()
         self.UpdateUI()
         self.UpdateTreeNamespace()
@@ -472,7 +473,7 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
             lNSObj = self.mNSModel.GetNamespace(lIndexes[0].row())
             
             lStrList = [lNSObj.LongName]
-            if lNSObj.ClassGroupName <> '':
+            if lNSObj.ClassGroupName != '':
                 lStrList.append( lNSObj.ClassGroupName )
 
             lItem = QtWidgets.QTreeWidgetItem( lStrList )
@@ -490,7 +491,7 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
         pNSObj.GetContentList( lList, FBPlugModificationFlag.kFBPlugAllContent, False )
         for lPlug in lList:
             lStrList = [lPlug.LongName]
-            if lPlug.ClassGroupName <> '':
+            if lPlug.ClassGroupName != '':
                 lStrList.append( lPlug.ClassGroupName )
             else:
                 lStrList.append( lPlug.ClassName() )
@@ -607,12 +608,8 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
                     luiBtnInstance = True
                     luiSpinInstanceTimes = True
 
-                luiBtnUnload = True
-                luiBtnReload = True
-                if lAllSelectionLoaded:
-                    luiBtnReload = False
-                if lAllSelectionUnLoaded:
-                    luiBtnUnload = False
+                luiBtnUnload = not lAllSelectionUnLoaded   # disable Unload only when everything already unloaded
+                luiBtnReload = True                        # Reload is always valid: loads unloaded refs OR force-reloads loaded ones
 
         self.uiBtnBrowsePath.setEnabled( luiBtnBrowsePath )
         self.uiBtnLoad.setEnabled( luiBtnLoad )
@@ -633,7 +630,7 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
     def OnTimer( self ):
         for lFilePath, lReload in self.mNSModel.mRefFileReload.items():
             
-            if False == os.path.isfile(lFilePath) and True == lReload:
+            if not os.path.isfile(lFilePath) and lReload:
                 FBMessageBox( "External File Not Found", "The referenced file '%s' is not found!\nReference goes offline" % ( lFilePath ), "Ok" )
                 
                 if lFilePath in self.mNSModel.mRefFilePath:
@@ -650,48 +647,58 @@ class MainForm( QtWidgets.QWidget, Ui_ReferencingSample ):
                 self.UpdateTreeNamespace()
                 
             elif lReload:
+                # Pause the watcher for this path BEFORE showing any dialog.
+                # fileChanged is queued — it fires after control returns to the event
+                # loop, i.e. AFTER any = False reset inside this callback.  Removing
+                # the path prevents new notifications; re-adding it later establishes
+                # a fresh baseline so legitimate future changes are still detected.
+                self.mNSModel.mWatcher.removePath(lFilePath)
+                self.mNSModel.mRefFileReload[lFilePath] = False
+
                 FBMessageBox( "External File Changed", "The referenced file '%s' has been changed externally!" % ( lFilePath ), "OK" )
                 if lFilePath in self.mNSModel.mRefFilePath:
                     for lFileRefName in self.mNSModel.mRefFilePath[lFilePath]:
                         lNSObj = FBFindObjectByFullName( 'FileReference::' + lFileRefName )
                         lOption = FBMessageBox( "External File Changed", "Please choose the following action for Reference: %s!" % ( lFileRefName ), "Load", "Merge", "Ignore" )
-                        
-                        if lOption <> 3:
+
+                        if lOption != 3:
+                            self.mNSModel.RemoveFileFromWatcher( lNSObj )
+
                             lUndo = FBUndoManager()
                             lUndo.Clear()
-                            
+
                             diff = []
-                            
+
                             edits = ''
                             misc.DisconnectAllShaders(lNSObj)
                             if lNSObj.GetContentModified( FBPlugModificationFlag.kFBContentAllModifiedMask ):
                                 edits = lNSObj.GetRefEdit()
-                            
+
                             lNSObj.IsLoaded = False
                             lNSObj.IsLoaded = True
-                            
+
                             filename = lNSObj.ReferenceFilePath
-                            
+
                             base = os.path.splitext(filename)[0]
                             xmlname = base + '.xml'
-                            
+
                             if lOption == 2:
-                                
+
                                 imp.DoFbxShadersGraphImport(True, 2, lNSObj, diff)
                                 if len(edits) > 0:
                                     lNSObj.RevertRefEdit()
                                     lNSObj.ApplyRefEditPyScriptFromString( edits )
-                                 
+
                                 imp.LoadShaderGraphConnections(xmlname, xmlname, lNSObj, True)
-                                
+
                             else:
                                 modelsMask = []
                                 lNSObj.RevertRefEdit()
                                 imp.DoFbxShadersGraphImport(True, 2, lNSObj, modelsMask)
-                            
+
                             # store new xml data
                             misc.DescriptionStore(lNSObj)
-                            
-                    self.mNSModel.mRefFileReload[lFilePath] = False
 
-        self.mNSModel.UpdateFileWatcher()
+                    # Re-arm the watcher with a fresh baseline now that the reload is done
+                    self.mNSModel.mWatcher.addPath(lFilePath)
+                    self.mNSModel.mRefFileReload[lFilePath] = False

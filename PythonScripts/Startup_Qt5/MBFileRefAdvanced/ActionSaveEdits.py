@@ -1,7 +1,7 @@
 
 # Internal action for reference manager
 #
-# Sergey <Neill3d> Solokhin 2018
+# Sergey <Neill3d> Solokhin 2018-2026
 
 from pyfbsdk import *
 import os

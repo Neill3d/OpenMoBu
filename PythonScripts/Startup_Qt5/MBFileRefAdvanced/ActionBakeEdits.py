@@ -1,7 +1,7 @@
 
 # Internal action for reference manager
 #
-# Sergey <Neill3d> Solokhin 2018
+# Sergey <Neill3d> Solokhin 2018-2026
 
 from pyfbsdk import *
 
@@ -10,29 +10,30 @@ import sys
 import os
 
 lCurFilePath = inspect.currentframe().f_code.co_filename
-sys.path.append( os.path.dirname(lCurFilePath) )
-#sys.path.append( os.path.join( os.path.dirname(lCurFilePath), 'MBFileRefAdvanced' ) )
+path = os.path.dirname(lCurFilePath)
+sys.path.append(path)
 
-#import FbxShadersGraphImport as imp
-import FbxShadersGraphBake as bake
-#import FbxShadersGraphMisc as misc
-
+# MoBu substitutes these at the top level before executing the script
 lRefName = ''
-lSystem = FBSystem()
-lScene = lSystem.Scene
 
-if len(lRefName) > 0:
-    
-    for ns in lScene.Namespaces:
-        if isinstance(ns, FBFileReference) and lRefName == ns.LongName:
-            filename = ns.ReferenceFilePath
+try:
 
-            base = os.path.splitext(filename)[0]
-            xmlname = base + '.xml'                
+    import FbxShadersGraphBake as bake
 
-            bake.BakeShadersGraphEdits(ns, xmlname)          
-            
-            
-# Remove temp sys.path
-#sys.path.remove( os.path.join( os.path.dirname(lCurFilePath), 'MBFileRefAdvanced' ) )
-sys.path.remove( os.path.dirname(lCurFilePath) )
+    lSystem = FBSystem()
+    lScene = lSystem.Scene
+
+    if len(lRefName) > 0:
+        
+        for ns in lScene.Namespaces:
+            if isinstance(ns, FBFileReference) and lRefName == ns.LongName:
+                filename = ns.ReferenceFilePath
+
+                base = os.path.splitext(filename)[0]
+                xmlname = base + '.xml'                
+
+                bake.BakeShadersGraphEdits(ns, xmlname)          
+                
+finally:            
+    # Remove temp sys.path
+    sys.path.remove( os.path.dirname(lCurFilePath) )

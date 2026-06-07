@@ -2,7 +2,7 @@
 
 # FbxShadersGraphMisc - misc functions
 #
-# Sergey <Neill3d> Solokhin 2018
+# Sergey <Neill3d> Solokhin 2018-2026
 
 
 import os
@@ -17,8 +17,12 @@ from pyfbsdk import *
 lApp = FBApplication()
 lSystem = FBSystem()
 
-gCmdDevPath = 'C:\\Program Files\\Autodesk\\MotionBuilder 2017\\OpenRealitySDK\\samples\\importexport\\FBXExtension\\Debug\\shadingGraph_cmd.exe'
+# Directory of this module — shadingGraph_cmd.exe is expected to live here
+_MODULE_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 gCmdName = 'shadingGraph_cmd.exe'
+
+# Optional hard-coded dev override — leave as '' to rely solely on module-relative lookup
+gCmdDevPath = ''
 
 gDescClass = 'DescriptionHolder'
 gDescAssetPath = 'Browsing/Templates/Elements'
@@ -242,43 +246,42 @@ def MBGetShaderTypeName(pShader):
     
 ################################################################## Fbx ShadersGraph Cmd Functions
 
+def _find_cmd_path():
+    """Return the absolute path to shadingGraph_cmd.exe, or '' if not found.
+
+    Search order:
+      1. gCmdDevPath  — optional hard-coded override for development builds
+      2. Same directory as this module (FbxShadersGraphMisc.py), which is
+         where shadingGraph_cmd.exe is deployed alongside the scripts.
+    """
+    if gCmdDevPath and os.path.isfile(gCmdDevPath):
+        return gCmdDevPath
+    candidate = os.path.join(_MODULE_DIR, gCmdName)
+    return candidate if os.path.isfile(candidate) else ''
+
 def RunCmdExtractXml(filename):
-    
-    lStatus = False
-    
-    if os.path.isfile(filename):
-    
-        cmdPath = ''    
-        if os.path.isfile(gCmdDevPath):
-            cmdPath = gCmdDevPath
-        else:
-            lCurFilePath = inspect.currentframe().f_code.co_filename
-            cmdPath = os.path.join( os.path.dirname(lCurFilePath), gCmdName )    
-    
-        if os.path.isfile(cmdPath):
-            subprocess.check_call([cmdPath, '-f', filename])
-            lStatus = True
-            
-    return lStatus
-    
+
+    if not os.path.isfile(filename):
+        return False
+
+    cmdPath = _find_cmd_path()
+    if not cmdPath:
+        return False
+
+    subprocess.check_call([cmdPath, '-f', filename])
+    return True
+
 def RunCmdBake(fbxname, xmlname, outname):
-    
-    lStatus = False
-    
-    if os.path.isfile(fbxname) and os.path.isfile(xmlname):
-    
-        cmdPath = ''    
-        if os.path.isfile(gCmdDevPath):
-            cmdPath = gCmdDevPath
-        else:
-            lCurFilePath = inspect.currentframe().f_code.co_filename
-            cmdPath = os.path.join( os.path.dirname(lCurFilePath), gCmdName )    
-    
-        if os.path.isfile(cmdPath):
-            subprocess.check_call([cmdPath, '-b', fbxname, xmlname, outname])
-            lStatus = True
-            
-    return lStatus
+
+    if not os.path.isfile(fbxname) or not os.path.isfile(xmlname):
+        return False
+
+    cmdPath = _find_cmd_path()
+    if not cmdPath:
+        return False
+
+    subprocess.check_call([cmdPath, '-b', fbxname, xmlname, outname])
+    return True
 
 ########################################################### Misc File Functions
 
@@ -286,8 +289,7 @@ def GetFileLastWrite(filename):
     return time.strftime('%d/%m/%Y  %H:%M:%S', time.gmtime(os.path.getmtime(filename)))
     
 def ConvertPath(path):
-    return os.path.normcase(xmlFileName)
-    #return path.replace(os.path.sep, '/')
+    return os.path.normcase(path)
 
 ########################################################## Misc Scene Managment Functions
 
@@ -407,20 +409,10 @@ def GetPropValueStr(prop):
         elif type(data) is FBTime:
             value = data.GetTimeString()
         elif type(data) is FBVector2d:
-            elem.setAttribute( "X", str(data[0]) )
-            elem.setAttribute( "Y", str(data[1]) )
-            elem.setAttribute( "Z", str(data[2]) )            
             value = str(data)            
-        elif (type(data) is FBVector3d) or (type(data) is FBColor):
-            elem.setAttribute( "X", str(data[0]) )
-            elem.setAttribute( "Y", str(data[1]) )
-            elem.setAttribute( "Z", str(data[2]) )            
+        elif (type(data) is FBVector3d) or (type(data) is FBColor):           
             value = str(data)
-        elif (type(data) is FBVector4d) or (type(data) is FBColorAndAlpha):
-            elem.setAttribute( "X", str(data[0]) )
-            elem.setAttribute( "Y", str(data[1]) )
-            elem.setAttribute( "Z", str(data[2]) )            
-            elem.setAttribute( "W", str(data[3]) )            
+        elif (type(data) is FBVector4d) or (type(data) is FBColorAndAlpha):           
             value = str(data)
         else:        
             value = str(data)
