@@ -75,7 +75,7 @@ bool FBLibrary::LibInit()       {
 	}
 	
 	LOGI("GLEW version: %s\n", glewGetString(GLEW_VERSION));
-	constexpr const float VERSION{ 2.01f };
+	constexpr const float VERSION{ 2.1f };
 	LOGI("Post Processing Manager v%.2f\n", VERSION);
 
 	g_isGlewInitialized = true;

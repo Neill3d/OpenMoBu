@@ -178,38 +178,34 @@ void PostProcessContextData::PrepareEachPaneCamera()
     FBRenderer* pRenderer = system.Renderer;
 
     mSchematicViewIndex = pRenderer->GetSchematicViewPaneIndex();
-    mRenderPaneCount = pRenderer->GetPaneCount();
-
-    if (schematic >= 0)
-        mSchematicView[schematic] = true;
-
+    
 #if(PRODUCT_VERSION>=2027)
     switch (pRenderer->GetPanesLayoutMode())
     {
     case kFBOnePane:
-        mLastPaneCount = 1;
+        mRenderPaneCount = 1;
 		break;
     case kFBTwoPanesHorizontal:
     case kFBTwoPanesVertical:
-        mLastPaneCount = 2;
+        mRenderPaneCount = 2;
 		break;
     case kFBThreePanesSplitBottom:
     case kFBThreePanesSplitLeft:
     case kFBThreePanesSplitRight:
     case kFBThreePanesSplitTop:
-		mLastPaneCount = 3;
+        mRenderPaneCount = 3;
         break;
     case kFBFourPanes:
-        mLastPaneCount = 4;
+        mRenderPaneCount = 4;
 		break;
     default:
-        mLastPaneCount = 1;
+        mRenderPaneCount = 1;
     }
 #else
-    mLastPaneCount = pRenderer->GetPaneCount();
+    mRenderPaneCount = pRenderer->GetPaneCount();
 #endif
     
-    for (int i = 0; i < mLastPaneCount; ++i)
+    for (int i = 0; i < mRenderPaneCount; ++i)
     {
         SPaneData& pane = mRenderPanes[i];
 
