@@ -48,7 +48,9 @@ void EffectShaderLensFlare::OnPopulateProperties(ShaderPropertyScheme* scheme)
 
 	mTime = scheme->AddProperty("timer", "iTime")
 		.SetFlag(PropertyFlag::SKIP)
+		.SetScale(0.01f)
 		.GetProxy();
+
 	mLightPos = scheme->AddProperty("light_pos", "light_pos")
 		.SetFlag(PropertyFlag::SKIP)
 		.SetType(EPropertyType::VEC4)
@@ -82,12 +84,12 @@ bool EffectShaderLensFlare::OnCollectUI(PostEffectContextProxy* effectContext, i
 	if (!data)
 		return false;
 
-	const int numberOfPasses = data->FlareLight.GetCount();
+	const int numberOfPasses = std::max(1, data->FlareLight.GetCount());
 	mNumberOfPasses.store(numberOfPasses, std::memory_order_release);
 
 	const double systemTime = (data->FlareUsePlayTime) ? effectContext->GetLocalTime() : effectContext->GetSystemTime();
 	double timerMult = data->FlareTimeSpeed;
-	double flareTimer = 0.01 * timerMult * systemTime;
+	double flareTimer = timerMult * systemTime;
 	
 	ShaderPropertyWriter writer(this, effectContext);
 	writer(mTime, static_cast<float>(flareTimer));
@@ -169,9 +171,14 @@ bool EffectShaderLensFlare::SubShader::CollectUIValues(int shaderIndex, PostEffe
 	}
 	else
 	{
-		m_LightPositions.clear();
-		m_LightColors.clear();
-		m_LightAlpha.clear();
+		m_LightPositions.resize(1);
+		m_LightColors.resize(1);
+		m_LightAlpha.resize(1);
+
+		m_LightPositions[0] = FBVector3d(flarePos);
+		m_LightColors[0] = FBColor(1.0, 1.0, 1.0);
+		m_LightAlpha[0] = 1.0f;
+		m_DepthAttenuation = 0.0f;
 	}
 
 	return true;
@@ -183,9 +190,9 @@ void EffectShaderLensFlare::SubShader::ProcessLightObjects(PostEffectContextProx
 	m_LightPositions.resize(numberOfPasses);
 	m_LightColors.resize(numberOfPasses);
 	m_LightAlpha.resize(numberOfPasses, 0.0f);
-
+	
 	FBMatrix mvp;
-	pCamera->GetCameraMatrix(mvp, kFBModelViewProj);
+	pCamera->GetCameraMatrix(mvp, kFBModelViewProj, effectContext->GetEvaluateInfo());
 
 	for (int i = 0; i < numberOfPasses; ++i)
 	{
@@ -202,7 +209,7 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostEffectContextProxy
 	FBLight* pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(index));
 
 	FBVector3d lightPos;
-	pLight->GetVector(lightPos);
+	pLight->GetVector(lightPos, FBModelTransformationType::kModelTranslation, true, effectContext->GetEvaluateInfo());
 
 	FBVector4d v4;
 	FBVectorMatrixMult(v4, mvp, FBVector4d(lightPos[0], lightPos[1], lightPos[2], 1.0));
@@ -227,8 +234,7 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostEffectContextProxy
 		const int x = offsetX + static_cast<int>(v4[0]);
 		const int y = offsetY + (h - static_cast<int>(v4[1]));
 
-		FBVector3d camPosition;
-		pCamera->GetVector(camPosition);
+		FBVector3d camPosition(effectContext->GetCameraPosition());
 		
 		const double distToLight = VectorLength(VectorSubtract(lightPos, camPosition));
 
