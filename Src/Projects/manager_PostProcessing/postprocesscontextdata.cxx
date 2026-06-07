@@ -180,7 +180,36 @@ void PostProcessContextData::PrepareEachPaneCamera()
     mSchematicViewIndex = pRenderer->GetSchematicViewPaneIndex();
     mRenderPaneCount = pRenderer->GetPaneCount();
 
-    for (int i = 0; i < mRenderPaneCount; ++i)
+    if (schematic >= 0)
+        mSchematicView[schematic] = true;
+
+#if(PRODUCT_VERSION>=2027)
+    switch (pRenderer->GetPanesLayoutMode())
+    {
+    case kFBOnePane:
+        mLastPaneCount = 1;
+		break;
+    case kFBTwoPanesHorizontal:
+    case kFBTwoPanesVertical:
+        mLastPaneCount = 2;
+		break;
+    case kFBThreePanesSplitBottom:
+    case kFBThreePanesSplitLeft:
+    case kFBThreePanesSplitRight:
+    case kFBThreePanesSplitTop:
+		mLastPaneCount = 3;
+        break;
+    case kFBFourPanes:
+        mLastPaneCount = 4;
+		break;
+    default:
+        mLastPaneCount = 1;
+    }
+#else
+    mLastPaneCount = pRenderer->GetPaneCount();
+#endif
+    
+    for (int i = 0; i < mLastPaneCount; ++i)
     {
         SPaneData& pane = mRenderPanes[i];
 
