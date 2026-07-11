@@ -1,7 +1,7 @@
 
 /** \file   MAIN.cxx
 
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -75,7 +75,7 @@ bool FBLibrary::LibInit()       {
 	}
 	
 	LOGI("GLEW version: %s\n", glewGetString(GLEW_VERSION));
-	constexpr const float VERSION{ 2.1f };
+	constexpr const float VERSION{ 2.2f };
 	LOGI("Post Processing Manager v%.2f\n", VERSION);
 
 	g_isGlewInitialized = true;
