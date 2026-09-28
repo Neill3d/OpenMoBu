@@ -11,12 +11,6 @@ set_target_properties(freetype-gl PROPERTIES
     IMPORTED_IMPLIB ${CMAKE_SOURCE_DIR}/third_party/freetype-gl.lib
 )
 
-add_library(xxhash SHARED IMPORTED GLOBAL)
-set_target_properties(xxhash PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/third_party/xxhash
-    IMPORTED_IMPLIB ${CMAKE_SOURCE_DIR}/third_party/xxhash.lib
-)
-
 project(manager_PostProcessing LANGUAGES CXX)
 
 set (IMGUI_CORE 
@@ -190,7 +184,7 @@ target_compile_features(shader_property_core PUBLIC cxx_std_17)
 #
 # link libraries
 
-target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk OpenGL::GL OpenGL::GLU GLEW::glew_s freetype2 freetype-gl MotionCodeLibrary xxhash shader_property_core)
+target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk OpenGL::GL OpenGL::GLU GLEW::glew_s freetype2 freetype-gl MotionCodeLibrary shader_property_core)
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENREALITY_ROOT}/include ${CMAKE_SOURCE_DIR}/MotionCodeLibrary)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third_party/imgui)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third_party/imnodes)
