@@ -16,7 +16,7 @@
 
 //--- SDK include
 #include <fbsdk/fbsdk.h>
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Framebuffer.h"
 #include "ParticleSystem_types.h"
 #include "Shader_ParticleSystem.h"

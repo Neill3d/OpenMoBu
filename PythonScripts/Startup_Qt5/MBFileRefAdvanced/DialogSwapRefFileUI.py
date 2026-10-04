@@ -7,7 +7,10 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 
 class Ui_DialogSwapRefFile(object):
     def setupUi(self, DialogSwapRefFile):
@@ -60,13 +63,13 @@ class Ui_DialogSwapRefFile(object):
         self.verticalLayout_2.addWidget(self.groupBox_2)
 
         self.retranslateUi(DialogSwapRefFile)
-        QtCore.QObject.connect(self.uiBtnOK, QtCore.SIGNAL("clicked()"), DialogSwapRefFile.OnBtnOKClicked)
+        self.uiBtnOK.clicked.connect(DialogSwapRefFile.OnBtnOKClicked)
         QtCore.QMetaObject.connectSlotsByName(DialogSwapRefFile)
 
     def retranslateUi(self, DialogSwapRefFile):
-        DialogSwapRefFile.setWindowTitle(QtWidgets.QApplication.translate("DialogSwapRefFile", "Swap Reference File", None, -1))
-        self.uiCbApplyTargetEdit.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "Use edits from incoming file", None, -1))
-        self.uiCbMergeCurrentEdit.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "Use already loaded edits", None, -1))
-        self.label.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "( Checking both will merge all edits together )", None, -1))
-        self.uiBtnOK.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "OK", None, -1))
+        DialogSwapRefFile.setWindowTitle(QtWidgets.QApplication.translate("DialogSwapRefFile", "Swap Reference File"))
+        self.uiCbApplyTargetEdit.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "Use edits from incoming file"))
+        self.uiCbMergeCurrentEdit.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "Use already loaded edits"))
+        self.label.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "( Checking both will merge all edits together )"))
+        self.uiBtnOK.setText(QtWidgets.QApplication.translate("DialogSwapRefFile", "OK"))
 

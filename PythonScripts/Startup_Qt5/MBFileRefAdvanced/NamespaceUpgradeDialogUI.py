@@ -7,7 +7,10 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 
 class Ui_NamespaceUpgradeDialog(object):
     def setupUi(self, NamespaceUpgradeDialog):
@@ -78,16 +81,16 @@ class Ui_NamespaceUpgradeDialog(object):
         self.verticalLayout.addWidget(self.groupBox_2)
 
         self.retranslateUi(NamespaceUpgradeDialog)
-        QtCore.QObject.connect(self.uiBtnBrowsePath, QtCore.SIGNAL("clicked()"), NamespaceUpgradeDialog.OnBtnBrowsePathClicked)
-        QtCore.QObject.connect(self.uiBtnOK, QtCore.SIGNAL("clicked()"), NamespaceUpgradeDialog.OnBtnOKClicked)
-        QtCore.QObject.connect(self.uiBtnCancel, QtCore.SIGNAL("clicked()"), NamespaceUpgradeDialog.OnBtnOKClicked)
+        self.uiBtnBrowsePath.clicked.connect(NamespaceUpgradeDialog.OnBtnBrowsePathClicked)
+        self.uiBtnOK.clicked.connect(NamespaceUpgradeDialog.OnBtnOKClicked)
+        self.uiBtnCancel.clicked.connect(NamespaceUpgradeDialog.OnBtnOKClicked)
         QtCore.QMetaObject.connectSlotsByName(NamespaceUpgradeDialog)
 
     def retranslateUi(self, NamespaceUpgradeDialog):
-        NamespaceUpgradeDialog.setWindowTitle(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Namespace Upgrading", None, -1))
-        self.groupBox.setTitle(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Choose a reference file", None, -1))
-        self.uiBtnBrowsePath.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "...", None, -1))
-        self.uiCbSaveAsText.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Save as ASCII format", None, -1))
-        self.uiBtnOK.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "OK", None, -1))
-        self.uiBtnCancel.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Cancel", None, -1))
+        NamespaceUpgradeDialog.setWindowTitle(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Namespace Upgrading"))
+        self.groupBox.setTitle(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Choose a reference file"))
+        self.uiBtnBrowsePath.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "..."))
+        self.uiCbSaveAsText.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Save as ASCII format"))
+        self.uiBtnOK.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "OK"))
+        self.uiBtnCancel.setText(QtWidgets.QApplication.translate("NamespaceUpgradeDialog", "Cancel"))
 

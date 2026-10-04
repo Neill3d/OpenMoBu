@@ -15,7 +15,7 @@
 #include "markup.h"
 
 #include "nv_math.h"
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 
 //////////////////////////
 //
@@ -51,7 +51,7 @@ private:
 	font_manager_t* font_manager;
 	text_buffer_t* buffer;	// store pen position and characters
 
-	static GLSLShader* g_glslShader;
+	static GLSLShaderProgram* g_glslShader;
 	static int		g_shaderCounter;
 };
 

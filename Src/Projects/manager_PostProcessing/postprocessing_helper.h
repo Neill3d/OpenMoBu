@@ -12,6 +12,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include "nv_math.h"
+#include <functional>
+
+class FXMaskingShader;
 
 //
 enum EImageCompression
@@ -64,4 +67,4 @@ size_t CompressImageEnd();
 void ComputeCameraOrthoPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, nv::vec3 *points);
 void ComputeCameraFrustumPoints(const float renderWidth, const float renderHeight, FBModel *pCamera, double farPlane, double nearPlane, double FieldOfView, nv::vec3 *points);
 
-void RenderMaskedModels(const int maskIndex, FBCamera* camera);
+void RenderMaskedModels(const int maskIndex, FBCamera* camera, std::function<void(FBModel*, FXMaskingShader*)> preDrawCallback);

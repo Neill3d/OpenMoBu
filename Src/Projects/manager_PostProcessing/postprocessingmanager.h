@@ -1,9 +1,8 @@
-#ifndef _POST_PROCESSING_MANAGER_H__
-#define _POST_PROCESSING_MANAGER_H__
+#pragma once
 
 /** \file   postprocessing_manager.h
 
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -19,13 +18,13 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "graphics_framebuffer.h"
 #include "postpersistentdata.h"
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Framebuffer.h"
 
 //#include "WGLFONT.h"
 #include "postprocessing_fonts.h"
 
-#include "posteffectchain.h"
+#include "posteffect_chain.h"
 #include "postprocesscontextdata.h"
 
 //--- Registration defines
@@ -62,6 +61,7 @@ public: // CALLBACKS
 	void EventFileOpen(HISender pSender, HKEvent pEvent);
 	void EventFileMerge(HISender pSender, HKEvent pEvent);
 	void EventFileOpenComplete(HISender pSender, HKEvent pEvent);
+	void EventFileOpenOverride(HISender pSender, HKEvent pEvent);
 
 	void OnPerFrameSynchronizationCallback(HISender pSender, HKEvent pEvent);
 	void OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent);
@@ -73,41 +73,25 @@ public: // CALLBACKS
 	void OnUIIdle(HISender pSender, HKEvent pEvent);
 	
 	void OnVideoFrameRendering(HISender pSender, HKEvent pEvent);
-
-	const PostEffectChain* GetCurrentEffectChain() const 
-	{ 
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter != end(gContextMap))
-		{
-			return &gContextMap[gCurrentContext]->GetEffectChain();
-		}
-		return nullptr;
-	}
-
+	
 private:
 
-	bool				mFirstRun;
-
-	FBApplication		mApplication;
-	FBSystem			mSystem;
-	
-	bool		mDoVideoClipTimewrap;
+	bool		mFirstRun{ true };
+	bool		mDoVideoClipTimewrap{ false };
 
 	//
-	static HGLRC			gCurrentContext;
+	std::atomic<PostProcessContextData*> mSyncContextData{ nullptr };
+	std::atomic<PostProcessContextData*> mEvaluateContextData{ nullptr };
+	static std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	gContextMap;
 
-	static std::map<HGLRC, PostProcessContextData*>	gContextMap;
-
-
-	int				mEnterId;
-	size_t			mFrameId;
+	RenderFrameGate mFrameGate;
 
 	// Tango device experiment
-	double				mLastSendTimeSecs;
-	void				*mSocketSender;
-	void				*mSocketRecv;
+	double				mLastSendTimeSecs{ 0.0 };
+	void* mSocketSender{ nullptr };
+	void* mSocketRecv{ nullptr };
 
-	bool				mIsSynced;
+	bool				mIsSynced{ false };
 	FBTime				mLastSyncTime;
 	FBTime				mSyncDuration;
 
@@ -121,6 +105,7 @@ private:
 	
 	void	CheckForAContextChange();
 
+	PostProcessContextData* GetCurrentContextData();
 	
 	/*
 	bool	OpenSocket(const int portSend, const int portRecv, bool blocking);
@@ -132,16 +117,13 @@ private:
 	void	PushUpperLowerClipForEffects();
 	void	PopUpperLowerClipForEffects();
 
+	void	LoadShaderTextInsertions();
+
 public:
-	bool			mLastProcessCompositions;
-
-	bool skipRender;
-
-	void	PreRenderFirstEntry();
+	
+	std::atomic<bool> skipRender{ false };
 
 	bool ExternalRenderAfterRender();
 
 	void PrepVideoClipsTimeWrap();
 };
-
-#endif /* _POST_PROCESSING_MANAGER_H__ */

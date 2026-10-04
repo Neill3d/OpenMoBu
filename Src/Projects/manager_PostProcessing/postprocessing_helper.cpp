@@ -19,6 +19,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <GL/glew.h>
 #include "fxmaskingshader.h"
+#include <functional>
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -391,7 +392,9 @@ void RenderModel(FBModel* model)
 	BindUniformMatrix(5, modelMatrix);
 
 	FBModelVertexData* vertexData = model->ModelVertexData;
-	
+	if (!vertexData)
+		return;
+
 	//Get number of region mapped by different materials.
 	const int lSubRegionCount = vertexData->GetSubRegionCount();
 	if (lSubRegionCount)
@@ -430,12 +433,14 @@ void RenderModel(FBModel* model)
 	}
 }
 
-void RenderMaskedModels(const int maskIndex, FBCamera* camera)
+void RenderMaskedModels(const int maskIndex, FBCamera* camera, std::function<void(FBModel*, FXMaskingShader*)> preDrawCallback)
 {
 	if (FBIS(camera, FBCameraSwitcher))
 	{
 		camera = (FBCast<FBCameraSwitcher>(camera))->CurrentCamera;
 	}
+	if (!camera)
+		return;
 
 	FBMatrix mv, mp;
 	FBVector3d eyePos3;
@@ -461,37 +466,41 @@ void RenderMaskedModels(const int maskIndex, FBCamera* camera)
 		if (!FBIS(scene->Shaders[i], FXMaskingShader))
 			continue;
 
-		if (FXMaskingShader* shader = FBCast<FXMaskingShader>(scene->Shaders[i]))
-		{
-			const int maskFlags[4]{ shader->CompositeMaskA.AsInt(), shader->CompositeMaskB.AsInt(), shader->CompositeMaskC.AsInt(), shader->CompositeMaskD.AsInt() };
+		FXMaskingShader* shader = FBCast<FXMaskingShader>(scene->Shaders[i]);
+		if (!shader)
+			continue;
+		
+		const int maskFlags[4]{ shader->CompositeMaskA.AsInt(), shader->CompositeMaskB.AsInt(), shader->CompositeMaskC.AsInt(), shader->CompositeMaskD.AsInt() };
 
-			if (maskFlags[maskIndex] == 0)
+		if (maskFlags[maskIndex] == 0)
+			continue;
+
+		const int dstCount = shader->GetDstCount();
+
+		for (int j = 0; j < dstCount; ++j)
+		{
+			if (!FBIS(shader->GetDst(j), FBModel))
 				continue;
 
-			const int dstCount = shader->GetDstCount();
+			FBModel* maskObject = static_cast<FBModel*>(shader->GetDst(j));
+			FBModelVertexData* vertexData = maskObject->ModelVertexData;
+					
+			if (!vertexData || !vertexData->IsDrawable())
+				continue;
 
-			for (int j = 0; j < dstCount; ++j)
+			if (preDrawCallback)
 			{
-				if (FBIS(shader->GetDst(j), FBModel))
-				{
-					FBModel* maskObject = static_cast<FBModel*>(shader->GetDst(j));
-					FBModelVertexData* vertexData = nullptr;
-					if (maskObject) 
-						vertexData = maskObject->ModelVertexData;
-
-					if (vertexData != nullptr && vertexData->IsDrawable())
-					{
-						FBMatrix normalMatrix;
-						maskObject->GetMatrix(normalMatrix, kModelTransformation_Geometry);
-						FBMatrixMult(normalMatrix, mv, normalMatrix);
-						FBMatrixInverse(normalMatrix, normalMatrix);
-						FBMatrixTranspose(normalMatrix, normalMatrix);
-						BindUniformMatrix(6, normalMatrix);
-
-						RenderModel(maskObject);
-					}
-				}
+				preDrawCallback(maskObject, shader);
 			}
+					
+			FBMatrix normalMatrix;
+			maskObject->GetMatrix(normalMatrix, kModelTransformation_Geometry);
+			FBMatrixMult(normalMatrix, mv, normalMatrix);
+			FBMatrixInverse(normalMatrix, normalMatrix);
+			FBMatrixTranspose(normalMatrix, normalMatrix);
+			BindUniformMatrix(6, normalMatrix);
+
+			RenderModel(maskObject);
 		}
 	}
 }

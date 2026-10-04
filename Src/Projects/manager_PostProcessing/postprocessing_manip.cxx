@@ -13,8 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postprocessing_manip.h"
 #include "postprocessingmanager.h"
 #include <fbsdk/fbsdk-opengl.h>
-#include "posteffectbase.h"
-#include "posteffectchain.h"
+#include "posteffect_chain.h"
 
 #include <imgui.h>
 #include <imnodes.h>
@@ -24,8 +23,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Registration defines
 #define ORMANIPTEMPLATE__CLASS	ORMANIPTEMPLATE__CLASSNAME
-#define ORMANIPTEMPLATE__LABEL	"OR - Manip Template"
-#define ORMANIPTEMPLATE__DESC	"OR - Manipulator Template Description"
+#define ORMANIPTEMPLATE__LABEL	"Post Processing Manip"
+#define ORMANIPTEMPLATE__DESC	"Manipulator for post processing effects"
 
 //--- FiLMBOX implementation and registration
 FBManipulatorImplementation	(	ORMANIPTEMPLATE__CLASS		);
@@ -42,7 +41,7 @@ extern PostProcessingManager* GetPostProcessingManager();
 /************************************************
  *	FiLMBOX Constructor.
  ************************************************/
-bool ORManip_Template::FBCreate()
+bool Manip_PostProcessing::FBCreate()
 {
 	if( FBManipulator::FBCreate() )
 	{
@@ -73,7 +72,7 @@ struct PostGraphNode
 
 public:
 
-	PostGraphNode(const PostEffectBase* effect)
+	PostGraphNode(const PostEffectBufferShader* effect)
 		: m_effect(effect)
 	{}
 
@@ -98,7 +97,7 @@ public:
 	int attrOut = 0;
 
 private:
-	const PostEffectBase* m_effect;
+	const PostEffectBufferShader* m_effect;
 
 };
 
@@ -108,15 +107,16 @@ public:
 
 	PostGraph(const PostEffectChain* chain)
 	{
-		nodes.push_back( PostGraphNode(chain->GetSSAOEffect()) ); // 0
-		nodes.push_back(PostGraphNode(chain->GetColorEffect())); // 1
-		nodes.push_back(PostGraphNode(chain->GetDOFEffect())); // 2
-		nodes.push_back(PostGraphNode(chain->GetFilmGrainEffect())); // 3
-		nodes.push_back(PostGraphNode(chain->GetFishEyeEffect())); // 4
-		nodes.push_back(PostGraphNode(chain->GetVignettingEffect())); // 5
-		nodes.push_back(PostGraphNode(chain->GetDisplacementEffect())); // 6
-		nodes.push_back(PostGraphNode(chain->GetLensFlareEffect())); // 7
-		nodes.push_back(PostGraphNode(chain->GetMotionBlurEffect())); // 8
+		// TODO:
+		//nodes.push_back( PostGraphNode(chain->GetSSAOEffect()) ); // 0
+		//nodes.push_back(PostGraphNode(chain->GetColorEffect())); // 1
+		//nodes.push_back(PostGraphNode(chain->GetDOFEffect())); // 2
+		//nodes.push_back(PostGraphNode(chain->GetFilmGrainEffect())); // 3
+		//nodes.push_back(PostGraphNode(chain->GetFishEyeEffect())); // 4
+		//nodes.push_back(PostGraphNode(chain->GetVignettingEffect())); // 5
+		//nodes.push_back(PostGraphNode(chain->GetDisplacementEffect())); // 6
+		//nodes.push_back(PostGraphNode(chain->GetLensFlareEffect())); // 7
+		//nodes.push_back(PostGraphNode(chain->GetMotionBlurEffect())); // 8
 		
 		links.push_back({ 0, 8 });
 		links.push_back({ 8, 2 });
@@ -233,14 +233,14 @@ static PostGraph* g_graph = nullptr;
 /************************************************
  *	FiLMBOX Destructor.
  ************************************************/
-void ORManip_Template::FBDestroy()
+void Manip_PostProcessing::FBDestroy()
 {
 	FBManipulator::FBDestroy();
 
 	HideGraph();
 }
 
-void ORManip_Template::ShowGraph()
+void Manip_PostProcessing::ShowGraph()
 {
 	if (m_firstRun)
 	{
@@ -257,17 +257,16 @@ void ORManip_Template::ShowGraph()
 
 		m_firstRun = false;
 	}
-
+	/*
 	if (!g_graph
-		&& GetPostProcessingManager()->GetCurrentEffectChain()
-		&& GetPostProcessingManager()->GetCurrentEffectChain()->GetSSAOEffect())
+		&& GetPostProcessingManager()->GetCurrentEffectChain())
 	{
 		g_graph = new PostGraph(GetPostProcessingManager()->GetCurrentEffectChain());
 	}
-
+	*/
 	// Use ImGui functions between here and Render()
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2((float)GetPaneWidth(), (float)GetPaneHeight());
+	io.DisplaySize = ImVec2(static_cast<float>(GetPaneWidth()), static_cast<float>(GetPaneHeight()));
 
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
@@ -294,7 +293,7 @@ void ORManip_Template::ShowGraph()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ORManip_Template::HideGraph()
+void Manip_PostProcessing::HideGraph()
 {
 	if (g_graph)
 	{
@@ -314,10 +313,10 @@ void ORManip_Template::HideGraph()
 /************************************************
  *	Draw function for manipulator
  ************************************************/
-void ORManip_Template::ViewExpose()
+void Manip_PostProcessing::ViewExpose()
 {
 	glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
-
+	
 	GRenderAfterRender();
 
 	glPopAttrib();
@@ -336,7 +335,7 @@ void ORManip_Template::ViewExpose()
 /************************************************
  *	Deal with maniplator input.
  ************************************************/
-bool ORManip_Template::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, int pButtonKey, int pModifier)
+bool Manip_PostProcessing::ViewInput(int pMouseX, int pMouseY, FBInputType pAction, int pButtonKey, int pModifier)
 {
 	if (g_graph)
 	{

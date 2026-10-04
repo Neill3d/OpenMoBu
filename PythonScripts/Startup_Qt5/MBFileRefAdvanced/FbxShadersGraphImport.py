@@ -248,11 +248,11 @@ def RetrieveShaderPropertyValue(lShader, propElem, importNS):
                 for connElem in allTheConnections:
                     compName = importNS + str(connElem.getAttribute('LongName'))
 
-                    ndx = gReferenceContentNames.index(compName)
-                    if ndx >= 0:
-                        #theProp.ConnectSrc(comp)
+                    try:
+                        ndx = gReferenceContentNames.index(compName)
                         FBConnect(gReferenceContent[ndx], theProp)
-                        #sys.__stdout__.write(gReferenceContent[ndx].LongName + '\n')
+                    except ValueError:
+                        pass
 
 #
 # findByTag is bool
@@ -321,10 +321,11 @@ def LoadShaderGraphResources(filename, origFileName, objNS, findByTag, alwaysRet
                         
                         for attachment in allTheAttElems:
                             modelname = str(attachment.getAttribute('LongName'))
-                            
-                            ndx = gReferenceContentNames.index(importNS + modelname)
-                            if ndx >= 0:
+                            try:
+                                ndx = gReferenceContentNames.index(importNS + modelname)
                                 FBConnect(newShader, gReferenceContent[ndx])
+                            except ValueError:
+                                pass
             
             #
             if newShader is not None:
@@ -332,9 +333,11 @@ def LoadShaderGraphResources(filename, origFileName, objNS, findByTag, alwaysRet
                 if True == isSystem:
                     for attachment in allTheAttElems:
                         modelname = str(attachment.getAttribute('LongName'))
-                        ndx = gReferenceContentNames.index(importNS + modelname)
-                        if ndx >= 0:
+                        try:
+                            ndx = gReferenceContentNames.index(importNS + modelname)
                             FBConnect(newShader, gReferenceContent[ndx])
+                        except ValueError:
+                            pass                            
                 else:
                 
                     if True == alwaysRetrieveProps:
@@ -344,9 +347,11 @@ def LoadShaderGraphResources(filename, origFileName, objNS, findByTag, alwaysRet
                             
                         for attachment in allTheAttElems:
                             modelname = str(attachment.getAttribute('LongName'))
-                            ndx = gReferenceContentNames.index(importNS + modelname)
-                            if ndx >= 0:
+                            try:
+                                ndx = gReferenceContentNames.index(importNS + modelname)
                                 FBConnect(newShader, gReferenceContent[ndx])
+                            except ValueError:
+                                pass
   
                         # id props
                         fnameProp = newShader.PropertyList.Find( 'RefFileName' )
@@ -412,9 +417,11 @@ def LoadShaderGraphConnections(filename, origFileName, objNS, findByTag):
                             
                 for attachment in allTheAttElems:
                     modelname = str(attachment.getAttribute('LongName'))
-                    ndx = gReferenceContentNames.index(importNS + modelname)
-                    if ndx >= 0:
+                    try:
+                        ndx = gReferenceContentNames.index(importNS + modelname)
                         FBConnect(newShader, gReferenceContent[ndx])
+                    except ValueError:
+                        pass
             
     #
     # import model visibility and show
@@ -431,8 +438,8 @@ def LoadShaderGraphConnections(filename, origFileName, objNS, findByTag):
             show = ('True' == str(modelelem.getAttribute('Show')))
             vis = ('True' == str(modelelem.getAttribute('Visibility')))
             
-            ndx = gReferenceContentNames.index(importNS + modelName)
-            if ndx >= 0:
+            try:
+                ndx = gReferenceContentNames.index(importNS + modelName)
                 model = gReferenceContent[ndx]
                 
                 currShow = model.Show
@@ -444,7 +451,10 @@ def LoadShaderGraphConnections(filename, origFileName, objNS, findByTag):
                     model.Visibility = vis
                 
                 if False == show or False == vis:
-                    print modelName
+                    print(modelName)
+
+            except ValueError:
+                pass
     
     #del (xmldoc, shadersGraphElem, modelsElem)
 
@@ -491,7 +501,7 @@ def ComparePropsAndValues(mbObj, props):
                     
             except NotImplementedError:
                 #numberOfPropCollisions += 1
-                print mbProp.GetName()
+                print(mbProp.GetName())
         
             # TODO: check prop connections if there are any
             srcCount = mbProp.GetSrcCount()
@@ -836,7 +846,7 @@ def HasReferenceNewUpdate(objNS):
     
     xmlLastWrite = str(shadersGraphElem[0].getAttribute('LastWrite'))
     
-    print date
-    print xmlLastWrite
+    print(date)
+    print(xmlLastWrite)
     
     return (date > xmlLastWrite)

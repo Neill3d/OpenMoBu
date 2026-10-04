@@ -9,13 +9,14 @@ GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
 */
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "SuperShader_glsl.h"
 #include "GPUBuffer.h"
 #include "LightGPUBuffersManager.h"
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include <vector>
+#include <filesystem>
 
 #include <memory>
 
@@ -42,8 +43,8 @@ namespace Graphics
 		//! a destructor
 		~SuperShader();
 
-		// path - where to locate our effect files
-		bool Initialize(const char *path);
+		// shadersPath - a folder where to locate our effect files
+		bool Initialize(const std::filesystem::path& shadersPath);
 
 		bool BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList);
 		void EndShading(FBRenderOptions *pRenderOptions=nullptr);
@@ -88,7 +89,7 @@ namespace Graphics
 		} PhongShaderUniformLocations;
 
 		double						mAlpha;
-		GLSLShader*					mLastBinded{ nullptr };
+		GLSLShaderProgram*					mLastBinded{ nullptr };
 		GLuint						mLastTexId{ 0 };
 		GLuint						mLastLightmapId{ 0 };
 		FBMaterial*					mLastMaterial{ nullptr };
@@ -103,8 +104,8 @@ namespace Graphics
 		GPUBufferSSBO				mBufferDirLights;
 		GPUBufferSSBO				mBufferLights;
 
-		std::unique_ptr<GLSLShader>	mShaderBufferId;
-		std::unique_ptr<GLSLShader>	mShaderShading;
+		std::unique_ptr<GLSLShaderProgram>	mShaderBufferId;
+		std::unique_ptr<GLSLShaderProgram>	mShaderShading;
 
 		//
 		//

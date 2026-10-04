@@ -196,17 +196,18 @@ void MainFrameBuffer::PrepAttachedFBO()
 	// collect information about the mobu framebuffer
 
 	int objectType, objectName;
-	GLint width = 0, height = 0, format = 0, samples = 0;
+	GLint width = 0, height = 0, format = 0;
+	GLint samples = extendedInfo.GetNumberOfSamples();
 
 	glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &objectType);
 	glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &objectName);
-
+	
 	if (objectType == 0)
 	{
 		glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &objectType);
 		glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &objectName);
 	}
-
+	
 	if (objectType == GL_RENDERBUFFER && glIsRenderbuffer(objectName) == GL_TRUE)
 	{
 		glBindRenderbuffer(GL_RENDERBUFFER, objectName);
@@ -215,16 +216,7 @@ void MainFrameBuffer::PrepAttachedFBO()
 		glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
 		glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, &format);
 		glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &samples);
-		/*
-		if (samples > 0)
-		{
-			glRenderbufferStorageMultisample(GL_RENDERBUFFER, linfo.samples, linfo.depthInternalFormat, linfo.width, linfo.height);
-		}
-		else
-		{
-			glRenderbufferStorage     ( GL_RENDERBUFFER, linfo.depthInternalFormat, linfo.width, linfo.height );
-		}
-		*/
+		
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 			GL_RENDERBUFFER, 0);	// objectName 
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT,
@@ -234,42 +226,36 @@ void MainFrameBuffer::PrepAttachedFBO()
 	}
 	else if (glIsTexture(objectName) == GL_TRUE)
 	{
-		glGetTextureParameteriv(objectName, GL_TEXTURE_WIDTH, &width);
-		glGetTextureParameteriv(objectName, GL_TEXTURE_HEIGHT, &height);
-		glGetTextureParameteriv(objectName, GL_TEXTURE_SAMPLES, &samples);
+		// For size, query mip level 0:
+		glGetTextureLevelParameteriv(objectName, 0, GL_TEXTURE_WIDTH, &width);
+		glGetTextureLevelParameteriv(objectName, 0, GL_TEXTURE_HEIGHT, &height);
 	}
 
-	if (width > 0 && height > 0)
+	if (width > 0 
+		&& height > 0
+		&& (width != extendedInfo.GetWidth() || height != extendedInfo.GetHeight() || samples != extendedInfo.GetNumberOfSamples()))
 	{
 		extendedInfo.Set(1.0, samples, 0, width, height);
 
-		//
-		// detach mobu resources
-
-		detachFBOAttachment(0, GL_COLOR_ATTACHMENT0, samples);
-
-		/*
-		CreateTextures(textures_extended, extendedInfo.GetBufferWidth(), extendedInfo.GetBufferHeight(),
-		extendedInfo.GetNumberOfSamples(), extendedInfo.GetNumberOfCoverageSamples(), true, true, false, true, true);
-
-		attachTexture2D(0, GL_COLOR_ATTACHMENT0, textures_extended.color_texture, extendedInfo.GetNumberOfSamples());
-		attachTexture2D(0, depthAttachment, textures_extended.depth_texture, extendedInfo.GetNumberOfSamples());
-		//attachTexture2D(0, GL_STENCIL_ATTACHMENT, textures_extended.stencil_texture, extendedInfo.GetNumberOfSamples());
-		attachTexture2D(0, GL_COLOR_ATTACHMENT1, textures_extended.normal_texture, extendedInfo.GetNumberOfSamples());
-		attachTexture2D(0, GL_COLOR_ATTACHMENT2, textures_extended.mask_texture, extendedInfo.GetNumberOfSamples());
-		*/
 		CreateTextures(textures_extended, extendedInfo.GetBufferWidth(), extendedInfo.GetBufferHeight(),
 			extendedInfo.GetNumberOfSamples(), extendedInfo.GetNumberOfCoverageSamples(), true, true, true, true, true);
 
+		//
+		// detach mobu resources
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo_attached);
+
+		detachFBOAttachment(0, GL_COLOR_ATTACHMENT0, samples);
+		
 		attachTexture2D(0, GL_COLOR_ATTACHMENT0, textures_extended.color_texture, extendedInfo.GetNumberOfSamples());
 		attachTexture2D(0, depthAttachment, textures_extended.depth_texture, extendedInfo.GetNumberOfSamples());
-		attachTexture2D(0, GL_STENCIL_ATTACHMENT, textures_extended.stencil_texture, mainInfo.GetNumberOfSamples());
-
+		attachTexture2D(0, GL_STENCIL_ATTACHMENT, textures_extended.stencil_texture, extendedInfo.GetNumberOfSamples());
+		
 #ifdef MANY_ATTACHMENTS
 		attachTexture2D(0, GL_COLOR_ATTACHMENT1, textures_extended.normal_texture, extendedInfo.GetNumberOfSamples());
 		attachTexture2D(0, GL_COLOR_ATTACHMENT2, textures_extended.mask_texture, extendedInfo.GetNumberOfSamples());
 #endif
 
+		checkFboStatus(fbo_attached);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -282,8 +268,6 @@ const GLuint MainFrameBuffer::prepTexture(GLuint id, int depthSamples, int cover
 	{
 		glGenTextures(1, &texId);
 	}
-
-	CHECK_GL_ERROR();
 
 	if (depthSamples <= 1)
 	{
@@ -305,7 +289,6 @@ const GLuint MainFrameBuffer::prepTexture(GLuint id, int depthSamples, int cover
 		}
 	}
 
-	CHECK_GL_ERROR();
 	return texId;
 }
 
@@ -475,8 +458,6 @@ bool MainFrameBuffer::ReSize(const int newWidth, const int newHeight, double ssf
 		firstTime = true;
 	}
 
-	CHECK_GL_ERROR();
-
 	double local_ssfact = ssfact;
 	int local_samples = _depthSamples;
 	int local_coverageSamples = _coverageSamples;
@@ -507,8 +488,6 @@ bool MainFrameBuffer::ReSize(const int newWidth, const int newHeight, double ssf
 				DetachTexturesFromFBO(fboms, mainInfo.GetNumberOfSamples() );
 		}
 
-		CHECK_GL_ERROR();
-
 		mainInfo.Set(local_ssfact, local_samples, local_coverageSamples, local_width, local_height);
 
 		unbindFBO();
@@ -527,22 +506,33 @@ bool MainFrameBuffer::ReSize(const int newWidth, const int newHeight, double ssf
 		}
 		CreateTextures(textures, mainInfo.GetWidth(), mainInfo.GetHeight(), 0, 0, true, true, true, true, true); 
 		AttachTexturesToFBO(fbo, textures, 0);
-		
-		CHECK_GL_ERROR();
 	}
 
 	return result;
 }
 
+void MainFrameBuffer::CopyFromFramebuffer(GLuint fboIn, int widthIn, int heightIn, int depthSamplesIn)
+{
+	ReSize(widthIn, heightIn, 1.0, depthSamplesIn, 0);
+
+	constexpr const bool copyColor1{ true };
+	constexpr const bool copyColor2{ false };
+	constexpr const bool copyColor3{ false };
+
+	BlitFBOToFBO(fboIn, widthIn, heightIn,
+		fbo, widthIn, heightIn,
+		copyColor1, copyColor2, copyColor3);
+}
+
 void MainFrameBuffer::PrepForPostProcessing(bool drawToBack)
 {
 	if (isFboAttached() )
-		PrepForPostProcessingExtended(drawToBack);
+		PrepForPostProcessingExternal(drawToBack);
 	else
 		PrepForPostProcessingInternal(drawToBack);
 }
 
-void MainFrameBuffer::PrepForPostProcessingExtended(bool drawToBack)
+void MainFrameBuffer::PrepForPostProcessingExternal(bool drawToBack)
 {
 	const int bufw = extendedInfo.GetBufferWidth();
 	const int bufh = extendedInfo.GetBufferHeight();
@@ -552,9 +542,13 @@ void MainFrameBuffer::PrepForPostProcessingExtended(bool drawToBack)
 
 	if (extendedInfo.GetNumberOfSamples() > 1)
 	{
+		constexpr const bool copyColor1{ true };
+		constexpr const bool copyColor2{ false };
+		constexpr const bool copyColor3{ false };
+
 		BlitFBOToFBO( fbo_attached, bufw, bufh,
 					fbo, bufw, bufh,
-				true, true, false );
+				copyColor1, copyColor2, copyColor3 );
 		
 	} // if multisample
 
@@ -621,7 +615,6 @@ void MainFrameBuffer::PrepForPostProcessingInternal(bool drawToBack)
 
 void MainFrameBuffer::ChangeContext()
 {
-	
 	DeleteTextures();
 	DeleteFBO();
 
@@ -656,6 +649,7 @@ void MainFrameBuffer::BeginRenderAttached()
 
 	GLenum buffers2 [] = { GL_COLOR_ATTACHMENT0 };
 	glDrawBuffers( 1, buffers2 );
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 	// enable multisample
 	if (samples > 1)
@@ -677,10 +671,8 @@ void MainFrameBuffer::BeginRenderInternal()
 		bindFBO( fboms );
 	else
 	{
-		if (mainInfo.GetScaleFactor() > 1.0)
-			bindFBO( fbobig );
-		else
-			bindFBO( fbo );
+		const GLuint fboToBind = (mainInfo.GetScaleFactor() > 1.0) ? fbobig : fbo;
+		bindFBO( fboToBind );
 	}
 
 #ifdef MANY_ATTACHMENTS

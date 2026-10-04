@@ -9,7 +9,7 @@
 //
 // GitHub repository - https://github.com/Neill3d/MoBu
 //
-// Author Sergey Solohin (Neill3d) 2014
+// Author Sergei Solokhin (Neill3d) 2014
 //  e-mail to: neill3d@gmail.com
 // 
 /////////////////////////////////////////////////////////////////////////////////////////

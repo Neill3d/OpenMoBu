@@ -24,4 +24,20 @@ find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 link_libraries(${GLEW_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Version.lib fbsdk fbxsdk OpenGL::GL OpenGL::GLU GLEW::glew_s)
+# fbxsdk is intentionally not linked here: only FBXUtils.cpp uses it (headers come from
+# OPENREALITY_ROOT/include above), and consumers that need FBX link fbxsdk themselves.
+# Linking it here would propagate the import lib to every plugin, since this is a static library.
+target_link_libraries(${PROJECT_NAME} PRIVATE Version.lib fbsdk OpenGL::GL OpenGL::GLU GLEW::glew_s)
+
+#
+# XXHASH - built from the sources in third_party/xxhash
+
+add_library(xxhash_local STATIC
+  "${CMAKE_SOURCE_DIR}/third_party/xxhash/xxhash.c"
+)
+
+target_include_directories(xxhash_local PUBLIC
+  "${CMAKE_SOURCE_DIR}/third_party/xxhash"
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE xxhash_local)

@@ -11,7 +11,12 @@
 //	Special for Les Androids Associes
 //
 
-uniform sampler2D sampler0;
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
+
+uniform sampler2D colorSampler;
 uniform sampler2D maskSampler;
 
 uniform float	useMasking;
@@ -27,23 +32,23 @@ uniform float vignfade; // = 22.0; //f-stops till vignete fades
 
 float vignette()
 {
-	float dist = distance(gl_TexCoord[0].xy, vec2(0.5,0.5)); // gl_TexCoord[3].xy
+	float dist = distance(texCoord.xy, vec2(0.5,0.5));
 	dist = smoothstep(vignout+(fstop/vignfade), vignin+(fstop/vignfade), dist);
 	return clamp(dist,0.0,1.0);
 }
 
 void main (void)
 {
-	vec2 tx = gl_TexCoord [0].st;
+	vec2 tx = texCoord;
 	
 	if (tx.y < upperClip || tx.y > lowerClip)
 	{
-		vec4 fragColor = texture2D(sampler0, tx);
-		gl_FragData [0] =  fragColor;
+		vec4 fragColor = texture2D(colorSampler, tx);
+		FragColor =  fragColor;
 		return;
 	}
 	
-	vec4 color = texture2D( sampler0, tx ); 
+	vec4 color = texture2D(colorSampler, tx); 
 	
 	vec4 vigncolor = color * vignette();
 
@@ -53,10 +58,10 @@ void main (void)
 
 	if (useMasking > 0.0)
 	{
-		vec4 mask = texture2D( maskSampler, tx );
+		vec4 mask = texture2D(maskSampler, tx);
 		f *= 1.0 - mask.r * useMasking;
 	}
 	
 	color = mix(color, vigncolor, f);
-	gl_FragData [0] =  color;
+	FragColor = color;
 }

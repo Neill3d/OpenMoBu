@@ -1,0 +1,243 @@
+#pragma once
+
+// posteffect_buffers.h
+/*
+Sergei <Neill3d> Solokhin 2018-2026
+
+GitHub page - https://github.com/Neill3d/OpenMoBu
+Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
+*/
+
+//--- SDK include
+#include <fbsdk/fbsdk.h>
+
+#include "GL/glew.h"
+
+#include "graphics_framebuffer.h"
+#include "postprocessing_helper.h"
+
+#include "glslShaderProgram.h"
+#include "Framebuffer.h"
+
+#include <memory>
+#include <bitset>
+#include <string>
+
+// swap indices between 0 and 1
+class PingPongData
+{
+private:
+	int readAttachment = 0; //!< index of the current read attachment
+	int writeAttachment = 1; //!< index of the current write attachment
+
+public:
+	PingPongData() noexcept = default;
+
+	int GetReadAttachment() const noexcept { return readAttachment; }
+	int GetWriteAttachment() const noexcept { return writeAttachment; }
+
+	void Swap() { std::swap(readAttachment, writeAttachment); }
+};
+
+// a framebuffer with 2 attachments, so that we could read from one attachment and write into another, then swap
+class FramebufferPingPongHelper
+{
+private:
+	FrameBuffer& fb;
+	PingPongData& data;
+
+public:
+	FramebufferPingPongHelper(FrameBuffer& framebufferIn, PingPongData& dataIn)
+		: fb(framebufferIn), data(dataIn)
+	{}
+
+	inline int GetReadAttachment() const { return data.GetReadAttachment(); }
+	inline int GetWriteAttachment() const { return data.GetWriteAttachment(); }
+
+	FrameBuffer* GetPtr() { return &fb; }
+
+	// swap attachment indices
+	void Swap() { data.Swap(); }
+
+	GLuint GetReadColorObject() const { return fb.GetColorObject(GetReadAttachment()); }
+
+	void Bind() const {
+		fb.Bind(GetWriteAttachment());
+	}
+	void UnBind(bool generateMips=false) const {
+		fb.UnBind(generateMips);
+	}
+};
+
+class IFramebufferProvider {
+public:
+	virtual ~IFramebufferProvider() = default;
+
+	// @param nameKey is a hashed value of a framebuffer name
+	virtual FrameBuffer* RequestFramebuffer(uint32_t nameKey, bool addReference=false) = 0;
+
+	// Request a framebuffer with specific dimensions or properties
+	virtual FrameBuffer* RequestFramebuffer(
+		uint32_t nameKey, 
+		int width, 
+		int height, 
+		int flags, 
+		int numColorAttachments,
+		bool isAutoResize,
+		const std::function<void(FrameBuffer*)>& onInit=nullptr,
+		bool addReference=false) = 0;
+
+	virtual void ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmidiately=false) = 0;
+
+	virtual void OnFrameRendered() = 0;
+
+	// Notify context change
+	virtual void OnContextChanged() = 0;
+};
+
+///////////////////////////
+// double buffer for effect chain
+
+
+
+/// <summary>
+/// manage framebuffer resources for a given context
+///  also provide
+///  - double buffers for effect chain
+///  - framebuffer provider
+/// </summary>
+class PostEffectBuffers : public IFramebufferProvider
+{
+public:
+
+	//! a constructor
+	PostEffectBuffers();
+	//! a destructor
+	~PostEffectBuffers();
+
+	void ChangeContext();
+
+	bool ReSize(const int w, const int h, bool useScale, double scaleFactor, bool filterMips=false);
+
+	bool Ok();
+
+	
+	const int GetWidth() const { return mWidth; }
+	const int GetHeight() const { return mHeight; }
+	const unsigned int GetPreviewWidth() const { return mPreviewWidth; }
+	const unsigned int GetPreviewHeight() const { return mPreviewHeight; }
+	
+	void		PreviewSignal() { mPreviewSignal = true; }
+
+	//bool		PreviewCompressBegin();
+	//bool		PreviewCompressEnd();
+	//void		PrepPreviewCompressed();
+
+	bool		PreviewOpenGLCompress(EImageCompression	compressionType, GLint &compressionCode);
+
+	const GLuint GetPreviewCompressedColor();
+
+	//void MapCompressedData(const float timestamp, Network::CPacketImageHeader &header);
+
+	const size_t GetCompressedSize() const {
+		return mCompressedSize;
+	}
+	const size_t GetUnCompressedSize() const {
+		return mUnCompressSize;
+	}
+
+	static int GetFlagsForMainColorBuffer();
+	static int GetFlagsForSingleColorBuffer();
+	static void SetParametersForMainColorBuffer(FrameBuffer* buffer, bool filterMips);
+	static void SetParametersForMainDepthBuffer(FrameBuffer* buffer);
+
+	//
+	// IFramebufferProvider
+
+	FrameBuffer* RequestFramebuffer(uint32_t nameKey, bool addReference=false) override;
+
+	FrameBuffer* RequestFramebuffer(
+		uint32_t nameKey,
+		int width,
+		int height,
+		int flags,
+		int numColorAttachments,
+		bool isAutoResize,
+		const std::function<void(FrameBuffer*)>& onInit = nullptr,
+		bool addReference=false) override;
+	
+	void ReleaseFramebuffer(uint32_t nameKey, bool doRemoveImmidiately=false) override;
+
+	void OnFrameRendered() override;
+
+	void OnContextChanged() override;
+
+private:
+
+	struct FramebufferEntry {
+		std::unique_ptr<FrameBuffer> framebuffer;
+		//std::string name;
+		int width{ 1 };
+		int height{ 1 };
+		int flags{ 0 };
+		int numColorAttachments{ 1 };
+		bool isAutoResize{ true };
+		int referenceCount{ 0 };
+		mutable int lazyEraseCounter{ 15 };
+
+		void MarkUsed() { lazyEraseCounter = 15; }
+		void AddReference() { ++referenceCount; }
+		void RemoveReference() { if (referenceCount > 0) --referenceCount; }
+		int GetReferenceCount() const { return referenceCount; }
+
+		bool ReadyToErase() const { --lazyEraseCounter; return lazyEraseCounter <= 0; }
+	};
+
+	// use xxhash32 for a key
+	std::unordered_map<uint32_t, FramebufferEntry> framebufferPool;
+	
+	//std::string GenerateKey(const std::string& name, int width, int height, int flags, int numAttachments) {
+	//	return name + "(" + std::to_string(flags) + "):" + std::to_string(numAttachments) + "x" + std::to_string(width) + "x" + std::to_string(height);
+	//}
+
+protected:
+
+	// last local buffers resize
+	int								mWidth;
+	int								mHeight;
+	GLuint							mOutputColorObject;
+
+	bool							mPreviewSignal;
+	bool							mPreviewRunning;
+
+	// downscaled size
+	unsigned int					mPreviewWidth;
+	unsigned int					mPreviewHeight;
+
+	int			mSrc;
+	int			mDst;
+
+	// compressed ETC1 output texture
+	GLenum								mCompressionInternal;
+	GLenum								mCompressionFormat;
+	GLenum								mCompressionType;
+	GLuint								mCompressedPreviewId;
+
+	GLuint								mCompressOnFlyId;
+
+	int									mCurPBO;
+	GLuint								mPBOs[2];
+
+	// temp
+	int									mCurUnPack;
+	GLuint								mUnPackPBOs[2];
+
+	size_t								mUnCompressSize;
+	size_t								mCompressedSize;
+
+	//CompressImageHeader				mCompressHeader;
+
+	void		FreeBuffers();
+	void AllocPreviewTexture(int w, int h);
+	void		FreeTextures();
+};

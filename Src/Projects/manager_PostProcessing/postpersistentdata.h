@@ -21,6 +21,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 // forward declaration
 class PostPersistentData;
+class PostEffectBufferShader;
+class EffectShaderUserObject;
 
 enum EBlurQuality
 {
@@ -40,13 +42,169 @@ enum EPostAction
 };
 
 /// <summary>
-/// This class will make sure that the data related to the tool is persistent.
+/// This class will make sure that the data related to the post processing is persistent.
 /// </summary>
 class PostPersistentData : public FBUserObject 
 {
     //--- FiLMBOX declaration.
 	FBClassDeclare(PostPersistentData, FBUserObject)
 	FBDeclareUserObject(PostPersistentData);
+
+public:
+	// common
+
+	static constexpr const char* UPPER_CLIP = "Bottom Clip Percent";
+	static constexpr const char* LOWER_CLIP = "Top Clip Percent";
+
+	// Color Correction
+
+	static constexpr const char* COLOR_USE_MASKING = "Color Correction Use Masking";
+	static constexpr const char* COLOR_MASKING_CHANNEL = "Color Correction Masking Channel";
+
+	static constexpr const char* CHROMATIC_ABERRATION = "Chromatic Aberration";
+	static constexpr const char* CHROMATIC_ABERRATION_DIR = "Chromatic Aberration Direction";
+	static constexpr const char* CONTRAST = "Contrast";
+	static constexpr const char* BRIGHTNESS = "Brightness";
+	static constexpr const char* SATURATION = "Saturation";
+
+	static constexpr const char* COLOR_GAMMA = "Gamma";
+	static constexpr const char* COLOR_INVERSE = "Inverse";
+	static constexpr const char* BLOOM = "Bloom";
+	static constexpr const char* BLOOM_MIN_BRIGHT = "Bloom Min Bright";
+	static constexpr const char* BLOOM_TONE = "Bloom Tone";
+	static constexpr const char* BLOOM_STRETCH = "Bloom Stretch";
+
+	static constexpr const char* COLOR_HUE = "Hue";
+	static constexpr const char* COLOR_HUE_SATURATION = "Hue Saturation";
+	static constexpr const char* COLOR_LIGHTNESS = "Lightness";
+
+	// Depth of Field
+
+	static constexpr const char* DOF_USE_MASKING = "Depth Of Field Use Masking";
+	static constexpr const char* DOF_MASKING_CHANNEL = "Depth Of Field Masking Channel";
+
+	static constexpr const char* USE_CAMERA_DOF_PROPS = "Use Camera DOF Properties";
+	static constexpr const char* RESET_DOF = "Reset DOF";
+	static constexpr const char* DOF_DEBUG_BLUR_VALUE = "Debug Blur Value";
+	static constexpr const char* DOF_DEBUG_SHOW_FOCUS = "Debug Show Focus";
+	static constexpr const char* DOF_DEBUG_FAR_DIST = "Debug Camera Far Dist";
+	static constexpr const char* DOF_FIX_CAM_SETTINGS = "Fix Camera Settings";
+
+	static constexpr const char* DOF_FOCAL_DISTANCE = "Focal Distance";
+	static constexpr const char* DOF_FOCAL_RANGE = "Focal Range";
+	static constexpr const char* DOF_FSTOP = "F-Stop";
+
+	static constexpr const char* DOF_AUTO_FOCUS = "Auto Focus";
+	static constexpr const char* DOF_FOCUS_OBJECT = "Focus Object";
+	static constexpr const char* DOF_BLUR_FOREGROUND = "Blur Foreground";
+
+	static constexpr const char* DOF_USE_FOCUS_POINT = "Use Focus Point";
+	static constexpr const char* DOF_FOCUS_POINT = "Focus Point";
+	static constexpr const char* DOF_SAMPLES = "Samples";
+	static constexpr const char* DOF_RINGS = "Ring count";
+	static constexpr const char* DOF_COC = "Circle of confusion";
+	static constexpr const char* DOF_BLUR_RADIUS = "Blur Radius";
+	static constexpr const char* DOF_THRESHOLD = "Highlight Threshold";
+	static constexpr const char* DOF_GAIN = "Highlight Gain";
+	static constexpr const char* DOF_BIAS = "Bokeh Bias";
+	static constexpr const char* DOF_FRINGE = "Bokeh Fringe";
+	static constexpr const char* DOF_NOISE = "Noise";
+	static constexpr const char* DOF_PENTAGON = "Pentagon";
+	static constexpr const char* DOF_PENTAGON_FEATHER = "Pentagon feather";
+
+	// displacement
+
+	static constexpr const char* DISP_USE_MASKING = "Disp Use Masking";
+	static constexpr const char* DISP_MASKING_CHANNEL = "Disp Masking Channel";
+
+	static constexpr const char* DISP_USE_QUAKE_EFFECT = "Use Quake Water Effect";
+	static constexpr const char* DISP_USE_PLAY_TIME = "Disp Use Play Time";
+	static constexpr const char* DISP_SPEED = "Displacement Speed";
+	static constexpr const char* DISP_MAGNITUDE_X = "Disp Magnitude X";
+	static constexpr const char* DISP_MAGNITUDE_Y = "Disp Magnitude Y";
+	static constexpr const char* DISP_SIN_CYCLES_X = "Disp Sin Cycles X";
+	static constexpr const char* DISP_SIN_CYCLES_Y = "Disp Sin Cycles Y";
+
+	// film grain
+
+	static constexpr const char* GRAIN_USE_MASKING = "Grain Use Masking";
+	static constexpr const char* GRAIN_MASKING_CHANNEL = "Grain Masking Channel";
+
+	static constexpr const char* GRAIN_USE_PLAY_TIME = "Grain Use Play Time";
+	static constexpr const char* GRAIN_SPEED = "Grain Time Speed";
+
+	static constexpr const char* GRAIN_AMOUNT = "Grain Amount";
+	static constexpr const char* GRAIN_COLORED = "Grain Colored";
+	static constexpr const char* GRAIN_COLOR_AMOUNT = "Grain Color Amount";
+	static constexpr const char* GRAIN_SIZE = "Grain Size";
+	static constexpr const char* GRAIN_LUMAMOUNT = "Grain Lum Amount";
+
+	// Fish Eye
+
+	static constexpr const char* FISHEYE_USE_MASKING = "Fish Eye Use Masking";
+	static constexpr const char* FISHEYE_MASKING_CHANNEL = "Fish Eye Masking Channel";
+
+	static constexpr const char* FISHEYE_AMOUNT = "Fish Eye Amount";
+	static constexpr const char* FISHEYE_LENS_RADIUS = "Fish Eye Lens Radius";
+	static constexpr const char* FISHEYE_SIGN_CURV = "Fish Eye Sign Curvature";
+	static constexpr const char* FISHEYE_ORDER = "Fish Eye Order";
+
+	// Lens Flare
+
+	static constexpr const char* FLARE_USE_MASKING = "Flare Use Masking";
+	static constexpr const char* FLARE_MASKING_CHANNEL = "Flare Masking Channel";
+
+	static constexpr const char* FLARE_USE_OCCLUSION = "Flare Use Occlusion";
+	static constexpr const char* FLARE_OCC_SPEED = "Flare Occlusion Speed";
+	static constexpr const char* FLARE_OCC_OBJECTS = "Flare Occlusion Objects";
+
+	static constexpr const char* FLARE_TYPE = "Flare Type";
+	static constexpr const char* FLARE_SEED = "Flare Seed";
+	static constexpr const char* FLARE_USE_PLAY_TIME = "Flare Use Play Time";
+	static constexpr const char* FLARE_TIME_SPEED = "Flare Time Speed";
+
+	static constexpr const char* FLARE_USE_LIGHT_OBJECT = "Use Flare Light Object";
+	static constexpr const char* FLARE_LIGHT = "Flare Light";
+	static constexpr const char* FLARE_AMOUNT = "Lens Flare Amount";
+	static constexpr const char* FLARE_DEPTH_ATT = "Flare Depth Attenuation";
+	static constexpr const char* FLARE_POSX = "Lens Flare X";
+	static constexpr const char* FLARE_POSY = "Lens Flare Y";
+
+	static constexpr const char* FLARE_TINT = "Lens Flare Tint";
+	static constexpr const char* FLARE_INNER = "Lens Flare Inner";
+	static constexpr const char* FLARE_OUTER = "Lens Flare Outer";
+	static constexpr const char* FLARE_FADE_TO_BORDERS = "Flare Fade To Borders";
+	static constexpr const char* FLARE_BORDER_WIDTH = "Flare Border Width";
+	static constexpr const char* FLARE_BORDER_FEATHER = "Flare Border Feather";
+
+	// Motion Blur
+
+	static constexpr const char* MOTIONBLUR_USE_MASKING = "Motion Blur Use Masking";
+	static constexpr const char* MOTIONBLUR_MASKING_CHANNEL = "Motion Blur Masking Channel";
+
+	static constexpr const char* MOTIONBLUR_AMOUNT = "Motion Blur Amount";
+
+	// SSAO
+
+	static constexpr const char* SSAO_USE_MASKING = "SSAO Use Masking";
+	static constexpr const char* SSAO_MASKING_CHANNEL = "SSAO Masking Channel";
+
+	static constexpr const char* SSAO_RADIUS = "SSAO Radius";
+	static constexpr const char* SSAO_INTENSITY = "SSAO Intensity";
+	static constexpr const char* SSAO_BIAS = "SSAO Bias";
+	static constexpr const char* SSAO_ONLY_AO = "Only AO";
+	static constexpr const char* SSAO_BLUR = "SSAO Blur";
+	static constexpr const char* SSAO_BLUR_SHARPNESS = "SSAO Blur Sharpness";
+
+	// vignetting
+
+	static constexpr const char* VIGN_USE_MASKING = "Vignetting Use Masking";
+	static constexpr const char* VIGN_MASKING_CHANNEL = "Vignetting Masking Channel";
+
+	static constexpr const char* VIGN_AMOUNT = "Vignetting Amount";
+	static constexpr const char* VIGN_OUT = "Vignetting Outer Border";
+	static constexpr const char* VIGN_IN = "Vignetting Inner Border";
+	static constexpr const char* VIGN_FADE = "Vignetting Fade";
 
 public:
 	//! a constructor
@@ -105,9 +263,12 @@ public: // PROPERTIES
 	{
 		assert(maskIndex < NUMBER_OF_MASKS);
 
-		FBVector3d v;
-		Masks[maskIndex].BlurMaskScale->GetData(v, sizeof(FBVector3d));
-
+		FBVector3d v(1.0, 1.0, 1.0);
+		if (maskIndex >= 0 && maskIndex < NUMBER_OF_MASKS)
+		{
+			Masks[maskIndex].BlurMaskScale->GetData(v, sizeof(FBVector3d));
+		}
+		
 		return FBVector2d(v[0], v[1]);
 	}
 
@@ -118,6 +279,9 @@ public: // PROPERTIES
 	FBPropertyAction			ReloadShaders;
 	FBPropertyBool				GenerateMipMaps;
 	FBPropertyAction			ResetToDefault;
+
+	FBPropertyAnimatableBool	UseUserEffects;
+	FBPropertyListObject		UserEffects; //!< connected custom effects to use in the processing chain
 
 	FBPropertyBool				AutoClipFromHUD;
 	FBPropertyDouble			UpperClip;
@@ -254,6 +418,7 @@ public: // PROPERTIES
 	FBPropertyAction			ResetDOF;
 
 	FBPropertyBool				DebugBlurValue; //!< output only computed blur gradient
+	FBPropertyBool				DebugShowFocus; //!< visualize focal distance in the viewport with a color gradient
 	FBPropertyAction			DebugFarDistance; //!< check if camera far distance is too big for glsl float
 	FBPropertyAction			FixCameraSettings; //!< update camera far plane, and turns off real-time camera effects
 
@@ -269,12 +434,6 @@ public: // PROPERTIES
 	
 	FBPropertyBool					BlurForeground;	//!< flag to make everything clean in foreground
 
-	FBPropertyBool					ManualFocus;
-	FBPropertyAnimatableDouble		ManualNear;
-	FBPropertyAnimatableDouble		ManualNearFalloff;
-	FBPropertyAnimatableDouble		ManualFar;
-	FBPropertyAnimatableDouble		ManualFarFalloff;
-
 	FBPropertyBool					UseFocusPoint;
 	FBPropertyAnimatableVector2d	FocusPoint;		//!< relative screen coord to grab a depth distance from
 
@@ -286,6 +445,8 @@ public: // PROPERTIES
 	FBPropertyInt					Rings;		//!< ring count
 
 	FBPropertyAnimatableDouble		CoC;	//!< circle of confusion size in mm (35 mm film = 0.03mm)
+
+	FBPropertyAnimatableDouble		BlurRadius;	//!< max blur radius in pixels
 
 	FBPropertyAnimatableDouble		Threshold;	//!< highlight threshold
 	FBPropertyAnimatableDouble		Gain;		//!< highlight gain
@@ -363,8 +524,6 @@ public:
 	void DoDebugFarDist();
 	void DoFixCameraSettings();
 
-	void DoReloadShaders();
-
 	void DoFocusObjectCreate();
 	void DoFocusObjectSelect();
 
@@ -373,8 +532,10 @@ public:
 
 	void DoResetDOF();
 
-	bool IsNeedToReloadShaders();
-	void SetReloadShadersState(bool state);
+	void RequestShadersReload(bool isExternal = true, bool doPropagateToUserEffects = false);
+	bool IsNeedToReloadShaders(bool doPropagateToUserEffects=true);
+	bool IsExternalReloadRequested() const;
+	void DoReloadShaders();
 
 	void SetPreviewTextureId(unsigned int id, double ratio, 
 		unsigned int w, unsigned int h, int uncomporessSize, 
@@ -382,8 +543,6 @@ public:
 
 	void PushClipSettings(double upper, double lower);
 	void PopClipSettings();
-
-	bool IsLazyLoadReady() { mLazyLoadCounter = (mLazyLoadCounter >= 0) ? mLazyLoadCounter-1 : -1; return mLazyLoadCounter < 0; }
 
 	/// <summary>
 	/// return true if masking is activated globally or in any effect in particular
@@ -397,13 +556,19 @@ public:
 	/// </summary>
 	int GetGlobalMaskIndex() const;
 
+	int GetNumberOfActiveUserEffects();
+	PostEffectBufferShader* GetActiveUserEffectShader(const int index);
+	EffectShaderUserObject* GetActiveUserEffectObject(const int index);
+	bool HasAnyUserEffectWithReloadRequest();
+
+	std::vector<EffectShaderUserObject*> GetAllConnectedUserEffects();
+
 protected:
 
 	friend class ToolPostProcessing;
 
-	FBSystem			mSystem;
-
     FBString			mText;
+	bool				mReloadExternal{ false };
 	bool				mReloadShaders{ false };
 	EPostAction			mPostAction{ EPostAction::ePostActionNone };
 
@@ -412,13 +577,13 @@ protected:
 	double				mTempLower{ 0.0 };
 	double				mTempUpper{ 0.0 };
 
-	int			mLazyLoadCounter{ 0 };
-
 	void		DefaultValues();
 	void		LoadFromConfig(const char *sessionFilter=nullptr);
 	void		LoadFarValueFromConfig();
 
 	void ComputePointInFront(FBVector3d &v);
+
+	void ProcessSiblingsOfUserEffect(std::vector<EffectShaderUserObject*>& effectsOut, EffectShaderUserObject* userEffectIn);
 };
 
 #endif /* __POST_PROCESSING_DATA_H__ */

@@ -1,7 +1,7 @@
 
 /** \file   postprocessing_manager.cxx
 
-	Sergei <Neill3d> Solokhin 2018
+	Sergei <Neill3d> Solokhin 2018-2026
 
 	GitHub page - https://github.com/Neill3d/OpenMoBu
 	Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -10,8 +10,10 @@
 
 //--- Class declaration
 #include <Windows.h>
+#include <filesystem>
+#include <shared_mutex>
 #include "postprocessingmanager.h"
-
+#include "posteffect_contextmobu.h"
 #include "postprocessing_helper.h"
 
 //--- Registration defines
@@ -26,8 +28,8 @@ FBRegisterCustomManager(POSTPROCESSING_MANAGER__CLASS);         // Manager class
 #define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
 
 // track the state of OpenGL viewport context
-HGLRC	PostProcessingManager::gCurrentContext = 0;
-std::map<HGLRC, PostProcessContextData*>	PostProcessingManager::gContextMap;
+std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	PostProcessingManager::gContextMap;
+static std::shared_mutex gContextMapMutex;
 
 PostProcessingManager *gManager = nullptr;
 
@@ -65,8 +67,8 @@ void DebugOGL_Callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 {
 	if (type == GL_DEBUG_TYPE_ERROR)
 	{
-		FBTrace(">> ERROR!\n");
-		FBTrace("debug message - %s\n", message);
+		LOGE(">> ERROR!\n");
+		LOGE("debug message - %s\n", message);
 	}
 }
 
@@ -80,9 +82,6 @@ bool PostProcessingManager::FBCreate()
 	//
 	FBProfiling_SetupTaskCycle(PostProcessRenderer);
 
-	mEnterId = 0;
-	mFrameId = 0;
-	
 	gManager = this;
 
 	mLastSendTimeSecs = 0.0;
@@ -115,6 +114,7 @@ bool PostProcessingManager::FBCreate()
 void PostProcessingManager::FBDestroy()
 {
     // Free any user memory here.
+	gManager = nullptr;
 }
 
 
@@ -131,24 +131,62 @@ bool PostProcessingManager::Init()
 	glDebugMessageCallback(DebugOGL_Callback, nullptr);
 #endif
 
+	LoadShaderTextInsertions();
     return true;
 }
 
 bool PostProcessingManager::Open()
 {
-	mApplication.OnFileNewCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileNew);
-	mApplication.OnFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpen);
-	mApplication.OnFileOpenCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
+	FBApplication& application = FBApplication::TheOne();
+	FBSystem& system = FBSystem::TheOne();
+	FBEvaluateManager& evaluateManager = FBEvaluateManager::TheOne();
 
-	mSystem.Scene->OnChange.Add(this, (FBCallback)&PostProcessingManager::EventSceneChange);
+	application.OnFileNewCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileNew);
+	application.OnFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpen);
+	application.OnFileOpenCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
+	application.OnOverrideFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
 
-	mSystem.OnUIIdle.Add(this, (FBCallback)&PostProcessingManager::OnUIIdle);
+	system.Scene->OnChange.Add(this, (FBCallback)&PostProcessingManager::EventSceneChange);
 
-	mSystem.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
+	system.OnUIIdle.Add(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
-	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
+	system.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
+	evaluateManager.OnEvaluationPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	evaluateManager.OnSynchronizationEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
+	evaluateManager.OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
     return true;
+}
+
+void PostProcessingManager::LoadShaderTextInsertions()
+{
+	constexpr const char* KEYWORD_HEADER{ "INSERT: HEADER" };
+	constexpr const char* KEYWORD_IMAGE_CROP{ "INSERT: APPLY_IMAGE_CROP" };
+	constexpr const char* KEYWORD_MASKING{ "INSERT: APPLY_MASKING" };
+
+	const std::filesystem::path INSERT_HEADER{ L"GLSL/insert_header.glslf" };
+	const std::filesystem::path INSERT_IMAGE_CROP{ L"GLSL/insert_image_crop.glslf" };
+	const std::filesystem::path INSERT_MASKING{ L"GLSL/insert_masking.glslf" };
+
+	const auto loadInsertion = [](const char* keyword, const std::filesystem::path& requestedPath)
+	{
+		const auto filePath = FindEffectLocation(requestedPath);
+
+		if (!filePath)
+		{
+			LOGE("Failed to locate shader insertion: %ls\n", requestedPath.c_str());
+			return;
+		}
+
+		if (!GLSLShaderProgram::AddTextInsertionFromFile(keyword, *filePath))
+		{
+			LOGE("Failed to load shader insertion: %ls\n", filePath->c_str());
+		}
+	};
+
+	loadInsertion(KEYWORD_HEADER, INSERT_HEADER);
+	loadInsertion(KEYWORD_IMAGE_CROP, INSERT_IMAGE_CROP);
+	loadInsertion(KEYWORD_MASKING, INSERT_MASKING);
 }
 
 void PostProcessingManager::LoadConfig()
@@ -230,14 +268,15 @@ void PostProcessingManager::LoadConfig()
 
 void PostProcessingManager::OnUIIdle(HISender pSender, HKEvent pEvent)
 {
+	FBSystem& system = FBSystem::TheOne();
 
-	if (true == mFirstRun)
+	if (mFirstRun)
 	{
 		mFirstRun = false;
 
 		//
-		mSystem.OnConnectionNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnNotify);
-		mSystem.OnConnectionDataNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
+		system.OnConnectionNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnNotify);
+		system.OnConnectionDataNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
 
 		//
 		LoadConfig();
@@ -301,19 +340,24 @@ bool PostProcessingManager::Clear()
 
 bool PostProcessingManager::Close()
 {
-	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
+	FBSystem& system = FBSystem::TheOne();
+	FBEvaluateManager& evaluateManager = FBEvaluateManager::TheOne();
+	FBApplication& application = FBApplication::TheOne();
 
-	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
+	system.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
-	mApplication.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
-	mApplication.OnFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpen);
-	mApplication.OnFileMerge.Remove(this, (FBCallback)&PostProcessingManager::EventFileMerge);
-	mApplication.OnFileOpenCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
-
-	mSystem.Scene->OnChange.Remove(this, (FBCallback)&PostProcessingManager::EventSceneChange);
-	mSystem.OnConnectionNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnNotify);
-	mSystem.OnConnectionDataNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
-	mSystem.OnVideoFrameRendering.Remove(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
+	evaluateManager.OnEvaluationPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	evaluateManager.OnSynchronizationEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
+	evaluateManager.OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
+	application.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
+	application.OnFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpen);
+	application.OnFileMerge.Remove(this, (FBCallback)&PostProcessingManager::EventFileMerge);
+	application.OnFileOpenCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
+	application.OnOverrideFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
+	system.Scene->OnChange.Remove(this, (FBCallback)&PostProcessingManager::EventSceneChange);
+	system.OnConnectionNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnNotify);
+	system.OnConnectionDataNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
+	system.OnVideoFrameRendering.Remove(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
 	//CloseSocket();
 
@@ -324,28 +368,44 @@ bool PostProcessingManager::Close()
 void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 {
 	// clear all pointers (start point)
-
-	//ClearOutputCompositePtr();
-	//mSettings = nullptr;
+	std::unique_lock wlock(gContextMapMutex);
+	for (auto& contextPair : gContextMap)
+	{
+		PostProcessContextData& contextData = *contextPair.second; 
+		contextData.SetNeedToResetPaneSettings(true);
+	}
 }
 
 void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
 	skipRender = true;
+	std::unique_lock wlock(gContextMapMutex);
+	for (auto& contextPair : gContextMap)
+	{
+		PostProcessContextData& contextData = *contextPair.second;
+		contextData.SetNeedToResetPaneSettings(true);
+	}
+}
+
+void PostProcessingManager::EventFileOpenOverride(HISender pSender, HKEvent pEvent)
+{
+	FBEventOverrideFileOpen lEvent(pEvent);
+	SetCurrentFileOpenPath(lEvent.FilePath.AsString());
 }
 
 void PostProcessingManager::EventFileMerge(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
-	//mSettingsMerge = true;
-	
 }
 
 void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEvent)
 {
-	//mSettings = nullptr;
 	skipRender = false;
+	std::unique_lock wlock(gContextMapMutex);
+	for (auto& contextPair : gContextMap)
+	{
+		PostProcessContextData& contextData = *contextPair.second;
+		contextData.SetNeedToResetPaneSettings(true);
+	}
 }
 
 
@@ -365,24 +425,59 @@ void PostProcessingManager::EventConnNotify(HISender pSender, HKEvent pEvent)
 	
 }
 
+PostProcessContextData* PostProcessingManager::GetCurrentContextData()
+{
+	HGLRC hContext = wglGetCurrentContext();
+	if (!hContext)
+		return nullptr;
+
+	std::shared_lock lock(gContextMapMutex); // many readers allowed concurrently
+	auto it = gContextMap.find(hContext);
+	return it != gContextMap.end() ? it->second.get() : nullptr;
+}
 
 void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, HKEvent pEvent)
 {
 	FBEventEvalGlobalCallback lFBEvent(pEvent);
 	if (lFBEvent.GetTiming() == kFBGlobalEvalCallbackSyn)
 	{
+		const int enterId = mFrameGate.GetEnterId();
+		ENSURE(enterId == 0);
+		mFrameGate.Reset();
+
 		///
 		// This callback occurs when both rendering and evaluation pipeline are stopped,
 		// plugin developer could add some lightweight scene modification tasks here
 		// and no need to worry complicated thread issues. 
 		//
-
+		if (PostProcessContextData* pContextData =
+			mSyncContextData.load(std::memory_order_acquire))
+		{
+			pContextData->Synchronize();
+			mEvaluateContextData.store(pContextData, std::memory_order_release);
+		}
 	}
 }
 
 void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSender, HKEvent pEvent)
 {
+	FBEventEvalGlobalCallback lFBEvent(pEvent);
+
+	const FBGlobalEvalCallbackTiming timing = lFBEvent.GetTiming();
 	
+	if (timing == FBGlobalEvalCallbackTiming::kFBGlobalEvalCallbackAfterDAG)
+	{
+		// TODO: this is not context based, we have to evaluate once
+		// and reuse in every context !
+		if (PostProcessContextData* evalContext = mEvaluateContextData.load(std::memory_order_acquire))
+		{
+			FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
+			FBTime systemTime = evalInfo->GetSystemTime();
+			FBTime localTime = evalInfo->GetLocalTime();
+
+			evalContext->Evaluate(systemTime, localTime, evalInfo);
+		}
+	}
 }
 
 
@@ -393,126 +488,92 @@ void PostProcessingManager::OnPerFrameEvaluationPipelineCallback(HISender pSende
 void PostProcessingManager::CheckForAContextChange()
 {
 	HGLRC hContext = wglGetCurrentContext();
+	if (!hContext)
+		return;
 
-	if (0 == gCurrentContext)
+	// fast path: context already exists (the common case every frame)
 	{
-		// initialize for the first time
-		gCurrentContext = hContext;
+		std::shared_lock rlock(gContextMapMutex);
+		if (gContextMap.count(hContext))
+			return;
 	}
 
-	auto iter = gContextMap.find(hContext);
-
-	if (iter == end(gContextMap))
+	// slow path: new context, take exclusive lock and insert
+	std::unique_lock wlock(gContextMapMutex);
+	auto& entry = gContextMap.try_emplace(hContext, nullptr).first->second;
+	if (!entry) // double-check after acquiring exclusive lock
 	{
-		PostProcessContextData *newData = new PostProcessContextData();
-		newData->Init();
-		gContextMap.insert(std::make_pair(hContext, newData));
-	}
-
-	if (hContext != gCurrentContext)
-	{
-		gCurrentContext = hContext;
-		FBTrace("> !! CHANGE CONTEXT !!\n");
+		entry = std::make_unique<PostProcessContextData>();
+		entry->Init();
+		LOGI("PostProcessing: created context data for HGLRC=%p\n", (void*)hContext);
 	}
 }
-
-
-void PostProcessingManager::PreRenderFirstEntry()
-{
-	CheckForAContextChange();
-
-	auto iter = gContextMap.find(gCurrentContext);
-
-	if (iter != end(gContextMap))
-	{
-		iter->second->PreRenderFirstEntry();
-	}
-}
-
 
 void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent)
 {
-
 	if (skipRender)
 		return;
 
 	FBEventEvalGlobalCallback lFBEvent(pEvent);
 
 	// check for a context change here
-	if (mEnterId < 1 && lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender)
+	if (lFBEvent.GetTiming() == kFBGlobalEvalCallbackBeforeRender)
 	{
-		PreRenderFirstEntry();
+		mFrameGate.Enter();
+	}
+	else if (lFBEvent.GetTiming() == kFBGlobalEvalCallbackAfterRender)
+	{
+		mFrameGate.Leave();
+	}
+	if (mFrameGate.IsFirstEnter())
+	{
+		CheckForAContextChange();
 	}
 
-	auto iter = gContextMap.find(gCurrentContext);
-
-	if (iter == end(gContextMap))
-	{
+	PostProcessContextData* pContextData = GetCurrentContextData();
+	if (!pContextData)
 		return;
-	}
-
-	bool usePostProcessing = false;
-
-	for (int i = 0; i<iter->second->mLastPaneCount; ++i)
-	{
-		if (nullptr != iter->second->mPaneSettings[i])
-		{
-			usePostProcessing = true;
-			break;
-		}
-	}
-
 	
 	switch (lFBEvent.GetTiming())
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
-		if (iter->second->mViewerViewport[2] <= 1 || iter->second->mViewerViewport[3] <= 1)
-		{
-			usePostProcessing = false;
-		}
-
-			mLastProcessCompositions = usePostProcessing;
-			iter->second->RenderBeforeRender(usePostProcessing, false);
+			mSyncContextData.store(pContextData, std::memory_order_release);
+			pContextData->RenderBeforeRender();
 			
-			if (true == mDoVideoClipTimewrap)
+			if (mDoVideoClipTimewrap)
 			{
 				PrepVideoClipsTimeWrap();
 			}
-			
-
 		} break;
 	case kFBGlobalEvalCallbackAfterRender:
 		{
-			//
-			// This callback occurs just before swapping GL back/front buffers. 
-			// User could do some special effect, HUD or buffer download (via PBO) here. 
-			//
-			
-			//
-			// Start PostProcessRenderer task cycle profiling, 
-			//
 			FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
 
-			iter->second->RenderAfterRender(usePostProcessing, false);
+			FBEvaluateInfo* evalInfo = lFBEvent.GetEvaluateInfo();
+			FBTime systemTime = evalInfo->GetSystemTime();
+			FBTime localTime = evalInfo->GetLocalTime();
 
+			pContextData->RenderAfterRender(systemTime, localTime, evalInfo);
 		} break;
 
 	default:
 		break;
 	}
-
-	CHECK_GL_ERROR();
 }
 
 
 bool PostProcessingManager::ExternalRenderAfterRender()
 {
-	auto iter = gContextMap.find(gCurrentContext);
+	FBProfilerHelper lProfiling(FBProfiling_TaskCycleIndex(PostProcessRenderer), FBGetDisplayInfo(), FBGetRenderingTaskCycle());
 
-	if (iter != end(gContextMap))
+	if (PostProcessContextData* pContextData = GetCurrentContextData())
 	{
-		return iter->second->RenderAfterRender(mLastProcessCompositions, false);
+		FBSystem& system = FBSystem::TheOne();
+		FBTime systemTime = system.SystemTime;
+		FBTime localTime = system.LocalTime;
+
+		return pContextData->RenderAfterRender(systemTime, localTime, FBGetDisplayInfo());
 	}
 	return false;
 }
@@ -523,33 +584,30 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 
 	if (levent.GetState() == FBEventVideoFrameRendering::eBeginRendering)
 	{
-		PreRenderFirstEntry();
-
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter == end(gContextMap))
-			return;
-
-		// turn off preview mode and switch quality settings if needed
-		iter->second->mVideoRendering = true;
+		CheckForAContextChange();
 		
+		if (PostProcessContextData* pContextData = GetCurrentContextData())
+		{
+			pContextData->VideoRenderingBegin();
+		}
+		// turn off preview mode and switch quality settings if needed
 		PushUpperLowerClipForEffects();
 	}
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
 	{
-		auto iter = gContextMap.find(gCurrentContext);
-		if (iter == end(gContextMap))
-			return;
-
+		if (PostProcessContextData* pContextData = GetCurrentContextData())
+		{
+			pContextData->VideoRenderingEnd();
+		}
 		// turn on back preview mode and display quality settings
-		iter->second->mVideoRendering = false;
 		PopUpperLowerClipForEffects();
 	}
 }
 
 void PostProcessingManager::PrepVideoClipsTimeWrap()
 {
-
-	FBScene *pScene = mSystem.Scene;
+	FBSystem& system = FBSystem::TheOne();
+	FBScene *pScene = system.Scene;
 
 	for (int i = 0, count = pScene->VideoClips.GetCount(); i < count; ++i)
 	{
@@ -585,7 +643,7 @@ void PostProcessingManager::PrepVideoClipsTimeWrap()
 			{
 				FBPropertyAnimatableDouble *animprop = (FBPropertyAnimatableDouble*)prop;
 
-				FBTime currTime = mSystem.LocalTime;
+				FBTime currTime = system.LocalTime;
 				double dvalue;
 
 				animprop->GetAnimationNode()->Evaluate(&dvalue, currTime);
@@ -774,7 +832,8 @@ void Manager_PostProcessing::SendPreview(PostEffectBuffers *buffers)
 */
 void PostProcessingManager::PushUpperLowerClipForEffects()
 {
-	FBScene *pScene = mSystem.Scene;
+	FBSystem& system = FBSystem::TheOne();
+	FBScene *pScene = system.Scene;
 
 	// let's find a clip values
 
@@ -821,7 +880,8 @@ void PostProcessingManager::PushUpperLowerClipForEffects()
 
 void PostProcessingManager::PopUpperLowerClipForEffects()
 {
-	FBScene *pScene = mSystem.Scene;
+	FBSystem& system = FBSystem::TheOne();
+	FBScene *pScene = system.Scene;
 	//
 
 	for (int i = 0, count = pScene->UserObjects.GetCount(); i < count; ++i)

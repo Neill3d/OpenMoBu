@@ -23,6 +23,46 @@
 //#ifdef CMD_SEND_CODE
 #include "FileUtils.h"
 
+namespace fs = std::filesystem;
+
+namespace
+{
+	std::wstring QuoteWindowsArgument(std::wstring_view value)
+	{
+		std::wstring result;
+		result.push_back(L'"');
+
+		size_t backslashCount = 0;
+
+		for (const wchar_t character : value)
+		{
+			if (character == L'\\')
+			{
+				++backslashCount;
+				continue;
+			}
+
+			if (character == L'"')
+			{
+				result.append(backslashCount * 2 + 1, L'\\');
+				result.push_back(L'"');
+				backslashCount = 0;
+				continue;
+			}
+
+			result.append(backslashCount, L'\\');
+			backslashCount = 0;
+			result.push_back(character);
+		}
+
+		// Backslashes preceding the closing quote must be doubled.
+		result.append(backslashCount * 2, L'\\');
+		result.push_back(L'"');
+
+		return result;
+	}
+}
+
 bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, InputModelData &data, const bool ResetXForm)
 {
 	LPCSTR	szMemoryName = _T("Local\\cmdfbxmem");
@@ -70,56 +110,60 @@ bool CmdMakeSnapshotFBX_Send(const char *filename, const char *uniqueName, Input
 
 	try
 	{
-		const char* appFilename{ "\\cmdFBX.exe" };
-		char location[MAX_PATH];
-		
-		if ( !FindEffectLocation(appFilename, location, MAX_PATH) )
-			throw "failed to find cmdFBX";
+		const fs::path inputFilename(AnsiToWide(filename));
+		const std::wstring wideUniqueName = AnsiToWide(uniqueName);
 
-		// filename is a path for saving temp fbx !!
+		const auto executable = FindEffectLocation(fs::path(L"cmdFBX.exe"));
 
-		//if( IsFileExists(filename) == false )
-		//	throw " file is not exist\n";
-	
-		// prepare command line with filename and unique name
-		//out_fullpath += " ";
-		//out_fullpath += filename;
-		//out_fullpath += " ";
-		//out_fullpath += uniqueName;
-
-		//std::string		out_fullpath("D:\\Program Files\\Autodesk\\MotionBuilder 2017\\bin\\x64\\plugins\\cmdFBX.exe");
-
-		// prepare command line with filename and unique name
-		
-		std::string fullpath = location;
-		fullpath += appFilename;
-		fullpath += " ";
-		fullpath += filename;
-		fullpath += " ";
-		fullpath += uniqueName;
-		
-		// Start the child process. 
-		if( !CreateProcess( NULL,   // No module name (use command line)
-			const_cast<char*>(fullpath.c_str()),        // Command line
-			NULL,           // Process handle not inheritable
-			NULL,           // Thread handle not inheritable
-			FALSE,          // Set handle inheritance to FALSE
-			0,              // No creation flags
-			NULL,           // Use parent's environment block
-			NULL,           // Use parent's starting directory 
-			&si,            // Pointer to STARTUPINFO structure
-			&pi )           // Pointer to PROCESS_INFORMATION structure
-		) 
+		if (!executable)
 		{
-			throw "CreateProcess failed";
+			throw std::runtime_error("Failed to find cmdFBX.exe");
 		}
 
-		// Wait until child process exits.
-		WaitForSingleObject( pi.hProcess, INFINITE );
+		std::wstring commandLine = QuoteWindowsArgument(executable->native());
 
-		// Close process and thread handles. 
-		CloseHandle( pi.hProcess );
-		CloseHandle( pi.hThread );
+		commandLine += L' ';
+		commandLine += QuoteWindowsArgument(inputFilename.native());
+
+		commandLine += L' ';
+		commandLine += QuoteWindowsArgument(wideUniqueName);
+
+		// CreateProcessW is allowed to modify its command-line buffer.
+		std::vector<wchar_t> mutableCommandLine(
+			commandLine.begin(),
+			commandLine.end());
+
+		mutableCommandLine.push_back(L'\0');
+
+		STARTUPINFOW startupInfo{};
+		startupInfo.cb = sizeof(startupInfo);
+
+		PROCESS_INFORMATION processInfo{};
+
+		const fs::path workingDirectory = executable->parent_path();
+
+		if (!CreateProcessW(
+			executable->c_str(),          // Exact executable
+			mutableCommandLine.data(),    // Mutable command line
+			nullptr,
+			nullptr,
+			FALSE,
+			0,
+			nullptr,
+			workingDirectory.c_str(),
+			&startupInfo,
+			&processInfo))
+		{
+			const DWORD error = GetLastError();
+
+			throw std::system_error(
+				static_cast<int>(error),
+				std::system_category(),
+				"CreateProcessW failed");
+		}
+
+		CloseHandle(processInfo.hThread);
+		CloseHandle(processInfo.hProcess);
 	}
 	catch (const char *msg)
 	{

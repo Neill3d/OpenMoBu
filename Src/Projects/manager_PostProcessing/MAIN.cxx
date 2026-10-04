@@ -1,7 +1,7 @@
 
 /** \file   MAIN.cxx
 
-Sergei <Neill3d> Solokhin 2018
+Sergei <Neill3d> Solokhin 2018-2026
 
 GitHub page - https://github.com/Neill3d/OpenMoBu
 Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/master/LICENSE
@@ -26,6 +26,7 @@ extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 /// <summary>
 /// a method to transfer shared library logs into motionbuilder logs output
 /// </summary>
+DEFINE_LOGV; // TODO: have to be enabled only when corresponding log level is set in command line
 DEFINE_LOGI;
 DEFINE_LOGE;
 
@@ -38,9 +39,16 @@ FBLibraryDeclare( manager_postprocessing )
 	FBLibraryRegister(PostPersistentData);
 	FBLibraryRegisterElement(PostPersistentData);
 
-	FBLibraryRegister(ORManip_Template);
-	//FBLibraryRegisterStorable(ORHUDElementCustom);
+	FBLibraryRegister(EffectShaderUserObject);
+	FBLibraryRegisterElement(EffectShaderUserObject);
 
+	FBLibraryRegister(EffectShaderBilateralBlurUserObject);
+	FBLibraryRegisterElement(EffectShaderBilateralBlurUserObject);
+	FBLibraryRegister(EffectShaderMixUserObject);
+	FBLibraryRegisterElement(EffectShaderMixUserObject);
+
+	FBLibraryRegister(Manip_PostProcessing);
+	
 	FBLibraryRegister(FXMaskingShader);
 }
 FBLibraryDeclareEnd;
@@ -59,11 +67,14 @@ bool FBLibrary::LibInit()       {
 	if (GLEW_OK != err)
 	{
 		// Problem: glewInit failed, something is seriously wrong.
-		LOGE("GLEW error: %s\n", glewGetErrorString(err));
+		LOGE("GLEW error: %s\n", reinterpret_cast<const char*>(glewGetErrorString(err)));
 		return false;
 	}
 	
-	LOGI("GLEW version: %s\n", glewGetString(GLEW_VERSION));
+	LOGI("GLEW version: %s\n", reinterpret_cast<const char*>(glewGetString(GLEW_VERSION)));
+	constexpr const float VERSION{ 2.2f };
+	LOGI("Post Processing Manager v%.2f\n", VERSION);
+
 	g_isGlewInitialized = true;
 	return true; 
 }

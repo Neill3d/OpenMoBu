@@ -12,6 +12,11 @@
 //	Special for Les Androids Associes
 //
 
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
+
 uniform	sampler2D	sampler0;
 uniform sampler2D	maskSampler;
 
@@ -19,15 +24,14 @@ uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
-uniform float 		textureWidth; //scene sampler width
-uniform float 		textureHeight; //scene sampler height
+uniform vec2		gResolution; //viewport resolution
 uniform float 		timer;
 
 const float permTexUnit = 1.0/256.0;		// Perm texture texel-size
 const float permTexUnitHalf = 0.5/256.0;	// Half perm texture texel-size
 
-float width = textureWidth;
-float height = textureHeight;
+float width = gResolution.x;
+float height = gResolution.y;
 
 uniform float grainamount; // = 0.05; //grain amount
 uniform float colored; // = false; //colored noise?
@@ -112,12 +116,9 @@ vec2 coordRot(in vec2 tc, in float angle)
 
 void main() 
 {
-	vec2 texCoord = gl_TexCoord[0].st;
-	
 	if (texCoord.y < upperClip || texCoord.y > lowerClip)
 	{
-		vec4 fragColor = texture2D(sampler0, texCoord);
-		gl_FragColor =  fragColor;
+		FragColor = texture2D(sampler0, texCoord);
 		return;
 	}
 	
@@ -147,12 +148,8 @@ void main()
 	//
 	// masking 
 
-	vec4 mask = vec4(0.0, 0.0, 0.0, 0.0);
-	if (useMasking > 0.0)
-	{
-		mask = texture2D( maskSampler, texCoord );
-	}
-
-	col = mix(noise * grainamount + col, col, mask.r * useMasking);
-	gl_FragColor =  vec4(col,1.0);
+	float masked = (useMasking > 0.0) ? texture2D(maskSampler, texCoord).r : 0.0;
+	
+	col = mix(noise * grainamount + col, col, masked);
+	FragColor =  vec4(col, 1.0);
 }

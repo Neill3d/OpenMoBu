@@ -15,8 +15,11 @@
 
 #version 130
 
+in vec2 texCoord;
+out vec4 FragColor;
+
 uniform	sampler2D	colorSampler;
-uniform sampler2D	depthSampler;
+uniform sampler2D	linearDepthSampler;
 uniform sampler2D	texRandom;
 uniform sampler2D	maskSampler;
 
@@ -24,22 +27,16 @@ uniform float	useMasking;
 uniform float	upperClip;
 uniform float	lowerClip;
 
-uniform vec4	gClipInfo;	// z_n * z_f,  z_n - z_f,  z_f, perspective = 1 : 0
-
 uniform vec4 projInfo;
 uniform int projOrtho;
-uniform vec2 InvQuarterResolution;
 uniform vec2 InvFullResolution;
 
 uniform float RadiusToScreen;		// radius
-uniform float R2;					// 1 / radius
 uniform float NegInvR2;				// radius * radius
 uniform float NDotVBias;			
 
 uniform float	AOMultiplier;
 uniform float 	PowExponent;
-
-uniform vec4 	g_Jitter;
 
 uniform float	OnlyAO;		// display only AO when > 0.0
 
@@ -58,7 +55,7 @@ vec3 UVToView(vec2 uv, float eye_z)
 
 vec3 FetchViewPos(vec2 UV)
 {
-  float ViewDepth = textureLod(depthSampler, UV, 0).x;	// texLinearDepth
+  float ViewDepth = textureLod(linearDepthSampler, UV, 0).x;	// texLinearDepth
   return UVToView(UV, ViewDepth);
 }
 
@@ -95,8 +92,8 @@ float Falloff(float DistanceSquare)
 float ComputeAO(vec3 P, vec3 N, vec3 S)
 {
   vec3 V = S - P;
-  float VdotV = dot(V, V);
-  float NdotV = dot(N, V) * 1.0/sqrt(VdotV);
+  float VdotV = max(dot(V, V), 1e-6);
+	float NdotV = dot(N, V) * inversesqrt(VdotV);
 
   // Use saturate(x) instead of max(x,0.f) because that is faster on Kepler
   return clamp(NdotV - NDotVBias,0,1) * clamp(Falloff(VdotV),0,1);
@@ -112,7 +109,7 @@ vec2 RotateDirection(vec2 Dir, vec2 CosSin)
 //----------------------------------------------------------------------------------
 vec4 GetJitter()
 {
-	return texture2DLod( texRandom, (gl_FragCoord.xy / AO_RANDOMTEX_SIZE), 0);
+	return textureLod( texRandom, (gl_FragCoord.xy / AO_RANDOMTEX_SIZE), 0);
 }
 
 //----------------------------------------------------------------------------------
@@ -127,7 +124,7 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 
   const float Alpha = 2.0 * M_PI / NUM_DIRECTIONS;
   float AO = 0;
-
+  
   for (float DirectionIndex = 0; DirectionIndex < NUM_DIRECTIONS; ++DirectionIndex)
   {
     float Angle = Alpha * DirectionIndex;
@@ -140,29 +137,33 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 
     for (float StepIndex = 0; StepIndex < NUM_STEPS; ++StepIndex)
     {
-      vec2 SnappedUV = round(RayPixels * Direction) * InvFullResolution + FullResUV;
+      vec2 SnappedUV = clamp(round(RayPixels * Direction) * InvFullResolution + FullResUV, 0.0, 1.0);
+      if (SnappedUV.x < 0.0 || SnappedUV.x > 1.0 || SnappedUV.y < 0.0 || SnappedUV.y > 1.0)
+    		continue;
       vec3 S = FetchViewPos(SnappedUV);
 
       RayPixels += StepSizePixels;
 
-      AO += ComputeAO(ViewPosition, ViewNormal, S);
+			AO += ComputeAO(ViewPosition, ViewNormal, S);
     }
   }
 
-  AO *= AOMultiplier / (NUM_DIRECTIONS * NUM_STEPS);
-  return clamp(1.0 - AO * 2.0,0,1);
+  AO = clamp(AO / (NUM_DIRECTIONS * NUM_STEPS), 0.0, 1.0);
+	AO = 1.0 - 2.0 * AOMultiplier * AO;
+	AO = clamp(AO, 0.0, 1.0);
+	return AO;
 }
 
 // -----------------------------------------------------------------------
 
 void main()
 {
-	vec2 uv = gl_TexCoord[0].st;
+	vec2 uv = texCoord;
 	
 	if (uv.y < upperClip || uv.y > lowerClip)
 	{
 		vec4 fragColor = texture2D(colorSampler, uv);
-		gl_FragColor =  fragColor;
+		FragColor =  fragColor;
 		return;
 	}
 	
@@ -172,7 +173,7 @@ void main()
 	vec3 ViewNormal = -ReconstructNormal(uv, ViewPosition);
 
 	// Compute projection of disk of radius control.R into screen space
-	float RadiusPixels = RadiusToScreen / (projOrtho != 0 ? 1.0 : ViewPosition.z);
+	float RadiusPixels = RadiusToScreen / max(abs(ViewPosition.z), 1e-4);
 
 	// Get jitter vector for the current full-res pixel
 	vec4 Rand = GetJitter();
@@ -194,5 +195,5 @@ void main()
 		outcolor.rgb *= AO;
 	}
 	
-	gl_FragColor = outcolor;		
+	FragColor = outcolor;		
 }

@@ -1,9 +1,21 @@
 #pragma once
 
+#include <cstdlib> // for std::abort
 
 /// <summary>
 /// a method to transfer shared library logs into motionbuilder logs output
 /// </summary>
+#define DEFINE_LOGV void LOGV(const char* pFormatString, ...) \
+{ \
+	constexpr int BUFFER_SIZE{ 512 }; \
+	char buffer[BUFFER_SIZE]{ 0 }; \
+	va_list args; \
+	va_start(args, pFormatString); \
+	vsnprintf(buffer, static_cast<size_t>(BUFFER_SIZE - 1), pFormatString, args); \
+	FBTrace("%s", buffer);\
+	va_end(args); \
+}
+
 #define DEFINE_LOGI void LOGI(const char* pFormatString, ...) \
 { \
 	constexpr int BUFFER_SIZE{ 512 }; \
@@ -11,7 +23,7 @@
 	va_list args; \
 	va_start(args, pFormatString); \
 	vsnprintf(buffer, static_cast<size_t>(BUFFER_SIZE - 1), pFormatString, args); \
-	FBTrace(buffer); \
+	FBTrace("%s", buffer);\
 	va_end(args); \
 }
 
@@ -22,10 +34,45 @@
 	va_list args; \
 	va_start(args, pFormatString); \
 	vsnprintf(buffer, static_cast<size_t>(BUFFER_SIZE - 1), pFormatString, args); \
-	FBTrace(buffer); \
+	FBTrace("%s", buffer);\
 	va_end(args); \
 }
 
 // declaration of log functions
+
+// verbose, to print such log use a correspondent command line argument
+extern void LOGV(const char* pFormatString, ...);
+// information line
 extern void LOGI(const char* pFormatString, ...);
+// error line
 extern void LOGE(const char* pFormatString, ...);
+
+#define ENSURE(expr) \
+    do { \
+        if (!(expr)) { \
+        LOGE("Check failed: %s at %s:%d\n", #expr, __FILE__, __LINE__); \
+		} \
+    } while(0)
+
+#define ENSURE_MSG(expr, fmt, ...) \
+    do { \
+        if (!(expr)) { \
+            LOGE("Check failed: %s at %s:%d | " fmt, #expr, __FILE__, __LINE__, ##__VA_ARGS__); \
+        } \
+    } while(0)
+
+#define VERIFY(expr) \
+    do { \
+        if (!(expr)) { \
+        LOGE("Check failed: %s at %s:%d\n", #expr, __FILE__, __LINE__); \
+        std::abort(); \
+		} \
+    } while(0)
+
+#define VERIFY_MSG(expr, fmt, ...) \
+    do { \
+        if (!(expr)) { \
+            LOGE("Check failed: %s at %s:%d | " fmt, #expr, __FILE__, __LINE__, ##__VA_ARGS__); \
+            std::abort(); \
+        } \
+    } while(0)

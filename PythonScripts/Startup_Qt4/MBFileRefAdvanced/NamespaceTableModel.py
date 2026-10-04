@@ -30,7 +30,7 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
         self.mNamespaces = []
         self.mNamespacesFlag = []
         
-        if True == self.mOnlyRef:
+        if self.mOnlyRef:
             for ns in self.mSys.Scene.Namespaces:
                 if isinstance(ns, FBFileReference):
                     self.mNamespaces.append(ns)
@@ -199,7 +199,7 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
                     return QtCore.Qt.Unchecked
 
     def headerData( self, pSection, pOrientation, pRole = QtCore.Qt.DisplayRole ):
-        if pRole <> QtCore.Qt.DisplayRole:
+        if pRole != QtCore.Qt.DisplayRole:
             return None
 
         if pOrientation == QtCore.Qt.Horizontal:
@@ -255,7 +255,7 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
                 lMsgBox = QtGui.QMessageBox( QtGui.QMessageBox.Information, 'Rename', 'Namespace %s will be renamed as %s. Do you want to proceed?' % ( lNSObj.LongName, str(pValue) ), QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, self.mParentDialog )
                 if lMsgBox.exec_() == QtGui.QMessageBox.Yes:
                     oldName = lNSObj.LongName
-                    if True == self.mSys.Scene.NamespaceRename( lNSObj.LongName, str(pValue) ):
+                    if self.mSys.Scene.NamespaceRename( lNSObj.LongName, str(pValue) ):
                         self.namespaceRenamed.emit( oldName, pValue )
                     #self.Refresh( pIndex, pIndex )
                     self.dataChanged.emit( pIndex, pIndex )
@@ -265,7 +265,7 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
                 if lFileToLoad == '':
                     lFileToLoad, strFilter = QtGui.QFileDialog.getOpenFileName( self.mParentDialog, "Pick FBX to reference", self.mParentDialog.mDefaultPath, "*.fbx" )
 
-                if lFileToLoad <> '':
+                if lFileToLoad != '':
                     lQFileInfo = QtCore.QFileInfo( unicode(lFileToLoad) )
                     
                     if not lQFileInfo.exists() or not lQFileInfo.suffix().lower() == 'fbx':
@@ -274,7 +274,7 @@ class NamespaceTableModel( QtCore.QAbstractTableModel ):
                     lSwapDlg = DialogSwapRefFile.DialogSwapRefFile( self.mParentDialog )
                     lSwapDlg.exec_()
                     oldPath = lNSObj.ReferenceFilePath
-                    if True == lNSObj.SwapReferenceFilePath( str(lFileToLoad), lSwapDlg.uiCbApplyTargetEdit.checkState() == QtCore.Qt.Checked, lSwapDlg.uiCbMergeCurrentEdit.checkState() == QtCore.Qt.Checked ):
+                    if lNSObj.SwapReferenceFilePath( str(lFileToLoad), lSwapDlg.uiCbApplyTargetEdit.checkState() == QtCore.Qt.Checked, lSwapDlg.uiCbMergeCurrentEdit.checkState() == QtCore.Qt.Checked ):
                         self.namespaceFilePathSwapped.emit( lNSObj, oldPath, str(lFileToLoad), lSwapDlg.uiCbMergeCurrentEdit.checkState() == QtCore.Qt.Checked )
                     self.dataChanged.emit( pIndex, pIndex )
                     return True

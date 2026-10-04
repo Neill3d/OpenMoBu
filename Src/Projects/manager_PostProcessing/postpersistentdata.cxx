@@ -14,6 +14,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <vector>
 #include <limits>
 
+#include "posteffect_shader_userobject.h"
+
 // custom assets inserting
 
 /** Element Class implementation. (Asset system)
@@ -124,9 +126,6 @@ PostPersistentData::PostPersistentData(const char* pName, HIObject pObject)
 	, mText("")
 {
     FBClassInit;
-
-	mReloadShaders = false;
-	mLazyLoadCounter = 0;
 }
 
 void PostPersistentData::ActionReloadShaders(HIObject pObject, bool value)
@@ -134,7 +133,10 @@ void PostPersistentData::ActionReloadShaders(HIObject pObject, bool value)
 	PostPersistentData *p = FBCast<PostPersistentData>(pObject);
 	if (p && value)
 	{
-		p->DoReloadShaders();
+		constexpr const bool isExternal{ false };
+		constexpr const bool propagateToCustomEffects{ true };
+
+		p->RequestShadersReload(isExternal, propagateToCustomEffects);
 	}
 }
 
@@ -234,6 +236,9 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Reload Shaders", "");
 	AddPropertyView("Reset To Default", "");
 	
+	AddPropertyView("User Effects", "");
+
+	AddPropertyView("Use User Effects", "");
 	AddPropertyView("SSAO", "");
 	AddPropertyView("Motion Blur", "");
 	AddPropertyView("Depth Of Field", "");
@@ -322,13 +327,15 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	AddPropertyView("Use Camera DOF Properties", "Depth Of Field Setup");
 	AddPropertyView("Reset DOF", "Depth Of Field Setup");
-	AddPropertyView("Debug Blur Value", "Depth Of Field Setup");
+	AddPropertyView(DOF_DEBUG_BLUR_VALUE, "Depth Of Field Setup");
+	AddPropertyView(DOF_DEBUG_SHOW_FOCUS, "Depth Of Field Setup");
 	AddPropertyView("Debug Camera Far Dist", "Depth Of Field Setup");
 	AddPropertyView("Fix Camera Settings", "Depth Of Field Setup");
 
-	AddPropertyView("Focal Distance", "Depth Of Field Setup");
-	AddPropertyView("Focal Range", "Depth Of Field Setup");
-	AddPropertyView("F-Stop", "Depth Of Field Setup");
+
+	AddPropertyView(DOF_FOCAL_DISTANCE, "Depth Of Field Setup");
+	AddPropertyView(DOF_FOCAL_RANGE, "Depth Of Field Setup");
+	AddPropertyView(DOF_FSTOP, "Depth Of Field Setup");
 
 	AddPropertyView("Auto Focus", "Depth Of Field Setup");
 	AddPropertyView("Focus Object", "Depth Of Field Setup");
@@ -342,10 +349,11 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 
 	AddPropertyView("Blur Foreground", "Depth Of Field Setup");
 
-	AddPropertyView("Samples", "Depth Of Field Setup");
-	AddPropertyView("Ring count", "Depth Of Field Setup");
+	AddPropertyView(DOF_SAMPLES, "Depth Of Field Setup");
+	AddPropertyView(DOF_RINGS, "Depth Of Field Setup");
 
-	AddPropertyView("Circle of confusion", "Depth Of Field Setup");
+	AddPropertyView(DOF_COC, "Depth Of Field Setup");
+	AddPropertyView(DOF_BLUR_RADIUS, "Depth Of Field Setup");
 
 	AddPropertyView("Highlight Threshold", "Depth Of Field Setup");
 	AddPropertyView("Highlight Gain", "Depth Of Field Setup");
@@ -511,9 +519,12 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, GenerateMipMaps, "Generate MipMaps", nullptr, nullptr);
 	FBPropertyPublish(this, ResetToDefault, "Reset To Default", nullptr, ActionResetToDefault);
 
+	FBPropertyPublish(this, UseUserEffects, "Use User Effects", nullptr, nullptr);
+	FBPropertyPublish(this, UserEffects, "User Effects", nullptr, nullptr);
+
 	FBPropertyPublish(this, AutoClipFromHUD, "Auto Clip From HUD", nullptr, nullptr);
-	FBPropertyPublish(this, UpperClip, "Bottom Clip Percent", nullptr, nullptr);
-	FBPropertyPublish(this, LowerClip, "Top Clip Percent", nullptr, nullptr);
+	FBPropertyPublish(this, UpperClip, UPPER_CLIP, nullptr, nullptr);
+	FBPropertyPublish(this, LowerClip, LOWER_CLIP, nullptr, nullptr);
 
 	// global masking properties
 	FBPropertyPublish(this, UseCompositeMasking, "Use Masking", nullptr, nullptr);
@@ -552,44 +563,43 @@ bool PostPersistentData::FBCreate()
 
 	FBPropertyPublish(this, SSAO, "SSAO", nullptr, nullptr);
 
-	FBPropertyPublish(this, SSAO_UseMasking, "SSAO Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, SSAO_MaskingChannel, "SSAO Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_UseMasking, SSAO_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_MaskingChannel, SSAO_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, SSAO_Radius, "SSAO Radius", nullptr, nullptr);
-
-	FBPropertyPublish(this, SSAO_Intensity, "SSAO Intensity", nullptr, nullptr);
-	FBPropertyPublish(this, SSAO_Bias, "SSAO Bias", nullptr, nullptr);
-
-	FBPropertyPublish(this, OnlyAO, "Only AO", nullptr, nullptr);
-
-	FBPropertyPublish(this, SSAO_Blur, "SSAO Blur", nullptr, nullptr);
-	FBPropertyPublish(this, SSAO_BlurSharpness, "SSAO Blur Sharpness", nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Radius, SSAO_RADIUS, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Intensity, SSAO_INTENSITY, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Bias, SSAO_BIAS, nullptr, nullptr);
+	FBPropertyPublish(this, OnlyAO, SSAO_ONLY_AO, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_Blur, SSAO_BLUR, nullptr, nullptr);
+	FBPropertyPublish(this, SSAO_BlurSharpness, SSAO_BLUR_SHARPNESS, nullptr, nullptr);
 
 	// Motion Blur
+	
 	FBPropertyPublish(this, MotionBlur, "Motion Blur", nullptr, nullptr);
-	FBPropertyPublish(this, MotionBlur_UseMasking, "Motion Blur Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, MotionBlur_MaskingChannel, "Motion Blur Masking Channel", nullptr, nullptr);
-	FBPropertyPublish(this, MotionBlurAmount, "Motion Blur Amount", nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlur_UseMasking, MOTIONBLUR_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlur_MaskingChannel, MOTIONBLUR_MASKING_CHANNEL, nullptr, nullptr);
+	FBPropertyPublish(this, MotionBlurAmount, MOTIONBLUR_AMOUNT, nullptr, nullptr);
 	
 	// Depth Of Field
 
 	FBPropertyPublish(this, DepthOfField, "Depth Of Field", nullptr, nullptr);
 
-	FBPropertyPublish(this, DOF_UseMasking, "Depth Of Field Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, DOF_MaskingChannel, "Depth Of Field Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, DOF_UseMasking, DOF_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, DOF_MaskingChannel, DOF_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, UseCameraDOFProperties, "Use Camera DOF Properties", nullptr, nullptr);
-	FBPropertyPublish(this, ResetDOF, "Reset DOF", nullptr, ActionResetDOF);
-	FBPropertyPublish(this, DebugBlurValue, "Debug Blur Value", nullptr, nullptr);
-	FBPropertyPublish(this, DebugFarDistance, "Debug Camera Far Dist", nullptr, ActionDebugFarDist);
-	FBPropertyPublish(this, FixCameraSettings, "Fix Camera Settings", nullptr, ActionFixCameraSettings);
+	FBPropertyPublish(this, UseCameraDOFProperties, USE_CAMERA_DOF_PROPS, nullptr, nullptr);
+	FBPropertyPublish(this, ResetDOF, RESET_DOF, nullptr, ActionResetDOF);
+	FBPropertyPublish(this, DebugBlurValue, DOF_DEBUG_BLUR_VALUE, nullptr, nullptr);
+	FBPropertyPublish(this, DebugShowFocus, DOF_DEBUG_SHOW_FOCUS, nullptr, nullptr);
+	FBPropertyPublish(this, DebugFarDistance, DOF_DEBUG_FAR_DIST, nullptr, ActionDebugFarDist);
+	FBPropertyPublish(this, FixCameraSettings, DOF_FIX_CAM_SETTINGS, nullptr, ActionFixCameraSettings);
 
-	FBPropertyPublish(this, FocalDistance, "Focal Distance", nullptr, nullptr);
-	FBPropertyPublish(this, FocalRange, "Focal Range", nullptr, nullptr);
-	FBPropertyPublish(this, FStop, "F-Stop", nullptr, nullptr);
+	FBPropertyPublish(this, FocalDistance, DOF_FOCAL_DISTANCE, nullptr, nullptr);
+	FBPropertyPublish(this, FocalRange, DOF_FOCAL_RANGE, nullptr, nullptr);
+	FBPropertyPublish(this, FStop, DOF_FSTOP, nullptr, nullptr);
 
-	FBPropertyPublish(this, AutoFocus, "Auto Focus", nullptr, nullptr);
-	FBPropertyPublish(this, FocusObject, "Focus Object", nullptr, nullptr);
+	FBPropertyPublish(this, AutoFocus, DOF_AUTO_FOCUS, nullptr, nullptr);
+	FBPropertyPublish(this, FocusObject, DOF_FOCUS_OBJECT, nullptr, nullptr);
 	FBPropertyPublish(this, FocusObjectCreate, "Create A Focus Object", nullptr, ActionFocusObjectCreate);
 	FBPropertyPublish(this, FocusObjectSelect, "Select A Focus Object", nullptr, ActionFocusObjectSelect);
 
@@ -597,146 +607,141 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, PreviewQuality, "Preview Quality", nullptr, nullptr);
 	FBPropertyPublish(this, PreviewBlurAmount, "Preview Blur Amount", nullptr, nullptr);
 
-	FBPropertyPublish(this, BlurForeground, "Blur Foreground", nullptr, nullptr);
-	/*
-	FBPropertyPublish(this, ManualFocus, "Manual mode", nullptr, nullptr);
-	FBPropertyPublish(this, ManualNear, "Manual Near Distance", nullptr, nullptr);
-	FBPropertyPublish(this, ManualNearFalloff, "Manual Near Falloff", nullptr, nullptr);
-	FBPropertyPublish(this, ManualFar, "Manual Far Distance", nullptr, nullptr);
-	FBPropertyPublish(this, ManualFarFalloff, "Manual Far Falloff", nullptr, nullptr);
-	*/
+	FBPropertyPublish(this, BlurForeground, DOF_BLUR_FOREGROUND, nullptr, nullptr);
+	
+	FBPropertyPublish(this, UseFocusPoint, DOF_USE_FOCUS_POINT, nullptr, nullptr);
+	FBPropertyPublish(this, FocusPoint, DOF_FOCUS_POINT, nullptr, nullptr);
 
-	FBPropertyPublish(this, UseFocusPoint, "Use Focus Point", nullptr, nullptr);
-	FBPropertyPublish(this, FocusPoint, "Focus Point", nullptr, nullptr);
+	FBPropertyPublish(this, Samples, DOF_SAMPLES, nullptr, nullptr);
+	FBPropertyPublish(this, Rings, DOF_RINGS, nullptr, nullptr);
 
-	FBPropertyPublish(this, Samples, "Samples", nullptr, nullptr);
-	FBPropertyPublish(this, Rings, "Ring count", nullptr, nullptr);
+	FBPropertyPublish(this, CoC, DOF_COC, nullptr, nullptr);
+	FBPropertyPublish(this, BlurRadius, DOF_BLUR_RADIUS, nullptr, nullptr);
 
-	FBPropertyPublish(this, CoC, "Circle of confusion", nullptr, nullptr);
+	FBPropertyPublish(this, Threshold, DOF_THRESHOLD, nullptr, nullptr);
+	FBPropertyPublish(this, Gain, DOF_GAIN, nullptr, nullptr);
 
-	FBPropertyPublish(this, Threshold, "Highlight Threshold", nullptr, nullptr);
-	FBPropertyPublish(this, Gain, "Highlight Gain", nullptr, nullptr);
+	FBPropertyPublish(this, Bias, DOF_BIAS, nullptr, nullptr);
+	FBPropertyPublish(this, Fringe, DOF_FRINGE, nullptr, nullptr);
 
-	FBPropertyPublish(this, Bias, "Bokeh Bias", nullptr, nullptr);
-	FBPropertyPublish(this, Fringe, "Bokeh Fringe", nullptr, nullptr);
+	FBPropertyPublish(this, Noise, DOF_NOISE, nullptr, nullptr);
 
-	FBPropertyPublish(this, Noise, "Noise", nullptr, nullptr);
-
-	FBPropertyPublish(this, Pentagon, "Pentagon", nullptr, nullptr);
-	FBPropertyPublish(this, PentagonFeather, "Pentagon feather", nullptr, nullptr);
+	FBPropertyPublish(this, Pentagon, DOF_PENTAGON, nullptr, nullptr);
+	FBPropertyPublish(this, PentagonFeather, DOF_PENTAGON_FEATHER, nullptr, nullptr);
 
 	// Color Correction
 
 	FBPropertyPublish(this, ColorCorrection, "Color Correction", nullptr, nullptr);
 
-	FBPropertyPublish(this, ColorCorrection_UseMasking, "Color Correction Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, ColorCorrection_MaskingChannel, "Color Correction Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, ColorCorrection_UseMasking, COLOR_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, ColorCorrection_MaskingChannel, COLOR_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, ChromaticAberration, "Chromatic Aberration", nullptr, nullptr);
-	FBPropertyPublish(this, ChromaticAberrationDirection, "Chromatic Aberration Direction", nullptr, nullptr);
+	FBPropertyPublish(this, ChromaticAberration, CHROMATIC_ABERRATION, nullptr, nullptr);
+	FBPropertyPublish(this, ChromaticAberrationDirection, CHROMATIC_ABERRATION_DIR, nullptr, nullptr);
 
-	FBPropertyPublish(this, Contrast, "Contrast", nullptr, nullptr);
-	FBPropertyPublish(this, Brightness, "Brightness", nullptr, nullptr);
-	FBPropertyPublish(this, Saturation, "Saturation", nullptr, nullptr);
+	FBPropertyPublish(this, Contrast, CONTRAST, nullptr, nullptr);
+	FBPropertyPublish(this, Brightness, BRIGHTNESS, nullptr, nullptr);
+	FBPropertyPublish(this, Saturation, SATURATION, nullptr, nullptr);
 
-	FBPropertyPublish(this, Gamma, "Gamma", nullptr, nullptr);
-	FBPropertyPublish(this, Inverse, "Inverse", nullptr, nullptr);
+	FBPropertyPublish(this, Gamma, COLOR_GAMMA, nullptr, nullptr);
+	FBPropertyPublish(this, Inverse, COLOR_INVERSE, nullptr, nullptr);
 
-	FBPropertyPublish(this, Bloom, "Bloom", nullptr, nullptr);
-	FBPropertyPublish(this, BloomMinBright, "Bloom Min Bright", nullptr, nullptr);
-	FBPropertyPublish(this, BloomTone, "Bloom Tone", nullptr, nullptr);
-	FBPropertyPublish(this, BloomStretch, "Bloom Stretch", nullptr, nullptr);
+	FBPropertyPublish(this, Bloom, BLOOM, nullptr, nullptr);
+	FBPropertyPublish(this, BloomMinBright, BLOOM_MIN_BRIGHT, nullptr, nullptr);
+	FBPropertyPublish(this, BloomTone, BLOOM_TONE, nullptr, nullptr);
+	FBPropertyPublish(this, BloomStretch, BLOOM_STRETCH, nullptr, nullptr);
 	
-	FBPropertyPublish(this, Hue, "Hue", nullptr, nullptr);
-	FBPropertyPublish(this, HueSaturation, "Hue Saturation", nullptr, nullptr);
-	FBPropertyPublish(this, Lightness, "Lightness", nullptr, nullptr);
+	FBPropertyPublish(this, Hue, COLOR_HUE, nullptr, nullptr);
+	FBPropertyPublish(this, HueSaturation, COLOR_HUE_SATURATION, nullptr, nullptr);
+	FBPropertyPublish(this, Lightness, COLOR_LIGHTNESS, nullptr, nullptr);
 
 	// Lens Flare
 
 	FBPropertyPublish(this, LensFlare, "Lens Flare", nullptr, nullptr);
-	FBPropertyPublish(this, LensFlare_UseMasking, "Flare Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, LensFlare_MaskingChannel, "Flare Masking Channel", nullptr, nullptr);
-	FBPropertyPublish(this, LensFlare_UseOcclusion, "Flare Use Occlusion", nullptr, nullptr);
-	FBPropertyPublish(this, FlareOcclusionSpeed, "Flare Occlusion Speed", nullptr, nullptr);
-	FBPropertyPublish(this, FlareOcclusionObjects, "Flare Occlusion Objects", nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_UseMasking, FLARE_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_MaskingChannel, FLARE_MASKING_CHANNEL, nullptr, nullptr);
+	FBPropertyPublish(this, LensFlare_UseOcclusion, FLARE_USE_OCCLUSION, nullptr, nullptr);
+	FBPropertyPublish(this, FlareOcclusionSpeed, FLARE_OCC_SPEED, nullptr, nullptr);
+	FBPropertyPublish(this, FlareOcclusionObjects, FLARE_OCC_OBJECTS, nullptr, nullptr);
 
 	//Louis 
-	FBPropertyPublish(this, FlareType, "Flare Type", nullptr, nullptr);
-	FBPropertyPublish(this, FlareSeed, "Flare Seed", nullptr, nullptr);
-	FBPropertyPublish(this, FlareUsePlayTime, "Flare Use Play Time", nullptr, nullptr);
-	FBPropertyPublish(this, FlareTimeSpeed, "Flare Time Speed", nullptr, nullptr);
+	FBPropertyPublish(this, FlareType, FLARE_TYPE, nullptr, nullptr);
+	FBPropertyPublish(this, FlareSeed, FLARE_SEED, nullptr, nullptr);
+	FBPropertyPublish(this, FlareUsePlayTime, FLARE_USE_PLAY_TIME, nullptr, nullptr);
+	FBPropertyPublish(this, FlareTimeSpeed, FLARE_TIME_SPEED, nullptr, nullptr);
 
-	FBPropertyPublish(this, UseFlareLightObject, "Use Flare Light Object", nullptr, nullptr);
-	FBPropertyPublish(this, FlareLight, "Flare Light", nullptr, nullptr);
+	FBPropertyPublish(this, UseFlareLightObject, FLARE_USE_LIGHT_OBJECT, nullptr, nullptr);
+	FBPropertyPublish(this, FlareLight, FLARE_LIGHT, nullptr, nullptr);
 
 	FBPropertyPublish(this, FlareLightCreate, "Create A Flare Light", nullptr, ActionFlareLightCreate);
 	FBPropertyPublish(this, FlareLightSelect, "Select A Flare Light", nullptr, ActionFlareLightSelect);
 
-	FBPropertyPublish(this, FlareAmount, "Lens Flare Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FlareDepthAttenuation, "Flare Depth Attenuation", nullptr, nullptr);
-	FBPropertyPublish(this, FlarePosX, "Lens Flare X", nullptr, nullptr);
-	FBPropertyPublish(this, FlarePosY, "Lens Flare Y", nullptr, nullptr);
+	FBPropertyPublish(this, FlareAmount, FLARE_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FlareDepthAttenuation, FLARE_DEPTH_ATT, nullptr, nullptr);
+	FBPropertyPublish(this, FlarePosX, FLARE_POSX, nullptr, nullptr);
+	FBPropertyPublish(this, FlarePosY, FLARE_POSY, nullptr, nullptr);
 
-	FBPropertyPublish(this, FlareTint, "Lens Flare Tint", nullptr, nullptr);
-	FBPropertyPublish(this, FlareInner, "Lens Flare Inner", nullptr, nullptr);
-	FBPropertyPublish(this, FlareOuter, "Lens Flare Outer", nullptr, nullptr);
+	FBPropertyPublish(this, FlareTint, FLARE_TINT, nullptr, nullptr);
+	FBPropertyPublish(this, FlareInner, FLARE_INNER, nullptr, nullptr);
+	FBPropertyPublish(this, FlareOuter, FLARE_OUTER, nullptr, nullptr);
 
-	FBPropertyPublish(this, FlareFadeToBorders, "Flare Fade To Borders", nullptr, nullptr);
-	FBPropertyPublish(this, FlareBorderWidth, "Flare Border Width", nullptr, nullptr);
-	FBPropertyPublish(this, FlareBorderFeather, "Flare Border Feather", nullptr, nullptr);
+	FBPropertyPublish(this, FlareFadeToBorders, FLARE_FADE_TO_BORDERS, nullptr, nullptr);
+	FBPropertyPublish(this, FlareBorderWidth, FLARE_BORDER_WIDTH, nullptr, nullptr);
+	FBPropertyPublish(this, FlareBorderFeather, FLARE_BORDER_FEATHER, nullptr, nullptr);
 
 	// Displacement
 
 	FBPropertyPublish(this, Displacement, "Displacement", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_UseMasking, "Disp Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_MaskingChannel, "Disp Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_UseMasking, DISP_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_MaskingChannel, DISP_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, UseQuakeWaterEffect, "Use Quake Water Effect", nullptr, nullptr);
+	FBPropertyPublish(this, UseQuakeWaterEffect, DISP_USE_QUAKE_EFFECT, nullptr, nullptr);
 
-	FBPropertyPublish(this, Disp_UsePlayTime, "Disp Use Play Time", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_Speed, "Displacement Speed", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_MagnitudeX, "Disp Magnitude X", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_MagnitudeY, "Disp Magnitude Y", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_UsePlayTime, DISP_USE_PLAY_TIME, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_Speed, DISP_SPEED, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_MagnitudeX, DISP_MAGNITUDE_X, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_MagnitudeY, DISP_MAGNITUDE_Y, nullptr, nullptr);
 
-	FBPropertyPublish(this, Disp_SinCyclesX, "Disp Sin Cycles X", nullptr, nullptr);
-	FBPropertyPublish(this, Disp_SinCyclesY, "Disp Sin Cycles Y", nullptr, nullptr);
+	FBPropertyPublish(this, Disp_SinCyclesX, DISP_SIN_CYCLES_X, nullptr, nullptr);
+	FBPropertyPublish(this, Disp_SinCyclesY, DISP_SIN_CYCLES_Y, nullptr, nullptr);
 
 	// Fish Eye
 
 	FBPropertyPublish(this, FishEye, "Fish Eye", nullptr, nullptr);
-	FBPropertyPublish(this, FishEye_UseMasking, "Fish Eye Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, FishEye_MaskingChannel, "Fish Eye Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, FishEye_UseMasking, FISHEYE_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, FishEye_MaskingChannel, FISHEYE_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, FishEyeAmount, "Fish Eye Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FishEyeLensRadius, "Fish Eye Lens Radius", nullptr, nullptr);
-	FBPropertyPublish(this, FishEyeSignCurvature, "Fish Eye Sign Curvature", nullptr, nullptr);
-	FBPropertyPublish(this, FishEyeOrder, "Fish Eye Order", nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeAmount, FISHEYE_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeLensRadius, FISHEYE_LENS_RADIUS, nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeSignCurvature, FISHEYE_SIGN_CURV, nullptr, nullptr);
+	FBPropertyPublish(this, FishEyeOrder, FISHEYE_ORDER, nullptr, nullptr);
 
 	// Film Grain
 
+	
 	FBPropertyPublish(this, FilmGrain, "Film Grain", nullptr, nullptr);
-	FBPropertyPublish(this, FilmGrain_UseMasking, "Grain Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, FilmGrain_MaskingChannel, "Grain Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, FilmGrain_UseMasking, GRAIN_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, FilmGrain_MaskingChannel, GRAIN_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, FG_UsePlayTime, "Grain Use Play Time", nullptr, nullptr);
-	FBPropertyPublish(this, FG_TimeSpeed, "Grain Time Speed", nullptr, nullptr);
+	FBPropertyPublish(this, FG_UsePlayTime, GRAIN_USE_PLAY_TIME, nullptr, nullptr);
+	FBPropertyPublish(this, FG_TimeSpeed, GRAIN_SPEED, nullptr, nullptr);
 
-	FBPropertyPublish(this, FG_GrainAmount, "Grain Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FG_Colored, "Grain Colored", nullptr, nullptr);
-	FBPropertyPublish(this, FG_ColorAmount, "Grain Color Amount", nullptr, nullptr);
-	FBPropertyPublish(this, FG_GrainSize, "Grain Size", nullptr, nullptr);
-	FBPropertyPublish(this, FG_LumAmount, "Grain Lum Amount", nullptr, nullptr);
+	FBPropertyPublish(this, FG_GrainAmount, GRAIN_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FG_Colored, GRAIN_COLORED, nullptr, nullptr);
+	FBPropertyPublish(this, FG_ColorAmount, GRAIN_COLOR_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, FG_GrainSize, GRAIN_SIZE, nullptr, nullptr);
+	FBPropertyPublish(this, FG_LumAmount, GRAIN_LUMAMOUNT, nullptr, nullptr);
 
 	// Vignetting 
 
 	FBPropertyPublish(this, Vignetting, "Vignetting", nullptr, nullptr);
-	FBPropertyPublish(this, Vign_UseMasking, "Vignetting Use Masking", nullptr, nullptr);
-	FBPropertyPublish(this, Vign_MaskingChannel, "Vignetting Masking Channel", nullptr, nullptr);
+	FBPropertyPublish(this, Vign_UseMasking, VIGN_USE_MASKING, nullptr, nullptr);
+	FBPropertyPublish(this, Vign_MaskingChannel, VIGN_MASKING_CHANNEL, nullptr, nullptr);
 
-	FBPropertyPublish(this, VignAmount, "Vignetting Amount", nullptr, nullptr);
-	FBPropertyPublish(this, VignOut, "Vignetting Outer Border", nullptr, nullptr);
-	FBPropertyPublish(this, VignIn, "Vignetting Inner Border", nullptr, nullptr);
-	FBPropertyPublish(this, VignFade, "Vignetting Fade", nullptr, nullptr);
+	FBPropertyPublish(this, VignAmount, VIGN_AMOUNT, nullptr, nullptr);
+	FBPropertyPublish(this, VignOut, VIGN_OUT, nullptr, nullptr);
+	FBPropertyPublish(this, VignIn, VIGN_IN, nullptr, nullptr);
+	FBPropertyPublish(this, VignFade, VIGN_FADE, nullptr, nullptr);
 
 	// preview output
 	FBPropertyPublish(this, OutputPreview, "Output Preview", nullptr, nullptr);
@@ -843,7 +848,8 @@ bool PostPersistentData::FBCreate()
 
 	Samples.SetMinMax(1, 12, true, true);
 	Rings.SetMinMax(1, 32, true, true);
-	PentagonFeather.SetMinMax(0.0, 1.0, true, true);
+	PentagonFeather.SetMinMax(0.0, 100.0, true, true);
+	FStop.SetMinMax(1.0, 22.0, true, true);
 
 	// SSAO
 	SSAO_Intensity.SetMinMax(0.0, 100.0);
@@ -891,6 +897,7 @@ void PostPersistentData::DefaultValues()
 	DrawHUDLayer = false;
 	GenerateMipMaps = false;
 	UseCameraObject = true;
+	UseUserEffects = true;
 
 	// global masking properties
 	UseCompositeMasking = true;
@@ -1008,19 +1015,13 @@ void PostPersistentData::DefaultValues()
 
 	UseCameraDOFProperties = false;
 	DebugBlurValue = false;
+	DebugShowFocus = false;
 
 	FocalDistance = 40.0;
 	FocalRange = 4.0;
-	FStop = 0.5;
+	FStop = 1.4; // full blur
 
 	BlurForeground = true;
-	/*
-	ManualFocus = false;
-	ManualNear = 1.0;
-	ManualNearFalloff = 2.0;
-	ManualFar = 1.0;
-	ManualFarFalloff = 3.0;
-	*/
 	AutoFocus = false;
 
 	UseFocusPoint = false;
@@ -1034,10 +1035,11 @@ void PostPersistentData::DefaultValues()
 	PreviewQuality.SetData(&defaultBlurQuality);
 	PreviewBlurAmount = 100.0;
 
-	Samples = 3;
-	Rings = 12;
+	Samples = 4;
+	Rings = 4;
 
 	CoC = 3.0;
+	BlurRadius = 15.0;
 	Threshold = 50.0;
 	Gain = 200.0;
 	Bias = 50.0;
@@ -1160,27 +1162,25 @@ bool PostPersistentData::FbxStore(FBFbxObject* pFbxObject, kFbxObjectStore pStor
 
 bool PostPersistentData::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pStoreWhat)
 {
-	constexpr int LAZY_COUNTER_VALUE{ 500 };
-
-    if( pStoreWhat == kAttributes )
+    if( pStoreWhat == kCleanup )
     {
-        //Retrieve default text
-        //mText = pFbxObject->FieldReadC("Text");
-		mLazyLoadCounter = LAZY_COUNTER_VALUE;
+		mReloadShaders = true;
+		mReloadExternal = true;
     }
 
     return false;
 }
 
-
-
-void PostPersistentData::DoReloadShaders()
+void PostPersistentData::RequestShadersReload(bool isExternal, bool doPropagateToUserEffects)
 {
 	mReloadShaders = true;
+	mReloadExternal = isExternal;
 }
 
 void PostPersistentData::DoDebugFarDist()
 {
+	FBSystem& mSystem = FBSystem::TheOne();
+
 #if(PRODUCT_VERSION >= 2024)
 	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
 	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
@@ -1203,6 +1203,7 @@ void PostPersistentData::DoDebugFarDist()
 
 void PostPersistentData::DoFixCameraSettings()
 {
+	FBSystem& mSystem = FBSystem::TheOne();
 	FBRenderer *pRenderer = mSystem.Renderer;
 
 	int lOption = FBMessageBox("Post Processing", "Do you want to fix settings for a current pane camera or for DOF connected?", "Current", "All Conn", "Cancel");
@@ -1277,16 +1278,6 @@ void PostPersistentData::DoFixCameraSettings()
 	}
 }
 
-bool PostPersistentData::IsNeedToReloadShaders()
-{
-	return mReloadShaders;
-}
-
-void PostPersistentData::SetReloadShadersState(bool state)
-{
-	mReloadShaders = state;
-}
-
 bool PostPersistentData::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, int pIndex, FBPlug* pPlug, FBConnectionType pConnectionType, FBPlug* pNewPlug)
 {
 	if (pThis == &Camera)
@@ -1294,6 +1285,19 @@ bool PostPersistentData::PlugNotify(FBConnectionAction pAction, FBPlug* pThis, i
 		if (pAction == kFBConnectedSrc)
 		{
 			ConnectSrc(pPlug);
+		}
+		else if (pAction == kFBDisconnectedSrc)
+		{
+			DisconnectSrc(pPlug);
+		}
+	}
+	else if (pThis == &UserEffects)
+	{
+		if (pAction == kFBConnectedSrc)
+		{
+			ConnectSrc(pPlug);
+			// if the connected shader has a pending reload flag, let's propagate to the given persistent data
+			mReloadExternal = true;
 		}
 		else if (pAction == kFBDisconnectedSrc)
 		{
@@ -1448,29 +1452,34 @@ void PostPersistentData::ConnectFocus(FBModelNull *pNull)
 void PostPersistentData::DoFocusObjectCreate()
 {
 	mPostAction = ePostActionFocusCreate;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::DoFocusObjectSelect()
 {
 	mPostAction = ePostActionFocusSelect;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::DoFlareLightCreate()
 {
 	mPostAction = ePostActionFlareCreate;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::DoFlareLightSelect()
 {
 	mPostAction = ePostActionFlareSelect;
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Add(this, (FBCallback)&PostPersistentData::OnUIIdle);
 }
 
 void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 {
+	FBSystem& mSystem = FBSystem::TheOne();
 	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostPersistentData::OnUIIdle);
 
 	switch (mPostAction)
@@ -1481,15 +1490,15 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 
 		if (FocusObject.GetCount() > 0)
 		{
-			int userChooise = FBMessageBox("Post Processing", "Focus Object is already assigned.\n What do you want to do with existing?", "Delete", "Disconnect", "Cancel");
-			if (1 == userChooise)
+			int userChoice = FBMessageBox("Post Processing", "Focus Object is already assigned.\n What do you want to do with existing?", "Delete", "Disconnect", "Cancel");
+			if (1 == userChoice)
 			{
 				FBModel *pModel = (FBModel*)FocusObject.GetAt(0);
 				FocusObject.RemoveAll();
 				pModel->FBDelete();
 				pModel = nullptr;
 			}
-			else if (2 == userChooise)
+			else if (2 == userChoice)
 			{
 				FocusObject.RemoveAll();
 			}
@@ -1539,6 +1548,7 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 
 void PostPersistentData::ComputePointInFront(FBVector3d &v)
 {
+	FBSystem& mSystem = FBSystem::TheOne();
 #if(PRODUCT_VERSION >= 2024)
 	const unsigned selectedPaneIndex = mSystem.Renderer->GetSelectedPaneIndex();
 	FBCamera* pCamera = mSystem.Renderer->GetCameraInPane(selectedPaneIndex);
@@ -1548,7 +1558,7 @@ void PostPersistentData::ComputePointInFront(FBVector3d &v)
 	if (nullptr == pCamera)
 		return;
 	if (FBIS(pCamera, FBCameraSwitcher))
-		pCamera = ((FBCameraSwitcher*)pCamera)->CurrentCamera;
+		pCamera = FBCast<FBCameraSwitcher>(pCamera)->CurrentCamera;
 
 	if (nullptr == pCamera)
 		return;
@@ -1568,10 +1578,11 @@ void PostPersistentData::DoResetDOF()
 	// DONE:
 	UseCameraDOFProperties = false;
 	DebugBlurValue = false;
+	DebugShowFocus = false;
 
 	FocalDistance = 40.0;
 	FocalRange = 4.0;
-	FStop = 0.5;
+	FStop = 1.4; // full blur
 
 	BlurForeground = true;
 	/*
@@ -1595,6 +1606,7 @@ void PostPersistentData::DoResetDOF()
 	Rings = 12;
 
 	CoC = 3.0;
+	BlurRadius = 15.0;
 	Threshold = 50.0;
 	Gain = 200.0;
 	Bias = 50.0;
@@ -1708,4 +1720,169 @@ int PostPersistentData::GetGlobalMaskIndex() const
 {
 	const EMaskingChannel maskingChannel = GlobalMaskingChannel;
 	return static_cast<int>(maskingChannel);
+}
+
+int PostPersistentData::GetNumberOfActiveUserEffects()
+{
+	int count = 0;
+	if (!UseUserEffects)
+		return count;
+
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
+		{
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active && UserObject->GetUserShaderPtr())
+			{
+				count += 1;
+			}
+		}
+	}
+	return count;
+}
+
+bool PostPersistentData::IsNeedToReloadShaders(bool doPropagateToUserEffects)
+{
+	if (doPropagateToUserEffects && HasAnyUserEffectWithReloadRequest())
+	{
+		return true;
+	}
+	return mReloadShaders; 
+}
+
+bool PostPersistentData::IsExternalReloadRequested() const
+{
+	return mReloadExternal;
+}
+
+void PostPersistentData::DoReloadShaders()
+{
+	mReloadShaders = false;
+
+	if (mReloadExternal)
+	{
+		mReloadExternal = false;
+
+		for (int i = 0; i < UserEffects.GetCount(); ++i)
+		{
+			FBComponent* component = UserEffects.GetAt(i);
+			EffectShaderUserObject* userEffect = FBCast<EffectShaderUserObject>(component);
+			if (userEffect)
+			{
+				if (userEffect->IsNeedToReloadShaders())
+				{
+					if (!userEffect->DoReloadShaders())
+					{
+						return;
+					}
+				}
+			}
+		}
+	}
+}
+
+bool PostPersistentData::HasAnyUserEffectWithReloadRequest()
+{
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
+		{
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active && UserObject->IsNeedToReloadShaders())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+std::vector<EffectShaderUserObject*> PostPersistentData::GetAllConnectedUserEffects()
+{
+	std::vector<EffectShaderUserObject*> userEffects;
+	if (!UseUserEffects)
+		return userEffects;
+
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
+		{
+			EffectShaderUserObject* userObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
+			if (userObject)
+			{
+				userEffects.push_back(userObject);
+				ProcessSiblingsOfUserEffect(userEffects, userObject);
+			}
+		}
+	}
+	return userEffects;
+}
+
+void PostPersistentData::ProcessSiblingsOfUserEffect(std::vector<EffectShaderUserObject*>& effectsOut, EffectShaderUserObject* userEffectIn)
+{
+	if (!userEffectIn)
+		return;
+
+	for (int i=0; i<userEffectIn->GetDstCount(); ++i)
+	{
+		FBPlug* dstPlug = userEffectIn->GetDst(i);
+		if (FBIS(dstPlug, EffectShaderUserObject))
+		{
+			EffectShaderUserObject* siblingEffect = FBCast<EffectShaderUserObject>(dstPlug);
+			if (siblingEffect)
+			{
+				effectsOut.push_back(siblingEffect);
+				ProcessSiblingsOfUserEffect(effectsOut, siblingEffect);
+			}
+		}
+	}
+}
+
+PostEffectBufferShader* PostPersistentData::GetActiveUserEffectShader(const int index)
+{
+	if (!UseUserEffects)
+		return nullptr;
+
+	int count = 0;
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
+		{
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active)
+			{
+				if (count == index)
+				{
+					return UserObject->GetUserShaderPtr();
+				}
+				count += 1;
+			}
+		}
+	}
+	return nullptr;
+}
+
+EffectShaderUserObject* PostPersistentData::GetActiveUserEffectObject(const int index)
+{
+	if (!UseUserEffects)
+		return nullptr;
+
+	int count = 0;
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		if (FBIS(UserEffects[i], EffectShaderUserObject))
+		{
+			EffectShaderUserObject* UserObject = FBCast<EffectShaderUserObject>(UserEffects[i]);
+			if (UserObject && UserObject->Active)
+			{
+				if (count == index)
+				{
+					return UserObject;
+				}
+				count += 1;
+			}
+		}
+	}
+	return nullptr;
 }

@@ -15,7 +15,7 @@
 
 //--- SDK include
 #include <fbsdk/fbsdk.h>
-#include "GLSLShader.h"
+#include "GLSLShaderProgram.h"
 
 #include "compositeMaster_shaders.h"
 
@@ -204,7 +204,7 @@ protected:
 
 	bool				mSupported;
 		
-	GLSLShader			*mShaders[TOTAL_NUMBER_OF_SPRITE_SHADERS];
+	GLSLShaderProgram			*mShaders[TOTAL_NUMBER_OF_SPRITE_SHADERS];
 
 	struct Locations
 	{
@@ -229,7 +229,7 @@ protected:
 	//
 
 	bool				InitShaders();
-	bool				InitLocations(const GLSLShader *shader, Locations &locations);
+	bool				InitLocations(const GLSLShaderProgram *shader, Locations &locations);
 
 	void				FreeShaders();
 };

@@ -37,11 +37,11 @@
  * example usage: glClear(GL_COLOR_BUFFER_BIT); CHECK_GL_ERROR(); // this will check for errors in this (and any previous statements)
  */
 //#define CHECK_GL_ERROR() { checkGLError(__FILE__, __LINE__) && (DBG_BREAK(), 1); }
-#ifdef _DEBUG
+//#ifdef _DEBUG
 #define CHECK_GL_ERROR() { checkGLError(__FILE__, __LINE__); }
-#else // !_DEBUG
-#define CHECK_GL_ERROR() {  }
-#endif // _DEBUG
+//#else // !_DEBUG
+//#define CHECK_GL_ERROR() {  }
+//#endif // _DEBUG
 /**
  * Internal function used by macro CHECK_GL_ERROR, use that instead.
  */

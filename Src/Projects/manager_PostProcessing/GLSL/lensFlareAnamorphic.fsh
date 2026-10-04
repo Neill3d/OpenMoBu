@@ -14,6 +14,11 @@
 // musk's lense flare, modified by icecool.
 // See the original at: https://www.shadertoy.com/view/4sX3Rs 
 
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
+
 uniform sampler2D sampler0;
 uniform sampler2D maskSampler;
 
@@ -23,8 +28,7 @@ uniform float	lowerClip;
 
 uniform float amount;
 
-uniform float textureWidth;
-uniform float textureHeight;
+uniform vec2 iResolution;
 
 uniform float iTime;
 uniform vec4  light_pos;
@@ -38,9 +42,6 @@ uniform float borderWidth;
 uniform float feather; // = 1.0;
 
 uniform float flareSeed;
-
-float width = textureWidth; //texture width
-float height = textureHeight; //texture height
 
 
 //
@@ -140,20 +141,18 @@ vec3 anflares(vec2 uv, float intensity, float stretch, float brightness)
 
 void main(void)
 {
-	vec2 tx = gl_TexCoord [0].st;
+	vec2 tx = texCoord.st;
 	
 	if (tx.y < upperClip || tx.y > lowerClip)
 	{
-		vec4 fragColor = texture2D(sampler0, tx);
-		gl_FragData [0] =  fragColor;
+		FragColor = texture2D(sampler0, tx);
 		return;
 	}
 	
 	vec4 color = texture2D( sampler0, tx ); 
 	
 	vec2 fragCoord = gl_FragCoord.xy;
-	vec2 iResolution = vec2(textureWidth, textureHeight);
-	vec3 iMouse = vec3(light_pos.x * textureWidth, light_pos.y * textureHeight, light_pos.z);
+	vec3 iMouse = vec3(light_pos.x * iResolution.x, light_pos.y * iResolution.y, light_pos.z);
 	
 	vec2 uv = fragCoord.xy / iResolution.xy - 0.5;
 	uv.x *= iResolution.x/iResolution.y; //fix aspect ratio
@@ -161,12 +160,13 @@ void main(void)
 	float att = 1.0 - clamp(2.0 * (light_pos.z - 0.5), 0.0, 1.0);
 	mouse.z = clamp(0.275 * log(100.0 * att), 0.0, 1.0);
 	mouse.x *= iResolution.x/iResolution.y; //fix aspect ratio
-	vec3 col;
-	vec3 sun, sunflare, lensflare;
-	vec3 flare = lensflare2(uv*1.5, mouse*1.5, sunflare, lensflare);
+	vec3 col = vec3(0.0);
+	vec3 sun = vec3(0.0);
+	vec3 sunflare, lensflare;
+	vec3 flare = lensflare2(uv*1.5, mouse.xy*1.5, sunflare, lensflare);
 	
-	vec3 anflare = pow(anflares(uv-mouse, 0.5, 400.0, 0.9 + (flareSeed*0.05 - 1), 0.1), vec3(4.0));
-    sun += getSun(uv-mouse) + (flare + anflare)*suncolor*2.0;
+	vec3 anflare = pow(anflares(uv-mouse.xy, 0.5, 400.0, 0.9 + (flareSeed*0.05 - 1), 0.1), vec3(4.0));
+    sun += getSun(uv-mouse.xy) + (flare + anflare)*suncolor*2.0;
     col += sun;
     col = pow(col, vec3(1.0/2.2));
     
@@ -178,10 +178,10 @@ void main(void)
 	if (fadeToBorders > 0.0)
 	{
 		float distToBorder = light_pos.x + borderWidth;
-		distToBorder = min(distToBorder, width + borderWidth - light_pos.x);
+		distToBorder = min(distToBorder, iResolution.x + borderWidth - light_pos.x);
 	
 		distToBorder = min(distToBorder, light_pos.y + borderWidth);
-		distToBorder = min(distToBorder, height + borderWidth - light_pos.y);
+		distToBorder = min(distToBorder, iResolution.y + borderWidth - light_pos.y);
 	
 		distToBorder *= 0.01;
 		distToBorder = clamp(distToBorder, 0.0, 1.0);
@@ -198,5 +198,5 @@ void main(void)
 		mask = texture2D( maskSampler, tx );
 	}
 	color.rgb = mix(flareColor * f + color.rgb, color.rgb, mask.r * useMasking);
-	gl_FragData [0] =  color;
+	FragColor = color;
 }

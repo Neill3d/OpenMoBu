@@ -10,7 +10,7 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 */
 
 #include "ModelProxy.h"
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Framebuffer.h"
 #include <glm/glm.hpp>
 #include "SuperShader_glsl.h"
@@ -132,7 +132,7 @@ namespace Graphics
 
 		FrameBuffer		frameBuffer; //!< used to render into shadow textures
 
-		GLSLShader		shader; //!< a shader to render models into a shadow maps
+		GLSLShaderProgram		shader; //!< a shader to render models into a shadow maps
 
 		GLint shaderProjMatrixLoc{ -1 };
 		GLint shaderViewMatrixLoc{ -1 };

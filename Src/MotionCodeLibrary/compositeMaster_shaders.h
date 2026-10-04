@@ -17,7 +17,7 @@
 #include <fbsdk/fbsdk.h>
 
 #include <GL\glew.h>
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 #include "Types.h"
 
 //
@@ -226,7 +226,7 @@ struct ShaderBaseLocations
 
 	virtual ~ShaderBaseLocations() = default;
 
-	void Init(GLSLShader *pShader, bool useMaskState)
+	void Init(GLSLShaderProgram *pShader, bool useMaskState)
 	{
 		if (useMaskState)
 		{
@@ -249,10 +249,10 @@ struct ShaderBaseLocations
 
 	void SetMaskUniforms( const bool invertCompositeMask )
 	{
-		GLSLShader::setUniformFloat( maskInverse, (invertCompositeMask) ? 1.0f : 0.0f );
+		GLSLShaderProgram::setUniformFloat( maskInverse, (invertCompositeMask) ? 1.0f : 0.0f );
 	}
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState)
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState)
 	{
 	}
 };
@@ -261,7 +261,7 @@ struct	ShaderBlitLocations : public ShaderBaseLocations
 {
 	GLint		sampler{ 0 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -296,7 +296,7 @@ struct ShaderBlendLocations : public ShaderBaseLocations
 	GLint		maskSampler{ 0 };
 	GLint		maskInverse{ 0 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -330,9 +330,9 @@ struct ShaderBlendLocations : public ShaderBaseLocations
 
 	void Set(const float _opacity, const bool _blendWithAColor, const float *_blendColor) const
 	{
-		GLSLShader::setUniformFloat( opacity, _opacity );
-		GLSLShader::setUniformFloat( doBlendWithAColor, (_blendWithAColor) ? 1.0f : 0.0f );
-		GLSLShader::setUniformVector( blendColor, _blendColor[0], _blendColor[1], _blendColor[2], _blendColor[3] );
+		GLSLShaderProgram::setUniformFloat( opacity, _opacity );
+		GLSLShaderProgram::setUniformFloat( doBlendWithAColor, (_blendWithAColor) ? 1.0f : 0.0f );
+		GLSLShaderProgram::setUniformVector( blendColor, _blendColor[0], _blendColor[1], _blendColor[2], _blendColor[3] );
 	}
 };
 
@@ -341,7 +341,7 @@ struct ShaderBlurLocations : public ShaderBaseLocations
 	GLint		sampler{ 0 };
 	GLint		scale{ 0 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -362,7 +362,7 @@ struct ShaderBlurLocations : public ShaderBaseLocations
 
 	void Set(const float _x, const float _y)
 	{
-		GLSLShader::setUniformVector(scale, _x, _y, 0.0f, 1.0f);
+		GLSLShaderProgram::setUniformVector(scale, _x, _y, 0.0f, 1.0f);
 	}
 };
 
@@ -373,7 +373,7 @@ struct ShaderProcessNormalsLocations : public ShaderBaseLocations
 	GLint		colorY{ 0 };
 	GLint		colorZ{ 0 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -396,9 +396,9 @@ struct ShaderProcessNormalsLocations : public ShaderBaseLocations
 
 	void Set(const double *_x, const double *_y, const double *_z)
 	{
-		GLSLShader::setUniformVector(colorX, _x[0], _x[1], _x[2], 1.0f);
-		GLSLShader::setUniformVector(colorY, _y[0], _y[1], _y[2], 1.0f);
-		GLSLShader::setUniformVector(colorZ, _z[0], _z[1], _z[2], 1.0f);
+		GLSLShaderProgram::setUniformVector(colorX, _x[0], _x[1], _x[2], 1.0f);
+		GLSLShaderProgram::setUniformVector(colorY, _y[0], _y[1], _y[2], 1.0f);
+		GLSLShaderProgram::setUniformVector(colorZ, _z[0], _z[1], _z[2], 1.0f);
 	}
 };
 
@@ -408,7 +408,7 @@ struct ShaderPosterizationLocations : public ShaderBaseLocations
 	GLint		numberOfColors{ 0 };
 	GLint		gamma{ 0 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -430,8 +430,8 @@ struct ShaderPosterizationLocations : public ShaderBaseLocations
 
 	void Set(const double _numberOfColors, const double _gamma)
 	{
-		GLSLShader::setUniformFloat(numberOfColors, _numberOfColors);
-		GLSLShader::setUniformFloat(gamma, _gamma);
+		GLSLShaderProgram::setUniformFloat(numberOfColors, _numberOfColors);
+		GLSLShaderProgram::setUniformFloat(gamma, _gamma);
 	}
 };
 
@@ -453,7 +453,7 @@ struct ShaderChangeColorLocations : public ShaderBaseLocations
 	GLint		replace3{ -1 };
 	GLint		weights3{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -488,27 +488,27 @@ struct ShaderChangeColorLocations : public ShaderBaseLocations
 		const float _changeColor2, const double *_color2, const double *_replace2, const double *_weights2,
 		const float _changeColor3, const double *_color3, const double *_replace3, const double *_weights3)
 	{
-		GLSLShader::setUniformVector(color1, (float)_color1[0], (float)_color1[1], (float)_color1[2], 1.0);
-		GLSLShader::setUniformVector(replace1, (float)_replace1[0], (float)_replace1[1], (float)_replace1[2], 1.0);
-		GLSLShader::setUniformVector(weights1, (float)_weights1[0], (float)_weights1[1], (float)_weights1[2], (float)_weights1[3]);
+		GLSLShaderProgram::setUniformVector(color1, (float)_color1[0], (float)_color1[1], (float)_color1[2], 1.0);
+		GLSLShaderProgram::setUniformVector(replace1, (float)_replace1[0], (float)_replace1[1], (float)_replace1[2], 1.0);
+		GLSLShaderProgram::setUniformVector(weights1, (float)_weights1[0], (float)_weights1[1], (float)_weights1[2], (float)_weights1[3]);
 
 		// TODO: setUp changecolor 2,3
 		if (changeColor >= 0)
 		{
-			GLSLShader::setUniformVector(changeColor, _changeColor2, _changeColor3, 0.0f, 0.0f );
+			GLSLShaderProgram::setUniformVector(changeColor, _changeColor2, _changeColor3, 0.0f, 0.0f );
 		}
 
 		if (_changeColor2 > 0)
 		{
-			GLSLShader::setUniformVector(color2, (float)_color2[0], (float)_color2[1], (float)_color2[2], 1.0);
-			GLSLShader::setUniformVector(replace2, (float)_replace2[0], (float)_replace2[1], (float)_replace2[2], 1.0);
-			GLSLShader::setUniformVector(weights2, (float)_weights2[0], (float)_weights2[1], (float)_weights2[2], (float)_weights2[3]);
+			GLSLShaderProgram::setUniformVector(color2, (float)_color2[0], (float)_color2[1], (float)_color2[2], 1.0);
+			GLSLShaderProgram::setUniformVector(replace2, (float)_replace2[0], (float)_replace2[1], (float)_replace2[2], 1.0);
+			GLSLShaderProgram::setUniformVector(weights2, (float)_weights2[0], (float)_weights2[1], (float)_weights2[2], (float)_weights2[3]);
 		}
 		if (_changeColor3 > 0)
 		{
-			GLSLShader::setUniformVector(color3, (float)_color3[0], (float)_color3[1], (float)_color3[2], 1.0);
-			GLSLShader::setUniformVector(replace3, (float)_replace3[0], (float)_replace3[1], (float)_replace3[2], 1.0);
-			GLSLShader::setUniformVector(weights3, (float)_weights3[0], (float)_weights3[1], (float)_weights3[2], (float)_weights3[3]);
+			GLSLShaderProgram::setUniformVector(color3, (float)_color3[0], (float)_color3[1], (float)_color3[2], 1.0);
+			GLSLShaderProgram::setUniformVector(replace3, (float)_replace3[0], (float)_replace3[1], (float)_replace3[2], 1.0);
+			GLSLShaderProgram::setUniformVector(weights3, (float)_weights3[0], (float)_weights3[1], (float)_weights3[2], (float)_weights3[3]);
 		}
 	}
 };
@@ -518,7 +518,7 @@ struct ShaderLUTLocations : public ShaderBaseLocations
 {
 	GLint		sampler{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -555,7 +555,7 @@ struct ShaderFilmGrainLocations : public ShaderBaseLocations
 	GLint		grainSize{ -1 };
 	GLint		lumAmount{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -588,15 +588,15 @@ struct ShaderFilmGrainLocations : public ShaderBaseLocations
 	void Set(const float _textureWidth, const float _textureHeight, const float _timer, 
 		const float _grainamount, const float _colored, const float _coloramount, const float _grainsize, const float _lumamount)
 	{
-		GLSLShader::setUniformFloat(textureHeight, _textureWidth);
-		GLSLShader::setUniformFloat(textureWidth, _textureHeight);
-		GLSLShader::setUniformFloat(timer, _timer);
+		GLSLShaderProgram::setUniformFloat(textureHeight, _textureWidth);
+		GLSLShaderProgram::setUniformFloat(textureWidth, _textureHeight);
+		GLSLShaderProgram::setUniformFloat(timer, _timer);
 
-		GLSLShader::setUniformFloat(grainAmount, _grainamount);
-		GLSLShader::setUniformFloat(colored, _colored);
-		GLSLShader::setUniformFloat(colorAmount, _coloramount);
-		GLSLShader::setUniformFloat(grainSize, _grainsize);
-		GLSLShader::setUniformFloat(lumAmount, _lumamount);
+		GLSLShaderProgram::setUniformFloat(grainAmount, _grainamount);
+		GLSLShaderProgram::setUniformFloat(colored, _colored);
+		GLSLShaderProgram::setUniformFloat(colorAmount, _coloramount);
+		GLSLShaderProgram::setUniformFloat(grainSize, _grainsize);
+		GLSLShaderProgram::setUniformFloat(lumAmount, _lumamount);
 	}
 };
 
@@ -610,7 +610,7 @@ struct ShaderFXAALocations : public ShaderBaseLocations
     // {_y} = 1.0/screenHeightInPixels
 	GLint		RCPFrame{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -631,7 +631,7 @@ struct ShaderFXAALocations : public ShaderBaseLocations
 
 	void Set(const float _textureWidth, const float _textureHeight)
 	{
-		GLSLShader::setUniformVector2f(RCPFrame, _textureWidth, _textureHeight);
+		GLSLShaderProgram::setUniformVector2f(RCPFrame, _textureWidth, _textureHeight);
 	}
 };
 
@@ -639,7 +639,7 @@ struct ShaderCrossHatchLocations : public ShaderBaseLocations
 {
 	GLint		sampler{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -668,7 +668,7 @@ struct ShaderSolidColorLocations : public ShaderBaseLocations
 	GLint		bottomColor{ -1 };
 	GLint		gradient{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -685,9 +685,9 @@ struct ShaderSolidColorLocations : public ShaderBaseLocations
 
 	void Set(float solidR, float solidG, float solidB, float solidA, float bottomR, float bottomG, float bottomB, float bottomA, const bool isGradient)
 	{
-		GLSLShader::setUniformVector( solidColor, solidR, solidG, solidB, solidA );
-		GLSLShader::setUniformVector( bottomColor, bottomR, bottomG, bottomB, bottomA );
-		GLSLShader::setUniformFloat( gradient, (isGradient) ? 1.0f : 0.0f );
+		GLSLShaderProgram::setUniformVector( solidColor, solidR, solidG, solidB, solidA );
+		GLSLShaderProgram::setUniformVector( bottomColor, bottomR, bottomG, bottomB, bottomA );
+		GLSLShaderProgram::setUniformFloat( gradient, (isGradient) ? 1.0f : 0.0f );
 	}
 };
 
@@ -697,7 +697,7 @@ struct ShaderCSBLocations : public ShaderBaseLocations
 	GLint		csb{ -1 };
 	GLint		hue{ -1 };
 	
-	virtual void OnInit(GLSLShader *pShader, bool maskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool maskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -714,8 +714,8 @@ struct ShaderCSBLocations : public ShaderBaseLocations
 
 	void Set(const float _contrast, const float _brightness, const float _saturation, const float _gamma, bool inverseState, float _hue, float _hueSat, float _lightness)
 	{
-		GLSLShader::setUniformVector( csb, _contrast, _saturation, _brightness, _gamma );
-		GLSLShader::setUniformVector( hue, _hue, _hueSat, _lightness, (inverseState) ? 1.0f : 0.0f);
+		GLSLShaderProgram::setUniformVector( csb, _contrast, _saturation, _brightness, _gamma );
+		GLSLShaderProgram::setUniformVector( hue, _hue, _hueSat, _lightness, (inverseState) ? 1.0f : 0.0f);
 	}
 };
 
@@ -726,7 +726,7 @@ struct ShaderHalfToneLocations : public ShaderBaseLocations
 	GLint		height{ -1 };
 	GLint		frequency{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -744,9 +744,9 @@ struct ShaderHalfToneLocations : public ShaderBaseLocations
 
 	void Set( const float _width, const float _height, const float _frequency)
 	{
-		GLSLShader::setUniformFloat( width, _width );
-		GLSLShader::setUniformFloat( height, _height );
-		GLSLShader::setUniformFloat( frequency, _frequency );
+		GLSLShaderProgram::setUniformFloat( width, _width );
+		GLSLShaderProgram::setUniformFloat( height, _height );
+		GLSLShaderProgram::setUniformFloat( frequency, _frequency );
 	}
 };
 
@@ -779,7 +779,7 @@ struct ShaderDOFLocations : public ShaderBaseLocations
 	GLint				logarithmic{ -1 };
 	GLint				highQualityDepth{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -846,38 +846,38 @@ struct ShaderDOFLocations : public ShaderBaseLocations
 						const float	_logarithmic,
 						const float _highQualityDepth )
 	{
-		GLSLShader::setUniformFloat( focalDistance, _focalDistance );
-		GLSLShader::setUniformFloat( focalRange, _focalRange );
-		GLSLShader::setUniformFloat( FStop, _fstop );
-		GLSLShader::setUniformFloat( width, _width );
-		GLSLShader::setUniformFloat( height, _height );
-		GLSLShader::setUniformUINT( autoFocus, _autoFocus );
-		GLSLShader::setUniformFloat( blurForeground, _blurForeground );
-		GLSLShader::setUniformUINT( vignetting, _vignetting );
-		GLSLShader::setUniformUINT( samples, _samples );
-		GLSLShader::setUniformUINT( rings, _rings );
-		GLSLShader::setUniformFloat( CoC, _CoC );
-		GLSLShader::setUniformFloat( threshold, _threshold );
-		GLSLShader::setUniformFloat( gain, _gain );
-		GLSLShader::setUniformFloat( bias, _bias );
-		GLSLShader::setUniformFloat( fringe, _fringe );
-		GLSLShader::setUniformUINT( noise, _noise );
-		GLSLShader::setUniformUINT( pentagon, _pentagon );
-		GLSLShader::setUniformFloat( feather, _pentagonFeather );
-		GLSLShader::setUniformFloat( logarithmic, _logarithmic );
-		GLSLShader::setUniformFloat( highQualityDepth, _highQualityDepth );
+		GLSLShaderProgram::setUniformFloat( focalDistance, _focalDistance );
+		GLSLShaderProgram::setUniformFloat( focalRange, _focalRange );
+		GLSLShaderProgram::setUniformFloat( FStop, _fstop );
+		GLSLShaderProgram::setUniformFloat( width, _width );
+		GLSLShaderProgram::setUniformFloat( height, _height );
+		GLSLShaderProgram::setUniformUINT( autoFocus, _autoFocus );
+		GLSLShaderProgram::setUniformFloat( blurForeground, _blurForeground );
+		GLSLShaderProgram::setUniformUINT( vignetting, _vignetting );
+		GLSLShaderProgram::setUniformUINT( samples, _samples );
+		GLSLShaderProgram::setUniformUINT( rings, _rings );
+		GLSLShaderProgram::setUniformFloat( CoC, _CoC );
+		GLSLShaderProgram::setUniformFloat( threshold, _threshold );
+		GLSLShaderProgram::setUniformFloat( gain, _gain );
+		GLSLShaderProgram::setUniformFloat( bias, _bias );
+		GLSLShaderProgram::setUniformFloat( fringe, _fringe );
+		GLSLShaderProgram::setUniformUINT( noise, _noise );
+		GLSLShaderProgram::setUniformUINT( pentagon, _pentagon );
+		GLSLShaderProgram::setUniformFloat( feather, _pentagonFeather );
+		GLSLShaderProgram::setUniformFloat( logarithmic, _logarithmic );
+		GLSLShaderProgram::setUniformFloat( highQualityDepth, _highQualityDepth );
 	}
 
 	void Set( const float _zNear, const float _zFar )
 	{
-		GLSLShader::setUniformFloat( zNear, _zNear );
-		GLSLShader::setUniformFloat( zFar, _zFar );
+		GLSLShaderProgram::setUniformFloat( zNear, _zNear );
+		GLSLShaderProgram::setUniformFloat( zFar, _zFar );
 	}
 
 	void Set( const int	_autoFocus, const float _focalDistance )
 	{
-		GLSLShader::setUniformUINT( autoFocus, _autoFocus );
-		GLSLShader::setUniformFloat( focalDistance, _focalDistance );
+		GLSLShaderProgram::setUniformUINT( autoFocus, _autoFocus );
+		GLSLShaderProgram::setUniformFloat( focalDistance, _focalDistance );
 	}
 };
 
@@ -904,7 +904,7 @@ struct ShaderFogLocations : public ShaderBaseLocations
 	GLint				volumeMin{ -1 };
 	GLint				volumeMax{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -966,7 +966,7 @@ struct ShaderFogLocations : public ShaderBaseLocations
 
 	void Set( const int	_alphaValid )
 	{
-		GLSLShader::setUniformUINT( alphaValid, _alphaValid );
+		GLSLShaderProgram::setUniformUINT( alphaValid, _alphaValid );
 	}
 
 	void Set( const float _r, const float _g, const float _b,
@@ -980,34 +980,34 @@ struct ShaderFogLocations : public ShaderBaseLocations
 						const float _highQualityDepth,
 						const float	_volumeObject )
 	{
-		GLSLShader::setUniformVector( color, _r, _g, _b, 1.0f );
-		GLSLShader::setUniformFloat( density, _density );
-		GLSLShader::setUniformFloat( zNear, _znear );
-		GLSLShader::setUniformFloat( zFar, _zfar );
-		GLSLShader::setUniformFloat( fogNear, _fognear );
-		GLSLShader::setUniformFloat( fogFar, _fogfar );
-		GLSLShader::setUniformFloat( fogBorder, _fogborder );
-		GLSLShader::setUniformFloat( logarithmic, _logarithmic );
-		GLSLShader::setUniformFloat( highQualityDepth, _highQualityDepth );
-		GLSLShader::setUniformFloat( volumeObject, _volumeObject );
+		GLSLShaderProgram::setUniformVector( color, _r, _g, _b, 1.0f );
+		GLSLShaderProgram::setUniformFloat( density, _density );
+		GLSLShaderProgram::setUniformFloat( zNear, _znear );
+		GLSLShaderProgram::setUniformFloat( zFar, _zfar );
+		GLSLShaderProgram::setUniformFloat( fogNear, _fognear );
+		GLSLShaderProgram::setUniformFloat( fogFar, _fogfar );
+		GLSLShaderProgram::setUniformFloat( fogBorder, _fogborder );
+		GLSLShaderProgram::setUniformFloat( logarithmic, _logarithmic );
+		GLSLShaderProgram::setUniformFloat( highQualityDepth, _highQualityDepth );
+		GLSLShaderProgram::setUniformFloat( volumeObject, _volumeObject );
 	}
 
 	void Set( const float *invModelMatrix, const float *_volumeMin, const float *_volumeMax, const float *_color, const float _density, const float _feather )
 	{
 		if (invModel >= 0)
-			GLSLShader::setUniformMatrix( invModel, invModelMatrix );
+			GLSLShaderProgram::setUniformMatrix( invModel, invModelMatrix );
 
 		if (volumeMin >= 0)
-			GLSLShader::setUniformVector( volumeMin, _volumeMin[0], _volumeMin[1], _volumeMin[2], _volumeMin[3] );
+			GLSLShaderProgram::setUniformVector( volumeMin, _volumeMin[0], _volumeMin[1], _volumeMin[2], _volumeMin[3] );
 		if (volumeMax >= 0)
-			GLSLShader::setUniformVector( volumeMax, _volumeMax[0], _volumeMax[1], _volumeMax[2], _volumeMax[3] );
+			GLSLShaderProgram::setUniformVector( volumeMax, _volumeMax[0], _volumeMax[1], _volumeMax[2], _volumeMax[3] );
 
 		if (color >= 0)
-			GLSLShader::setUniformVector( color, _color[0], _color[1], _color[2], _color[3] );
+			GLSLShaderProgram::setUniformVector( color, _color[0], _color[1], _color[2], _color[3] );
 		if (density >= 0)
-			GLSLShader::setUniformFloat( density, _density );
+			GLSLShaderProgram::setUniformFloat( density, _density );
 		if (fogBorder >= 0)
-			GLSLShader::setUniformFloat( fogBorder, _feather );
+			GLSLShaderProgram::setUniformFloat( fogBorder, _feather );
 	}
 };
 
@@ -1016,7 +1016,7 @@ struct ShaderMaskLocations : public ShaderBaseLocations
 	GLint				maskSampler{ -1 };
 	GLint				colorSampler{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -1052,7 +1052,7 @@ struct ShaderToonLinesLocations : public ShaderBaseLocations
 	GLint				logarithmic{ -1 };
 	GLint				highQualityDepth{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -1109,16 +1109,16 @@ struct ShaderToonLinesLocations : public ShaderBaseLocations
 				const int _width,
 				const int _height )
 	{
-		GLSLShader::setUniformFloat( zFar, _zfar );
-		GLSLShader::setUniformFloat( zNear, _znear );
-		GLSLShader::setUniformFloat( falloff, _falloff );
+		GLSLShaderProgram::setUniformFloat( zFar, _zfar );
+		GLSLShaderProgram::setUniformFloat( zNear, _znear );
+		GLSLShaderProgram::setUniformFloat( falloff, _falloff );
 		
-		GLSLShader::setUniformFloat( logarithmic, _logarithmic );
-		GLSLShader::setUniformFloat( highQualityDepth, _highQualityDepth );
+		GLSLShaderProgram::setUniformFloat( logarithmic, _logarithmic );
+		GLSLShaderProgram::setUniformFloat( highQualityDepth, _highQualityDepth );
 
-		GLSLShader::setUniformUINT( numberOfSamples, _numberOfSamples );
-		GLSLShader::setUniformUINT( screenWidth, _width );
-		GLSLShader::setUniformUINT( screenHeight, _height );
+		GLSLShaderProgram::setUniformUINT( numberOfSamples, _numberOfSamples );
+		GLSLShaderProgram::setUniformUINT( screenWidth, _width );
+		GLSLShaderProgram::setUniformUINT( screenHeight, _height );
 	}
 };
 
@@ -1148,7 +1148,7 @@ struct ShaderSSAOLocations : public ShaderBaseLocations
 	GLint				logarithmic{ -1 };
 	GLint				highQualityDepth{ -1 };
 
-	virtual void OnInit(GLSLShader *pShader, bool useMaskState) override
+	virtual void OnInit(GLSLShaderProgram *pShader, bool useMaskState) override
 	{
 		if (pShader == nullptr)
 		{
@@ -1221,27 +1221,27 @@ struct ShaderSSAOLocations : public ShaderBaseLocations
 				const float _logarithmic,
 				const float _highQualityDepth )
 	{
-		GLSLShader::setUniformFloat( distance, _distance );
-		GLSLShader::setUniformVector2f( filterRadius, _filterX, _filterY );
-		GLSLShader::setUniformFloat( gamma, _gamma );
-		GLSLShader::setUniformFloat( contrast, _contrast );
-		GLSLShader::setUniformUINT( onlyAO, _onlyAO );
-		GLSLShader::setUniformFloat( zNear, _znear );
-		GLSLShader::setUniformFloat( zFar, _zfar );
-		GLSLShader::setUniformMatrix( invProj, _invProjMatrix );
-		GLSLShader::setUniformMatrix( viewMatrix, _viewMatrix );
+		GLSLShaderProgram::setUniformFloat( distance, _distance );
+		GLSLShaderProgram::setUniformVector2f( filterRadius, _filterX, _filterY );
+		GLSLShaderProgram::setUniformFloat( gamma, _gamma );
+		GLSLShaderProgram::setUniformFloat( contrast, _contrast );
+		GLSLShaderProgram::setUniformUINT( onlyAO, _onlyAO );
+		GLSLShaderProgram::setUniformFloat( zNear, _znear );
+		GLSLShaderProgram::setUniformFloat( zFar, _zfar );
+		GLSLShaderProgram::setUniformMatrix( invProj, _invProjMatrix );
+		GLSLShaderProgram::setUniformMatrix( viewMatrix, _viewMatrix );
 
-		GLSLShader::setUniformFloat( logarithmic, _logarithmic );
-		GLSLShader::setUniformFloat( highQualityDepth, _highQualityDepth );
+		GLSLShaderProgram::setUniformFloat( logarithmic, _logarithmic );
+		GLSLShaderProgram::setUniformFloat( highQualityDepth, _highQualityDepth );
 	}
 
 	void Set( const int	_numberOfSamples,
 							const int	_width,
 							const int	_height )
 	{
-		GLSLShader::setUniformUINT( numberOfSamples, _numberOfSamples );
-		GLSLShader::setUniformUINT( screenWidth, _width );
-		GLSLShader::setUniformUINT( screenHeight, _height );
+		GLSLShaderProgram::setUniformUINT( numberOfSamples, _numberOfSamples );
+		GLSLShaderProgram::setUniformUINT( screenWidth, _width );
+		GLSLShaderProgram::setUniformUINT( screenHeight, _height );
 	}
 };
 
@@ -1264,7 +1264,7 @@ public:
 	bool		CheckAndLoadShader( const ECompositeShader shader, const bool useMask );
 	void		UnLoadShader( const ECompositeShader shader, const bool useMask );
 
-	const GLSLShader	*GetShaderPtr( const ECompositeShader shader, const bool useMask );
+	const GLSLShaderProgram	*GetShaderPtr( const ECompositeShader shader, const bool useMask );
 	const ShaderBaseLocations *GetShaderLocationsPtr( const ECompositeShader shader, const bool useMask );
 
 	// function to bind some shader
@@ -1376,15 +1376,15 @@ private:
 	bool					mShaderUseMask[eCompositeShaderCount];
 
 	// version with an undefined mask
-	GLSLShader				*mShadersNoMask[eCompositeShaderCount];
+	GLSLShaderProgram				*mShadersNoMask[eCompositeShaderCount];
 	ShaderBaseLocations		*mShaderLocNoMask[eCompositeShaderCount];
 
 	// version with a defined mask
-	GLSLShader				*mShadersWithMask[eCompositeShaderCount];
+	GLSLShaderProgram				*mShadersWithMask[eCompositeShaderCount];
 	ShaderBaseLocations		*mShaderLocWithMask[eCompositeShaderCount];
 
-	bool	InitShader(const char *vertex_filename, const char *fragment_filename, GLSLShader *&pShader, ShaderBaseLocations *&pLocations, bool useMask);
-	void	FreeShader(GLSLShader *&pShader, ShaderBaseLocations *&pLocations);
+	bool	InitShader(const char *vertex_filename, const char *fragment_filename, GLSLShaderProgram *&pShader, ShaderBaseLocations *&pLocations, bool useMask);
+	void	FreeShader(GLSLShaderProgram *&pShader, ShaderBaseLocations *&pLocations);
 
 	GLhandleARB	GetVertexShader();
 
@@ -1394,7 +1394,7 @@ private:
 
 private:
 
-	GLSLShader* mShader{ nullptr };
+	GLSLShaderProgram* mShader{ nullptr };
 	ShaderBaseLocations* mLocations{ nullptr };
 };
 
@@ -1427,7 +1427,7 @@ public:
 		impl->UnLoadShader(shader, useMask);
 	}
 
-	const GLSLShader	*GetShaderPtr( const ECompositeShader shader, bool useMask )
+	const GLSLShaderProgram	*GetShaderPtr( const ECompositeShader shader, bool useMask )
 	{
 		return impl->GetShaderPtr(shader, useMask);
 	}

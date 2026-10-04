@@ -19,6 +19,29 @@
 #include "BlendShapeToolkit_brushesBase.h"
 #include "FileUtils.h"
 
+// look for a BlendShapeToolkit icon in the effect locations,
+// the result is stored in fullPath to keep the returned pointer valid
+inline const char* ResolvePicturePath(FBString& fullPath, const char* fileName)
+{
+	const std::filesystem::path relativePath = std::filesystem::path("System") / "BlendShapeToolkit" / fileName;
+
+	if (const auto foundPath = FindEffectLocation(relativePath))
+	{
+		try
+		{
+			fullPath = foundPath->string().c_str();
+			return fullPath;
+		}
+		catch (const std::exception&)
+		{
+			// path is not representable in the ANSI code page, use the fallback below
+		}
+	}
+
+	fullPath = (std::string("\\BlendShapeToolkit\\") + fileName).c_str();
+	return fullPath;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // BrushMove
 
@@ -32,16 +55,7 @@ public:
 
 	// information
 	const char* GetCaption() override { return "Drag"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Grab.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\Grab.png"; 
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "Grab.png"); }
 
 	bool	WantToReacalcWeights() { return false; }
 
@@ -62,16 +76,7 @@ public:
 
 	// information
 	const char* GetCaption() { return "Push"; }
-	const char* GetPicturePath() { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Bulge.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\Bulge.png"; 
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "Bulge.png"); }
 
 	bool	WantToReacalcWeights() { return true; }
 
@@ -92,16 +97,7 @@ public:
 
 	// information
 	const char* GetCaption() override { return "Freeze"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Freeze.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\Freeze.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "Freeze.png"); }
 
 	bool	WantToReacalcWeights() { return true; }
 
@@ -122,16 +118,7 @@ public:
 
 	// information
 	const char* GetCaption() override { return "Smooth"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Smooth.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\Smooth.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "Smooth.png"); }
 
 	bool	WantToReacalcWeights() { return true; }
 
@@ -152,16 +139,7 @@ public:
 
 	// information
 	const char* GetCaption() override { return "Erase"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Erase.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\Erase.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "Erase.png"); }
 
 	bool	WantToReacalcWeights() { return true; }
 
@@ -182,16 +160,7 @@ public:
 
 	// information
 	const char* GetCaption() override { return "Paint"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\Paint.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\Paint.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "Paint.png"); }
 
 	bool	WantToReacalcWeights() { return true; }
 
@@ -214,16 +183,7 @@ public:
 	{}
 
 	const char* GetCaption() override { return "Linear"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffLinear.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\falloffLinear.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "falloffLinear.png"); }
 
 	double	Calculate(double t) override { return t; }
 };
@@ -244,16 +204,7 @@ public:
 	{}
 
 	const char* GetCaption() override { return "Hard"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffTop.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\falloffTop.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "falloffTop.png"); }
 
 	double	Calculate(double t) override;
 };
@@ -273,16 +224,7 @@ public:
 	{}
 
 	const char* GetCaption() override { return "Point"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffPoint.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\falloffPoint.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "falloffPoint.png"); }
 
 	double	Calculate(double t) override;
 };
@@ -302,16 +244,7 @@ public:
 	{}
 
 	const char* GetCaption() override { return "Smooth"; }
-	const char* GetPicturePath() override { 
-		char buffer[256]{ 0 };
-		if (FindEffectLocation("\\System\\BlendShapeToolkit\\falloffSmooth.png", buffer, 256))
-		{
-			FullPath = buffer;
-			return FullPath;
-		}
-		
-		return "\\BlendShapeToolkit\\falloffSmooth.png";
-	}
+	const char* GetPicturePath() override { return ResolvePicturePath(FullPath, "falloffSmooth.png"); }
 
 	double	Calculate(double t) override;
 };

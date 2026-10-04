@@ -532,7 +532,7 @@ void ORPopup_ColorEditor::UIConfigure()
 	mEditAlpha.Max = 255.0;
 	mEditAlpha.OnChange.Add( this, (FBCallback) &ORPopup_ColorEditor::EventEditColorChange );
 
-#if(PRODUCT_VERSION<2027)
+#if(PRODUCT_VERSION<=2025)
 	mEditColor.ColorMode = 3;
 #endif
 	mEditColor.OnChange.Add( this, (FBCallback) &ORPopup_ColorEditor::EventEditColorChange );

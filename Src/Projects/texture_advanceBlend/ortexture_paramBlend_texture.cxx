@@ -347,7 +347,7 @@ void ORTextureParamBlend::TextureLayerComposition(FBTime pTime,FBTime pTimeInCur
 		//
 		// draw quad with a shader
 
-		GLSLShader *pShader=mShaders[SpriteOrder];
+		GLSLShaderProgram *pShader=mShaders[SpriteOrder];
 		Locations &loc = mLocations[SpriteOrder];
 		pShader->Bind();
 
@@ -428,22 +428,23 @@ bool ORTextureParamBlend::InitShaders()
 {
 
 	bool result = true;
-	FBString effectPath, effectFullName;
 	
 	try
 	{
 		FreeShaders();
-		char buffer[256]{ 0 };
-		if (false == FindEffectLocation( gBlendFragmentShaders[0], buffer, 256) )
-			throw std::exception( "Failed to locate shader files" );
 
 		// most of shaders share the same simple vertex shader
 		
 		for (int i=0; i<TOTAL_NUMBER_OF_SPRITE_SHADERS; ++i)
 		{
-			mShaders[i] = new GLSLShader();
+			const auto vertexPath = FindEffectLocation( std::filesystem::path(gBlendVertexShaders[i]) );
+			const auto fragmentPath = FindEffectLocation( std::filesystem::path(gBlendFragmentShaders[i]) );
+			if (!vertexPath || !fragmentPath)
+				throw std::exception( "Failed to locate shader files" );
 
-			if (false == mShaders[i]->LoadShaders( FBString(buffer, gBlendVertexShaders[i]), FBString(buffer, gBlendFragmentShaders[i]) ) )
+			mShaders[i] = new GLSLShaderProgram();
+
+			if (false == mShaders[i]->LoadShaders( *vertexPath, *fragmentPath ) )
 				throw std::exception( "Failed to load shader" );
 		
 			//
@@ -464,7 +465,7 @@ bool ORTextureParamBlend::InitShaders()
 	return result;
 }
 
-bool ORTextureParamBlend::InitLocations(const GLSLShader *shader, Locations &locations)
+bool ORTextureParamBlend::InitLocations(const GLSLShaderProgram *shader, Locations &locations)
 {
 	if (shader)
 	{

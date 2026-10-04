@@ -11,146 +11,240 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include <windows.h>
 #include "FileUtils.h"
-#include <filesystem>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <Windows.h>
 
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 
+#include "mobu_logging.h"
+
+namespace fs = std::filesystem;
+static fs::path g_currentOpenFile;
+
+void SetCurrentFileOpenPath(const char* filepath)
+{
+    if (filepath && *filepath)
+        g_currentOpenFile = fs::path(AnsiToWide(filepath));
+    else
+        g_currentOpenFile.clear();
+}
+
+namespace
+{
+	bool IsRegularFile(const fs::path& path)
+	{
+		std::error_code ec;
+		const bool result = fs::is_regular_file(path, ec);
+		return result && !ec;
+	}
+}
+
 /////////////////////////////////////////////////////////////
 
-bool IsFileExists ( const char* filename ) 
-{	
-	WIN32_FIND_DATA FindFileData;
-	HANDLE hFind;
-
-	hFind = FindFirstFile( filename, &FindFileData);
-	if (hFind == INVALID_HANDLE_VALUE)
-	{
+bool IsFileExists(const char* filename)
+{
+	if (!filename || !*filename)
 		return false;
-	}
-	else
-	{
-		FindClose(hFind);
-		return true;
-	}
+
+	std::error_code ec;
+	return std::filesystem::exists(filename, ec) && !ec;
 }
 
 ////////////////////////////////////////////////////////////
-
-bool FindEffectLocation(const char *effect, char* outPath, const int outPathLength)
+std::wstring AnsiToWide(std::string_view text)
 {
-	char buffer[MAX_PATH];
+    if (text.empty())
+        return {};
 
-	auto fn_checkLocation = [&buffer](const char* location, const char* fileName) -> bool
-		{
-			memset(buffer, 0, sizeof(char) * MAX_PATH);
-			sprintf_s(buffer, sizeof(char) * MAX_PATH, "%s\\%s", location, fileName);
+    if (text.size() > static_cast<size_t>(std::numeric_limits<int>::max()))
+    {
+        throw std::length_error("ANSI string is too long");
+    }
 
-			return std::filesystem::exists(buffer);
-		};
+    const int inputLength = static_cast<int>(text.size());
 
-	auto fn_copyLocation = [](const char* location, char* outPath, const int maxPath)
-		{
-			const int len = std::min(MAX_PATH, maxPath);
-			memset(outPath, 0, sizeof(char) * len);
+    const int requiredLength = MultiByteToWideChar(
+        CP_ACP,
+        0,
+        text.data(),
+        inputLength,
+        nullptr,
+        0);
 
-			const int userConfigPathLen = std::min(static_cast<int>(strlen(location)), maxPath);
-			memcpy(outPath, location, sizeof(char) * userConfigPathLen);
-		};
+    if (requiredLength == 0)
+    {
+        throw std::system_error(
+            static_cast<int>(GetLastError()),
+            std::system_category(),
+            "ANSI to UTF-16 conversion failed");
+    }
 
-	FBSystem& lSystem = FBSystem::TheOne();
+    std::wstring result(static_cast<size_t>(requiredLength), L'\0');
 
-	// check if effect is in absolute path and could be found directly
-	
-	if (std::filesystem::exists(effect) 
-		&& strstr(effect, ":") != nullptr)
-	{
-		const int effectLen = std::min(static_cast<int>(strlen(effect)), outPathLength);
-		
-		for (int i = effectLen - 1; i >= 0; --i)
-		{
-			if (effect[i] == '/' || effect[i] == '\\')
-			{
-				memcpy(outPath, effect, sizeof(char) * i);
-				break;
-			}
-		}
-	}
-	else
-	{
-		const char* userConfigPath = static_cast<const char*>(lSystem.UserConfigPath);
+    if (MultiByteToWideChar(
+        CP_ACP,
+        0,
+        text.data(),
+        inputLength,
+        result.data(),
+        requiredLength) == 0)
+    {
+        throw std::system_error(
+            static_cast<int>(GetLastError()),
+            std::system_category(),
+            "ANSI to UTF-16 conversion failed");
+    }
 
-		if (fn_checkLocation(userConfigPath, effect))
-		{
-			fn_copyLocation(userConfigPath, outPath, outPathLength);
-			return true;
-		}
-
-	}
-	
-	// look in alternative plugin paths
-	FBStringList paths;
-#ifndef ORSDK2013
-	paths = lSystem.GetPluginPath();
-#endif
-	
-	for (int i=0; i<paths.GetCount(); ++i)
-	{
-		const char* location = static_cast<const char*>(paths[i]);
-
-		if (fn_checkLocation(location, effect))
-		{
-			fn_copyLocation(location, outPath, outPathLength);
-			return true;
-		}
-	}
-	
-	return false;
+    return result;
 }
 
-
-bool FindEffectLocation(std::function<bool(const char* testPath)> const& checkLocationFn, char* outPath, const int outPathLength)
+////////////////////////////////////////////////////////////
+std::optional<fs::path> FindEffectLocation(const fs::path& requestedPath)
 {
-	auto fn_copyLocation = [](const char* location, char* outPath, const int maxPath)
-		{
-			const int len = std::min(MAX_PATH, maxPath);
-			memset(outPath, 0, sizeof(char) * len);
+    if (requestedPath.empty())
+        return std::nullopt;
 
-			const int userConfigPathLen = std::min(static_cast<int>(strlen(location)), maxPath);
-			memcpy(outPath, location, sizeof(char) * userConfigPathLen);
-		};
+    // A genuinely absolute filename does not need search locations.
+    if (requestedPath.is_absolute())
+    {
+        if (IsRegularFile(requestedPath))
+            return requestedPath.lexically_normal();
 
-	FBSystem& lSystem = FBSystem::TheOne();
+        return std::nullopt;
+    }
 
-	// check if effect is in absolute path and could be found directly
+    // This also tolerates old names such as "/GLSL/file.glslf".
+    const fs::path relativePath = requestedPath.relative_path();
+    if (relativePath.empty())
+        return std::nullopt;
 
-	const char* userConfigPath = static_cast<const char*>(lSystem.UserConfigPath);
+    auto checkLocation =
+        [&relativePath](const fs::path& basePath)
+        -> std::optional<fs::path>
+        {
+            if (basePath.empty())
+                return std::nullopt;
 
-	if (checkLocationFn(userConfigPath))
-	{
-		fn_copyLocation(userConfigPath, outPath, outPathLength);
-		return true;
-	}
+            const fs::path candidate = (basePath / relativePath).lexically_normal();
 
-	// look in alternative plugin paths
+            if (IsRegularFile(candidate))
+                return candidate;
 
-	FBStringList paths;
+            return std::nullopt;
+        };
+
+    FBSystem& system = FBSystem::TheOne();
+
+    const char* userConfigPath = static_cast<const char*>(system.UserConfigPath);
+
+    if (userConfigPath && *userConfigPath)
+    {
+        const fs::path basePath(AnsiToWide(userConfigPath));
+
+        if (auto result = checkLocation(basePath))
+            return result;
+    }
+
+    if (!g_currentOpenFile.empty())
+    {
+        const fs::path currentFile(g_currentOpenFile);
+        const fs::path currentDirectory = currentFile.parent_path();
+
+        if (auto result = checkLocation(currentDirectory))
+            return result;
+    }
+
 #ifndef ORSDK2013
-	paths = lSystem.GetPluginPath();
+    const FBStringList pluginPaths = system.GetPluginPath();
+
+    for (int i = 0; i < pluginPaths.GetCount(); ++i)
+    {
+        const char* pluginPath = static_cast<const char*>(pluginPaths[i]);
+
+        if (pluginPath && *pluginPath)
+        {
+            const fs::path basePath(AnsiToWide(pluginPath));
+
+            if (auto result = checkLocation(basePath))
+                return result;
+        }
+    }
 #endif
 
-	for (int i = 0; i < paths.GetCount(); ++i)
-	{
-		const char* location = static_cast<const char*>(paths[i]);
+    return std::nullopt;
+}
 
-		if (checkLocationFn(location))
-		{
-			fn_copyLocation(location, outPath, outPathLength);
-			return true;
-		}
-	}
+std::optional<fs::path> FindEffectLocation(const LocationCheck& checkLocationFn)
+{
+    if (!checkLocationFn)
+        return std::nullopt;
 
-	return false;
+    auto checkPath = [&checkLocationFn](const fs::path& basePath) -> std::optional<fs::path>
+        {
+            if (basePath.empty())
+                return std::nullopt;
+
+            try
+            {
+                const fs::path normalizedPath = basePath.lexically_normal();
+
+                if (checkLocationFn(normalizedPath))
+                    return normalizedPath;
+            }
+            catch (const std::exception& exception)
+            {
+                LOGE("[FileUtils] Failed to check location: %s\n", exception.what());
+            }
+
+            return std::nullopt;
+        };
+
+    auto checkAnsiPath = [&checkPath](const char* ansiPath) -> std::optional<fs::path>
+        {
+            if (!ansiPath || !*ansiPath)
+                return std::nullopt;
+
+            try
+            {
+                return checkPath(fs::path(AnsiToWide(ansiPath)));
+            }
+            catch (const std::exception& exception)
+            {
+                LOGE("[FileUtils] Failed to convert location '%s': %s\n", ansiPath, exception.what());
+                return std::nullopt;
+            }
+        };
+
+    FBSystem& system = FBSystem::TheOne();
+
+    const char* userConfigPath = static_cast<const char*>(system.UserConfigPath);
+
+    if (auto result = checkAnsiPath(userConfigPath))
+        return result;
+
+    if (!g_currentOpenFile.empty())
+    {
+        const fs::path currentDirectory = g_currentOpenFile.parent_path();
+
+        if (auto result = checkPath(currentDirectory))
+            return result;
+    }
+
+#ifndef ORSDK2013
+    const FBStringList pluginPaths = system.GetPluginPath();
+
+    for (int i = 0; i < pluginPaths.GetCount(); ++i)
+    {
+        const char* pluginPath = static_cast<const char*>(pluginPaths[i]);
+
+        if (auto result = checkAnsiPath(pluginPath))
+            return result;
+    }
+#endif
+
+    return std::nullopt;
 }

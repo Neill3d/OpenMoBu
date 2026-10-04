@@ -100,7 +100,7 @@ namespace nv
 
     struct vec2
     {
-        vec2() { }
+        vec2(): x(0.0f), y(0.0f) { }
         vec2(nv_scalar x, nv_scalar y) : x(x), y(y) { }
         vec2(const nv_scalar* xy) : x(xy[0]), y(xy[1]) { }
         vec2(const vec2& u) : x(u.x), y(u.y) { }
@@ -188,7 +188,7 @@ namespace nv
 
     struct vec3
     {
-        vec3() { }
+        vec3() : x(0.0f), y(0.0f), z(0.0f) { }
         vec3(unsigned int ux, unsigned int uy, unsigned int uz) : x((nv_scalar)ux), y((nv_scalar)uy), z((nv_scalar)uz) {}
         vec3(nv_scalar x, nv_scalar y, nv_scalar z) : x(x), y(y), z(z) { }
         vec3(const nv_scalar* xyz) : x(xyz[0]), y(xyz[1]), z(xyz[2]) { }
@@ -326,7 +326,7 @@ namespace nv
 
     struct vec4
     {
-        vec4() { }
+        vec4() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) { }
         vec4(nv_scalar x, nv_scalar y, nv_scalar z, nv_scalar w) : x(x), y(y), z(z), w(w) { }
         vec4(const nv_scalar* xyzw) : x(xyzw[0]), y(xyzw[1]), z(xyzw[2]), w(xyzw[3]) { }
         vec4(const vec3& u) : x(u.x), y(u.y), z(u.z), w(1.0f) { }

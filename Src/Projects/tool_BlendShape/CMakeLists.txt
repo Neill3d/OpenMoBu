@@ -23,7 +23,7 @@ link_libraries(${GLEW_LIBRARIES})
 #
 # link libraries
 
-target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk GLEW::glew_s MotionCodeLibrary)
+target_link_libraries(${PROJECT_NAME} PRIVATE fbsdk fbxsdk GLEW::glew_s MotionCodeLibrary)
 
 if (COPY_TO_PLUGINS)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

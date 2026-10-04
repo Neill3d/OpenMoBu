@@ -21,7 +21,7 @@
 #include <map>
 #include <memory>
 
-#include "glslShader.h"
+#include "glslShaderProgram.h"
 
 #ifndef ORSDK_DLL
 	/** \def ORSDK_DLL
@@ -72,7 +72,7 @@ public:
 protected:
     unsigned int        mAttachCount;          //!< How many view panes use this renderer callback instance currently.
 
-	std::unique_ptr<GLSLShader>   mColorShader;
+	std::unique_ptr<GLSLShaderProgram>   mColorShader;
 
 	GLint				mLocationMVP;
 	GLint				mLocationCubeMin;

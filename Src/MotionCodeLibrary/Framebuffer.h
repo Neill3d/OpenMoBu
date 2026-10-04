@@ -85,7 +85,8 @@ public:
 	
 	void	SetFlag(const int flag);
 	void	RemoveFlag(const int flag);
-	bool	IsFlag(const int flag);
+	bool	IsFlag(const int flag) const;
+	inline int 	GetFlags() const { return mFlags; }
 
 	// attach external resources
 
@@ -202,15 +203,9 @@ public:
 		mDepthAttachment.type = _type;
 	}
 
-	int	GetWidth () const
-	{
-		return mWidth;
-	}
-	
-	int	GetHeight () const
-	{
-		return mHeight;
-	}
+	inline int	GetWidth () const { return mWidth; }
+	inline int	GetHeight () const { return mHeight; }
+	inline int GetNumberOfColorAttachments() const { return mNumberOfColorAttachments; }
 
 	//
 	//

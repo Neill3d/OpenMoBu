@@ -14,6 +14,10 @@
 // musk's lense flare, modified by icecool.
 // See the original at: https://www.shadertoy.com/view/4sX3Rs 
 
+#version 140
+
+in vec2 texCoord;
+out vec4 FragColor;
 
 uniform sampler2D sampler0;
 uniform sampler2D maskSampler;
@@ -24,8 +28,7 @@ uniform float	lowerClip;
 
 uniform float amount;
 
-uniform float textureWidth;
-uniform float textureHeight;
+uniform vec2 iResolution;
 
 uniform float iTime;
 uniform vec4  light_pos;
@@ -38,15 +41,12 @@ uniform float fadeToBorders; // = 1.0;
 uniform float borderWidth;
 uniform float feather; // = 1.0;
 
-float width = textureWidth; //texture width
-float height = textureHeight; //texture height
-
 
 float noise(float t) //generating noise/pattern texture for dithering
 {
 	vec2 coord = vec2(t, t);
-	float noiseX = ((fract(1.0-coord.s*(width/2.0))*0.25)+(fract(coord.t*(height/2.0))*0.75))*2.0-1.0;
-	float noiseY = ((fract(1.0-coord.s*(width/2.0))*0.75)+(fract(coord.t*(height/2.0))*0.25))*2.0-1.0;
+	float noiseX = ((fract(1.0-coord.s*(iResolution.x/2.0))*0.25)+(fract(coord.t*(iResolution.y/2.0))*0.75))*2.0-1.0;
+	float noiseY = ((fract(1.0-coord.s*(iResolution.x/2.0))*0.75)+(fract(coord.t*(iResolution.y/2.0))*0.25))*2.0-1.0;
 	
 	//if (noise)
 	//{
@@ -58,8 +58,8 @@ float noise(float t) //generating noise/pattern texture for dithering
 
 float noise(vec2 coord) //generating noise/pattern texture for dithering
 {
-	float noiseX = ((fract(1.0-coord.s*(width/2.0))*0.25)+(fract(coord.t*(height/2.0))*0.75))*2.0-1.0;
-	float noiseY = ((fract(1.0-coord.s*(width/2.0))*0.75)+(fract(coord.t*(height/2.0))*0.25))*2.0-1.0;
+	float noiseX = ((fract(1.0-coord.s*(iResolution.x/2.0))*0.25)+(fract(coord.t*(iResolution.y/2.0))*0.75))*2.0-1.0;
+	float noiseY = ((fract(1.0-coord.s*(iResolution.x/2.0))*0.75)+(fract(coord.t*(iResolution.y/2.0))*0.25))*2.0-1.0;
 	
 	//if (noise)
 	//{
@@ -120,20 +120,18 @@ vec3 cc(vec3 color, float factor,float factor2) // color modifier
 
 void main (void)
 {
-	vec2 tx = gl_TexCoord [0].st;
+	vec2 tx = texCoord.st;
 	
 	if (tx.y < upperClip || tx.y > lowerClip)
 	{
-		vec4 fragColor = texture2D(sampler0, tx);
-		gl_FragData [0] =  fragColor;
+		FragColor = texture2D(sampler0, tx);
 		return;
 	}
 	
 	vec4 color = texture2D( sampler0, tx ); 
 	
 	vec2 fragCoord = gl_FragCoord.xy;
-	vec2 iResolution = vec2(textureWidth, textureHeight);
-	vec3 iMouse = vec3(light_pos.x * textureWidth, light_pos.y * textureHeight, light_pos.z);
+	vec3 iMouse = vec3(light_pos.x * iResolution.x, light_pos.y * iResolution.y, light_pos.z);
 	
 	vec2 uv = fragCoord.xy / iResolution.xy - 0.5;
 	uv.x *= iResolution.x/iResolution.y; //fix aspect ratio
@@ -152,10 +150,10 @@ void main (void)
 	if (fadeToBorders > 0.0)
 	{
 		float distToBorder = light_pos.x + borderWidth;
-		distToBorder = min(distToBorder, width + borderWidth - light_pos.x);
+		distToBorder = min(distToBorder, iResolution.x + borderWidth - light_pos.x);
 	
 		distToBorder = min(distToBorder, light_pos.y + borderWidth);
-		distToBorder = min(distToBorder, height + borderWidth - light_pos.y);
+		distToBorder = min(distToBorder, iResolution.y + borderWidth - light_pos.y);
 	
 		distToBorder *= 0.01;
 		distToBorder = clamp(distToBorder, 0.0, 1.0);
@@ -172,5 +170,5 @@ void main (void)
 		mask = texture2D( maskSampler, tx );
 	}
 	color.rgb = mix(flareColor * f + color.rgb, color.rgb, mask.r * useMasking);
-	gl_FragData [0] =  color;
+	FragColor = color;
 }

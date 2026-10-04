@@ -16,16 +16,16 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 //#include "WGLFONT.h"
 
 //--- Registration defines
-#define ORMANIPTEMPLATE__CLASSNAME	ORManip_Template
-#define ORMANIPTEMPLATE__CLASSSTR	"ORManip_Template"
+#define ORMANIPTEMPLATE__CLASSNAME	Manip_PostProcessing
+#define ORMANIPTEMPLATE__CLASSSTR	"Manip_PostProcessing"
 
 ///////////////////////////////////////////////////////////////////////////////
 //! PostProcessing Manipulator
 
-class ORManip_Template : public FBManipulator
+class Manip_PostProcessing : public FBManipulator
 {
 	//--- FiLMBOX declaration.
-	FBManipulatorDeclare( ORManip_Template, FBManipulator );
+	FBManipulatorDeclare( Manip_PostProcessing, FBManipulator );
 
 public:
 	//! FiLMBOX Constructor.

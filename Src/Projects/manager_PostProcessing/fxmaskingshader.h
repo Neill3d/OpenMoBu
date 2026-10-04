@@ -45,4 +45,8 @@ public:
 	FBPropertyBool									CompositeMaskB;
 	FBPropertyBool									CompositeMaskC;
 	FBPropertyBool									CompositeMaskD;
+
+	// the flag defines which color object will be draw, white or black
+	// that is useful for making mask occlusion with certain objects
+	FBPropertyBool									OcclusionRender;
 };
