@@ -12,7 +12,7 @@
 	va_list args; \
 	va_start(args, pFormatString); \
 	vsnprintf(buffer, static_cast<size_t>(BUFFER_SIZE - 1), pFormatString, args); \
-	FBTrace(buffer); \
+	FBTrace("%s", buffer);\
 	va_end(args); \
 }
 
@@ -23,7 +23,7 @@
 	va_list args; \
 	va_start(args, pFormatString); \
 	vsnprintf(buffer, static_cast<size_t>(BUFFER_SIZE - 1), pFormatString, args); \
-	FBTrace(buffer); \
+	FBTrace("%s", buffer);\
 	va_end(args); \
 }
 
@@ -34,7 +34,7 @@
 	va_list args; \
 	va_start(args, pFormatString); \
 	vsnprintf(buffer, static_cast<size_t>(BUFFER_SIZE - 1), pFormatString, args); \
-	FBTrace(buffer); \
+	FBTrace("%s", buffer);\
 	va_end(args); \
 }
 
