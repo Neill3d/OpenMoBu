@@ -274,11 +274,11 @@ void ShaderPropertyScheme::AssociateFBProperties(FBComponent* component)
 	}
 }
 
-bool ShaderPropertyScheme::ExportToJSON(const char* fileName) const
+bool ShaderPropertyScheme::ExportToJSON(const std::filesystem::path& filePath) const
 {
 	// for convenience
 	using json = nlohmann::json;
-	
+
 	json root = json::object();
 	root["properties"] = json::array();
 
@@ -335,23 +335,14 @@ bool ShaderPropertyScheme::ExportToJSON(const char* fileName) const
 	}
 
 	// Serialize and write to file
-	std::string out;
-	try
-	{
-		out = root.dump(4);
-	}
-	catch (...)
-	{
-		return false;
-	}
 
-	std::ofstream ofs(fileName, std::ios::out | std::ios::trunc);
-	if (!ofs.is_open())
+	std::ofstream output(filePath, std::ios::out | std::ios::trunc);
+
+	if (!output.is_open())
 		return false;
 
-	ofs << out;
-	ofs.close();
-	return true;
+	output << root.dump(4);
+	return output.good();
 }
 
 

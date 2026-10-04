@@ -864,48 +864,54 @@ void CompositeShaderManagerImpl::SetSSAOUniforms(	const int	_numberOfSamples,
 	}
 }
 
-bool CompositeShaderManagerImpl::InitShader(const char *vertex_filename, const char *fragment_filename, GLSLShaderProgram *&pShader, ShaderBaseLocations *&pLocations, bool useMask)
+bool CompositeShaderManagerImpl::InitShader(const char *vertexFilename, const char *fragmentFilename, GLSLShaderProgram *&shader, ShaderBaseLocations *&locations, bool useMask)
 {
-	if (pShader == nullptr || pLocations == nullptr)
+	if (!shader || !locations || !fragmentFilename || !*fragmentFilename)
+	{
 		return false;
-
-	bool result = true;
-	FBString effectPath, effectFullName;
-	
+	}
 	try
 	{
-		char effectPath[MAX_PATH];
+		const auto fragmentPath = FindEffectLocation(std::filesystem::path(AnsiToWide(fragmentFilename)));
 
-		if ( !FindEffectLocation( fragment_filename, effectPath, MAX_PATH ) )
-			throw std::exception( "Failed to locate shader files" );
+		if (!fragmentPath)
+			throw std::runtime_error("Failed to locate fragment shader");
 
-		// most of shaders share the same simple vertex shader
-		if (vertex_filename == nullptr)
+		// LoadShaders still accepts ANSI char paths.
+		const std::string fragmentPathString = fragmentPath->string();
+
+		bool loaded = false;
+
+		// Reuse the vertex shader from the blit shader.
+		if (!vertexFilename)
 		{
-			if ( !pShader->LoadShaders( GetVertexShader(), FBString(effectPath, fragment_filename) ) )
-				throw std::exception( "Failed to load shader" );
-		}	
+			loaded = shader->LoadShaders(GetVertexShader(), fragmentPathString.c_str());
+		}
 		else
 		{
-			if ( !pShader->LoadShaders( FBString(effectPath, vertex_filename), FBString(effectPath, fragment_filename) ) )
-				throw std::exception( "Failed to load shader" );
+			const auto vertexPath = FindEffectLocation(std::filesystem::path(AnsiToWide(vertexFilename)));
+
+			if (!vertexPath)
+				throw std::runtime_error("Failed to locate vertex shader");
+
+			const std::string vertexPathString = vertexPath->string();
+
+			loaded = shader->LoadShaders(vertexPathString.c_str(), fragmentPathString.c_str());
 		}
 
-		//
-		// find locations for all neede shader uniforms
-		
-		pLocations->Init(pShader, useMask);
+		if (!loaded)
+			throw std::runtime_error("Failed to load shader");
 
+		locations->Init(shader, useMask);
+		return true;
 	}
-	catch ( const std::exception &e )
+	catch (const std::exception& exception)
 	{
-		FBMessageBox( "Composite Master Tool", e.what(), "Ok" );
-		result = false;
+		FBMessageBox("Composite Master Tool", exception.what(), "Ok");
 
-		FreeShader(pShader, pLocations);
+		FreeShader(shader, locations);
+		return false;
 	}
-
-	return result;
 }
 
 void CompositeShaderManagerImpl::FreeShader(GLSLShaderProgram *&pShader, ShaderBaseLocations *&pLocations)

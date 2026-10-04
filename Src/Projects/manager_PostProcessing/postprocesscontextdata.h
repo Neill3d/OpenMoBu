@@ -14,6 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <fbsdk/fbsdk.h>
 #include <map>
 #include <limits>
+#include <filesystem>
 
 #include "GL/glew.h"
 
@@ -167,7 +168,7 @@ private:
 
 	// manager shaders
 	bool	LoadSimpleBlitShader();
-	const bool CheckShadersPath(const char* path) const;
+	bool CheckShadersPath(const std::filesystem::path& basePath) const;
 	void	FreeShaders();
 
 	void	FreeBuffers();

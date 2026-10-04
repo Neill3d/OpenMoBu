@@ -121,18 +121,15 @@ bool ColorsRendererCallback::LoadShader()
 
 	mColorShader.reset(new GLSLShaderProgram());
 
-	const FBString fragment_filename( "\\GLSL\\renderer_colorRamp.fsh" );
-	const FBString vertex_filename( "\\GLSL\\renderer_colorRamp.vsh" );
-
-    char effectPath[256]{ 0 };
-	if (!FindEffectLocation( fragment_filename, effectPath, 256) )
+	const auto fragmentPath = FindEffectLocation( std::filesystem::path( "GLSL/renderer_colorRamp.fsh" ) );
+	const auto vertexPath = FindEffectLocation( std::filesystem::path( "GLSL/renderer_colorRamp.vsh" ) );
+	if (!fragmentPath || !vertexPath)
 	{
 		FreeShader();
 		return false;
 	}
 
-	// most of shaders share the same simple vertex shader
-	if (!mColorShader->LoadShaders( FBString(effectPath, vertex_filename), FBString(effectPath, fragment_filename) ) )
+	if (!mColorShader->LoadShaders( *vertexPath, *fragmentPath ) )
 	{
 		FreeShader();
 		return false;

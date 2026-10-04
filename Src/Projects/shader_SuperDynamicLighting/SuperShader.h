@@ -16,6 +16,7 @@ Licensed under The "New" BSD License - https ://github.com/Neill3d/OpenMoBu/blob
 //--- SDK include
 #include <fbsdk/fbsdk.h>
 #include <vector>
+#include <filesystem>
 
 #include <memory>
 
@@ -42,8 +43,8 @@ namespace Graphics
 		//! a destructor
 		~SuperShader();
 
-		// path - where to locate our effect files
-		bool Initialize(const char *path);
+		// shadersPath - a folder where to locate our effect files
+		bool Initialize(const std::filesystem::path& shadersPath);
 
 		bool BeginShading(FBRenderOptions* pRenderOptions, FBArrayTemplate<FBLight*>* pAffectingLightList);
 		void EndShading(FBRenderOptions *pRenderOptions=nullptr);

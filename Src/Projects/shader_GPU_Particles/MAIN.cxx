@@ -29,7 +29,7 @@
 #include "FileUtils.h"
 
 #define PARTICLES_EFFECT				"Particles.glslfx"
-#define PREP_SURFACE_COMPUTE_SHADER		"\\GLSL_CS\\prepSurfaceData.glsl"
+#define PREP_SURFACE_COMPUTE_SHADER		"GLSL_CS/prepSurfaceData.glsl"
 
 //--- Library declaration
 FBLibraryDeclare( gpushader_particles )
@@ -99,28 +99,36 @@ bool FBLibrary::LibReady()	{
 	nvFX::setMessageCallback(NVFXMessageCallback);
 
 	//
-	char buffer[256];
-
-	FBString particleEffectPath("\\GLSL_FX\\", PARTICLES_EFFECT);
-	if ( FindEffectLocation( particleEffectPath, buffer, 256 ) )
+	// locate a file and pass its full path to one of the particle shader location setters
+	// (setters copy into fixed 256 bytes buffers)
+	using LocationSetter = bool (*)(const char*, const int);
+	auto applyLocation = [](const char* relativePath, LocationSetter setter)
 	{
-		FBString effectFullName(buffer, particleEffectPath);
-		GPUParticles::ParticleShaderFX::SetShaderEffectLocation( effectFullName, effectFullName.GetLen() );
+		const auto foundPath = FindEffectLocation(std::filesystem::path(relativePath));
+		if (!foundPath)
+			return;
 
-		FBString computeLocation(buffer, "\\GLSL_CS\\Particles_simulation.glsl");
-		GPUParticles::ParticleShaderFX::SetComputeShaderLocation( computeLocation, computeLocation.GetLen() );
+		try
+		{
+			const std::string fullName = foundPath->string();
+			if (fullName.size() < 256)
+				setter(fullName.c_str(), static_cast<int>(fullName.size()));
+			else
+				FBTrace("[GPU Particles] shader path is too long: %s\n", fullName.c_str());
+		}
+		catch (const std::exception&)
+		{
+			FBTrace("[GPU Particles] shader path is not representable in ANSI: %s\n", relativePath);
+		}
+	};
 
-		FBString computeSelfCollisionsLocation(buffer, "\\GLSL_CS\\Particles_selfcollisions.glsl");
-		GPUParticles::ParticleShaderFX::SetComputeSelfCollisionsShaderLocation( computeSelfCollisionsLocation, computeSelfCollisionsLocation.GetLen() );
+	applyLocation("GLSL_FX/" PARTICLES_EFFECT, &GPUParticles::ParticleShaderFX::SetShaderEffectLocation);
+	applyLocation("GLSL_CS/Particles_simulation.glsl", &GPUParticles::ParticleShaderFX::SetComputeShaderLocation);
+	applyLocation("GLSL_CS/Particles_selfcollisions.glsl", &GPUParticles::ParticleShaderFX::SetComputeSelfCollisionsShaderLocation);
+	applyLocation("GLSL_CS/Particles_integrate.glsl", &GPUParticles::ParticleShaderFX::SetComputeIntegrateLocation);
+	applyLocation(PREP_SURFACE_COMPUTE_SHADER, &GPUParticles::ParticleShaderFX::SetComputeSurfaceDataPath);
 
-		FBString computeIntegrateLocation(buffer, "\\GLSL_CS\\Particles_integrate.glsl");
-		GPUParticles::ParticleShaderFX::SetComputeIntegrateLocation( computeIntegrateLocation, computeIntegrateLocation.GetLen() );
-
-		FBString strComputeSurfaceData(buffer, PREP_SURFACE_COMPUTE_SHADER);
-		GPUParticles::ParticleShaderFX::SetComputeSurfaceDataPath(strComputeSurfaceData, strComputeSurfaceData.GetLen() );
-	}
-
-	return true; 
+	return true;
 }
 bool FBLibrary::LibClose()	{ return true; }
 bool FBLibrary::LibRelease(){ return true; }

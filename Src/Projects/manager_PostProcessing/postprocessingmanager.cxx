@@ -137,20 +137,23 @@ bool PostProcessingManager::Init()
 
 bool PostProcessingManager::Open()
 {
-	mApplication.OnFileNewCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileNew);
-	mApplication.OnFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpen);
-	mApplication.OnFileOpenCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
-	mApplication.OnOverrideFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
+	FBApplication& application = FBApplication::TheOne();
+	FBSystem& system = FBSystem::TheOne();
+	FBEvaluateManager& evaluateManager = FBEvaluateManager::TheOne();
 
-	mSystem.Scene->OnChange.Add(this, (FBCallback)&PostProcessingManager::EventSceneChange);
+	application.OnFileNewCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileNew);
+	application.OnFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpen);
+	application.OnFileOpenCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
+	application.OnOverrideFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
 
-	mSystem.OnUIIdle.Add(this, (FBCallback)&PostProcessingManager::OnUIIdle);
+	system.Scene->OnChange.Add(this, (FBCallback)&PostProcessingManager::EventSceneChange);
 
-	mSystem.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
+	system.OnUIIdle.Add(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
-	FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
-	FBEvaluateManager::TheOne().OnSynchronizationEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
-	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
+	system.OnVideoFrameRendering.Add(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
+	evaluateManager.OnEvaluationPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	evaluateManager.OnSynchronizationEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
+	evaluateManager.OnRenderingPipelineEvent.Add(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 
     return true;
 }
@@ -161,28 +164,29 @@ void PostProcessingManager::LoadShaderTextInsertions()
 	constexpr const char* KEYWORD_IMAGE_CROP{ "INSERT: APPLY_IMAGE_CROP" };
 	constexpr const char* KEYWORD_MASKING{ "INSERT: APPLY_MASKING" };
 
-	constexpr const char* INSERT_HEADER{ "/GLSL/insert_header.glslf" };
-	constexpr const char* INSERT_IMAGE_CROP{ "/GLSL/insert_image_crop.glslf" };
-	constexpr const char* INSERT_MASKING{ "/GLSL/insert_masking.glslf" };
+	const std::filesystem::path INSERT_HEADER{ L"GLSL/insert_header.glslf" };
+	const std::filesystem::path INSERT_IMAGE_CROP{ L"GLSL/insert_image_crop.glslf" };
+	const std::filesystem::path INSERT_MASKING{ L"GLSL/insert_masking.glslf" };
 
-	char shadersPath[MAX_PATH];
-	if (FindEffectLocation(INSERT_HEADER, shadersPath, MAX_PATH))
+	const auto loadInsertion = [](const char* keyword, const std::filesystem::path& requestedPath)
 	{
-		std::string filePath = std::string(shadersPath) + INSERT_HEADER;
-		GLSLShaderProgram::AddTextInsertionFromFile(KEYWORD_HEADER, filePath.c_str());
-	}
+		const auto filePath = FindEffectLocation(requestedPath);
 
-	if (FindEffectLocation(INSERT_IMAGE_CROP, shadersPath, MAX_PATH))
-	{
-		std::string filePath = std::string(shadersPath) + INSERT_IMAGE_CROP;
-		GLSLShaderProgram::AddTextInsertionFromFile(KEYWORD_IMAGE_CROP, filePath.c_str());
-	}
+		if (!filePath)
+		{
+			LOGE("Failed to locate shader insertion: %ls\n", requestedPath.c_str());
+			return;
+		}
 
-	if (FindEffectLocation(INSERT_MASKING, shadersPath, MAX_PATH))
-	{
-		std::string filePath = std::string(shadersPath) + INSERT_MASKING;
-		GLSLShaderProgram::AddTextInsertionFromFile(KEYWORD_MASKING, filePath.c_str());
-	}
+		if (!GLSLShaderProgram::AddTextInsertionFromFile(keyword, *filePath))
+		{
+			LOGE("Failed to load shader insertion: %ls\n", filePath->c_str());
+		}
+	};
+
+	loadInsertion(KEYWORD_HEADER, INSERT_HEADER);
+	loadInsertion(KEYWORD_IMAGE_CROP, INSERT_IMAGE_CROP);
+	loadInsertion(KEYWORD_MASKING, INSERT_MASKING);
 }
 
 void PostProcessingManager::LoadConfig()
@@ -264,14 +268,15 @@ void PostProcessingManager::LoadConfig()
 
 void PostProcessingManager::OnUIIdle(HISender pSender, HKEvent pEvent)
 {
+	FBSystem& system = FBSystem::TheOne();
 
 	if (mFirstRun)
 	{
 		mFirstRun = false;
 
 		//
-		mSystem.OnConnectionNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnNotify);
-		mSystem.OnConnectionDataNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
+		system.OnConnectionNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnNotify);
+		system.OnConnectionDataNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
 
 		//
 		LoadConfig();
@@ -335,22 +340,24 @@ bool PostProcessingManager::Clear()
 
 bool PostProcessingManager::Close()
 {
-	mSystem.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
+	FBSystem& system = FBSystem::TheOne();
+	FBEvaluateManager& evaluateManager = FBEvaluateManager::TheOne();
+	FBApplication& application = FBApplication::TheOne();
 
-	FBEvaluateManager::TheOne().OnEvaluationPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
-	FBEvaluateManager::TheOne().OnSynchronizationEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
-	FBEvaluateManager::TheOne().OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
+	system.OnUIIdle.Remove(this, (FBCallback)&PostProcessingManager::OnUIIdle);
 
-	mApplication.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
-	mApplication.OnFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpen);
-	mApplication.OnFileMerge.Remove(this, (FBCallback)&PostProcessingManager::EventFileMerge);
-	mApplication.OnFileOpenCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
-	mApplication.OnOverrideFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
-
-	mSystem.Scene->OnChange.Remove(this, (FBCallback)&PostProcessingManager::EventSceneChange);
-	mSystem.OnConnectionNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnNotify);
-	mSystem.OnConnectionDataNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
-	mSystem.OnVideoFrameRendering.Remove(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
+	evaluateManager.OnEvaluationPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
+	evaluateManager.OnSynchronizationEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
+	evaluateManager.OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
+	application.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
+	application.OnFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpen);
+	application.OnFileMerge.Remove(this, (FBCallback)&PostProcessingManager::EventFileMerge);
+	application.OnFileOpenCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
+	application.OnOverrideFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
+	system.Scene->OnChange.Remove(this, (FBCallback)&PostProcessingManager::EventSceneChange);
+	system.OnConnectionNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnNotify);
+	system.OnConnectionDataNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
+	system.OnVideoFrameRendering.Remove(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
 	//CloseSocket();
 
@@ -599,8 +606,8 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 
 void PostProcessingManager::PrepVideoClipsTimeWrap()
 {
-
-	FBScene *pScene = mSystem.Scene;
+	FBSystem& system = FBSystem::TheOne();
+	FBScene *pScene = system.Scene;
 
 	for (int i = 0, count = pScene->VideoClips.GetCount(); i < count; ++i)
 	{
@@ -636,7 +643,7 @@ void PostProcessingManager::PrepVideoClipsTimeWrap()
 			{
 				FBPropertyAnimatableDouble *animprop = (FBPropertyAnimatableDouble*)prop;
 
-				FBTime currTime = mSystem.LocalTime;
+				FBTime currTime = system.LocalTime;
 				double dvalue;
 
 				animprop->GetAnimationNode()->Evaluate(&dvalue, currTime);
@@ -825,7 +832,8 @@ void Manager_PostProcessing::SendPreview(PostEffectBuffers *buffers)
 */
 void PostProcessingManager::PushUpperLowerClipForEffects()
 {
-	FBScene *pScene = mSystem.Scene;
+	FBSystem& system = FBSystem::TheOne();
+	FBScene *pScene = system.Scene;
 
 	// let's find a clip values
 
@@ -872,7 +880,8 @@ void PostProcessingManager::PushUpperLowerClipForEffects()
 
 void PostProcessingManager::PopUpperLowerClipForEffects()
 {
-	FBScene *pScene = mSystem.Scene;
+	FBSystem& system = FBSystem::TheOne();
+	FBScene *pScene = system.Scene;
 	//
 
 	for (int i = 0, count = pScene->UserObjects.GetCount(); i < count; ++i)

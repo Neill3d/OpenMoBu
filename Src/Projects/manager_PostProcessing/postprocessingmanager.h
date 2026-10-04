@@ -76,11 +76,7 @@ public: // CALLBACKS
 	
 private:
 
-	bool				mFirstRun{ true };
-
-	FBApplication		mApplication;
-	FBSystem			mSystem;
-	
+	bool		mFirstRun{ true };
 	bool		mDoVideoClipTimewrap{ false };
 
 	//

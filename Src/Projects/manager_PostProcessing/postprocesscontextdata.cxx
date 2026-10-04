@@ -17,8 +17,11 @@
 #define IS_INSIDE_MAIN_CYCLE			(mEnterId==1)
 #define IS_RENDERING_OFFLINE			(mAttachedFBO[mEnterId-1] > 0)
 
-#define SHADER_SIMPLE_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_SIMPLE_FRAGMENT			"\\GLSL\\simple.fsh"
+namespace
+{
+    const std::filesystem::path SHADER_SIMPLE_VERTEX{ L"GLSL/simple.vsh" };
+    const std::filesystem::path SHADER_SIMPLE_FRAGMENT{ L"GLSL/simple.fsh" };
+}
 
 #define RENDER_HUD_RECT_TOP				"RectangleTop"
 #define RENDER_HUD_RECT_BOTTOM			"RectangleBottom"
@@ -731,21 +734,20 @@ bool PostProcessContextData::EmptyGLErrorStack()
 }
 
 
-const bool PostProcessContextData::CheckShadersPath(const char* path) const
+bool PostProcessContextData::CheckShadersPath(const std::filesystem::path& basePath) const
 {
-    const char* test_shaders[] = {
-        SHADER_SIMPLE_VERTEX,
-        SHADER_SIMPLE_FRAGMENT
-    };
+    if (basePath.empty())
+        return false;
 
-    for (const char* shader_path : test_shaders)
+    const std::filesystem::path shaderPaths[] = { SHADER_SIMPLE_VERTEX, SHADER_SIMPLE_FRAGMENT };
+
+    for (const auto& relativePath : shaderPaths)
     {
-        FBString full_path(path, shader_path);
+        const std::filesystem::path fullPath = (basePath / relativePath).lexically_normal();
 
-        if (!IsFileExists(full_path))
-        {
+        std::error_code error;
+        if (!std::filesystem::is_regular_file(fullPath, error))
             return false;
-        }
     }
 
     return true;
@@ -753,60 +755,71 @@ const bool PostProcessContextData::CheckShadersPath(const char* path) const
 
 bool PostProcessContextData::LoadSimpleBlitShader()
 {
-    if (mShaderSimple.get())
-    {
-        // already loaded
+    namespace fs = std::filesystem;
+
+    if (mShaderSimple)
         return true;
-    }
+
     FBSystem& system = FBSystem::TheOne();
-    FBString shadersPath(system.ApplicationPath);
-    shadersPath = shadersPath + "\\plugins";
+    const char* applicationPath = static_cast<const char*>(system.ApplicationPath);
+
+    if (!applicationPath || !*applicationPath)
+    {
+        LOGE("[PostProcessing] Application path is empty\n");
+        return false;
+    }
+
+    fs::path shadersPath = fs::path(AnsiToWide(applicationPath)) / L"plugins";
 
     if (!CheckShadersPath(shadersPath))
     {
-        bool found = false;
-        const FBStringList& plugin_paths = system.GetPluginPath();
+        shadersPath.clear();
+        const FBStringList& pluginPaths = system.GetPluginPath();
 
-        for (int i = 0; i < plugin_paths.GetCount(); ++i)
+        for (int i = 0; i < pluginPaths.GetCount(); ++i)
         {
-            if (CheckShadersPath(plugin_paths[i]))
+            const char* pluginPath = static_cast<const char*>(pluginPaths[i]);
+
+            if (!pluginPath || !*pluginPath)
+                continue;
+
+            fs::path candidatePath{ AnsiToWide(pluginPath) };
+            if (CheckShadersPath(candidatePath))
             {
-                shadersPath = plugin_paths[i];
-                found = true;
+                shadersPath = std::move(candidatePath);
                 break;
             }
         }
 
-        if (!found)
+        if (shadersPath.empty())
         {
-            FBTrace("[PostProcessing] Failed to find simple shaders!\n");
+            LOGE("[PostProcessing] Failed to find simple shaders\n");
             return false;
         }
     }
 
-    auto pNewShader = std::make_unique<GLSLShaderProgram>();
+    const fs::path vertexPath = (shadersPath / SHADER_SIMPLE_VERTEX).lexically_normal();
+    const fs::path fragmentPath = (shadersPath / SHADER_SIMPLE_FRAGMENT).lexically_normal();
 
-    FBString vertexPath(shadersPath, SHADER_SIMPLE_VERTEX);
-    FBString fragmentPath(shadersPath, SHADER_SIMPLE_FRAGMENT);
+    auto newShader = std::make_unique<GLSLShaderProgram>();
 
-    if (!pNewShader->LoadShaders(vertexPath, fragmentPath))
+    if (!newShader->LoadShaders(vertexPath, fragmentPath))
     {
-        LOGE("Post Processing Simple Shader: %s\n", fragmentPath);
+        LOGE("Post Processing Simple Shader: %ls\n", fragmentPath.c_str());
         return false;
     }
 
-    // samplers and locations
-    if (pNewShader->Bind())
+    if (newShader->Bind())
     {
-        if (GLint loc = pNewShader->findLocation("sampler0"); loc >= 0)
-        {
-            glUniform1i(loc, 0);
-        }
+        const GLint location = newShader->findLocation("sampler0");
 
-        pNewShader->UnBind();
+        if (location >= 0)
+            glUniform1i(location, 0);
+
+        newShader->UnBind();
     }
 
-    mShaderSimple = std::move(pNewShader);
+    mShaderSimple = std::move(newShader);
     return true;
 }
 

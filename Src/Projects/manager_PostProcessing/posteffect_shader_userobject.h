@@ -194,7 +194,7 @@ public:
 
 	// calculate absolute paths for vertex and fragment shaders
 	// return false in case a given effect file is not found under the expected location
-	bool CalculateShaderFilePaths(FBString& vertexShaderPath, FBString& fragmentShaderPath);
+	bool CalculateShaderFilePaths(std::filesystem::path& vertexShaderPath, std::filesystem::path& fragmentShaderPath);
 
 	bool IsNeedToReloadShaders() const { return mReloadShaders; }
 	void SetReloadShadersState(bool state) { mReloadShaders = state; }

@@ -92,9 +92,9 @@ void PostEffectBufferShader::FreeShaders()
 }
 
 
-bool PostEffectBufferShader::Load(const int variationIndex, const char* vname, const char* fname, bool useShaderToyCompatibility)
+bool PostEffectBufferShader::Load(const int variationIndex, const std::filesystem::path& vname, const std::filesystem::path& fname, bool useShaderToyCompatibility)
 {
-	if (variationIndex < 0 || !vname || !fname)
+	if (variationIndex < 0 || vname.empty() || fname.empty())
 	{
 		LOGE("[PostEffectBufferShader %s]: load shader with a provided wrong index or vertex / fragment path \n", GetName());
 		SetActive(false);
@@ -113,7 +113,8 @@ bool PostEffectBufferShader::Load(const int variationIndex, const char* vname, c
 
 	if (!shader->LoadShaders(vname, fname))
 	{
-		LOGE("[PostEffectBufferShader %s]: failed to load variance %d (%s, %s)\n", GetName(), variationIndex, vname, fname);
+		LOGE("[PostEffectBufferShader %s]: failed to load variation %d (%ls, %ls)\n",
+			GetName(), variationIndex, vname.c_str(), fname.c_str());
 		SetActive(false);
 		return false;
 	}
@@ -136,38 +137,65 @@ bool PostEffectBufferShader::Load(const int variationIndex, const char* vname, c
 	return true;
 }
 
-bool PostEffectBufferShader::Load(const char* shadersLocation, bool useShaderToyCompatibility)
+bool PostEffectBufferShader::Load(const std::filesystem::path& shadersLocation, bool useShaderToyCompatibility)
 {
+	if (shadersLocation.empty())
+		return false;
+
 	for (int i = 0; i < GetNumberOfVariations(); ++i)
 	{
-		FBString vertex_path(shadersLocation, GetVertexFname(i));
-		FBString fragment_path(shadersLocation, GetFragmentFname(i));
+		const char* vertexName = GetVertexFname(i);
+		const char* fragmentName = GetFragmentFname(i);
 
-		if (!Load(i, vertex_path, fragment_path, useShaderToyCompatibility))
+		if (!vertexName || !*vertexName || !fragmentName || !*fragmentName)
+		{
 			return false;
+		}
+
+		// relative_path() tolerates existing names such as
+		// "/GLSL/simple130.glslv".
+		const std::filesystem::path vertexRelativePath = std::filesystem::path(AnsiToWide(vertexName)).relative_path();
+		const std::filesystem::path fragmentRelativePath = std::filesystem::path(AnsiToWide(fragmentName)).relative_path();
+
+		const std::filesystem::path vertexPath = (shadersLocation / vertexRelativePath).lexically_normal();
+		const std::filesystem::path fragmentPath = (shadersLocation / fragmentRelativePath).lexically_normal();
+
+		if (!Load(i, vertexPath, fragmentPath, useShaderToyCompatibility))
+		{
+			return false;
+		}
 	}
+
 	return true;
 }
 
-bool PostEffectBufferShader::CheckShadersPath(const char* path) const
+bool PostEffectBufferShader::CheckShadersPath(const std::filesystem::path& basePath) const
 {
-	if (GetNumberOfVariations() <= 0)
-	{
+	if (basePath.empty() || GetNumberOfVariations() <= 0)
 		return false;
-	}
 
-	const char* test_shaders[] = {
+	const char* shaderNames[] = {
 		GetVertexFname(0),
 		GetFragmentFname(0)
 	};
-	LOGV("[CheckShadersPath] testing path %s\n", path);
-	for (const char* shader_path : test_shaders)
-	{
-		FBString full_path(path, shader_path);
 
-		if (!IsFileExists(full_path))
+	LOGV("[CheckShadersPath] testing path %ls\n", basePath.c_str());
+
+	for (const char* shaderName : shaderNames)
+	{
+		if (!shaderName || !*shaderName)
+			return false;
+
+		// Handles existing names beginning with "/GLSL".
+		const std::filesystem::path relativePath = std::filesystem::path(AnsiToWide(shaderName)).relative_path();
+		const std::filesystem::path fullPath = (basePath / relativePath).lexically_normal();
+
+		std::error_code error;
+		const bool exists = std::filesystem::is_regular_file(fullPath, error);
+
+		if (!exists)
 		{
-			LOGV("[CheckShadersPath] %s is not found in the %s shader \n", shader_path, GetName());
+			LOGV("[CheckShadersPath] %ls was not found for the %s shader\n", fullPath.c_str(), GetName());
 			return false;
 		}
 	}
@@ -177,28 +205,35 @@ bool PostEffectBufferShader::CheckShadersPath(const char* path) const
 
 bool PostEffectBufferShader::Load()
 {
-	if (GetNumberOfVariations() <= 0)
-	{
+	const int variationCount = GetNumberOfVariations();
+
+	if (variationCount <= 0)
 		return false;
-	}
 
-	constexpr int PATH_LENGTH = 260;
-	char shadersPath[PATH_LENGTH]{ 0 };
-	if (!FindEffectLocation(std::bind(&PostEffectBufferShader::CheckShadersPath, this, std::placeholders::_1), 
-		shadersPath, PATH_LENGTH))
+	for (int i = 0; i < variationCount; ++i)
 	{
-		LOGE("[PostProcessing] Failed to find shaders location!\n");
-		return false;
-	}
+		const char* vertexName = GetVertexFname(i);
+		const char* fragmentName = GetFragmentFname(i);
 
-	for (int i = 0; i < GetNumberOfVariations(); ++i)
-	{
-		FBString vertex_path(shadersPath, GetVertexFname(i));
-		FBString fragment_path(shadersPath, GetFragmentFname(i));
+		if (!vertexName || !*vertexName || !fragmentName || !*fragmentName)
+		{
+			LOGE("[PostEffectBufferShader %s]: empty shader filename for variation %d\n", GetName(), i);
+			return false;
+		}
 
-		if (!Load(i, vertex_path, fragment_path))
+		const auto vertexPath = FindEffectLocation(std::filesystem::path(AnsiToWide(vertexName)));
+		const auto fragmentPath = FindEffectLocation(std::filesystem::path(AnsiToWide(fragmentName)));
+
+		if (!vertexPath || !fragmentPath)
+		{
+			LOGE("[PostEffectBufferShader %s]: failed to find variation %d shaders (%s, %s)\n", GetName(), i, vertexName, fragmentName);
+			return false;
+		}
+
+		if (!Load(i, *vertexPath, *fragmentPath))
 			return false;
 	}
+
 	return true;
 }
 

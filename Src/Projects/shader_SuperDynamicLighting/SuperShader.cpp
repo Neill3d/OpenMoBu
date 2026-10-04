@@ -255,7 +255,7 @@ namespace Graphics {
 
 	}
 
-	bool SuperShader::Initialize(const char *path)
+	bool SuperShader::Initialize(const std::filesystem::path& shadersPath)
 	{
 		bool lSuccess = true;
 
@@ -274,8 +274,8 @@ namespace Graphics {
 
 			std::unique_ptr<GLSLShaderProgram> shader = std::make_unique<GLSLShaderProgram>();
 
-			const FBString vertex_path(path, SHADER_BUFFERID_VERTEX);
-			const FBString fragment_path(path, SHADER_BUFFERID_FRAGMENT);
+			const std::filesystem::path vertex_path = shadersPath / SHADER_BUFFERID_VERTEX;
+			const std::filesystem::path fragment_path = shadersPath / SHADER_BUFFERID_FRAGMENT;
 
 			if (!shader->LoadShaders(vertex_path, fragment_path))
 			{
@@ -303,8 +303,8 @@ namespace Graphics {
 
 			std::unique_ptr<GLSLShaderProgram> shader = std::make_unique<GLSLShaderProgram>();
 
-			const FBString vertex_path = FBString(path, SHADER_SHADING_VERTEX);
-			const FBString fragment_path = FBString(path, SHADER_SHADING_FRAGMENT);
+			const std::filesystem::path vertex_path = shadersPath / SHADER_SHADING_VERTEX;
+			const std::filesystem::path fragment_path = shadersPath / SHADER_SHADING_FRAGMENT;
 
 			if (!shader->LoadShaders(vertex_path, fragment_path))
 			{

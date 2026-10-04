@@ -4,6 +4,7 @@
 
 #include "FileUtils.h"
 #include "postprocessing_fonts.h"
+#include "mobu_logging.h"
 
 #if defined(HUD_FONT)
 #include "ft2build.h"
@@ -18,8 +19,11 @@
 //////////////////////
 //
 #if defined(HUD_FONT)
-#define SHADER_VERTEX	"\\GLSL\\text.vert"
-#define SHADER_FRAGMENT	"\\GLSL\\text.frag"
+namespace
+{
+	const std::filesystem::path SHADER_VERTEX{ L"GLSL/text.vert" };
+	const std::filesystem::path SHADER_FRAGMENT{ L"GLSL/text.frag" };
+}
 
 #define FONT_NAME		"Arial"
 #define FONT_PATH		"C:\\Windows\\Fonts\\Arial.ttf"
@@ -255,57 +259,73 @@ void CFont::TextAdd(float x, float y, float _size, float rectw, float recth, con
 
 bool CFont::Display()
 {
-	if (nullptr == font_manager || nullptr == buffer)
+	namespace fs = std::filesystem;
+
+	if (!font_manager || !buffer)
 		return false;
 
-	// TODO: check if we need to load a glsl shader
 	if (!g_glslShader)
 	{
-		char path[MAX_PATH];
-		if (FindEffectLocation(SHADER_VERTEX, path, MAX_PATH))
-		{
-			FBString vert(path, SHADER_VERTEX);
-			FBString frag(path, SHADER_FRAGMENT);
+		const auto vertexPath = FindEffectLocation(SHADER_VERTEX);
 
-			g_glslShader = new GLSLShaderProgram;
-			g_glslShader->LoadShaders(vert, frag);
+		if (!vertexPath)
+		{
+			LOGE("[CFont] Failed to find text vertex shader\n");
+			return false;
 		}
+
+		// Keep both shaders in the same installation/folder.
+		const fs::path fragmentPath = (vertexPath->parent_path() / SHADER_FRAGMENT.filename()).lexically_normal();
+
+		std::error_code error;
+		if (!fs::is_regular_file(fragmentPath, error))
+		{
+			LOGE("[CFont] Failed to find text fragment shader: %ls\n", fragmentPath.c_str());
+			return false;
+		}
+
+		auto shader = std::make_unique<GLSLShaderProgram>();
+		if (!shader->LoadShaders(*vertexPath, fragmentPath))
+		{
+			LOGE("[CFont] Failed to load text shaders: %ls, %ls\n",
+				vertexPath->c_str(), fragmentPath.c_str());
+			return false;
+		}
+
+		// Publish only a completely loaded shader.
+		g_glslShader = shader.release();
 	}
 
-	if (!g_glslShader)
+	if (!g_glslShader->Bind())
 		return false;
 
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	g_glslShader->Bind();
-	{
 
-		g_glslShader->setUniformMatrix("model", model.mat_array);
-		g_glslShader->setUniformMatrix("view", view.mat_array);
-		g_glslShader->setUniformMatrix("projection", projection.mat_array);
+	g_glslShader->setUniformMatrix("model", model.mat_array);
+	g_glslShader->setUniformMatrix("view", view.mat_array);
+	g_glslShader->setUniformMatrix("projection", projection.mat_array);
+	g_glslShader->setUniformUINT("tex", 0);
 
-		g_glslShader->setUniformUINT("tex", 0);
-		g_glslShader->setUniformVector3f("pixel",
-			1.0f / font_manager->atlas->width,
-			1.0f / font_manager->atlas->height,
-			(float)font_manager->atlas->depth);
+	g_glslShader->setUniformVector3f("pixel",
+		1.0f / font_manager->atlas->width,
+		1.0f / font_manager->atlas->height,
+		static_cast<float>(font_manager->atlas->depth));
 
-		glEnable(GL_BLEND);
+	glEnable(GL_BLEND);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, font_manager->atlas->id);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, font_manager->atlas->id);
 
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glBlendColor(1, 1, 1, 1);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		vertex_buffer_render(buffer->buffer, GL_TRIANGLES);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glBlendColor(0, 0, 0, 0);
-		glUseProgram(0);
+	vertex_buffer_render(buffer->buffer, GL_TRIANGLES);
 
-		glDisable(GL_BLEND);
-	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBlendColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glDisable(GL_BLEND);
+
 	g_glslShader->UnBind();
-
 	return true;
 }
 

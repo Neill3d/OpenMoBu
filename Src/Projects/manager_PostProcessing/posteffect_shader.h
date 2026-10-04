@@ -12,6 +12,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffect_rendercontext.h"
 #include <memory>
 #include <unordered_map>
+#include <filesystem>
 
 // forward
 class FrameBuffer;
@@ -89,13 +90,13 @@ public:
 	virtual bool IsWorldNormalSamplerUsed() const;
 
 	/// load and initialize shader from a specified location, vname and fname are computed absolute path
-	bool Load(const int variationIndex, const char* vname, const char* fname, bool useShaderToyCompatibility=false);
+	bool Load(const int variationIndex, const std::filesystem::path& vname, const std::filesystem::path& fname, bool useShaderToyCompatibility=false);
 
 	/// <summary>
 	/// use \ref GetVertexFname and \ref GetFragmentFname to load a shader variance
 	///  the shaderLocation is calculated from system paths, scene current path
 	/// </summary>
-	bool Load(const char* shaderLocation, bool useShaderToyCompatibility=false);
+	bool Load(const std::filesystem::path& shadersLocation, bool useShaderToyCompatibility=false);
 
 	bool Load();
 
@@ -142,7 +143,7 @@ public:
 
 protected:
 
-	bool CheckShadersPath(const char* path) const;
+	bool CheckShadersPath(const std::filesystem::path& path) const;
 
 protected:
 	friend class EffectShaderPropertyProcessor;

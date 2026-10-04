@@ -28,27 +28,30 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <FileUtils.h>
 
 // shared shaders
+namespace
+{
+	namespace fs = std::filesystem;
 
-#define SHADER_DEPTH_LINEARIZE_VERTEX		"\\GLSL\\simple.vsh"
-#define SHADER_DEPTH_LINEARIZE_FRAGMENT		"\\GLSL\\depthLinearize.fsh"
+	const fs::path SHADER_DEPTH_LINEARIZE_VERTEX{ L"GLSL/simple130.glslv" };
+	const fs::path SHADER_DEPTH_LINEARIZE_FRAGMENT{ L"GLSL/depthLinearize.fsh" };
 
-// this is a depth based blur, fo SSAO
-#define SHADER_BLUR_VERTEX					"\\GLSL\\simple.vsh"
-#define SHADER_BLUR_FRAGMENT				"\\GLSL\\blur.fsh"
+	// Depth-based blur for SSAO.
+	const fs::path SHADER_BLUR_VERTEX{ L"GLSL/simple130.glslv" };
+	const fs::path SHADER_BLUR_FRAGMENT{ L"GLSL/blur.fsh" };
 
-// this is a simple gaussian image blur
-#define SHADER_IMAGE_BLUR_VERTEX			"\\GLSL\\simple.vsh"
-#define SHADER_IMAGE_BLUR_FRAGMENT			"\\GLSL\\imageBlur.glslf"
+	// Simple Gaussian image blur.
+	const fs::path SHADER_IMAGE_BLUR_VERTEX{ L"GLSL/simple130.glslv" };
+	const fs::path SHADER_IMAGE_BLUR_FRAGMENT{ L"GLSL/imageBlur.glslf" };
 
-#define SHADER_MIX_VERTEX					"\\GLSL\\simple.vsh"
-#define SHADER_MIX_FRAGMENT					"\\GLSL\\mix.fsh"
+	const fs::path SHADER_MIX_VERTEX{ L"GLSL/simple130.glslv" };
+	const fs::path SHADER_MIX_FRAGMENT{ L"GLSL/mix.fsh" };
 
-#define SHADER_DOWNSCALE_VERTEX				"\\GLSL\\downscale.vsh"
-#define SHADER_DOWNSCALE_FRAGMENT			"\\GLSL\\downscale.fsh"
+	const fs::path SHADER_DOWNSCALE_VERTEX{ L"GLSL/downscale.vsh" };
+	const fs::path SHADER_DOWNSCALE_FRAGMENT{ L"GLSL/downscale.fsh" };
 
-#define SHADER_SCENE_MASKED_VERTEX			"\\GLSL\\scene_masked.glslv"
-#define SHADER_SCENE_MASKED_FRAGMENT		"\\GLSL\\scene_masked.glslf"
-
+	const fs::path SHADER_SCENE_MASKED_VERTEX{ L"GLSL/scene_masked.glslv" };
+	const fs::path SHADER_SCENE_MASKED_FRAGMENT{ L"GLSL/scene_masked.glslf" };
+}
 
 void StandardEffectCollection::ChangeContext()
 {
@@ -58,17 +61,12 @@ void StandardEffectCollection::ChangeContext()
 
 bool StandardEffectCollection::ReloadShaders()
 {
-	bool lSuccess = true;
+	if (!mNeedReloadShaders)
+		return true;
 
-	if (mNeedReloadShaders)
-	{
-		if (!LoadShaders())
-			lSuccess = false;
-
-		mNeedReloadShaders = false;
-	}
-
-	return lSuccess;
+	const bool success = LoadShaders();
+	mNeedReloadShaders = !success;
+	return success;
 }
 
 bool StandardEffectCollection::IsOk() const
@@ -109,38 +107,42 @@ bool StandardEffectCollection::IsOk() const
 	return true;
 }
 
-PostEffectBufferShader* StandardEffectCollection::ShaderFactory(const BuildInEffect effectType, FBComponent* pOwner, const char *shadersLocation, bool immediatelyLoad)
+PostEffectBufferShader* StandardEffectCollection::ShaderFactory(
+	BuildInEffect effectType,
+	FBComponent* owner,
+	const std::filesystem::path& shadersLocation,
+	bool immediatelyLoad)
 {
 	PostEffectBufferShader* newEffect = nullptr;
 
 	switch (effectType)
 	{
 	case BuildInEffect::FISHEYE:
-		newEffect = new EffectShaderFishEye(pOwner);
+		newEffect = new EffectShaderFishEye(owner);
 		break;
 	case BuildInEffect::COLOR:
-		newEffect = new EffectShaderColor(pOwner);
+		newEffect = new EffectShaderColor(owner);
 		break;
 	case BuildInEffect::VIGNETTE:
-		newEffect = new EffectShaderVignetting(pOwner);
+		newEffect = new EffectShaderVignetting(owner);
 		break;
 	case BuildInEffect::FILMGRAIN:
-		newEffect = new EffectShaderFilmGrain(pOwner);
+		newEffect = new EffectShaderFilmGrain(owner);
 		break;
 	case BuildInEffect::LENSFLARE:
-		newEffect = new EffectShaderLensFlare(pOwner);
+		newEffect = new EffectShaderLensFlare(owner);
 		break;
 	case BuildInEffect::SSAO:
-		newEffect = new EffectShaderSSAO(pOwner);
+		newEffect = new EffectShaderSSAO(owner);
 		break;
 	case BuildInEffect::DOF:
-		newEffect = new EffectShaderDOF(pOwner);
+		newEffect = new EffectShaderDOF(owner);
 		break;
 	case BuildInEffect::DISPLACEMENT:
-		newEffect = new EffectShaderDisplacement(pOwner);
+		newEffect = new EffectShaderDisplacement(owner);
 		break;
 	case BuildInEffect::MOTIONBLUR:
-		newEffect = new EffectShaderMotionBlur(pOwner);
+		newEffect = new EffectShaderMotionBlur(owner);
 		break;
 	}
 
@@ -148,7 +150,7 @@ PostEffectBufferShader* StandardEffectCollection::ShaderFactory(const BuildInEff
 	{
 		if (!newEffect->Load(shadersLocation))
 		{
-			LOGE("Post Effect %s failed to Load from %s\n", newEffect->GetName(), shadersLocation);
+			LOGE("Post Effect %s failed to load from %ls\n", newEffect->GetName(), shadersLocation.c_str());
 
 			delete newEffect;
 			newEffect = nullptr;
@@ -158,9 +160,20 @@ PostEffectBufferShader* StandardEffectCollection::ShaderFactory(const BuildInEff
 	return newEffect;
 }
 
-bool StandardEffectCollection::CheckShadersPath(const char* path)
+bool StandardEffectCollection::CheckShadersPath(const std::filesystem::path& basePath)
 {
-	const char* test_shaders[] = {
+	namespace fs = std::filesystem;
+
+	if (basePath.empty())
+		return false;
+
+	const fs::path normalizedBase = basePath.lexically_normal();
+
+	std::error_code error;
+	if (!fs::is_directory(normalizedBase, error))
+		return false;
+
+	const fs::path requiredShaders[] = {
 		SHADER_DEPTH_LINEARIZE_VERTEX,
 		SHADER_DEPTH_LINEARIZE_FRAGMENT,
 
@@ -177,122 +190,115 @@ bool StandardEffectCollection::CheckShadersPath(const char* path)
 		SHADER_SCENE_MASKED_VERTEX,
 		SHADER_SCENE_MASKED_FRAGMENT
 	};
-	LOGV("[CheckShadersPath] testing path %s\n", path);
-	for (const char* shader_path : test_shaders)
-	{
-		FBString full_path(path, shader_path);
 
-		if (!IsFileExists(full_path))
+	LOGV("[CheckShadersPath] Testing path %ls\n", normalizedBase.c_str());
+
+	for (const fs::path& shaderPath : requiredShaders)
+	{
+		// relative_path() also tolerates legacy constants such as
+		// "/GLSL/simple.vsh".
+		const fs::path relativePath = shaderPath.relative_path();
+
+		if (relativePath.empty())
+			return false;
+
+		const fs::path fullPath = (normalizedBase / relativePath).lexically_normal();
+
+		error.clear();
+
+		if (!fs::is_regular_file(fullPath, error))
 		{
-			LOGV("[CheckShadersPath] %s is not found\n", shader_path);
+			if (error)
+			{
+				LOGV("[CheckShadersPath] Failed to inspect %ls: %s\n", fullPath.c_str(), error.message().c_str());
+			}
+			else
+			{
+				LOGV("[CheckShadersPath] Required shader was not found: %ls\n", fullPath.c_str());
+			}
 			return false;
 		}
 	}
-
 	return true;
 }
 
 bool StandardEffectCollection::LoadShaders()
 {
+	namespace fs = std::filesystem;
+
 	FreeShaders();
-	
-	constexpr int PATH_LENGTH = 260;
-	char shadersPath[PATH_LENGTH];
-	if (!FindEffectLocation(CheckShadersPath, shadersPath, PATH_LENGTH))
+
+	const auto shadersPath = FindEffectLocation([](const fs::path& candidate)
+		{
+			return CheckShadersPath(candidate);
+		});
+
+	if (!shadersPath)
 	{
-		LOGE("[PostProcessing] Failed to find shaders location!\n");
+		LOGE("[PostProcessing] Failed to find shaders location\n");
 		return false;
 	}
-	
-	LOGE("[PostProcessing] Shaders Location - %s\n", shadersPath);
 
-	constexpr FBComponent* pOwner = nullptr;
-	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, pOwner, shadersPath));
-	mColor.reset(ShaderFactory(BuildInEffect::COLOR, pOwner, shadersPath));
-	mVignetting.reset(ShaderFactory(BuildInEffect::VIGNETTE, pOwner, shadersPath));
-	mFilmGrain.reset(ShaderFactory(BuildInEffect::FILMGRAIN, pOwner, shadersPath));
-	mLensFlare.reset(ShaderFactory(BuildInEffect::LENSFLARE, pOwner, shadersPath));
-	mSSAO.reset(ShaderFactory(BuildInEffect::SSAO, pOwner, shadersPath));
-	mDOF.reset(ShaderFactory(BuildInEffect::DOF, pOwner, shadersPath));
-	mDisplacement.reset(ShaderFactory(BuildInEffect::DISPLACEMENT, pOwner, shadersPath));
-	mMotionBlur.reset(ShaderFactory(BuildInEffect::MOTIONBLUR, pOwner, shadersPath));
+	LOGI("[PostProcessing] Shaders location: %ls\n", shadersPath->c_str());
 
-	// load shared shaders (blur, mix)
+	constexpr FBComponent* owner = nullptr;
 
-	bool lSuccess = true;
+	mFishEye.reset(ShaderFactory(BuildInEffect::FISHEYE, owner, *shadersPath));
+	mColor.reset(ShaderFactory(BuildInEffect::COLOR, owner, *shadersPath));
+	mVignetting.reset(ShaderFactory(BuildInEffect::VIGNETTE, owner, *shadersPath));
+	mFilmGrain.reset(ShaderFactory(BuildInEffect::FILMGRAIN, owner, *shadersPath));
+	mLensFlare.reset(ShaderFactory(BuildInEffect::LENSFLARE, owner, *shadersPath));
+	mSSAO.reset(ShaderFactory(BuildInEffect::SSAO, owner, *shadersPath));
+	mDOF.reset(ShaderFactory(BuildInEffect::DOF, owner, *shadersPath));
+	mDisplacement.reset(ShaderFactory(BuildInEffect::DISPLACEMENT, owner, *shadersPath));
+	mMotionBlur.reset(ShaderFactory(BuildInEffect::MOTIONBLUR, owner, *shadersPath));
 
-	try
+	if (!mFishEye || !mColor || !mVignetting ||
+		!mFilmGrain || !mLensFlare || !mSSAO ||
+		!mDOF || !mDisplacement || !mMotionBlur)
 	{
-		//
-		// DEPTH LINEARIZE
-
-		mEffectDepthLinearize.reset(new PostEffectShaderLinearDepth());
-		if (!mEffectDepthLinearize->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare depth linearize effect");
-		}
-
-		//
-		// BLUR (for SSAO)
-
-		mEffectBlur.reset(new EffectShaderBlurLinearDepth(pOwner));
-		if (!mEffectBlur->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare SSAO blur effect");
-		}
-
-		//
-		// IMAGE BLUR, simple bilateral blur
-
-		mEffectBilateralBlur.reset(new PostEffectShaderBilateralBlur());
-		if (!mEffectBilateralBlur->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare image blur effect");
-		}
-
-		//
-		// MIX
-
-		mEffectMix.reset(new EffectShaderMix());
-		if (!mEffectMix->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare mix effect");
-		}
-
-		//
-		// DOWNSCALE
-
-		mEffectDownscale.reset(new PostEffectShaderDownscale());
-		if (!mEffectDownscale->Load(shadersPath))
-		{
-			throw std::exception("failed to load and prepare downscale effect");
-		}
-
-		//
-		// SCENE MASKED
-		std::unique_ptr<GLSLShaderProgram> pNewShader;
-		pNewShader.reset(new GLSLShaderProgram);
-
-		FBString vertex_path = FBString(shadersPath, SHADER_SCENE_MASKED_VERTEX);
-		FBString fragment_path = FBString(shadersPath, SHADER_SCENE_MASKED_FRAGMENT);
-
-		if (!pNewShader->LoadShaders(vertex_path, fragment_path))
-		{
-			throw std::exception("failed to load and prepare downscale shader");
-		}
-
-		mShaderSceneMasked.reset(pNewShader.release());
-
-	}
-	catch (const std::exception &e)
-	{
-		LOGE("Post Effect Chain ERROR: %s\n", e.what());
-		lSuccess = false;
+		LOGE("[PostProcessing] Failed to load a standard effect\n");
+		FreeShaders();
+		return false;
 	}
 
-	return lSuccess;
+	const auto loadShared = [&](auto& destination, auto shader, const char* description) -> bool
+		{
+			if (!shader->Load(*shadersPath))
+			{
+				LOGE("[PostProcessing] Failed to load %s\n", description);
+				return false;
+			}
+
+			destination = std::move(shader);
+			return true;
+		};
+
+	if (!loadShared(mEffectDepthLinearize, std::make_unique<PostEffectShaderLinearDepth>(), "depth linearize effect")
+		|| !loadShared(mEffectBlur, std::make_unique<EffectShaderBlurLinearDepth>(owner), "SSAO blur effect")
+		|| !loadShared(mEffectBilateralBlur, std::make_unique<PostEffectShaderBilateralBlur>(), "image blur effect")
+		|| !loadShared(mEffectMix, std::make_unique<EffectShaderMix>(), "mix effect")
+		|| !loadShared(mEffectDownscale, std::make_unique<PostEffectShaderDownscale>(), "downscale effect"))
+	{
+		FreeShaders();
+		return false;
+	}
+
+	const fs::path vertexPath = (*shadersPath / SHADER_SCENE_MASKED_VERTEX).lexically_normal();
+	const fs::path fragmentPath = (*shadersPath / SHADER_SCENE_MASKED_FRAGMENT).lexically_normal();
+
+	auto sceneMaskedShader = std::make_unique<GLSLShaderProgram>();
+
+	if (!sceneMaskedShader->LoadShaders(vertexPath, fragmentPath))
+	{
+		LOGE("[PostProcessing] Failed to load scene-masked shader\n");
+		FreeShaders();
+		return false;
+	}
+
+	mShaderSceneMasked = std::move(sceneMaskedShader);
+	return true;
 }
-
 
 void StandardEffectCollection::FreeShaders()
 {
@@ -311,4 +317,6 @@ void StandardEffectCollection::FreeShaders()
 	mEffectBlur.reset(nullptr);
 	mEffectMix.reset(nullptr);
 	mEffectDownscale.reset(nullptr);
+
+	mShaderSceneMasked.reset();
 }

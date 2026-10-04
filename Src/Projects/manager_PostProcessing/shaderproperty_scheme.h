@@ -17,6 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <bitset>
 #include <variant>
 #include <vector>
+#include <filesystem>
 
 // DLL export macro for Windows
 #ifndef MANAGER_POSTPROCESSING_API
@@ -108,7 +109,7 @@ struct ShaderPropertyScheme
 	// @see PostEffectBufferShader::Render
 	void AssociateFBProperties(FBComponent* component);
 
-	bool ExportToJSON(const char* fileName) const;
+	bool ExportToJSON(const std::filesystem::path& filePath) const;
 
 	int ReflectUniforms(const GLuint programId, bool doPopulatePropertiesFromUniforms);
 

@@ -72,7 +72,11 @@ bool CComputeProgram::PrepProgramFromBuffer(const char *bufferData, const char *
 		mShader = glCreateShader(GL_COMPUTE_SHADER);
 		glAttachShader(mProgram, mShader);
 
-		if (!loadComputeShaderFromBuffer(bufferData, shaderName, mShader, mProgram) )
+		const std::filesystem::path debugName = shaderName
+			? std::filesystem::path(AnsiToWide(shaderName))
+			: std::filesystem::path();
+
+		if (!loadComputeShaderFromBuffer(bufferData, debugName, mShader, mProgram))
 		{
 			Clear();
 			return false;
@@ -85,30 +89,30 @@ bool CComputeProgram::PrepProgramFromBuffer(const char *bufferData, const char *
 
 bool CComputeProgram::PrepProgram(const char *filename)
 {
-	if (0 == mProgram || 0 == mShader)
+	if (mProgram != 0 && mShader != 0)
+		return false;
+
+	Clear();
+
+	mProgram = glCreateProgram();
+	mShader = glCreateShader(GL_COMPUTE_SHADER);
+	glAttachShader(mProgram, mShader);
+
+	const auto shaderPath = FindEffectLocation(std::filesystem::path(AnsiToWide(filename)));
+
+	if (!shaderPath)
 	{
 		Clear();
-
-		mProgram = glCreateProgram();
-		mShader = glCreateShader(GL_COMPUTE_SHADER);
-		glAttachShader(mProgram, mShader);
-
-		//
-		char effectPath[256];
-		if (FindEffectLocation( filename, effectPath, 256 ) )
-		{
-			strcat_s(effectPath, 256, filename);
-			if (!loadComputeShader(effectPath, mShader, mProgram) )
-			{
-				Clear();
-				return false;
-			}
-
-			return true;
-		}
+		return false;
 	}
 
-	return false;
+	if (!loadComputeShader(*shaderPath, mShader, mProgram))
+	{
+		Clear();
+		return false;
+	}
+
+	return true;
 }
 
 void CComputeProgram::Bind()
@@ -127,19 +131,19 @@ void CComputeProgram::DispatchPipeline(const int groups_x, const int groups_y, c
 	glDispatchCompute(groups_x, groups_y, groups_z);
 }
 
-bool CComputeProgram::checkCompileStatus(GLuint shader, const char* shadername)
+bool CComputeProgram::checkCompileStatus(GLuint shader, const std::filesystem::path& shaderName)
 {
 	GLint  compiled;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
 	if (!compiled)
 	{
-		LOGE("%s failed to compile:", shadername);
+		LOGE("%ls failed to compile:", shaderName.c_str());
 		GLint  logSize;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logSize);
 		char* logMsg = new char[logSize+1];
 		memset(logMsg, 0, sizeof(char) * (logSize + 1));
 		glGetShaderInfoLog(shader, logSize, nullptr, logMsg);
-		LOGE(logMsg);
+		LOGE("%s", logMsg ? logMsg : "");
 		delete[] logMsg;
 
 		return false;
@@ -147,19 +151,19 @@ bool CComputeProgram::checkCompileStatus(GLuint shader, const char* shadername)
 	return true;
 }
 
-bool CComputeProgram::checkLinkStatus(GLuint program, const char* programName)
+bool CComputeProgram::checkLinkStatus(GLuint program, const std::filesystem::path& programName)
 {
 	GLint  linked;
 	glGetProgramiv(program, GL_LINK_STATUS, &linked);
 	if (!linked)
 	{
-		LOGE("Shader program %s failed to link", programName);
+		LOGE("Shader program %ls failed to link", programName.c_str());
 		GLint  logSize;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logSize);
 		char* logMsg = new char[logSize + 1];
 		memset(logMsg, 0, sizeof(char) * (logSize + 1));
 		glGetProgramInfoLog(program, logSize, nullptr, logMsg);
-		LOGE(logMsg);
+		LOGE("%s", logMsg ? logMsg : "");
 		delete[] logMsg;
 		
 		return false;
@@ -167,7 +171,7 @@ bool CComputeProgram::checkLinkStatus(GLuint program, const char* programName)
 	return true;
 }
 
-bool CComputeProgram::loadComputeShaderFromBuffer(const char* buffer, const char* shaderName, const GLuint shaderid, const GLuint programid)
+bool CComputeProgram::loadComputeShaderFromBuffer(const char* buffer, const std::filesystem::path& shaderName, const GLuint shaderid, const GLuint programid)
 {
 	const GLcharARB* bufferARB = buffer;
 
@@ -196,9 +200,9 @@ bool CComputeProgram::loadComputeShaderFromBuffer(const char* buffer, const char
 	return true;
 }
 
-bool CComputeProgram::loadComputeShader(const char* computeShaderName, const GLuint shaderid, const GLuint programid)
+bool CComputeProgram::loadComputeShader(const std::filesystem::path& computeShaderPath, const GLuint shaderid, const GLuint programid)
 {
-	FileReadScope FileRead(computeShaderName);
+	FileReadScope FileRead(computeShaderPath);
 
 	if (!FileRead.Get())
 		return false;
@@ -211,12 +215,12 @@ bool CComputeProgram::loadComputeShader(const char* computeShaderName, const GLu
 
 	if (readlen == 0)
 	{
-		LOGE("glsl shader %s has a zero file size", computeShaderName);
+		LOGE("glsl shader %ls has a zero file size", computeShaderPath.c_str());
 		return false;
 	}
 
 	// trick to zero all outside memory
 	memset(&buffer[readlen], 0, sizeof(char) * (fileLen + 1 - readlen));
 
-	return loadComputeShaderFromBuffer(buffer.data(), computeShaderName, shaderid, programid);
+	return loadComputeShaderFromBuffer(buffer.data(), computeShaderPath, shaderid, programid);
 }

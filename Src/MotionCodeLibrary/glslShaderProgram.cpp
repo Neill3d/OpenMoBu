@@ -33,26 +33,26 @@ std::unordered_map<std::string, std::string, StringViewHash, StringViewEqual> GL
 GLSLShaderProgram::GLSLShaderProgram() 
 {}
 
-void GLSLShaderProgram::AddTextInsertion(const char* insertion_keyword, const char* insertion_data)
+void GLSLShaderProgram::AddTextInsertion(const char* insertionKeyword, const char* insertionData)
 {
-	g_TextInsertions.emplace(insertion_keyword, insertion_data);
+	g_TextInsertions.emplace(insertionKeyword, insertionData);
 }
 
-bool GLSLShaderProgram::AddTextInsertionFromFile(const char* insertion_keyword, const char* file_name)
+bool GLSLShaderProgram::AddTextInsertionFromFile(const char* insertionKeyword, const std::filesystem::path& filePath)
 {
-	FileReadScope insertionFile(file_name);
+	FileReadScope insertionFile(filePath);
 
 	std::string insertionText;
-	insertionFile.ReadString(insertionText);
+	if (!insertionFile.ReadString(insertionText))
+		return false;
 
-	bool status = !insertionText.empty();
-	g_TextInsertions.emplace(insertion_keyword, std::move(insertionText));
-	return status;
+	g_TextInsertions.insert_or_assign(insertionKeyword, std::move(insertionText));
+	return true;
 }
 
-bool GLSLShaderProgram::ReCompileShaders( const char* vertex_file, const char* fragment_file )
+bool GLSLShaderProgram::ReCompileShaders(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath)
 {	
-	FileReadScope readFragment(fragment_file);
+	FileReadScope readFragment(fragmentPath);
 
 	if (FILE* fp = readFragment.Get())
 	{
@@ -63,7 +63,7 @@ bool GLSLShaderProgram::ReCompileShaders( const char* vertex_file, const char* f
 		}
 		
 		fragment = glCreateShaderObjectARB( GL_FRAGMENT_SHADER_ARB );
-		if (!LoadShader( fragment, fp, true, fragment_file ) ) {
+		if (!LoadShader(fragment, fp, true, fragmentPath)) {
 			return false;
 		}
 
@@ -86,7 +86,8 @@ bool GLSLShaderProgram::ReCompileShaders( const char* vertex_file, const char* f
 
 		if (linked == GL_FALSE || doPrint)
 		{
-			LOGI("[GLSLShader] Recompile status for vertex - %s, fragment - %s\n", vertex_file, fragment_file);
+			LOGI("[GLSLShader] Recompile status for vertex - %ls, fragment - %ls\n",
+				vertexPath.c_str(), fragmentPath.c_str());
 			LoadLog(programObj, nullptr);
 		}
 			
@@ -96,27 +97,27 @@ bool GLSLShaderProgram::ReCompileShaders( const char* vertex_file, const char* f
 	return false;
 }
 
-bool GLSLShaderProgram::LoadShaders( const char* vertex_file, const char* fragment_file )
+bool GLSLShaderProgram::LoadShaders(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath)
 {
 	Free();
 
 	{
-		FileReadScope readVertex(vertex_file);
+		FileReadScope readVertex(vertexPath);
 
 		if (FILE* fp = readVertex.Get())
 		{
 			vertex = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-			LoadShader(vertex, fp, false, vertex_file);
+			LoadShader(vertex, fp, false, vertexPath);
 		}
 	}
 
 	{
-		FileReadScope readFragment(fragment_file);
+		FileReadScope readFragment(fragmentPath);
 
 		if (FILE* fp = readFragment.Get())
 		{
 			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-			LoadShader(fragment, fp, true, fragment_file);
+			LoadShader(fragment, fp, true, fragmentPath);
 		}
 	}
 
@@ -149,7 +150,8 @@ bool GLSLShaderProgram::LoadShaders( const char* vertex_file, const char* fragme
 
 	  if (linked == GL_FALSE || doPrint)
 	  {
-		  LOGI("[GLSLShader ] link status for vertex - %s, fragment - %s\n", vertex_file, fragment_file);
+		  LOGI("[GLSLShader ] link status for vertex - %ls, fragment - %ls\n",
+			  vertexPath.c_str(), fragmentPath.c_str());
 		  LoadLog(programObj, nullptr);
 	  }
 	  
@@ -159,19 +161,19 @@ bool GLSLShaderProgram::LoadShaders( const char* vertex_file, const char* fragme
 	return false;
 }
 
-bool GLSLShaderProgram::LoadShaders( GLhandleARB	_vertex, const char* fragment_file )
+bool GLSLShaderProgram::LoadShaders(GLhandleARB	_vertex, const std::filesystem::path& fragmentPath)
 {
 	Free();
 
 	vertex = _vertex;
 
 	{
-		FileReadScope readFragment(fragment_file);
+		FileReadScope readFragment(fragmentPath);
 
 		if (FILE* fp = readFragment.Get())
 		{
 			fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-			LoadShader(fragment, fp, true, fragment_file);
+			LoadShader(fragment, fp, true, fragmentPath);
 		}
 	}
 
@@ -204,7 +206,7 @@ bool GLSLShaderProgram::LoadShaders( GLhandleARB	_vertex, const char* fragment_f
 
 	  if (linked == GL_FALSE || doPrint)
 	  {
-		  LOGI("[GLSLShader ] link status for fragment - %s\n", fragment_file);
+		  LOGI("[GLSLShader ] link status for fragment - %ls\n", fragmentPath.c_str());
 		  LoadLog(programObj, nullptr);
 	  }
 	  
@@ -268,7 +270,7 @@ void ProcessTextWithInsertions(std::string& inputText, const std::unordered_map<
 	inputText = outputStream.str();
 }
 
-bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, bool isFragmentShader, const char* debugName )
+bool GLSLShaderProgram::LoadShader(GLhandleARB shader, FILE* file, bool isFragmentShader, const std::filesystem::path& debugPath)
 {
 	if (!file)
 	{
@@ -284,7 +286,7 @@ bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, bool isFragm
 
 	if (fileLen == 0) //(readlen != len)
 	{
-		LOGE("[GLSLShaderProgram::LoadShader] glsl shader %s has empty file size", debugName);
+		LOGE("[GLSLShaderProgram::LoadShader] glsl shader %ls has empty file size", debugPath.c_str());
 		return false;
 	}
 
@@ -304,7 +306,7 @@ bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, bool isFragm
 
 	if (readlen == 0) //(readlen != len)
 	{
-		LOGE("[GLSLShaderProgram::LoadShader] glsl shader %s has empty read size", debugName);
+		LOGE("[GLSLShaderProgram::LoadShader] glsl shader %ls has empty read size", debugPath.c_str());
 		return false;
 	}
 
@@ -338,13 +340,13 @@ bool GLSLShaderProgram::LoadShader( GLhandleARB shader, FILE *file, bool isFragm
 
 	if (compileStatus == GL_FALSE || PRINT_WARNINGS)
 	{
-		LoadLog(shader, debugName);
+		LoadLog(shader, &debugPath);
 	}
 	
 	return (compileStatus != GL_FALSE);
 }
 
-bool GLSLShaderProgram::LoadLog( GLhandleARB object, const char* debugName ) const
+bool GLSLShaderProgram::LoadLog(GLhandleARB object, const std::filesystem::path* debugPath) const
 {
 	constexpr int STACK_BUFFER_SIZE{ 2048 };
 
@@ -378,11 +380,11 @@ bool GLSLShaderProgram::LoadLog( GLhandleARB object, const char* debugName ) con
 	if ( strlen(infoLog) > 0 )
 	{
 		status = true;
-		if (debugName)
+		if (debugPath)
 		{
-			LOGE("[GLSLShader] print info for %s\n", debugName);
+			LOGE("[GLSLShader] print info for %ls\n", debugPath->c_str());
 		}
-		LOGE( infoLog );
+		LOGE( "%s", infoLog ? infoLog : "" );
 	}
 
     if ( isAllocOnHeap )

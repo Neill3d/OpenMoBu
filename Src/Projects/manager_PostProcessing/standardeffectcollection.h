@@ -25,6 +25,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <memory>
 #include <bitset>
+#include <filesystem>
 
 enum class BuildInEffect : uint8_t
 {
@@ -67,7 +68,11 @@ public:
 	PostEffectBufferShader* GetMotionBlurEffect() { return mMotionBlur.get(); }
 	const PostEffectBufferShader* GetMotionBlurEffect() const { return mMotionBlur.get(); }
 
-	PostEffectBufferShader* ShaderFactory(const BuildInEffect effectType, FBComponent* pOwner, const char* shadersLocation, bool immediatelyLoad = true);
+	PostEffectBufferShader* ShaderFactory(
+		BuildInEffect effectType,
+		FBComponent* owner,
+		const std::filesystem::path& shadersLocation,
+		bool immediatelyLoad = true);
 
 	const EffectShaderBlurLinearDepth* GetEffectBlurLinearDepth() const { return mEffectBlur.get(); }
 	EffectShaderBlurLinearDepth* GetEffectBlurLinearDepth() { return mEffectBlur.get(); }
@@ -114,6 +119,6 @@ private:
 
 	bool mNeedReloadShaders{ true };
 
-	static bool CheckShadersPath(const char* path);
+	static bool CheckShadersPath(const std::filesystem::path& path);
 
 };

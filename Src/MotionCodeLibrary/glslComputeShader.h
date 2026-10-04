@@ -23,6 +23,8 @@
 #include <iostream>
 #include <functional>
 #include <algorithm>
+#include <filesystem>
+
 
 //////////////////////////////////////////////////////////////////////////////////////
 /// store main compute glsl shader pipeline functionality
@@ -70,12 +72,12 @@ protected:
 
 	bool			mStatus;	//!< compile and link shader status
 
-	bool checkCompileStatus(GLuint shader, const char* shadername);
+	bool checkCompileStatus(GLuint shader, const std::filesystem::path& shaderName);
 
-	bool checkLinkStatus(GLuint program, const char* programName);
+	bool checkLinkStatus(GLuint program, const std::filesystem::path& programName);
 
-	bool loadComputeShaderFromBuffer(const char* buffer, const char* shaderName, const GLuint shaderid, const GLuint programid);
+	bool loadComputeShaderFromBuffer(const char* buffer, const std::filesystem::path& shaderName, const GLuint shaderid, const GLuint programid);
 
-	bool loadComputeShader(const char* computeShaderName, const GLuint shaderid, const GLuint programid);
+	bool loadComputeShader(const std::filesystem::path& computeShaderPath, const GLuint shaderid, const GLuint programid);
 
 };

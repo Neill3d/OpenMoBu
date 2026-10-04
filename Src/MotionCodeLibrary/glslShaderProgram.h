@@ -16,6 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <string_view>
 #include <unordered_map>
+#include <filesystem>
 
 struct StringViewHash {
 	using is_transparent = void;  // Enables heterogeneous lookup
@@ -56,14 +57,14 @@ public:
   ///  that could be a way to avoid duplication of similar code for a every shader used in the system
   /// like insert header, insert image cropping, insert masking, etc.
   /// </summary>
-  static void AddTextInsertion(const char* insertion_keyword, const char* insertion_data);
-  static bool AddTextInsertionFromFile(const char* insertion_keyword, const char* file_name);
+  static void AddTextInsertion(const char* insertionKeyword, const char* insertionData);
+  static bool AddTextInsertionFromFile(const char* insertionKeyword, const std::filesystem::path& filePath);
 
 
-  bool LoadShaders( const char* vertex_file, const char* fragment_file );
-bool	LoadShaders( GLhandleARB	_vertex,	const char* fragment_file );
+  bool LoadShaders(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath);
+  bool	LoadShaders(GLhandleARB	_vertex, const std::filesystem::path& fragmentPath);
 
-	bool ReCompileShaders(const char* vertex_file, const char* fragment_file );
+	bool ReCompileShaders(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath);
 
   // return true if the shader program is binded
   bool Bind() const;
@@ -132,8 +133,8 @@ protected:
 
 	static std::unordered_map<std::string, std::string, StringViewHash, StringViewEqual>	g_TextInsertions;
 
-	bool LoadShader(GLhandleARB shader, FILE* file, bool isFragmentShader, const char* debugName);
-	bool LoadLog(GLhandleARB object, const char* debugName) const;
+	bool LoadShader(GLhandleARB shader, FILE* file, bool isFragmentShader, const std::filesystem::path& debugPath);
+	bool LoadLog(GLhandleARB object, const std::filesystem::path* debugPath) const;
 	 
 	virtual void OnShaderCodeReadyToCompile(std::string& shaderCodeInOut, bool isFragmentShader) const {}
 

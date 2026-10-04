@@ -197,7 +197,7 @@ void SuperDynamicLighting::BeginFrameForSharedManagers()
 
 		// Create the lighting shader
 		mpLightShader = new Graphics::SuperShader();
-		if (!mpLightShader->Initialize(shadersPath.generic_string().c_str()))
+		if (!mpLightShader->Initialize(shadersPath))
 		{
 			FBTrace("Failed to initialize a super lighting effect!\n");
 			delete mpLightShader;

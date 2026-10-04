@@ -202,49 +202,54 @@ bool EffectShaderUserObject::RequestShadersReload()
 	return true;
 }
 
-bool EffectShaderUserObject::CalculateShaderFilePaths(FBString& vertexShaderPath, FBString& fragmentShaderPath)
+bool EffectShaderUserObject::CalculateShaderFilePaths(std::filesystem::path& vertexShaderPath, std::filesystem::path& fragmentShaderPath)
 {
-	const char* vertex_shader_rpath = VertexFile;
-	if (!vertex_shader_rpath || strlen(vertex_shader_rpath) < 2)
+	const char* vertexRelativePath = VertexFile;
+
+	if (!vertexRelativePath || !*vertexRelativePath)
 	{
 		LOGE("[%s] Vertex File property is empty!\n", LongName.AsString());
 		return false;
 	}
 
-	const char* fragment_shader_rpath = FragmentFile;
-	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
+	const char* fragmentRelativePath = FragmentFile;
+
+	if (!fragmentRelativePath || !*fragmentRelativePath)
 	{
 		LOGE("[%s] Fragment File property is empty!\n", LongName.AsString());
 		return false;
 	}
 
-	char vertex_abs_path_only[MAX_PATH];
-	char fragment_abs_path_only[MAX_PATH];
-	if (!FindEffectLocation(vertex_shader_rpath, vertex_abs_path_only, MAX_PATH)
-		|| !FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
+	const auto foundVertexPath = FindEffectLocation(std::filesystem::path(AnsiToWide(vertexRelativePath)));
+	const auto foundFragmentPath = FindEffectLocation(std::filesystem::path(AnsiToWide(fragmentRelativePath)));
+
+	if (!foundVertexPath || !foundFragmentPath)
 	{
-		LOGE("[%s] Failed to find shaders location for %s, %s!\n", LongName.AsString(), vertex_shader_rpath, fragment_shader_rpath);
+		LOGE("[%s] Failed to find shaders location for %s, %s!\n", LongName.AsString(), vertexRelativePath, fragmentRelativePath);
 		return false;
 	}
 
-	LOGI("[%s] Vertex shader Location - %s\n", LongName.AsString(), vertex_abs_path_only);
-	LOGI("[%s] Fragment shader Location - %s\n", LongName.AsString(), fragment_abs_path_only);
+	vertexShaderPath = *foundVertexPath;
+	fragmentShaderPath = *foundFragmentPath;
 
-	vertexShaderPath = FBString(vertex_abs_path_only, vertex_shader_rpath);
-	fragmentShaderPath = FBString(fragment_abs_path_only, fragment_shader_rpath);
+	LOGI("[%s] Vertex shader path: %ls\n", LongName.AsString(), vertexShaderPath.c_str());
+	LOGI("[%s] Fragment shader path: %ls\n", LongName.AsString(), fragmentShaderPath.c_str());
 	return true;
 }
 
 bool EffectShaderUserObject::DoReloadShaders()
 {
-	FBString vertexPath, fragmentPath;
-	CalculateShaderFilePaths(vertexPath, fragmentPath);
+	std::filesystem::path vertexPath;
+	std::filesystem::path fragmentPath;
 
-	// NOTE: prep uniforms when load is succesfull
+	if (!CalculateShaderFilePaths(vertexPath, fragmentPath))
+		return false;
+
 	constexpr int variationIndex = 0;
 	if (!mUserShader->Load(variationIndex, vertexPath, fragmentPath, UseShaderToyCompatibility))
 	{
-		LOGE("[%s] Failed to load shaders for %s, %s!\n", LongName.AsString(), vertexPath, fragmentPath);
+		LOGE("[%s] Failed to load shaders for %ls, %ls!\n",
+			LongName.AsString(), vertexPath.c_str(), fragmentPath.c_str());
 		return false;
 	}
 	
@@ -315,24 +320,24 @@ bool OpenExplorerFolder(const std::filesystem::path& path)
 
 bool EffectShaderUserObject::DoOpenFolderWithShader()
 {
-	const char* fragment_shader_rpath = FragmentFile;
-	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
+	const char* fragmentRelativePath = FragmentFile;
+
+	if (!fragmentRelativePath || !*fragmentRelativePath)
 	{
 		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
 		return false;
 	}
 
-	char fragment_abs_path_only[MAX_PATH];
-	if (!FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
+	const auto shaderPath = FindEffectLocation(std::filesystem::path(AnsiToWide(fragmentRelativePath)));
+	if (!shaderPath)
 	{
-		LOGE("[%s] Failed to find shaders location for relative path %s!\n", LongName.AsString(), fragment_shader_rpath);
+		LOGE("[%s] Failed to find shader for relative path %s!\n", LongName.AsString(), fragmentRelativePath);
 		return false;
 	}
 
-	const std::filesystem::path shaderPath = ComputeFullShaderPath(fragment_shader_rpath, fragment_abs_path_only);
-
-	if (!OpenExplorerFolder(shaderPath)) {
-		LOGE("[%s] Failed to open folder for %s\n", LongName.AsString(), fragment_abs_path_only);
+	if (!OpenExplorerFolder(*shaderPath))
+	{
+		LOGE("[%s] Failed to open folder for %ls\n", LongName.AsString(), shaderPath->c_str());
 		return false;
 	}
 
@@ -341,26 +346,41 @@ bool EffectShaderUserObject::DoOpenFolderWithShader()
 
 bool EffectShaderUserObject::DoExportShaderScheme()
 {
-	const char* fragment_shader_rpath = FragmentFile;
-	if (!fragment_shader_rpath || strlen(fragment_shader_rpath) < 2)
+	namespace fs = std::filesystem;
+
+	const char* fragmentRelativePath = FragmentFile;
+
+	if (!fragmentRelativePath || !*fragmentRelativePath)
 	{
 		LOGE("[%s] Shader File property is empty!\n", LongName.AsString());
 		return false;
 	}
-	char fragment_abs_path_only[MAX_PATH];
-	if (!FindEffectLocation(fragment_shader_rpath, fragment_abs_path_only, MAX_PATH))
+
+	const auto shaderPath = FindEffectLocation(fs::path(AnsiToWide(fragmentRelativePath)));
+
+	if (!shaderPath)
 	{
-		LOGE("[%s] Failed to find shaders location for relative path %s!\n", LongName.AsString(), fragment_shader_rpath);
+		LOGE("[%s] Failed to find shader for relative path %s!\n", LongName.AsString(), fragmentRelativePath);
 		return false;
 	}
 
-	namespace fs = std::filesystem;
-	const fs::path base = fs::path(fragment_abs_path_only);
-	const fs::path name = fs::path(GetFullName());
-	fs::path full = fs::weakly_canonical(base / name);
-	full += ".json";
+	const char* objectName = GetFullName();
 
-	mUserShader->GetPropertySchemePtr()->ExportToJSON(full.string().c_str());
+	if (!objectName || !*objectName)
+		return false;
+
+	fs::path outputPath = shaderPath->parent_path() / fs::path(AnsiToWide(objectName));
+
+	outputPath += L".json";
+	outputPath = outputPath.lexically_normal();
+
+	const ShaderPropertyScheme* scheme = mUserShader ? mUserShader->GetPropertySchemePtr() : nullptr;
+
+	if (!scheme || !scheme->ExportToJSON(outputPath))
+	{
+		LOGE("[%s] Failed to export shader scheme to %ls\n", LongName.AsString(), outputPath.c_str());
+		return false;
+	}
 
 	return true;
 }

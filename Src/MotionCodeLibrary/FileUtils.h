@@ -16,6 +16,9 @@
 
 #include <functional>
 #include <string>
+#include <string_view>
+#include <filesystem>
+#include <optional>
 
 void SetCurrentFileOpenPath(const char* filepath);
 
@@ -23,6 +26,9 @@ void SetCurrentFileOpenPath(const char* filepath);
 /// return true if a given filename could be found, otherwise false
 /// </summary>
 bool IsFileExists ( const char* filename );
+
+// convert ANSI string into wide string using a given code page
+std::wstring AnsiToWide(std::string_view text);
 
 //
 // search first of all in mobu config folder, then in all plugins folders
@@ -35,10 +41,11 @@ bool IsFileExists ( const char* filename );
 /// <param name="outPath">a location where a given effect file could be found</param>
 /// <param name="outPathLength">a length of outPath array</param>
 /// <returns>true if a location for a given effect file is found</returns>
-bool FindEffectLocation(const char *effect, char* outPath, const int outPathLength=256);
+std::optional<std::filesystem::path> FindEffectLocation(const std::filesystem::path& requestedPath);
 
 
-bool FindEffectLocation(std::function<bool(const char* testPath)> const& lambda, char* outPath, const int outPathLength=256);
+using LocationCheck = std::function<bool(const std::filesystem::path&)>;
+std::optional<std::filesystem::path> FindEffectLocation(const LocationCheck& checkLocationFn);
 
 /// <summary>
 /// open file for reading and keep it open for a class life scope
@@ -46,15 +53,19 @@ bool FindEffectLocation(std::function<bool(const char* testPath)> const& lambda,
 class FileReadScope
 {
 public:
-	FileReadScope(const char* filename)
+	FileReadScope(const std::filesystem::path& filePath)
 	{
-		fopen_s(&fp, filename, "r");
+#ifdef _WIN32
+		_wfopen_s(&fp, filePath.c_str(), L"rb");
+#else
+		fp = std::fopen(filePath.c_str(), "rb");
+#endif
 	}
 
 	~FileReadScope()
 	{
 		if (fp)
-			fclose(fp);
+			std::fclose(fp);
 	}
 
 	FILE* Get() const { return fp; }
