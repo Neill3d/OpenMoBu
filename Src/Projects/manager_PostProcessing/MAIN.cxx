@@ -39,8 +39,6 @@ FBLibraryDeclare( manager_postprocessing )
 	FBLibraryRegister(PostPersistentData);
 	FBLibraryRegisterElement(PostPersistentData);
 
-	//FBLibraryRegisterElement(PostEffectUserObject);
-
 	FBLibraryRegister(EffectShaderUserObject);
 	FBLibraryRegisterElement(EffectShaderUserObject);
 
@@ -69,11 +67,11 @@ bool FBLibrary::LibInit()       {
 	if (GLEW_OK != err)
 	{
 		// Problem: glewInit failed, something is seriously wrong.
-		LOGE("GLEW error: %s\n", glewGetErrorString(err));
+		LOGE("GLEW error: %s\n", reinterpret_cast<const char*>(glewGetErrorString(err)));
 		return false;
 	}
 	
-	LOGI("GLEW version: %s\n", glewGetString(GLEW_VERSION));
+	LOGI("GLEW version: %s\n", reinterpret_cast<const char*>(glewGetString(GLEW_VERSION)));
 	constexpr const float VERSION{ 2.2f };
 	LOGI("Post Processing Manager v%.2f\n", VERSION);
 
