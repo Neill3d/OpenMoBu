@@ -15,6 +15,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <algorithm>
+#include <cmath>
 
 #include "postprocessing_helper.h"
 #include <hashUtils.h>
@@ -75,6 +77,20 @@ void EffectShaderDOF::OnPopulateProperties(ShaderPropertyScheme* scheme)
 		.GetProxy();
 	
 	mBlurRadius = scheme->AddProperty(PostPersistentData::DOF_BLUR_RADIUS, "blurRadius", EPropertyType::FLOAT)
+		.SetFlag(PropertyFlag::SKIP)
+		.GetProxy();
+
+	mLegacyFocusAngle = scheme->AddProperty(PostPersistentData::DOF_LEGACY_CAMERA_FOCUS_ANGLE, "legacyFocusAngle", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
+		.GetProxy();
+
+	// the lens model of the camera DOF and a scale of its blur width, computed from the camera focus angle
+	//  (no property of the data), the scale is 0 for a zero focus angle, so a flag is needed
+	mUseLensBlur = scheme->AddProperty("Use Lens Blur", "useLensBlur", EPropertyType::BOOL)
+		.SetFlag(PropertyFlag::SKIP)
+		.GetProxy();
+
+	mLensBlurScale = scheme->AddProperty("Lens Blur Scale", "lensBlurScale", EPropertyType::FLOAT)
 		.SetFlag(PropertyFlag::SKIP)
 		.GetProxy();
 
@@ -176,6 +192,13 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 	const bool _debugBlurValue = pData->DebugBlurValue;
 	const bool _debugShowFocus = pData->DebugShowFocus;
 
+	// original blur model is applied only for the camera focus angle
+	bool _useLegacyFocusAngle = false;
+	// the lens model of the camera DOF (otherwise a model with a band is used) and a scale of its blur width,
+	//  zero focus angle gives a zero scale, it is a sharp image
+	bool _useLensBlur = false;
+	float _lensBlurScale = 0.0f;
+
 	auto fn_calcFocalDistance = [](FBModel* camera, FBModel* pInterest)
 		{
 			FBMatrix modelView, modelViewI;
@@ -192,21 +215,9 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 			return p[0];
 		};
 
-	auto fn_calcBlurRadius = [](double focusAngle, double focalDistance, double screenHeight) -> float
-		{
-			double halfAngle = focusAngle * 0.5 * M_PI / 180.0;
-			
-			// radius is in world-space units — project to screen pixels
-			// divide by focalDistance to get normalized, then multiply by pixels
-			// this simplifies to: tan(halfAngle) * screenHeight * 0.5
-			return static_cast<float>(std::tan(halfAngle) * screenHeight * 0.5);
-		};
-
-
 	if (pData->UseCameraDOFProperties)
 	{
 		_focalDistance = camera->FocusSpecificDistance;
-		_blurRadius = fn_calcBlurRadius(camera->FocusAngle, _focalDistance, effectContext->GetViewHeight()); // height from resolution
 
 		FBCameraFocusDistanceSource cameraFocusDistanceSource;
 		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
@@ -228,6 +239,33 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 			// FocalDistance = dist;
 			_focalDistance = fn_calcFocalDistance(camera, pInterest);
 		}
+
+		const double focusAngle = camera->FocusAngle;
+		if (pData->LegacyCameraFocusAngle)
+		{
+			// legacy: focus angle is assigned to the focal range as is, without any calculations,
+			//  the shader uses it as a focal length of the original thin lens model
+			//  and the original blur spread is about 1 pixel per ring step
+			_focalRange = focusAngle;
+			_blurRadius = 1.0;
+			_useLegacyFocusAngle = true;
+		}
+		else
+		{
+			// lens model of the MotionBuilder camera DOF:
+			//   width = A * focusAngle * focalLengthInPixels * |depth - focus| / (depth * focus)
+			// the shader turns the width into a blur amount, the Blur Radius property is a maximum reach of a ring
+			// a focal length in pixels comes from the projection matrix of the camera (an orthogonal one has no blur)
+			constexpr double kApertureSizePerDegree = 0.854; // scene units per degree of the focus angle
+			
+			const double* projection = effectContext->GetProjectionMatrix();
+			const double focalLengthInPixels = (projection && !effectContext->IsCameraOrthogonal())
+				? 0.5 * static_cast<double>(effectContext->GetViewHeight()) * projection[5]
+				: 0.0;
+
+			_useLensBlur = true;
+			_lensBlurScale = static_cast<float>(std::max(focusAngle, 0.0) * kApertureSizePerDegree * std::max(focalLengthInPixels, 0.0));
+		}
 	}
 	else if (pData->AutoFocus && pData->FocusObject.GetCount() > 0)
 	{
@@ -246,6 +284,9 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 		(mRings, _rings)
 		(mCoC, static_cast<float>(_CoC))
 		(mBlurRadius, static_cast<float>(_blurRadius))
+		(mLegacyFocusAngle, _useLegacyFocusAngle)
+		(mUseLensBlur, _useLensBlur)
+		(mLensBlurScale, _lensBlurScale)
 		(mBlurForeground, _blurForeground)
 		(mThreshold, static_cast<float>(_threshold))
 		(mGain, static_cast<float>(_gain))

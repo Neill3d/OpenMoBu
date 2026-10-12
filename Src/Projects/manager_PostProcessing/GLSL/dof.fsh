@@ -62,6 +62,16 @@ uniform float blurForeground;
 uniform float CoC; // = 0.03;//circle of confusion size in mm (35mm film = 0.03mm)
 uniform float blurRadius;
 
+// > 0.0 - use the original thin lens blur factor,
+// in that mode focalRange is expected to be the camera focus angle (assigned as is)
+uniform float legacyFocusAngle;
+
+// > 0.0 - use the lens model of the MotionBuilder camera DOF, lensBlurScale is a scale of a blur width in pixels:
+//  edge blur width = lensBlurScale * |depth - focal distance| / (depth * focal distance)
+// the scale is 0 for a zero focus angle (no blur), so it can not tell if the model is used
+uniform float useLensBlur;
+uniform float lensBlurScale;
+
 uniform float threshold; // = 0.5; //highlight threshold;
 uniform float gain; // = 2.0; //highlight gain;
 
@@ -148,12 +158,60 @@ float ComputeDepth(in vec2 texCoord)
 	return LinearizeDepth(d);
 }
 
-void main() 
+// Original (legacy) blur factor, thin lens model on depths normalized by the far plane.
+// focalRange is used as a focal length (camera focus angle), result is in 0..1
+float LegacyBlurFactor(float depth, float fDepth)
+{
+	float f = focalRange * 0.05; // focal length in mm
+	float d = (fDepth / zFar) * 1000.0; // focal plane in mm
+	float o = (depth / zFar) * 1000.0; // depth in mm
+
+	// keep the denominators away from zero
+	float od = o - f;
+	float dd = d - f;
+	od = (abs(od) < 1e-4) ? ((od < 0.0) ? -1e-4 : 1e-4) : od;
+	dd = (abs(dd) < 1e-4) ? ((dd < 0.0) ? -1e-4 : 1e-4) : dd;
+
+	float a = (o * f) / od;
+	float b = (d * f) / dd;
+	float c = dd / (max(abs(d), 1e-4) * max(fstop, 1e-4) * max(CoC, 1e-4));
+
+	return clamp(10.0 * abs(a - b) * c, 0.0, 1.0);
+}
+
+// Lens model of the MotionBuilder camera DOF:
+//   width = lensBlurScale * |depth - fDepth| / (depth * fDepth),   lensBlurScale ~ aperture * focus angle * focal length (pixels)
+// A gather kernel of the rings reaches about a half of the width in pixels (width ~ 1.6 * reach),
+// the reach of a kernel is rings * blurRadius * blur, so blurRadius is a maximum reach of a ring
+float LensBlurFactor(float depth, float fDepth, float apertureScale)
+{
+	float width = lensBlurScale * abs(depth - fDepth) / max(depth * fDepth, 1e-4);
+	float reach = 0.625 * width * apertureScale;
+	return clamp(reach / max(float(rings) * blurRadius, 1e-4), 0.0, 1.0);
+}
+
+// a blur amount in 0..1 (without a shaping of a band model) of a depth, used to look at neighbours and samples
+float RawBlurFactor(float depth, float fDepth, float focusBand, float apertureScale)
+{
+	if (legacyFocusAngle > 0.0)
+	{
+		return LegacyBlurFactor(depth, fDepth);
+	}
+	if (useLensBlur > 0.0)
+	{
+		return LensBlurFactor(depth, fDepth, apertureScale);
+	}
+	return max(abs(depth - fDepth) - focusBand, 0.0) / focusBand * apertureScale;
+}
+
+void main()
 {
 	float width = gResolution.x; //texture width
 	float height = gResolution.y; //texture height
 	float focalLength = focalRange; //focal length in mm
-	
+	bool useLegacy = (legacyFocusAngle > 0.0);
+	bool useLens = (useLensBlur > 0.0) && !useLegacy;
+
 	if (texCoord.y < upperClip || texCoord.y > lowerClip)
 	{
 		FragColor = texture(colorSampler, texCoord);
@@ -197,21 +255,34 @@ void main()
 	float cocFactor = max(CoC / 0.03, 1e-4);
 	float focusBand = max(focalRange * cocFactor, 1e-4);
 
-	// outside this band blur starts increasing
-	float rawBlur = max(absDelta - focusBand, 0.0) / focusBand;
-	blur = smoothstep(0.0, 1.0, rawBlur);
-
-	// optional: slightly gentler background blur growth
-	if (delta > 0.0)
-	{
-		blur *= 0.85;
-	}
-
 	float refAperture = 1.4;
 	float apertureScale = refAperture / max(fstop, 1e-4);
-	
-	blur *= apertureScale;
-	blur = pow(clamp(blur, 0.0, 1.0), 1.35);
+
+	if (useLegacy)
+	{
+		// original thin lens model, focal range is a camera focus angle
+		blur = LegacyBlurFactor(depth, fDepth);
+	}
+	else if (useLens)
+	{
+		// lens model of the MotionBuilder camera DOF
+		blur = LensBlurFactor(depth, fDepth, apertureScale);
+	}
+	else
+	{
+		// outside this band blur starts increasing
+		float rawBlur = max(absDelta - focusBand, 0.0) / focusBand;
+		blur = smoothstep(0.0, 1.0, rawBlur);
+
+		// optional: slightly gentler background blur growth
+		if (delta > 0.0)
+		{
+			blur *= 0.85;
+		}
+
+		blur *= apertureScale;
+		blur = pow(clamp(blur, 0.0, 1.0), 1.35);
+	}
 
 	if (blurForeground == 0.0 && delta < 0.0)
 	{
@@ -241,8 +312,7 @@ void main()
 	for (int k = 0; k < 4; ++k)
 	{
 	    float nd = ComputeDepth(texCoord + probeOffsets[k]);
-	    float na = abs(nd - fDepth);
-	    float nb = max(na - focusBand, 0.0) / focusBand * apertureScale;
+	    float nb = RawBlurFactor(nd, fDepth, focusBand, apertureScale);
 	    maxNeighborBlur = max(maxNeighborBlur, clamp(nb, 0.0, 1.0));
 	}
 
@@ -309,8 +379,7 @@ void main()
 			    vec2 sampleCoord = texCoord + pOffset;
 
 			    float sampleDepth = ComputeDepth(sampleCoord);
-			    float sampleAbsDelta = abs(sampleDepth - fDepth);
-			    float sampleBlur = max(sampleAbsDelta - focusBand, 0.0) / focusBand * apertureScale;
+			    float sampleBlur = RawBlurFactor(sampleDepth, fDepth, focusBand, apertureScale);
 			    
 			    // only suppress when sample is sharper than center (background leaking into blur)
 				// allow when sample is more blurred than center (foreground trying to spread outward)

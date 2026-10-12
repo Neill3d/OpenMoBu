@@ -326,6 +326,7 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Depth Of Field Masking Channel", "Depth Of Field Setup");
 
 	AddPropertyView("Use Camera DOF Properties", "Depth Of Field Setup");
+	AddPropertyView(DOF_LEGACY_CAMERA_FOCUS_ANGLE, "Depth Of Field Setup");
 	AddPropertyView("Reset DOF", "Depth Of Field Setup");
 	AddPropertyView(DOF_DEBUG_BLUR_VALUE, "Depth Of Field Setup");
 	AddPropertyView(DOF_DEBUG_SHOW_FOCUS, "Depth Of Field Setup");
@@ -588,6 +589,7 @@ bool PostPersistentData::FBCreate()
 	FBPropertyPublish(this, DOF_MaskingChannel, DOF_MASKING_CHANNEL, nullptr, nullptr);
 
 	FBPropertyPublish(this, UseCameraDOFProperties, USE_CAMERA_DOF_PROPS, nullptr, nullptr);
+	FBPropertyPublish(this, LegacyCameraFocusAngle, DOF_LEGACY_CAMERA_FOCUS_ANGLE, nullptr, nullptr);
 	FBPropertyPublish(this, ResetDOF, RESET_DOF, nullptr, ActionResetDOF);
 	FBPropertyPublish(this, DebugBlurValue, DOF_DEBUG_BLUR_VALUE, nullptr, nullptr);
 	FBPropertyPublish(this, DebugShowFocus, DOF_DEBUG_SHOW_FOCUS, nullptr, nullptr);
@@ -1014,6 +1016,7 @@ void PostPersistentData::DefaultValues()
 	DOF_UseMasking = false;
 
 	UseCameraDOFProperties = false;
+	LegacyCameraFocusAngle = true;
 	DebugBlurValue = false;
 	DebugShowFocus = false;
 
@@ -1577,6 +1580,7 @@ void PostPersistentData::DoResetDOF()
 {
 	// DONE:
 	UseCameraDOFProperties = false;
+	LegacyCameraFocusAngle = true;
 	DebugBlurValue = false;
 	DebugShowFocus = false;
 

@@ -67,6 +67,9 @@ private:
     ShaderPropertyProxy mFStop;
     ShaderPropertyProxy mCoC;  // Circle of confusion size in mm (35mm film = 0.03mm)
     ShaderPropertyProxy mBlurRadius;
+    ShaderPropertyProxy mLegacyFocusAngle;  // use the original thin lens blur, focal range is a camera focus angle
+    ShaderPropertyProxy mUseLensBlur;       // use the lens model of the camera DOF (a blur width from the focus angle)
+    ShaderPropertyProxy mLensBlurScale;     // blur width scale of the lens model, 0 for a zero focus angle
 
     // Rendering parameters
     ShaderPropertyProxy mSamples;

@@ -84,6 +84,7 @@ public:
 	static constexpr const char* DOF_MASKING_CHANNEL = "Depth Of Field Masking Channel";
 
 	static constexpr const char* USE_CAMERA_DOF_PROPS = "Use Camera DOF Properties";
+	static constexpr const char* DOF_LEGACY_CAMERA_FOCUS_ANGLE = "Legacy Camera Focus Angle";
 	static constexpr const char* RESET_DOF = "Reset DOF";
 	static constexpr const char* DOF_DEBUG_BLUR_VALUE = "Debug Blur Value";
 	static constexpr const char* DOF_DEBUG_SHOW_FOCUS = "Debug Show Focus";
@@ -414,6 +415,7 @@ public: // PROPERTIES
 	FBPropertyBaseEnum<EMaskingChannel>	DOF_MaskingChannel;
 
 	FBPropertyBool				UseCameraDOFProperties;	//!< take focal distance, focal range and focus object from camera properties !
+	FBPropertyBool				LegacyCameraFocusAngle;	//!< when using camera properties, assign camera FocusAngle to the focal range as is and use the original thin lens blur model in the shader
 
 	FBPropertyAction			ResetDOF;
 
@@ -446,7 +448,7 @@ public: // PROPERTIES
 
 	FBPropertyAnimatableDouble		CoC;	//!< circle of confusion size in mm (35 mm film = 0.03mm)
 
-	FBPropertyAnimatableDouble		BlurRadius;	//!< max blur radius in pixels
+	FBPropertyAnimatableDouble		BlurRadius;	//!< max blur radius in pixels (with camera focus angle it is a ceiling for the angle-derived radius)
 
 	FBPropertyAnimatableDouble		Threshold;	//!< highlight threshold
 	FBPropertyAnimatableDouble		Gain;		//!< highlight gain
