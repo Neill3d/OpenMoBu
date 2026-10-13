@@ -230,14 +230,19 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 	void* const currentContext = static_cast<void*>(wglGetCurrentContext());
 	if (currentContext != mGLContext)
 	{
-		if (mBuffers)
+		// NOTE: the first composition is not a context change, the effect could be already loaded
+		//  (shared with the post processing chain) and must not be recompiled
+		if (mGLContext != nullptr)
 		{
-			mBuffers->OnContextChanged();
+			if (mBuffers)
+			{
+				mBuffers->OnContextChanged();
+			}
+			mEffectMap.clear();
+			userEffect->SetReloadShadersState(true);
+			mWarmupFrames = WARMUP_FRAMES;
 		}
-		mEffectMap.clear();
-		userEffect->SetReloadShadersState(true);
 		mGLContext = currentContext;
-		mWarmupFrames = WARMUP_FRAMES;
 	}
 
 	if (!mBuffers)
@@ -265,6 +270,8 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 	{
 		mUnsupportedSamplers.store(0, std::memory_order_release);
 		ClearTarget(width, height);
+		// let the pool release the unused output buffer
+		mBuffers->OnFrameRendered();
 		return;
 	}
 
@@ -275,7 +282,8 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 	GLint savedDrawBuffer = 0;
 	glGetIntegerv(GL_DRAW_BUFFER, &savedDrawBuffer);
 
-	glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT);
+	// NOTE: GL_TRANSFORM_BIT restores the matrix mode that MoBu had before the composition
+	glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT | GL_TRANSFORM_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -347,11 +355,11 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 		srcTextureId = inputTexture->TextureOGLId;
 	}
 
-	const std::string bufferName = std::string("TextureUserEffect_") + GetFullName();
-	const uint32_t bufferNameKey = xxhash32(bufferName);
+	// NOTE: the buffer pool is owned by this texture, so the key doesn't have to be unique between texture objects
+	static const uint32_t OUTPUT_BUFFER_KEY = xxhash32("TextureUserEffect_Output");
 
 	constexpr bool autoResize = false;
-	FrameBuffer* buffer = mBuffers->RequestFramebuffer(bufferNameKey, width, height,
+	FrameBuffer* buffer = mBuffers->RequestFramebuffer(OUTPUT_BUFFER_KEY, width, height,
 		PostEffectBuffers::GetFlagsForSingleColorBuffer(), 1, autoResize);
 
 	bool isRendered = false;
@@ -414,9 +422,9 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 		ClearTarget(width, height);
 	}
 
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glPopAttrib();
 

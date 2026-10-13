@@ -534,14 +534,16 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 		constexpr bool autoResize = false;
 		FrameBuffer* buffer = buffers->RequestFramebuffer(bufferNameKey, effectW, effectH, PostEffectBuffers::GetFlagsForSingleColorBuffer(), 1, autoResize);
 
-		PostEffectRenderContext renderContext(renderContext);
+		// NOTE: a separate name, the source effect renders into its own buffer with its own size
+		PostEffectRenderContext sourceContext(renderContext);
 
-		renderContext.width = effectW;
-		renderContext.height = effectH;
-		renderContext.targetFramebuffer = buffer;
-		renderContext.colorAttachment = 0;
+		sourceContext.width = effectW;
+		sourceContext.height = effectH;
+		sourceContext.targetFramebuffer = buffer;
+		sourceContext.colorAttachment = 0;
+		sourceContext.ClearOverrideUniforms();
 
-		bufferShader->Render(renderContext, effectContext);
+		bufferShader->Render(sourceContext, effectContext);
 		
 		const GLuint bufferTextureId = buffer->GetColorObject();
 		//buffers->ReleaseFramebuffer(bufferNameKey);
