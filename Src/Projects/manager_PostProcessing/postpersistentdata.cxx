@@ -1181,8 +1181,18 @@ bool PostPersistentData::FbxRetrieve(FBFbxObject* pFbxObject, kFbxObjectStore pS
 
 void PostPersistentData::RequestShadersReload(bool isExternal, bool doPropagateToUserEffects)
 {
-	mReloadShaders = true;
-	mReloadExternal = isExternal;
+	// An external request comes from a user effect and reloads only connected user effects that are marked for reload.
+	//  Rebuilding all standard effects (about 17 shader programs) is expensive, so it is requested only internally
+	//  (Reload Shaders action, a scene load).
+	// NOTE: a request never clears another pending one, both kinds of reload could be waiting at the same time.
+	if (isExternal)
+	{
+		mReloadExternal = true;
+	}
+	else
+	{
+		mReloadShaders = true;
+	}
 }
 
 void PostPersistentData::DoDebugFarDist()
