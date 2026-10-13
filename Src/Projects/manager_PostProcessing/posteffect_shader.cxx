@@ -822,13 +822,16 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 	*/
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::UPPER_CLIP); loc >= 0)
 	{
-		const double value = effectContext->GetPostProcessData()->UpperClip;
+		// NOTE: there is no post process data when an effect is rendered outside of the effects chain
+		const PostPersistentData* postData = effectContext->GetPostProcessData();
+		const double value = postData ? static_cast<double>(postData->UpperClip) : 0.0;
 		glProgramUniform1f(programId, loc, 0.01f * static_cast<float>(value));
 	}
 
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::LOWER_CLIP); loc >= 0)
 	{
-		const double value = effectContext->GetPostProcessData()->LowerClip;
+		const PostPersistentData* postData = effectContext->GetPostProcessData();
+		const double value = postData ? static_cast<double>(postData->LowerClip) : 0.0;
 		glProgramUniform1f(programId, loc, 1.0f - 0.01f * static_cast<float>(value));
 	}
 
