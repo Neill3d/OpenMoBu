@@ -270,31 +270,6 @@ bool EffectShaderUserObject::DoReloadShaders()
 	return true;
 }
 
-std::filesystem::path SanitizeRelative(const std::filesystem::path& rel)
-{
-	std::string s = rel.string();
-
-	// Remove any leading slashes or backslashes
-	while (!s.empty() && (s[0] == '/' || s[0] == '\\'))
-		s.erase(s.begin());
-
-	return std::filesystem::path(s);
-}
-
-std::filesystem::path ComputeFullShaderPath(
-	const char* fragment_shader_rpath,
-	const char* fragment_abs_path_only)
-{
-	namespace fs = std::filesystem;
-
-	fs::path base = fs::path(fragment_abs_path_only);
-	fs::path rel = SanitizeRelative(fs::path(fragment_shader_rpath));
-
-	fs::path full = fs::weakly_canonical(base / rel);
-
-	return full;
-}
-
 bool OpenExplorerFolder(const std::filesystem::path& path)
 {
 	if (!std::filesystem::exists(path))

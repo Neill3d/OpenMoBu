@@ -109,17 +109,25 @@ std::optional<fs::path> FindEffectLocation(const fs::path& requestedPath)
         return std::nullopt;
 
     // A genuinely absolute filename does not need search locations.
-    if (requestedPath.is_absolute())
-    {
-        if (IsRegularFile(requestedPath))
-            return requestedPath.lexically_normal();
+    if (requestedPath.is_absolute() && IsRegularFile(requestedPath))
+        return requestedPath.lexically_normal();
 
+    const std::wstring& requestedText = requestedPath.native();
+
+    // A missing path with a drive letter ("C:\...") can't be searched for.
+    if (requestedText.size() >= 2 && requestedText[1] == L':')
         return std::nullopt;
-    }
 
-    // This also tolerates old names such as "/GLSL/file.glslf".
-    const fs::path relativePath = requestedPath.relative_path();
-    if (relativePath.empty())
+    // Tolerate old names such as "/GLSL/file.glslf" or "//GLSL//file.glslf".
+    // The latter parses as a UNC path on Windows (root name "//GLSL"), so
+    // path::relative_path() would drop the "GLSL" folder; strip the leading
+    // separators from the raw string instead.
+    const size_t firstNameChar = requestedText.find_first_not_of(L"/\\");
+    if (firstNameChar == std::wstring::npos)
+        return std::nullopt;
+
+    const fs::path relativePath = fs::path(requestedText.substr(firstNameChar)).lexically_normal();
+    if (relativePath.empty() || relativePath.is_absolute())
         return std::nullopt;
 
     auto checkLocation =
