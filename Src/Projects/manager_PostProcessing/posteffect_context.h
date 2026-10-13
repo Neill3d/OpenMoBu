@@ -108,16 +108,18 @@ public:
 		mutable FBComponent* userObject{ nullptr }; //!< this is a component where all ui properties are exposed
 		FBCamera* camera{ nullptr }; //!< current camera that we are drawing with
 
-		float zNear;
-		float zFar;
+		// NOTE: defaults describe a "no camera" context (identity matrices, origin position),
+		//  so effects that are not rendered from a scene camera (texture user effect) get valid values
+		float zNear{ 1.0f };
+		float zFar{ 1000.0f };
 
-		float modelViewF[16];
-		float projectionF[16];
-		float modelViewProjF[16];
-		float invModelViewProjF[16];
-		float prevModelViewProjF[16];
-		float cameraPositionF[3];
-		float iDate[4];
+		float modelViewF[16]{ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+		float projectionF[16]{ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+		float modelViewProjF[16]{ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+		float invModelViewProjF[16]{ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+		float prevModelViewProjF[16]{ 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+		float cameraPositionF[3]{ 0.0f, 0.0f, 0.0f };
+		float iDate[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
 
 		bool isCameraOrtho{ false };
 	};
