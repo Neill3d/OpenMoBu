@@ -584,6 +584,7 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 		OnPropertySchemeUpdated(newPropertyScheme.get(), mRenderPropertyScheme.get());
 		FBComponent* effectComponent = GetOwner() ? GetOwner() : effectContext->GetPostProcessData();
 		newPropertyScheme->AssociateFBProperties(effectComponent);
+		OnPropertySchemeAssociated(newPropertyScheme.get());
 
 		mRenderPropertyScheme.reset(newPropertyScheme.release());
 		bIsNeedToUpdatePropertyScheme = false;

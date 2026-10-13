@@ -14,6 +14,9 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffect_shader_userobject.h"
 #include "posteffect_contextmobu.h"
 
+#include <mutex>
+#include <unordered_set>
+
 ShaderProperty::ShaderProperty(const ShaderProperty& other)
 {
 	SetNameHash(other.GetNameHash());
@@ -190,14 +193,48 @@ bool ShaderProperty::HasFlag(PropertyFlag testFlag) const {
 	return flags.test(static_cast<size_t>(testFlag));
 }
 
+namespace
+{
+	// This runs every evaluation, so a mismatch between a value type and a type of FBProperty
+	//  (could happen for a moment after a shader change) has to be reported once per property
+	//  and must never abort the application, we keep a default value of the shader property instead.
+	bool IsValueTypeCompatible(FBProperty* fbProperty, const ShaderPropertyValue& value,
+		EPropertyType expectedType, EPropertyType alternativeType = EPropertyType::NONE)
+	{
+		const EPropertyType valueType = value.GetType();
+		if (valueType == expectedType || (alternativeType != EPropertyType::NONE && valueType == alternativeType))
+			return true;
+
+		static std::mutex reportedMutex;
+		static std::unordered_set<uint64_t> reported;
+
+		const uint64_t key = (static_cast<uint64_t>(value.GetNameHash()) << 32)
+			| static_cast<uint64_t>(fbProperty->GetPropertyType());
+
+		bool isFirstReport = false;
+		{
+			std::lock_guard<std::mutex> lock(reportedMutex);
+			isFirstReport = reported.insert(key).second;
+		}
+
+		if (isFirstReport)
+		{
+			LOGE("property %s: value type %d doesn't match a type of fb property %s (%s), using a default value\n",
+				ResolveHash32(value.GetNameHash()), static_cast<int>(valueType),
+				fbProperty->GetName(), fbProperty->GetPropertyTypeName());
+		}
+		return false;
+	}
+}
+
 void ShaderProperty::ReadFBPropertyValue(
 	FBProperty* fbProperty,
-	ShaderPropertyValue& value, 
-	const ShaderProperty& shaderProperty, 
+	ShaderPropertyValue& value,
+	const ShaderProperty& shaderProperty,
 	const PostEffectContextProxy* effectContext,
 	int maskIndex)
 {
-	if (fbProperty == nullptr)
+	if (fbProperty == nullptr || effectContext == nullptr)
 		return;
 
 	double v[4]{ 0.0 };
@@ -207,7 +244,9 @@ void ShaderProperty::ReadFBPropertyValue(
 	{
 	case FBPropertyType::kFBPT_int:
 	{
-		VERIFY(value.GetType() == EPropertyType::INT);
+		if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::INT))
+			return;
+
 		int ivalue = 0;
 		fbProperty->GetData(&ivalue, sizeof(int), effectContext->GetEvaluateInfo());
 		value.SetValue(ivalue);
@@ -215,8 +254,8 @@ void ShaderProperty::ReadFBPropertyValue(
 
 	case FBPropertyType::kFBPT_bool:
 	{
-		VERIFY((value.GetType() == EPropertyType::BOOL)
-			|| (value.GetType() == EPropertyType::FLOAT));
+		if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::BOOL, EPropertyType::FLOAT))
+			return;
 
 		bool bvalue = false;
 		fbProperty->GetData(&bvalue, sizeof(bool), effectContext->GetEvaluateInfo());
@@ -225,14 +264,18 @@ void ShaderProperty::ReadFBPropertyValue(
 
 	case FBPropertyType::kFBPT_double:
 	{
-		VERIFY(value.GetType() == EPropertyType::FLOAT); // , "%s | %s\n", fbProperty->GetName(), ResolveHash32(value.GetNameHash()));
+		if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::FLOAT))
+			return;
+
 		fbProperty->GetData(v, sizeof(double), effectContext->GetEvaluateInfo());
 		value.SetValue(v[0]);
 	} break;
 
 	case FBPropertyType::kFBPT_float:
 	{
-		VERIFY(value.GetType() == EPropertyType::FLOAT);
+		if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::FLOAT))
+			return;
+
 		float fvalue = 0.0f;
 		fbProperty->GetData(&fvalue, sizeof(float), effectContext->GetEvaluateInfo());
 		value.SetValue(fvalue);
@@ -240,7 +283,9 @@ void ShaderProperty::ReadFBPropertyValue(
 
 	case FBPropertyType::kFBPT_Vector2D:
 	{
-		VERIFY(value.GetType() == EPropertyType::VEC2);
+		if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::VEC2))
+			return;
+
 		fbProperty->GetData(v, sizeof(double) * 2, effectContext->GetEvaluateInfo());
 		value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]));
 	} break;
@@ -250,15 +295,17 @@ void ShaderProperty::ReadFBPropertyValue(
 	{
 		if (!shaderProperty.HasFlag(PropertyFlag::ConvertWorldToScreenSpace))
 		{
-			VERIFY(value.GetType() == EPropertyType::VEC3);
+			if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::VEC3))
+				return;
+
 			fbProperty->GetData(v, sizeof(double) * 3, effectContext->GetEvaluateInfo());
 			value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]));
 		}
 		else
 		{
-			VERIFY(effectContext != nullptr);
 			// convert world to screen shape, output VEC2
-			VERIFY(value.GetType() == EPropertyType::VEC2);
+			if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::VEC2))
+				return;
 
 			// world space to screen space
 			fbProperty->GetData(v, sizeof(double) * 3, effectContext->GetEvaluateInfo());
@@ -280,7 +327,9 @@ void ShaderProperty::ReadFBPropertyValue(
 	case FBPropertyType::kFBPT_Vector4D:
 	case FBPropertyType::kFBPT_ColorRGBA:
 	{
-		VERIFY(value.GetType() == EPropertyType::VEC4);
+		if (!IsValueTypeCompatible(fbProperty, value, EPropertyType::VEC4))
+			return;
+
 		fbProperty->GetData(v, sizeof(double) * 4, effectContext->GetEvaluateInfo());
 		value.SetValue(static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2]), static_cast<float>(v[3]));
 	} break;

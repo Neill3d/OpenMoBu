@@ -20,7 +20,8 @@ void PostEffectRenderContext::OverrideUniform(const ShaderProperty* shaderProper
 	
 	ShaderPropertyValue newValue(shaderProperty->GetDefaultValue());
 	newValue.SetValue(valueIn);
-	VERIFY(newValue.GetLocation() >= 0);
+	if (newValue.GetLocation() < 0)
+		return;
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
@@ -31,7 +32,8 @@ void PostEffectRenderContext::OverrideUniform(const ShaderProperty* shaderProper
 
 	ShaderPropertyValue newValue(shaderProperty->GetDefaultValue());
 	newValue.SetValue(x, y);
-	VERIFY(newValue.GetLocation() >= 0);
+	if (newValue.GetLocation() < 0)
+		return;
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
@@ -42,7 +44,8 @@ void PostEffectRenderContext::OverrideUniform(const ShaderProperty* shaderProper
 
 	ShaderPropertyValue newValue(shaderProperty->GetDefaultValue());
 	newValue.SetValue(x, y, z, w);
-	VERIFY(newValue.GetLocation() >= 0);
+	if (newValue.GetLocation() < 0)
+		return;
 	overrideUniforms.emplace_back(std::move(newValue));
 }
 
@@ -55,7 +58,9 @@ bool PostEffectRenderContext::OverrideUniform(const ShaderPropertyScheme* proper
 		return false;
 	ShaderPropertyValue newValue(prop->GetDefaultValue());
 	newValue.SetValue(valueIn);
-	VERIFY(newValue.GetLocation() >= 0);
+	// the property could have no location (optional uniform, or a stale value after a shader reload)
+	if (newValue.GetLocation() < 0)
+		return false;
 	overrideUniforms.emplace_back(std::move(newValue));
 	return true;
 }
@@ -70,7 +75,9 @@ bool PostEffectRenderContext::OverrideUniform(const ShaderPropertyScheme* proper
 		return false;
 	ShaderPropertyValue newValue(prop->GetDefaultValue());
 	newValue.SetValue(x, y);
-	VERIFY(newValue.GetLocation() >= 0);
+	// the property could have no location (optional uniform, or a stale value after a shader reload)
+	if (newValue.GetLocation() < 0)
+		return false;
 	overrideUniforms.emplace_back(std::move(newValue));
 	return true;
 }
@@ -85,7 +92,9 @@ bool PostEffectRenderContext::OverrideUniform(const ShaderPropertyScheme* proper
 		return false;
 	ShaderPropertyValue newValue(prop->GetDefaultValue());
 	newValue.SetValue(x, y, z, w);
-	VERIFY(newValue.GetLocation() >= 0);
+	// the property could have no location (optional uniform, or a stale value after a shader reload)
+	if (newValue.GetLocation() < 0)
+		return false;
 	overrideUniforms.emplace_back(std::move(newValue));
 	return true;
 }

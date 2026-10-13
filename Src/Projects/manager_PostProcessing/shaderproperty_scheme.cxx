@@ -138,11 +138,21 @@ const char* ShaderPropertyScheme::gSystemUniformNames[static_cast<int>(ShaderSys
 //////////////////////////////////////////////////////////////////////////
 // PropertyScheme
 
+// NOTE: a duplicated property name is a data problem (for instance, user shader declares both "glow" and "glow_slider"
+//  uniforms which end up with the same property name), we must not abort the application because of that.
+//  In such case the existing property is returned and the duplicate is dropped.
+
 ShaderProperty& ShaderPropertyScheme::AddProperty(const ShaderProperty& property)
 {
 	const uint32_t nameHash = property.GetNameHash();
 	VERIFY(nameHash != 0);
-	VERIFY(!FindPropertyByHash(nameHash));
+
+	if (ShaderProperty* existing = FindPropertyByHash(nameHash))
+	{
+		LOGE("[ShaderPropertyScheme] skip a duplicated property %s\n", property.GetName());
+		AddWarning();
+		return *existing;
+	}
 
 	auto& newProp = properties.emplace_back(property);
 	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
@@ -153,7 +163,13 @@ ShaderProperty& ShaderPropertyScheme::AddProperty(ShaderProperty&& property)
 {
 	const uint32_t nameHash = property.GetNameHash();
 	VERIFY(nameHash != 0);
-	VERIFY(!FindPropertyByHash(nameHash));
+
+	if (ShaderProperty* existing = FindPropertyByHash(nameHash))
+	{
+		LOGE("[ShaderPropertyScheme] skip a duplicated property %s\n", property.GetName());
+		AddWarning();
+		return *existing;
+	}
 
 	auto& newProp = properties.emplace_back(std::move(property));
 	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
@@ -162,26 +178,12 @@ ShaderProperty& ShaderPropertyScheme::AddProperty(ShaderProperty&& property)
 
 ShaderProperty& ShaderPropertyScheme::AddProperty(std::string_view nameIn, std::string_view uniformNameIn, FBProperty* fbPropertyIn)
 {
-	ShaderProperty property(nameIn, uniformNameIn, fbPropertyIn);
-	const uint32_t nameHash = property.GetNameHash();
-	VERIFY(nameHash != 0);
-	VERIFY(!FindPropertyByHash(nameHash));
-
-	auto& newProp = properties.emplace_back(std::move(property));
-	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
-	return newProp;
+	return AddProperty(ShaderProperty(nameIn, uniformNameIn, fbPropertyIn));
 }
 
 ShaderProperty& ShaderPropertyScheme::AddProperty(std::string_view nameIn, std::string_view uniformNameIn, EPropertyType typeIn, FBProperty* fbPropertyIn)
 {
-	ShaderProperty property(nameIn, uniformNameIn, typeIn, fbPropertyIn);
-	const uint32_t nameHash = property.GetNameHash();
-	VERIFY(nameHash != 0);
-	VERIFY(!FindPropertyByHash(nameHash));
-
-	auto& newProp = properties.emplace_back(std::move(property));
-	newProp.SetIndexInArray(static_cast<int>(properties.size()) - 1);
-	return newProp;
+	return AddProperty(ShaderProperty(nameIn, uniformNameIn, typeIn, fbPropertyIn));
 }
 
 ShaderProperty* ShaderPropertyScheme::FindPropertyByHash(uint32_t nameHash)
@@ -262,10 +264,31 @@ const ShaderProperty* ShaderPropertyScheme::GetProperty(const ShaderPropertyProx
 
 void ShaderPropertyScheme::AssociateFBProperties(FBComponent* component)
 {
+	if (!component)
+		return;
+
 	for (auto& prop : properties)
 	{
 		FBProperty* fbProp = component->PropertyList.Find(prop.GetName());
-		VERIFY_MSG(fbProp || !prop.IsGeneratedByUniform(), "%s\n", prop.GetName());
+
+		// a property that is generated from a shader uniform must have exactly the type that we expect,
+		//  otherwise we are looking at some other (outdated or system) property with the same name
+		if (fbProp && prop.IsGeneratedByUniform()
+			&& fbProp->GetPropertyType() != ShaderProperty::ShaderPropertyToFBPropertyType(prop))
+		{
+			LOGE("[ShaderPropertyScheme] property %s has an unexpected type %s, skip association\n",
+				prop.GetName(), fbProp->GetPropertyTypeName());
+			AddWarning();
+			fbProp = nullptr;
+			prop.SetFBProperty(nullptr);
+		}
+
+		if (!fbProp && prop.IsGeneratedByUniform())
+		{
+			LOGE("[ShaderPropertyScheme] failed to find a property for uniform %s\n", prop.GetName());
+			AddWarning();
+		}
+
 		if (fbProp)
 		{
 			prop.SetFBProperty(fbProp);
@@ -379,7 +402,13 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 			continue;
 
 		const GLint location = glGetUniformLocation(programId, name.data());
-		VERIFY(location >= 0);
+		if (location < 0)
+		{
+			// members of a uniform block don't have a location, we can't set them as separate uniforms
+			LOGE("[ShaderPropertyScheme] uniform %s has no location, skip it\n", uniformName);
+			AddWarning();
+			continue;
+		}
 
 		// System uniform?
 		const int sysId = FindSystemUniform(uniformName);
@@ -395,9 +424,13 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 		if (auto prop = FindPropertyByUniform(uniformName))
 		{
 			// already exists, update location
-			VERIFY(prop
-				|| (prop->GetType() == shaderType)
-				|| (prop->GetType() == EPropertyType::BOOL && shaderType == EPropertyType::FLOAT));
+			const bool isTypeMatched = (prop->GetType() == shaderType)
+				|| (prop->GetType() == EPropertyType::BOOL && shaderType == EPropertyType::FLOAT);
+			if (!isTypeMatched)
+			{
+				LOGE("[ShaderPropertyScheme] uniform %s has a type that differs from the registered property\n", uniformName);
+				AddWarning();
+			}
 			prop->SetLocation(location);
 		}
 		else if (!isSystemUniform)
@@ -416,6 +449,16 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 				// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
 				// metadata
 				SetNameAndFlagsFromUniformNameAndType(newProp, newProp.GetUniformName(), type);
+
+				// different uniforms could end up with the same property name after a postfix is removed
+				//  (like "glow" and "glow_slider")
+				if (FindPropertyByHash(newProp.GetNameHash()))
+				{
+					LOGE("[ShaderPropertyScheme] uniform %s has the same property name as another uniform, skip it\n", uniformName);
+					AddWarning();
+					continue;
+				}
+
 				AddProperty(std::move(newProp));
 				added++;
 			}

@@ -1766,22 +1766,23 @@ void PostPersistentData::DoReloadShaders()
 
 	if (mReloadExternal)
 	{
-		mReloadExternal = false;
+		ReloadUserEffects();
+	}
+}
 
-		for (int i = 0; i < UserEffects.GetCount(); ++i)
+void PostPersistentData::ReloadUserEffects()
+{
+	// NOTE: clear the flag first, so a new request that comes while we are loading is not lost
+	mReloadExternal = false;
+
+	for (int i = 0; i < UserEffects.GetCount(); ++i)
+	{
+		FBComponent* component = UserEffects.GetAt(i);
+		EffectShaderUserObject* userEffect = FBCast<EffectShaderUserObject>(component);
+		if (userEffect && userEffect->IsNeedToReloadShaders())
 		{
-			FBComponent* component = UserEffects.GetAt(i);
-			EffectShaderUserObject* userEffect = FBCast<EffectShaderUserObject>(component);
-			if (userEffect)
-			{
-				if (userEffect->IsNeedToReloadShaders())
-				{
-					if (!userEffect->DoReloadShaders())
-					{
-						return;
-					}
-				}
-			}
+			// an effect reports its failure by itself, let's carry on with the rest of effects
+			userEffect->DoReloadShaders();
 		}
 	}
 }

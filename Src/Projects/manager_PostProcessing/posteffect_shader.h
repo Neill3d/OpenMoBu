@@ -163,6 +163,9 @@ protected:
 	// user object can make new fb properties according to populated property scheme
 	virtual void OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) {}
 
+	// the new scheme is associated with FBProperties and is about to be used for rendering
+	virtual void OnPropertySchemeAssociated(const ShaderPropertyScheme* newScheme) {}
+
 public:
 	
 	const ShaderPropertyScheme* GetPropertySchemePtr() const { return mRenderPropertyScheme.get(); }

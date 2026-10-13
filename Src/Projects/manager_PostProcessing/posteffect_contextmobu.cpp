@@ -150,24 +150,13 @@ bool PostEffectContextMoBu::ReloadShaders()
 	}
 
 	// user effects
+	// NOTE: a broken user shader must not stop the post processing as a whole, that effect reports an error
+	//  in its Status property and is skipped in the chain. The request flag is always consumed here,
+	//  otherwise the context would be waiting for the reload forever.
 
 	if (postProcessData->IsExternalReloadRequested())
 	{
-		for (int i = 0; i < postProcessData->UserEffects.GetCount(); ++i)
-		{
-			FBComponent* component = postProcessData->UserEffects.GetAt(i);
-			EffectShaderUserObject* userEffect = FBCast<EffectShaderUserObject>(component);
-			if (userEffect)
-			{
-				if (userEffect->IsNeedToReloadShaders())
-				{
-					if (!userEffect->DoReloadShaders())
-					{
-						return false;
-					}
-				}
-			}
-		}
+		postProcessData->ReloadUserEffects();
 	}
 
 	return true;

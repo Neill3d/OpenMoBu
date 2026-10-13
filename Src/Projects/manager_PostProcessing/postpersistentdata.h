@@ -538,6 +538,9 @@ public:
 	bool IsNeedToReloadShaders(bool doPropagateToUserEffects=true);
 	bool IsExternalReloadRequested() const;
 	void DoReloadShaders();
+	// reload connected user effects that have a pending request.
+	// A failed effect doesn't stop others, it reports its state in the Status property and is skipped in the chain
+	void ReloadUserEffects();
 
 	void SetPreviewTextureId(unsigned int id, double ratio, 
 		unsigned int w, unsigned int h, int uncomporessSize, 

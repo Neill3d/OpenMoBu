@@ -16,6 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "posteffect_shader.h"
 
 #include "glslShaderProgram.h"
+#include <atomic>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -80,6 +81,16 @@ enum EEffectResolution
 	eEffectResolutionDownscale4x
 };
 
+/// result of the last shader loading attempt.
+/// It is written by the thread that loads shaders (render thread) and read from UI, so it is kept as a plain value
+enum class EEffectLoadState : int
+{
+	NotLoaded,		//!< a shader was never loaded
+	Loaded,			//!< a shader is compiled and a property scheme is built
+	FileNotFound,	//!< vertex or fragment file is not defined or could not be located
+	LoadFailed		//!< shader files are found, but a compile or link has failed
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// <summary>
 /// internal buffer shader that is going to be conneced to an internal post effect 
@@ -131,6 +142,8 @@ protected:
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
 	virtual void OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) override;
+	//! the new scheme is ready and associated with FBProperties, here we know how many problems have been found
+	virtual void OnPropertySchemeAssociated(const ShaderPropertyScheme* newScheme) override;
 
 };
 
@@ -174,6 +187,7 @@ public: // PROPERTIES
 	FBPropertyAction			ReloadShaders;
 	FBPropertyAction			OpenFolder; // open a folder where the shader file is located (if found)
 	FBPropertyAction			ExportShaderScheme;
+	FBPropertyString			Status; //!< read only, a short text about the shader state: Not connected, Not loaded, Reload pending, Ok, Error
 	FBPropertyBool				GenerateMipMaps;
 	FBPropertyAction			ResetToDefault;
 
@@ -199,6 +213,18 @@ public:
 	bool IsNeedToReloadShaders() const { return mReloadShaders; }
 	void SetReloadShadersState(bool state) { mReloadShaders = state; }
 
+	// the shader loading result, thread-safe. Shown to the user in the Status property
+	EEffectLoadState GetLoadState() const { return mLoadState.load(std::memory_order_acquire); }
+	void SetLoadState(EEffectLoadState state) { mLoadState.store(state, std::memory_order_release); }
+	// number of non-critical problems found while the property scheme was made (skipped uniforms, etc.)
+	int GetWarningCount() const { return mWarningCount.load(std::memory_order_acquire); }
+	void SetWarningCount(int count) { mWarningCount.store(count, std::memory_order_release); }
+
+	// is the effect (directly or through other effects) connected to a post processing data
+	bool IsConnectedToPostProcessing(int depth = 0);
+	// compose a text for the Status property
+	std::string ComposeStatusText();
+
 	PostEffectBufferShader* GetUserShaderPtr() const { return mUserShader.get(); }
 
 	// recalculate width and height based on shader resolution option
@@ -210,7 +236,11 @@ protected:
 	friend class UserBufferShader;
 
     FBString			mText;
-	bool				mReloadShaders{ false };
+	// NOTE: a new effect is waiting for the first load. The flag is written from the render thread and read from UI
+	std::atomic<bool>	mReloadShaders{ true };
+	std::atomic<EEffectLoadState>	mLoadState{ EEffectLoadState::NotLoaded };
+	std::atomic<int>	mWarningCount{ 0 };
+	std::string			mStatusText; //!< storage for a string that is returned from the Status property getter
 	
 	std::unique_ptr<PostEffectBufferShader>		mUserShader;
 	
@@ -232,4 +262,7 @@ protected:
 	static void ActionReloadShaders(HIObject pObject, bool value);
 	static void ActionOpenFolder(HIObject pObject, bool value);
 	static void ActionExportShaderScheme(HIObject pObject, bool value);
+
+	//! a getter of the read only Status property
+	static const char* GetStatusText(HIObject pObject);
 };

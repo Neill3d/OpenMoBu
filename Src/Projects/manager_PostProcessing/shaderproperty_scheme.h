@@ -95,6 +95,10 @@ struct ShaderPropertyScheme
 
 	size_t GetNumberOfProperties() const { return properties.size(); }
 
+	// non-critical problems found while the scheme was made (skipped uniforms, not associated properties, etc.)
+	int GetNumberOfWarnings() const { return warningCount; }
+	void AddWarning() { ++warningCount; }
+
 	const std::vector<ShaderProperty>& GetProperties() const { return properties; }
 
 	void	ResetSystemUniformLocations();
@@ -126,5 +130,6 @@ protected:
 
 private:
 	std::vector<ShaderProperty> properties;
+	int warningCount{ 0 };
 	std::array<GLint, static_cast<int>(ShaderSystemUniform::COUNT)> systemUniformLocations;
 };
