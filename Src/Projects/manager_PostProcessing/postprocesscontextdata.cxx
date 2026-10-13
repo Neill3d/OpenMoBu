@@ -281,22 +281,27 @@ bool PostProcessContextData::PrepareEachPanePersistanceData()
         mRenderPanes[i].hasPostProcess = false;
     }
 
-    // find a global settings (without camera attachments)
-    PostPersistentData* pGlobalData = nullptr;
-
-    for (int i = 0, count = pScene->UserObjects.GetCount(); i < count; ++i)
+    // find a global settings (without camera attachments) for a given camera,
+    //  the last one in the scene has a priority, settings that ignore the camera are skipped
+    auto findGlobalData = [pScene](FBCamera* pCamera) -> PostPersistentData*
     {
-        if (FBIS(pScene->UserObjects[i], PostPersistentData))
+        for (int i = pScene->UserObjects.GetCount() - 1; i >= 0; --i)
         {
-            FBUserObject* pUserObject = pScene->UserObjects[i];
-            PostPersistentData* pData = static_cast<PostPersistentData*>(pUserObject);
-
-            if (pData->Active && (!pData->UseCameraObject || !pData->Camera.GetCount()))
+            if (FBIS(pScene->UserObjects[i], PostPersistentData))
             {
-                pGlobalData = pData;
+                FBUserObject* pUserObject = pScene->UserObjects[i];
+                PostPersistentData* pData = static_cast<PostPersistentData*>(pUserObject);
+
+                if (pData->Active
+                    && (!pData->UseCameraObject || !pData->Camera.GetCount())
+                    && !pData->IsCameraIgnored(pCamera))
+                {
+                    return pData;
+                }
             }
         }
-    }
+        return nullptr;
+    };
 
     // looking for exclusing values
 
@@ -312,7 +317,8 @@ bool PostProcessContextData::PrepareEachPanePersistanceData()
                 {
                     PostPersistentData* pData = static_cast<PostPersistentData*>(pdst);
 
-                    if (pData->Active && pData->UseCameraObject)
+                    // NOTE: an ignored camera is skipped by this settings, global settings could be used for it instead
+                    if (pData->Active && pData->UseCameraObject && !pData->IsCameraIgnored(pPaneCamera))
                     {
                         mRenderPanes[i].data = pData;
                         mRenderPanes[i].hasPostProcess = true;
@@ -323,10 +329,13 @@ bool PostProcessContextData::PrepareEachPanePersistanceData()
         }
 
         // if exclusive pane settings is not assign, then try to assign global one
-        if (!mRenderPanes[i].data && mRenderPanes[i].hasValidCamera && pGlobalData)
+        if (!mRenderPanes[i].data && mRenderPanes[i].hasValidCamera)
         {
-            mRenderPanes[i].data = pGlobalData;
-            mRenderPanes[i].hasPostProcess = true;
+            if (PostPersistentData* pGlobalData = findGlobalData(mRenderPanes[i].camera))
+            {
+                mRenderPanes[i].data = pGlobalData;
+                mRenderPanes[i].hasPostProcess = true;
+            }
         }
     }
 

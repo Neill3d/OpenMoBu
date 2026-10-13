@@ -232,6 +232,7 @@ void PostPersistentData::AddPropertiesToPropertyViewManager()
 	AddPropertyView("Active", "");
 	AddPropertyView("Use Camera Object", "");
 	AddPropertyView("Camera", "");
+	AddPropertyView("Ignored Cameras", "");
 	AddPropertyView("Active", "");
 	AddPropertyView("Reload Shaders", "");
 	AddPropertyView("Reset To Default", "");
@@ -515,6 +516,7 @@ bool PostPersistentData::FBCreate()
 
 	FBPropertyPublish(this, UseCameraObject, "Use Camera Object", nullptr, nullptr);
 	FBPropertyPublish(this, Camera, "Camera", nullptr, nullptr);
+	FBPropertyPublish(this, IgnoredCameras, "Ignored Cameras", nullptr, nullptr);
 
 	FBPropertyPublish(this, ReloadShaders, "Reload Shaders", nullptr, ActionReloadShaders);
 	FBPropertyPublish(this, GenerateMipMaps, "Generate MipMaps", nullptr, nullptr);
@@ -802,6 +804,9 @@ bool PostPersistentData::FBCreate()
 	//
 	Camera.SetFilter(FBCamera::GetInternalClassId());
 	Camera.SetSingleConnect(false);
+
+	IgnoredCameras.SetFilter(FBCamera::GetInternalClassId());
+	IgnoredCameras.SetSingleConnect(false);
 
 	//
 	FishEyeAmount.SetMinMax(0.0, 100.0);
@@ -1386,6 +1391,10 @@ void PostPersistentData::CopyValues(PostPersistentData *pOther)
 	for (int i = 0, count = pOther->Camera.GetCount(); i < count; ++i)
 		Camera.Add(pOther->Camera.GetAt(i));
 
+	IgnoredCameras.Clear();
+	for (int i = 0, count = pOther->IgnoredCameras.GetCount(); i < count; ++i)
+		IgnoredCameras.Add(pOther->IgnoredCameras.GetAt(i));
+
 	FlareLight.Clear();
 	for (int i = 0, count = pOther->FlareLight.GetCount(); i < count; ++i)
 		FlareLight.Add(pOther->FlareLight.GetAt(i));
@@ -1393,6 +1402,19 @@ void PostPersistentData::CopyValues(PostPersistentData *pOther)
 	FocusObject.Clear();
 	for (int i = 0, count = pOther->FocusObject.GetCount(); i < count; ++i)
 		FocusObject.Add(pOther->FocusObject.GetAt(i));
+}
+
+bool PostPersistentData::IsCameraIgnored(FBCamera* pCamera)
+{
+	if (!pCamera)
+		return false;
+
+	for (int i = 0, count = IgnoredCameras.GetCount(); i < count; ++i)
+	{
+		if (pCamera == IgnoredCameras.GetAt(i))
+			return true;
+	}
+	return false;
 }
 
 void PostPersistentData::ConnectCamera(FBCamera *pCamera)

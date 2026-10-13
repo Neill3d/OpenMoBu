@@ -226,6 +226,8 @@ public:
 	void OnUIIdle(HISender pSender, HKEvent pEvent);
 
 	void ConnectCamera(FBCamera *pCamera);
+	// true if the camera is in the IgnoredCameras list
+	bool IsCameraIgnored(FBCamera* pCamera);
 	void ConnectLight(FBLight *pLight);
 	void ConnectFocus(FBModelNull *pNull);
 
@@ -276,6 +278,10 @@ public: // PROPERTIES
 	// make effect local for a specified camera (override global effect)
 	FBPropertyBool				UseCameraObject;
 	FBPropertyListObject		Camera;
+	// cameras that this post process must skip. It wins over the Camera list, so a camera that is in both lists is skipped.
+	// NOTE: unlike Camera, it is not mirrored into a component connection (see PlugNotify),
+	//  otherwise the camera would be treated as a target of this post process
+	FBPropertyListObject		IgnoredCameras;
 
 	FBPropertyAction			ReloadShaders;
 	FBPropertyBool				GenerateMipMaps;
