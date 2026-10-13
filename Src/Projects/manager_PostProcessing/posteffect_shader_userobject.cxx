@@ -22,6 +22,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "postpersistentdata.h"
 #include "posteffect_buffers.h"
 #include <hashUtils.h>
+#include "texture_usereffect.h"
 
 // custom assets inserting
 
@@ -196,6 +197,13 @@ bool EffectShaderUserObject::RequestShadersReload()
 				persistentData->RequestShadersReload(isExternal, propagateToCustomEffects);
 			}
 		}
+		else if (FBIS(dstPlug, TextureUserEffect))
+		{
+			if (TextureUserEffect* texture = static_cast<TextureUserEffect*>(dstPlug))
+			{
+				texture->OnUserEffectChanged();
+			}
+		}
 		else if (FBIS(dstPlug, EffectShaderUserObject))
 		{
 			if (EffectShaderUserObject* effectShaderObj = static_cast<EffectShaderUserObject*>(dstPlug))
@@ -300,7 +308,7 @@ bool EffectShaderUserObject::IsConnectedToPostProcessing(int depth)
 	{
 		FBPlug* dstPlug = GetDst(i);
 
-		if (FBIS(dstPlug, PostPersistentData))
+		if (FBIS(dstPlug, PostPersistentData) || FBIS(dstPlug, TextureUserEffect))
 		{
 			return true;
 		}

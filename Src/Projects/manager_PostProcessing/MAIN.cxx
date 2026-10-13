@@ -50,6 +50,9 @@ FBLibraryDeclare( manager_postprocessing )
 	FBLibraryRegister(Manip_PostProcessing);
 	
 	FBLibraryRegister(FXMaskingShader);
+
+	FBLibraryRegisterStorable(TextureUserEffect);
+	FBLibraryRegisterShadingElement(TextureUserEffect);
 }
 FBLibraryDeclareEnd;
 
