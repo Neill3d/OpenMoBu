@@ -21,7 +21,12 @@ float drawCircle(vec2 center, float radius)
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     uv = fragCoord.xy / iResolution.x;
-    
+
+    // uv is normalized by the width, so the top of the view is at iResolution.y / iResolution.x
+    //  (0.5625 for 16:9, but 1.1+ for a tall pane). The snowflakes must be spawned over the whole height,
+    //  otherwise only the bottom part of a view is covered. A small margin lets flakes enter from outside the view.
+    float top = iResolution.y / iResolution.x + 0.03;
+
     fragColor = texture(iChannel0, texCoord);
 
     //fragColor = vec4(0.808, 0.89, 0.918, 1.0);
@@ -31,7 +36,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     {
         j = float(i);
         float speed = 0.3+rnd(cos(j))*(0.7+0.5*cos(j/(float(_SnowflakeAmount)*0.25)));
-        vec2 center = vec2((0.25-uv.y)*_BlizardFactor+rnd(j)+0.1*cos(iTime+sin(j)), mod(sin(j)-speed*(iTime*1.5*(0.1+_BlizardFactor)), 0.65));
+        vec2 center = vec2((0.25-uv.y)*_BlizardFactor+rnd(j)+0.1*cos(iTime+sin(j)), mod(sin(j)-speed*(iTime*1.5*(0.1+_BlizardFactor)), top));
         fragColor += vec4(0.09*drawCircle(center, 0.001+speed*0.012));
     }
 }
