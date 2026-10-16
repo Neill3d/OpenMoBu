@@ -192,7 +192,8 @@ public:
 
 protected:
 
-	void	BindSystemUniforms(const PostEffectContextProxy* effectContext) const;
+	// upload system uniforms (resolution, time, camera, etc.) of the bound program, render thread only
+	void	BindSystemUniforms(const PostEffectRenderContext& renderContext, const PostEffectContextProxy* effectContext) const;
 	void	TryUseGlobalMasking(const PostEffectContextProxy* effectContext) const;
 
 	inline GLint GetSystemUniformLoc(ShaderSystemUniform u) const noexcept {

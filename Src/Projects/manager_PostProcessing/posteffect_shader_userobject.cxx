@@ -738,7 +738,7 @@ void UserBufferShader::OnPropertySchemeAssociated(const ShaderPropertyScheme* ne
 //! grab from UI all needed parameters to update effect state (uniforms) during evaluation
 bool UserBufferShader::OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const
 {
-	BindSystemUniforms(effectContext);
+	// NOTE: system uniforms are uploaded in the render thread, see PostEffectBufferShader::Render
 	return true;
 }
 

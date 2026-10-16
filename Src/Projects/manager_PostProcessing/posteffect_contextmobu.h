@@ -101,4 +101,5 @@ private:
 	void UpdateContextParameters(PostEffectContextProxy::Cache& cacheOut, FBCamera* cameraIn, FBEvaluateInfo* pEvaluateInfoIn, const PostEffectContextProxy::Parameters& parametersIn);
 
 	void PrepareCache(PostEffectContextProxy::Cache& cacheOut, FBCamera* camera, FBEvaluateInfo* pEvaluateInfoIn);
+	static void PrepareDate(PostEffectContextProxy::Cache& cacheOut);
 };

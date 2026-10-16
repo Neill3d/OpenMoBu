@@ -199,48 +199,13 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 	bool _useLensBlur = false;
 	float _lensBlurScale = 0.0f;
 
-	auto fn_calcFocalDistance = [](FBModel* camera, FBModel* pInterest)
-		{
-			FBMatrix modelView, modelViewI;
-
-			static_cast<FBModel*>(camera)->GetMatrix(modelView);
-			FBMatrixInverse(modelViewI, modelView);
-
-			FBVector3d lPos;
-			pInterest->GetVector(lPos);
-
-			FBTVector p(lPos[0], lPos[1], lPos[2], 1.0);
-			FBVectorMatrixMult(p, modelViewI, p);
-			
-			return p[0];
-		};
-
 	if (pData->UseCameraDOFProperties)
 	{
-		_focalDistance = camera->FocusSpecificDistance;
+		// focus distance and lens values are resolved once per frame in the context cache (shared with system uniforms)
+		const CameraLens& lens = effectContext->GetCameraLens();
+		_focalDistance = lens.focusDistance;
 
-		FBCameraFocusDistanceSource cameraFocusDistanceSource;
-		camera->FocusDistanceSource.GetData(&cameraFocusDistanceSource, sizeof(FBCameraFocusDistanceSource), effectContext->GetEvaluateInfo());
-		
-		FBModel* pInterest = nullptr;
-		switch (cameraFocusDistanceSource)
-		{
-		case kFBFocusDistanceCameraInterest: pInterest = camera->Interest;
-			break;
-		case kFBFocusDistanceModel: pInterest = camera->FocusModel;
-			break;
-		default:
-			break;
-		}
-		
-		if (pInterest)
-		{
-			// Dont write to property
-			// FocalDistance = dist;
-			_focalDistance = fn_calcFocalDistance(camera, pInterest);
-		}
-
-		const double focusAngle = camera->FocusAngle;
+		const double focusAngle = lens.focusAngle;
 		if (pData->LegacyCameraFocusAngle)
 		{
 			// legacy: focus angle is assigned to the focal range as is, without any calculations,
@@ -257,22 +222,17 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 			// the shader turns the width into a blur amount, the Blur Radius property is a maximum reach of a ring
 			// a focal length in pixels comes from the projection matrix of the camera (an orthogonal one has no blur)
 			constexpr double kApertureSizePerDegree = 0.854; // scene units per degree of the focus angle
-			
-			const double* projection = effectContext->GetProjectionMatrix();
-			const double focalLengthInPixels = (projection && !effectContext->IsCameraOrthogonal())
-				? 0.5 * static_cast<double>(effectContext->GetViewHeight()) * projection[5]
-				: 0.0;
 
 			_useLensBlur = true;
-			_lensBlurScale = static_cast<float>(std::max(focusAngle, 0.0) * kApertureSizePerDegree * std::max(focalLengthInPixels, 0.0));
+			_lensBlurScale = static_cast<float>(std::max(focusAngle, 0.0) * kApertureSizePerDegree * lens.focalLengthPx);
 		}
 	}
 	else if (pData->AutoFocus && pData->FocusObject.GetCount() > 0)
 	{
 		// Dont write to property
 		// FocalDistance = dist;
-		FBModel* pModel = (FBModel*)pData->FocusObject.GetAt(0);
-		_focalDistance = fn_calcFocalDistance(camera, pModel);
+		FBModel* pModel = static_cast<FBModel*>(pData->FocusObject.GetAt(0));
+		_focalDistance = ComputeViewDepth(effectContext->GetModelViewMatrix(), pModel, effectContext->GetEvaluateInfo());
 	}
 
 	ShaderPropertyWriter writer(this, effectContext);

@@ -188,12 +188,28 @@ bool PostEffectContextMoBu::Render(FBEvaluateInfo* pEvaluateInfoIn, PostEffectBu
 void PostEffectContextMoBu::PrepareCache(PostEffectContextProxy::Cache& cacheOut, FBCamera* camera, FBEvaluateInfo* pEvaluateInfoIn)
 {
 	if (!camera)
+	{
+		// NOTE: the cache is double buffered, reset camera values to "no camera" defaults
+		//  instead of keeping the values from two frames ago
+		PostEffectContextProxy::Cache defaults;
+		defaults.parameters = cacheOut.parameters;
+		defaults.userObject = cacheOut.userObject;
+		cacheOut = defaults;
+		PrepareDate(cacheOut);
 		return;
-	
-	cacheOut.zNear = static_cast<float>(camera->NearPlaneDistance);
-	cacheOut.zFar = static_cast<float>(camera->FarPlaneDistance);
-		
-	cacheOut.isCameraOrtho = (camera->Type == FBCameraType::kFBCameraTypeOrthogonal);
+	}
+
+	PrepareDate(cacheOut);
+
+	double zNear{ 1.0 }, zFar{ 1000.0 };
+	camera->NearPlaneDistance.GetData(&zNear, sizeof(double), pEvaluateInfoIn);
+	camera->FarPlaneDistance.GetData(&zFar, sizeof(double), pEvaluateInfoIn);
+	cacheOut.zNear = static_cast<float>(zNear);
+	cacheOut.zFar = static_cast<float>(zFar);
+
+	FBCameraType cameraType{ FBCameraType::kFBCameraTypePerspective };
+	camera->Type.GetData(&cameraType, sizeof(FBCameraType), pEvaluateInfoIn);
+	cacheOut.isCameraOrtho = (cameraType == FBCameraType::kFBCameraTypeOrthogonal);
 
 	camera->GetVector(cacheOut.cameraPosition, kModelTranslation, true, pEvaluateInfoIn);
 	for (int i = 0; i < 3; ++i)
@@ -213,7 +229,13 @@ void PostEffectContextMoBu::PrepareCache(PostEffectContextProxy::Cache& cacheOut
 		cacheOut.invModelViewProjF[i] = static_cast<float>(cacheOut.invModelViewProj[i]);
 		cacheOut.prevModelViewProjF[i] = static_cast<float>(cacheOut.prevModelViewProj[i]);
 	}
-		
+
+	ComputeCameraLens(cacheOut.cameraLens, camera, cacheOut.modelView, cacheOut.projection,
+		cacheOut.parameters.h, cacheOut.isCameraOrtho, pEvaluateInfoIn);
+}
+
+void PostEffectContextMoBu::PrepareDate(PostEffectContextProxy::Cache& cacheOut)
+{
 	std::time_t now = std::time(nullptr);
 	std::tm localTime;
 	localtime_s(&localTime, &now);  // now should be of type std::time_t

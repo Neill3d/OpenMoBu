@@ -87,6 +87,8 @@ set (POSTEFFECTSCOMMON
     posteffect_contextmobu.h
     posteffect_buffers.h
     posteffect_buffers.cxx
+    posteffect_cameralens.h
+    posteffect_cameralens.cpp
     posteffect_shader.h
     posteffect_shader.cxx
     posteffect_rendercontext.h

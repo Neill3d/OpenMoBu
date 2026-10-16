@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <magic_enum.hpp>
 
 #include <fstream>
+#include <iterator>
 
 namespace _ShaderPropertySchemeInternal
 {
@@ -102,37 +103,63 @@ void ShaderPropertyScheme::ResetSystemUniformLocations()
 	systemUniformLocations.fill(-1);
 }
 
-const char* ShaderPropertyScheme::gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)] =
+namespace _ShaderPropertySchemeInternal
 {
-	"inputSampler", //!< this is an input image that we read from
-	"iChannel0", //!< this is an input image, compatible with shadertoy
-	"depthSampler", //!< this is a scene depth texture sampler in case shader will need it for processing
-	"linearDepthSampler",
-	"maskSampler", //!< binded mask for a shader processing (system run-time texture)
-	"normalSampler", //!< binded World-space normals texture (system run-time texture)
+	// NOTE: the order must match the ShaderSystemUniform enum
+	constexpr SystemUniformDesc gSystemUniforms[] =
+	{
+		{ "inputSampler", GL_SAMPLER_2D }, //!< this is an input image that we read from
+		{ "iChannel0", GL_SAMPLER_2D }, //!< this is an input image, compatible with shadertoy
+		{ "depthSampler", GL_SAMPLER_2D }, //!< this is a scene depth texture sampler in case shader will need it for processing
+		{ "linearDepthSampler", GL_SAMPLER_2D },
+		{ "maskSampler", GL_SAMPLER_2D }, //!< binded mask for a shader processing (system run-time texture)
+		{ "normalSampler", GL_SAMPLER_2D }, //!< binded World-space normals texture (system run-time texture)
 
-	"useMasking", //!< float uniform [0; 1] to define if the mask have to be used
-	"upperClip", //!< this is an upper clip image level. defined in a texture coord space to skip processing
-	"lowerClip", //!< this is a lower clip image level. defined in a texture coord space to skip processing
+		{ "useMasking", GL_FLOAT }, //!< float uniform [0; 1] to define if the mask have to be used
+		{ "upperClip", GL_FLOAT }, //!< this is an upper clip image level. defined in a texture coord space to skip processing
+		{ "lowerClip", GL_FLOAT }, //!< this is a lower clip image level. defined in a texture coord space to skip processing
 
-	"gResolution", //!< vec2 that contains processing absolute resolution, like 1920x1080
-	"iResolution", //!< vec2 image absolute resolution, compatible with shadertoy naming
-	"uInvResolution", //!< inverse resolution
-	"texelSize", //!< vec2 of a texel size, computed as 1/resolution
+		{ "gResolution", GL_FLOAT_VEC2 }, //!< vec2 that contains processing absolute resolution, like 1920x1080
+		{ "iResolution", GL_FLOAT_VEC2 }, //!< vec2 image absolute resolution, compatible with shadertoy naming
+		{ "uInvResolution", GL_FLOAT_VEC2 }, //!< inverse resolution
+		{ "texelSize", GL_FLOAT_VEC2 }, //!< vec2 of a texel size, computed as 1/resolution
 
-	"iTime", //!< compatible with shadertoy, float, shader playback time (in seconds)
-	"iDate",  //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
+		{ "iTime", GL_FLOAT }, //!< compatible with shadertoy, float, shader playback time (in seconds)
+		{ "iDate", GL_FLOAT_VEC4 },  //!< compatible with shadertoy, vec4, (year, month, day, time in seconds)
 
-	"cameraPosition", //!< world space camera position
-	"modelView", //!< current camera modelview matrix
-	"projection", //!< current camera projection matrix
-	"modelViewProj", //!< current camera modelview-projection matrix
-	"invModelViewProj",
-	"prevModelViewProj",
+		{ "cameraPosition", GL_FLOAT_VEC3 }, //!< world space camera position
+		{ "modelView", GL_FLOAT_MAT4 }, //!< current camera modelview matrix
+		{ "projection", GL_FLOAT_MAT4 }, //!< current camera projection matrix
+		{ "modelViewProj", GL_FLOAT_MAT4 }, //!< current camera modelview-projection matrix
+		{ "invModelViewProj", GL_FLOAT_MAT4 },
+		{ "prevModelViewProj", GL_FLOAT_MAT4 },
 
-	"zNear", //!< camera near plane
-	"zFar"	//!< camera far plane
+		{ "zNear", GL_FLOAT }, //!< camera near plane
+		{ "zFar", GL_FLOAT },	//!< camera far plane
+
+		{ "cameraFocusDistance", GL_FLOAT }, //!< camera focus distance in scene units
+		{ "cameraFocusAngle", GL_FLOAT }, //!< camera focus angle in degrees
+		{ "cameraFocalLength", GL_FLOAT }, //!< camera focal length in mm
+		{ "cameraFov", GL_FLOAT }, //!< camera FieldOfView property in degrees
+		{ "cameraFocalLengthPx", GL_FLOAT }, //!< focal length in pixels of the view height
+		{ "cameraIsOrtho", GL_FLOAT } //!< 1 for an orthogonal camera
+	};
+
+	static_assert(std::size(gSystemUniforms) == static_cast<size_t>(ShaderSystemUniform::COUNT),
+		"gSystemUniforms must have an entry for every ShaderSystemUniform");
 };
+
+const SystemUniformDesc& ShaderPropertyScheme::GetSystemUniformDesc(ShaderSystemUniform u) noexcept
+{
+	return _ShaderPropertySchemeInternal::gSystemUniforms[static_cast<int>(u)];
+}
+
+bool ShaderPropertyScheme::IsSystemUniformTypeCompatible(ShaderSystemUniform u, GLenum type) noexcept
+{
+	const GLenum expectedType = GetSystemUniformDesc(u).type;
+	return (type == expectedType)
+		|| (expectedType == GL_FLOAT && type == GL_BOOL);
+}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -415,7 +442,18 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 		const bool isSystemUniform = (sysId >= 0);
 		if (isSystemUniform)
 		{
-			SetSystemUniformLoc(static_cast<ShaderSystemUniform>(sysId), location);
+			const ShaderSystemUniform systemUniform = static_cast<ShaderSystemUniform>(sysId);
+			if (IsSystemUniformTypeCompatible(systemUniform, type))
+			{
+				SetSystemUniformLoc(systemUniform, location);
+			}
+			else
+			{
+				// a system value can't be uploaded into a uniform of another type, leave the uniform as is
+				LOGE("[ShaderPropertyScheme] system uniform %s has an unexpected type, skip it\n", uniformName);
+				AddWarning();
+				continue;
+			}
 		}
 
 		const auto shaderType = UniformTypeToShaderPropertyType(type);
@@ -496,9 +534,11 @@ EPropertyType ShaderPropertyScheme::UniformTypeToShaderPropertyType(GLenum type)
 
 int ShaderPropertyScheme::FindSystemUniform(const char* uniformName) const
 {
+	using namespace _ShaderPropertySchemeInternal;
+
 	for (int i = 0; i < static_cast<int>(ShaderSystemUniform::COUNT); ++i)
 	{
-		if (std::strcmp(uniformName, gSystemUniformNames[i]) == 0)
+		if (std::strcmp(uniformName, gSystemUniforms[i].name) == 0)
 			return i;
 	}
 	return -1;

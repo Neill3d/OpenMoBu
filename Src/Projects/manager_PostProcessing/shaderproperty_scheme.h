@@ -41,11 +41,11 @@ enum class ShaderSystemUniform : uint8_t
 	INPUT_MASK_SAMPLER_2D, //!< binded mask for a shader processing
 	WORLD_NORMAL_SAMPLER_2D,
 
-	USE_MASKING, //!< float uniform [0; 1] to define if the mask have to be used
-	UPPER_CLIP, //!< this is an upper clip image level. defined in a texture coord space to skip processing
-	LOWER_CLIP, //!< this is a lower clip image level. defined in a texture coord space to skip processing
+	USE_MASKING, //!< float uniform [0; 1] to define if the mask have to be used (value comes from the common property, see MakeCommonProperties)
+	UPPER_CLIP, //!< this is an upper clip image level. defined in a texture coord space to skip processing (value comes from the common property)
+	LOWER_CLIP, //!< this is a lower clip image level. defined in a texture coord space to skip processing (value comes from the common property)
 
-	RESOLUTION, //!< vec2 that contains processing absolute resolution, like 1920x1080
+	RESOLUTION, //!< vec2 that contains processing absolute resolution (size of the render target), like 1920x1080
 	iRESOLUTION, //!< vec2 absolute resolution, compatible with shadertoy
 	INV_RESOLUTION, //!< inverse resolution
 	TEXEL_SIZE, //!< vec2 of a texel size, computed as 1/resolution
@@ -64,7 +64,21 @@ enum class ShaderSystemUniform : uint8_t
 	ZNEAR, //!< camera near plane
 	ZFAR,	//!< camera far plane
 
+	CAMERA_FOCUS_DISTANCE,	//!< float, camera focus distance in scene units (specific distance, interest or focus model)
+	CAMERA_FOCUS_ANGLE,		//!< float, camera focus angle in degrees
+	CAMERA_FOCAL_LENGTH,	//!< float, camera focal length in mm
+	CAMERA_FOV,				//!< float, camera FieldOfView property in degrees
+	CAMERA_FOCAL_LENGTH_PX,	//!< float, focal length in pixels of the view height, 0 for an orthogonal camera
+	CAMERA_IS_ORTHO,		//!< float [0; 1], 1 for an orthogonal camera
+
 	COUNT
+};
+
+// name and expected glsl type of a system uniform
+struct SystemUniformDesc
+{
+	const char* name;
+	GLenum		type;
 };
 
 // result of glsl uniforms reflection
@@ -120,13 +134,11 @@ struct ShaderPropertyScheme
 	int		FindSystemUniform(const char* uniformName) const; // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
 	bool	IsInternalGLSLUniform(const char* uniformName) const;
 
+	static const SystemUniformDesc& GetSystemUniformDesc(ShaderSystemUniform u) noexcept;
+	// a glsl bool is accepted where a float is expected (flags like useMasking)
+	static bool IsSystemUniformTypeCompatible(ShaderSystemUniform u, GLenum type) noexcept;
+
 	EPropertyType UniformTypeToShaderPropertyType(GLenum type) const;
-
-protected:
-
-	// system uniforms
-
-	static const char* gSystemUniformNames[static_cast<int>(ShaderSystemUniform::COUNT)];
 
 private:
 	std::vector<ShaderProperty> properties;

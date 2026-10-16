@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <array>
 #include <mobu_logging.h>
 #include "shaderproperty_storage.h"
+#include "posteffect_cameralens.h"
 
 // forward
 class PostPersistentData;
@@ -121,6 +122,9 @@ public:
 		float cameraPositionF[3]{ 0.0f, 0.0f, 0.0f };
 		float iDate[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
 
+		// camera lens data, focus, fov, etc. (shared by system uniforms and effects)
+		CameraLens cameraLens;
+
 		bool isCameraOrtho{ false };
 	};
 
@@ -163,6 +167,9 @@ public:
 	[[nodiscard]] float GetCameraFarDistance() const noexcept { return cache.zFar; }
 
 	[[nodiscard]] bool IsCameraOrthogonal() const noexcept { return cache.isCameraOrtho; }
+
+	// focus distance, focus angle, focal length, fov of the current camera
+	[[nodiscard]] const CameraLens& GetCameraLens() const noexcept { return cache.cameraLens; }
 
 	[[nodiscard]] double* GetModelViewMatrix() const noexcept { return cache.modelView; }
 	[[nodiscard]] const float* GetModelViewMatrixF() const noexcept { return cache.modelViewF; }

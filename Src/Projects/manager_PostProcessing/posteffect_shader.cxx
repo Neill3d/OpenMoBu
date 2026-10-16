@@ -607,7 +607,7 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 	PostEffectBuffers* buffers = renderContext.buffers;
 	
 	// system uniforms, properties uniforms, could trigger other effects to render
-	BindSystemUniforms(effectContext);
+	BindSystemUniforms(renderContext, effectContext);
 
 	if (GetNumberOfPasses() == 1)
 	{
@@ -756,43 +756,13 @@ void PostEffectBufferShader::AutoUploadUniforms(const PostEffectRenderContext& r
 	renderContext.UploadUniforms(programId, readMap, skipTextureProperties);
 }
 
-void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* effectContext) const
+void PostEffectBufferShader::BindSystemUniforms(const PostEffectRenderContext& renderContext, const PostEffectContextProxy* effectContext) const
 {
-	if (!GetShaderPtr())
+	if (!GetShaderPtr() || !effectContext)
 		return;
 
-	// prepare use masking value
-	/*
-	bool useMasking = false;
-
-	auto fn_lookForMaskingFlag = [](FBComponent* component, const char* propertyName) -> bool {
-		if (FBProperty* prop = component->PropertyList.Find(propertyName))
-		{
-			bool bvalue{ false };
-			prop->GetData(&bvalue, sizeof(bool));
-			return bvalue;
-		}
-		return false;
-	};
-	
-	if (GetOwner())
-	{
-		useMasking |= fn_lookForMaskingFlag(GetOwner(), GetUseMaskingPropertyName());
-	}
-	else if (effectContext->GetPostProcessData())
-	{
-		if (effectContext->GetPostProcessData()->EnableMaskingForAllEffects)
-		{
-			useMasking = true;
-		}
-		else
-		{
-			useMasking |= fn_lookForMaskingFlag(effectContext->GetPostProcessData(), GetUseMaskingPropertyName());
-		}
-	}
-	*/
-	// bind uniforms
-	// TODO: should we replace glProgramUniform with glUniform ?!
+	// NOTE: useMasking, upperClip and lowerClip are common properties (see MakeCommonProperties),
+	//  their values are uploaded with the other property values in AutoUploadUniforms
 
 	const GLuint programId = GetShaderPtr()->GetProgramObj();
 
@@ -820,42 +790,25 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 	{
 		glProgramUniform1i(programId, loc, CommonEffect::MaskSamplerSlot);
 	}
-	/*
-	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::USE_MASKING); loc >= 0)
-	{
-		glProgramUniform1f(programId, loc, (useMasking) ? 1.0f : 0.0f);
-	}
-	*/
-	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::UPPER_CLIP); loc >= 0)
-	{
-		// NOTE: there is no post process data when an effect is rendered outside of the effects chain
-		const PostPersistentData* postData = effectContext->GetPostProcessData();
-		const double value = postData ? static_cast<double>(postData->UpperClip) : 0.0;
-		glProgramUniform1f(programId, loc, 0.01f * static_cast<float>(value));
-	}
-
-	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::LOWER_CLIP); loc >= 0)
-	{
-		const PostPersistentData* postData = effectContext->GetPostProcessData();
-		const double value = postData ? static_cast<double>(postData->LowerClip) : 0.0;
-		glProgramUniform1f(programId, loc, 1.0f - 0.01f * static_cast<float>(value));
-	}
+	// resolution of the render target, it differs from the view size for downscaled effects and internal buffers
+	const float width = static_cast<float>(std::max(1, renderContext.width));
+	const float height = static_cast<float>(std::max(1, renderContext.height));
 
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::RESOLUTION); loc >= 0)
 	{
-		glProgramUniform2f(programId, loc, static_cast<float>(effectContext->GetViewWidth()), static_cast<float>(effectContext->GetViewHeight()));
+		glProgramUniform2f(programId, loc, width, height);
 	}
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::iRESOLUTION); loc >= 0)
 	{
-		glProgramUniform2f(programId, loc, static_cast<float>(effectContext->GetViewWidth()), static_cast<float>(effectContext->GetViewHeight()));
+		glProgramUniform2f(programId, loc, width, height);
 	}
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::INV_RESOLUTION); loc >= 0)
 	{
-		glProgramUniform2f(programId, loc, 1.0f / static_cast<float>(effectContext->GetViewWidth()), 1.0f / static_cast<float>(effectContext->GetViewHeight()));
+		glProgramUniform2f(programId, loc, 1.0f / width, 1.0f / height);
 	}
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::TEXEL_SIZE); loc >= 0)
 	{
-		glProgramUniform2f(programId, loc, 1.0f / static_cast<float>(effectContext->GetViewWidth()), 1.0f / static_cast<float>(effectContext->GetViewHeight()));
+		glProgramUniform2f(programId, loc, 1.0f / width, 1.0f / height);
 	}
 
 	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::iTIME); loc >= 0)
@@ -898,11 +851,38 @@ void PostEffectBufferShader::BindSystemUniforms(const PostEffectContextProxy* ef
 	{
 		glProgramUniform1f(programId, loc, effectContext->GetCameraFarDistance());
 	}
+
+	const CameraLens& lens = effectContext->GetCameraLens();
+
+	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::CAMERA_FOCUS_DISTANCE); loc >= 0)
+	{
+		glProgramUniform1f(programId, loc, static_cast<float>(lens.focusDistance));
+	}
+	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::CAMERA_FOCUS_ANGLE); loc >= 0)
+	{
+		glProgramUniform1f(programId, loc, static_cast<float>(lens.focusAngle));
+	}
+	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::CAMERA_FOCAL_LENGTH); loc >= 0)
+	{
+		glProgramUniform1f(programId, loc, static_cast<float>(lens.focalLength));
+	}
+	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::CAMERA_FOV); loc >= 0)
+	{
+		glProgramUniform1f(programId, loc, static_cast<float>(lens.fieldOfView));
+	}
+	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::CAMERA_FOCAL_LENGTH_PX); loc >= 0)
+	{
+		glProgramUniform1f(programId, loc, static_cast<float>(lens.focalLengthPx));
+	}
+	if (const GLint loc = GetSystemUniformLoc(ShaderSystemUniform::CAMERA_IS_ORTHO); loc >= 0)
+	{
+		glProgramUniform1f(programId, loc, effectContext->IsCameraOrthogonal() ? 1.0f : 0.0f);
+	}
 }
 
 void PostEffectBufferShader::TryUseGlobalMasking(const PostEffectContextProxy* effectContext) const
 {
-	if (!GetShaderPtr())
+	if (!GetShaderPtr() || !effectContext)
 		return;
 	const GLuint programId = GetShaderPtr()->GetProgramObj();
 
