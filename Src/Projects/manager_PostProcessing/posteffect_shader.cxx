@@ -290,8 +290,12 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 			}
 		}
 
-		VERIFY(value.GetType() != EPropertyType::NONE);
-		//VERIFY(ShaderPropertyStorage::CheckPropertyExists(writeMap, value.GetNameHash()) == false);
+		if (value.GetType() == EPropertyType::NONE)
+		{
+			LOGE("[EffectShaderPropertyProcessor] property %s has no value and will be skipped\n", shaderProperty.GetName());
+			continue;
+		}
+
 		writeMap.emplace_back(std::move(value));
 	}
 
