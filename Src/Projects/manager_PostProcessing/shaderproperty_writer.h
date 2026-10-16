@@ -25,7 +25,8 @@ public:
         : mEffectHash(shader->GetNameHash())
         , mVariation(shader->GetCurrentVariation())
     {
-        scheme = shader->GetPropertySchemePtr();
+        // NOTE: values are written during evaluation, so the evaluation scheme is used
+        scheme = shader->GetEvalPropertySchemePtr();
         mWriteMap = context->GetEffectPropertyValueMap(mEffectHash);
     }
 

@@ -19,18 +19,86 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "ShaderToyShaderProgram.h"
 #include "posteffect_shader_userobject.h"
 
+#include <algorithm>
+#include <mutex>
+#include <vector>
+
+namespace _PostEffectBufferShaderInternal
+{
+	// shaders with a rebuilt property scheme that is waiting to be published
+	std::mutex& GetPendingMutex()
+	{
+		static std::mutex m;
+		return m;
+	}
+	std::vector<PostEffectBufferShader*>& GetPendingShaders()
+	{
+		static std::vector<PostEffectBufferShader*> shaders;
+		return shaders;
+	}
+};
+
 /////////////////////////////////////////////////////////////////////////
 // PostEffectBufferShader
 
 PostEffectBufferShader::PostEffectBufferShader(FBComponent* ownerIn)
 	: mOwner(ownerIn)
 {
-	mRenderPropertyScheme = std::make_unique<const ShaderPropertyScheme>();
+	mRenderPropertyScheme = std::make_shared<const ShaderPropertyScheme>();
+	mEvalPropertyScheme = mRenderPropertyScheme;
 }
 
 PostEffectBufferShader::~PostEffectBufferShader()
 {
+	{
+		using namespace _PostEffectBufferShaderInternal;
+		std::lock_guard<std::mutex> lock(GetPendingMutex());
+		auto& shaders = GetPendingShaders();
+		shaders.erase(std::remove(begin(shaders), end(shaders), this), end(shaders));
+	}
+
 	FreeShaders();
+}
+
+void PostEffectBufferShader::QueueSchemePublish()
+{
+	using namespace _PostEffectBufferShaderInternal;
+	std::lock_guard<std::mutex> lock(GetPendingMutex());
+	auto& shaders = GetPendingShaders();
+	if (std::find(begin(shaders), end(shaders), this) == end(shaders))
+	{
+		shaders.push_back(this);
+	}
+}
+
+void PostEffectBufferShader::PublishPendingSchemes()
+{
+	using namespace _PostEffectBufferShaderInternal;
+	// NOTE: the lock is kept while publishing, so a shader can't be destroyed in the middle of it
+	std::lock_guard<std::mutex> lock(GetPendingMutex());
+	auto& shaders = GetPendingShaders();
+	for (PostEffectBufferShader* shader : shaders)
+	{
+		shader->PublishPendingScheme();
+	}
+	shaders.clear();
+}
+
+void PostEffectBufferShader::PublishPendingScheme()
+{
+	if (!mPendingPropertyScheme)
+		return;
+
+	ShaderPropertyScheme* newScheme = mPendingPropertyScheme.get();
+
+	// user object could make new FBProperties according to the new scheme
+	OnPropertySchemeUpdated(newScheme, mEvalPropertyScheme.get());
+	newScheme->AssociateFBProperties(mPendingSchemeComponent);
+	OnPropertySchemeAssociated(newScheme);
+
+	mEvalPropertyScheme = std::move(mPendingPropertyScheme);
+	mPendingPropertyScheme.reset();
+	mPendingSchemeComponent = nullptr;
 }
 
 void PostEffectBufferShader::MakeCommonProperties(ShaderPropertyScheme* scheme)
@@ -239,9 +307,9 @@ bool PostEffectBufferShader::Load()
 
 bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, PostEffectContextProxy* effectContext, const PostEffectBufferShader* effectShader, int maskIndex)
 {
-	const ShaderPropertyScheme* propertyScheme = effectShader->GetPropertySchemePtr();
+	const ShaderPropertyScheme* propertyScheme = effectShader->GetEvalPropertySchemePtr();
 
-	if (!component || propertyScheme->IsEmpty() || !effectContext)
+	if (!component || !propertyScheme || propertyScheme->IsEmpty() || !effectContext)
 		return false;
 
 	ShaderPropertyStorage::EffectMap* effectMap = effectContext->GetEffectPropertyMap();
@@ -582,17 +650,18 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 	if (bIsNeedToUpdatePropertyScheme)
 	{
 		// change shader, change context, reload shader, we have to re-initialize property scheme with a new one
-		std::unique_ptr<ShaderPropertyScheme> newPropertyScheme = std::make_unique<ShaderPropertyScheme>();
+		std::shared_ptr<ShaderPropertyScheme> newPropertyScheme = std::make_shared<ShaderPropertyScheme>();
 		MakeCommonProperties(newPropertyScheme.get());
 		OnPopulateProperties(newPropertyScheme.get());
 		InitializeUniforms(newPropertyScheme.get(), GetCurrentVariation());
 
-		OnPropertySchemeUpdated(newPropertyScheme.get(), mRenderPropertyScheme.get());
-		FBComponent* effectComponent = GetOwner() ? GetOwner() : effectContext->GetPostProcessData();
-		newPropertyScheme->AssociateFBProperties(effectComponent);
-		OnPropertySchemeAssociated(newPropertyScheme.get());
+		// the new scheme is used for rendering right away, FBProperties are made and associated
+		//  when both pipelines are stopped (see PublishPendingSchemes)
+		mPendingSchemeComponent = GetOwner() ? GetOwner() : effectContext->GetPostProcessData();
+		mRenderPropertyScheme = newPropertyScheme;
+		mPendingPropertyScheme = std::move(newPropertyScheme);
+		QueueSchemePublish();
 
-		mRenderPropertyScheme.reset(newPropertyScheme.release());
 		bIsNeedToUpdatePropertyScheme = false;
 	}
 	
@@ -896,20 +965,22 @@ void PostEffectBufferShader::TryUseGlobalMasking(const PostEffectContextProxy* e
 	}
 }
 
+// NOTE: sampler usage is queried during evaluation (see PostEffectChain::Evaluate), so the evaluation scheme is used
+
 bool PostEffectBufferShader::IsDepthSamplerUsed() const
 {
-	return mRenderPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D) >= 0;
+	return mEvalPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::INPUT_DEPTH_SAMPLER_2D) >= 0;
 }
 bool PostEffectBufferShader::IsLinearDepthSamplerUsed() const
 {
-	return mRenderPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D) >= 0;
+	return mEvalPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::LINEAR_DEPTH_SAMPLER_2D) >= 0;
 }
 
 bool PostEffectBufferShader::IsMaskSamplerUsed() const
 {
-	return mRenderPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D) >= 0;
+	return mEvalPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::INPUT_MASK_SAMPLER_2D) >= 0;
 }
 bool PostEffectBufferShader::IsWorldNormalSamplerUsed() const
 {
-	return mRenderPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D) >= 0;
+	return mEvalPropertyScheme->GetSystemUniformLoc(ShaderSystemUniform::WORLD_NORMAL_SAMPLER_2D) >= 0;
 }

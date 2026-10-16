@@ -141,7 +141,9 @@ protected:
 	virtual bool OnCollectUI(PostEffectContextProxy* effectContext, int maskIndex) const override;
 
 	//! a callback event to process a property added, so that we could make and associate component's FBProperty with it
-	virtual void OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) override;
+	virtual void OnPropertySchemeUpdated(ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) override;
+	//! publish a pending scheme or process a request to remove unused properties
+	virtual void PublishPendingScheme() override;
 	//! the new scheme is ready and associated with FBProperties, here we know how many problems have been found
 	virtual void OnPropertySchemeAssociated(const ShaderPropertyScheme* newScheme) override;
 
@@ -185,6 +187,7 @@ public: // PROPERTIES
 	FBPropertyString			FragmentFile; //!< fragment shader file to evaluate
 
 	FBPropertyAction			ReloadShaders;
+	FBPropertyAction			RemoveUnusedProperties; //!< remove properties of uniforms that the current shader doesn't use
 	FBPropertyAction			OpenFolder; // open a folder where the shader file is located (if found)
 	FBPropertyAction			ExportShaderScheme;
 	FBPropertyString			Status; //!< read only, a short text about the shader state: Not connected, Not loaded, Reload pending, Ok, Error
@@ -220,6 +223,18 @@ public:
 	int GetWarningCount() const { return mWarningCount.load(std::memory_order_acquire); }
 	void SetWarningCount(int count) { mWarningCount.store(count, std::memory_order_release); }
 
+	// properties made from shader uniforms are kept when a uniform is gone (or stripped by the compiler as unused),
+	//  so that the value and animation survive a shader edit. They are removed on the user request only.
+	bool RequestRemoveUnusedProperties();
+	bool IsRemoveUnusedPropertiesRequested() const { return mRemoveUnusedRequested.load(std::memory_order_acquire); }
+	// number of shader properties that the current shader doesn't use
+	int GetUnusedPropertyCount() const { return mUnusedPropertyCount.load(std::memory_order_acquire); }
+	// count (and remove if requested) properties that are not used by the given scheme, call when pipelines are stopped
+	void UpdateUnusedProperties(const ShaderPropertyScheme& scheme, bool doRemove);
+
+	// a property that is published by the object itself (not made from a shader uniform)
+	bool IsStaticPropertyName(const char* name) const;
+
 	// is the effect (directly or through other effects) connected to a post processing data
 	bool IsConnectedToPostProcessing(int depth = 0);
 	// compose a text for the Status property
@@ -240,7 +255,12 @@ protected:
 	std::atomic<bool>	mReloadShaders{ true };
 	std::atomic<EEffectLoadState>	mLoadState{ EEffectLoadState::NotLoaded };
 	std::atomic<int>	mWarningCount{ 0 };
+	std::atomic<int>	mUnusedPropertyCount{ 0 };
+	std::atomic<bool>	mRemoveUnusedRequested{ false };
 	std::string			mStatusText; //!< storage for a string that is returned from the Status property getter
+
+	//! names of properties published in FBCreate, shader uniforms must not touch them
+	std::unordered_set<std::string> mStaticPropertyNames;
 	
 	std::unique_ptr<PostEffectBufferShader>		mUserShader;
 	
@@ -260,6 +280,7 @@ protected:
 	FBProperty* GetOrMakeProperty(const ShaderProperty& prop);
 
 	static void ActionReloadShaders(HIObject pObject, bool value);
+	static void ActionRemoveUnusedProperties(HIObject pObject, bool value);
 	static void ActionOpenFolder(HIObject pObject, bool value);
 	static void ActionExportShaderScheme(HIObject pObject, bool value);
 

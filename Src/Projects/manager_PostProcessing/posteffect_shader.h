@@ -150,7 +150,24 @@ protected:
 	friend class PostEffectRenderContext;
 
 	
-	std::unique_ptr<const ShaderPropertyScheme> mRenderPropertyScheme; // the property scheme to use in render thread
+	// NOTE: the property scheme is rebuilt in the render thread (it needs a GL program to reflect uniforms),
+	//  while the evaluation thread reads the scheme and its FBProperties at the same time.
+	//  So the new scheme is used for rendering right away, but it gets associated with FBProperties
+	//  and becomes visible for the evaluation only in \ref PublishPendingSchemes, when both pipelines are stopped.
+
+	std::shared_ptr<const ShaderPropertyScheme> mRenderPropertyScheme; //!< the property scheme to use in render thread
+	std::shared_ptr<const ShaderPropertyScheme> mEvalPropertyScheme; //!< the property scheme to use in evaluation thread
+	std::shared_ptr<ShaderPropertyScheme> mPendingPropertyScheme; //!< a rebuilt scheme that is waiting to be published
+	FBComponent* mPendingSchemeComponent{ nullptr }; //!< a component to associate the pending scheme with
+
+	// associate a pending scheme with FBProperties and make it visible for the evaluation thread
+	virtual void PublishPendingScheme();
+
+public:
+	// add the shader into a list of shaders that are going to be processed in \ref PublishPendingSchemes
+	void QueueSchemePublish();
+
+protected:
 
 	ShaderPropertyProxy UseMaskingProperty;
 	
@@ -161,14 +178,21 @@ protected:
 	virtual void OnPopulateProperties(ShaderPropertyScheme* scheme) {}
 
 	// user object can make new fb properties according to populated property scheme
-	virtual void OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) {}
+	// NOTE: called in \ref PublishPendingSchemes, when both evaluation and rendering pipelines are stopped
+	virtual void OnPropertySchemeUpdated(ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme) {}
 
 	// the new scheme is associated with FBProperties and is about to be used for rendering
 	virtual void OnPropertySchemeAssociated(const ShaderPropertyScheme* newScheme) {}
 
 public:
 	
+	//! the property scheme for the render thread (uniform locations, override uniforms)
 	const ShaderPropertyScheme* GetPropertySchemePtr() const { return mRenderPropertyScheme.get(); }
+	//! the property scheme for the evaluation thread (collecting values from FBProperties)
+	const ShaderPropertyScheme* GetEvalPropertySchemePtr() const { return mEvalPropertyScheme.get(); }
+
+	/// process all shaders with a rebuilt property scheme, call it only when evaluation and rendering pipelines are stopped
+	static void PublishPendingSchemes();
 
 	virtual int GetNumberOfProperties() const;
 	virtual const ShaderProperty& GetProperty(int index) const;

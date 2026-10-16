@@ -448,8 +448,12 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 		///
 		// This callback occurs when both rendering and evaluation pipeline are stopped,
 		// plugin developer could add some lightweight scene modification tasks here
-		// and no need to worry complicated thread issues. 
+		// and no need to worry complicated thread issues.
 		//
+
+		// rebuilt shader property schemes make and associate FBProperties, it is safe only here
+		PostEffectBufferShader::PublishPendingSchemes();
+
 		if (PostProcessContextData* pContextData =
 			mSyncContextData.load(std::memory_order_acquire))
 		{

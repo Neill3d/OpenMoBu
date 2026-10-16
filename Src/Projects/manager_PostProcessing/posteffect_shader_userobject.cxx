@@ -67,6 +67,15 @@ void EffectShaderUserObject::ActionReloadShaders(HIObject pObject, bool value)
 	}
 }
 
+void EffectShaderUserObject::ActionRemoveUnusedProperties(HIObject pObject, bool value)
+{
+	EffectShaderUserObject* p = FBCast<EffectShaderUserObject>(pObject);
+	if (p && value)
+	{
+		p->RequestRemoveUnusedProperties();
+	}
+}
+
 void EffectShaderUserObject::ActionOpenFolder(HIObject pObject, bool value)
 {
 	EffectShaderUserObject* p = FBCast<EffectShaderUserObject>(pObject);
@@ -112,6 +121,7 @@ bool EffectShaderUserObject::FBCreate()
 	FBPropertyPublish(this, FragmentFile, "Shader File", nullptr, nullptr);
 	FBPropertyPublish(this, UseShaderToyCompatibility, "ShaderToy Compatibility", nullptr, nullptr);
 	FBPropertyPublish(this, ReloadShaders, "Reload Shader", nullptr, ActionReloadShaders);
+	FBPropertyPublish(this, RemoveUnusedProperties, "Remove Unused Properties", nullptr, ActionRemoveUnusedProperties);
 	FBPropertyPublish(this, OpenFolder, "Open Folder", nullptr, ActionOpenFolder);
 	FBPropertyPublish(this, ExportShaderScheme, "Export Shader Scheme", nullptr, ActionExportShaderScheme);
 	FBPropertyPublish(this, Status, "Status", GetStatusText, nullptr);
@@ -140,6 +150,17 @@ bool EffectShaderUserObject::FBCreate()
 	
 	// DONE: READ default values from config file !
 	DefaultValues();
+
+	// everything that exists at this point is not made from shader uniforms
+	//  (properties of uniforms are made later on a shader load, or restored from a file)
+	mStaticPropertyNames.clear();
+	for (int i = 0; i < PropertyList.GetCount(); ++i)
+	{
+		if (FBProperty* prop = PropertyList[i])
+		{
+			mStaticPropertyNames.emplace(prop->GetName());
+		}
+	}
 
     return true;
 }
@@ -340,10 +361,20 @@ std::string EffectShaderUserObject::ComposeStatusText()
 	{
 	case EEffectLoadState::Loaded:
 	{
+		std::string details;
 		const int warnings = GetWarningCount();
-		if (warnings <= 0)
-			return "Ok";
-		return (warnings == 1) ? "Ok (1 warning)" : "Ok (" + std::to_string(warnings) + " warnings)";
+		if (warnings > 0)
+		{
+			details = (warnings == 1) ? "1 warning" : std::to_string(warnings) + " warnings";
+		}
+		const int unused = GetUnusedPropertyCount();
+		if (unused > 0)
+		{
+			if (!details.empty())
+				details += ", ";
+			details += (unused == 1) ? "1 unused property" : std::to_string(unused) + " unused properties";
+		}
+		return details.empty() ? "Ok" : "Ok (" + details + ")";
 	}
 	case EEffectLoadState::FileNotFound:
 		return "Error: shader file not found";
@@ -444,7 +475,7 @@ bool EffectShaderUserObject::DoExportShaderScheme()
 	outputPath += L".json";
 	outputPath = outputPath.lexically_normal();
 
-	const ShaderPropertyScheme* scheme = mUserShader ? mUserShader->GetPropertySchemePtr() : nullptr;
+	const ShaderPropertyScheme* scheme = mUserShader ? mUserShader->GetEvalPropertySchemePtr() : nullptr;
 
 	if (!scheme || !scheme->ExportToJSON(outputPath))
 	{
@@ -578,8 +609,70 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const ShaderProperty& pr
 	return nullptr;
 }
 
+bool EffectShaderUserObject::IsStaticPropertyName(const char* name) const
+{
+	return name && mStaticPropertyNames.find(name) != mStaticPropertyNames.end();
+}
+
+bool EffectShaderUserObject::RequestRemoveUnusedProperties()
+{
+	if (!mUserShader)
+		return false;
+
+	// NOTE: properties are associated with the property scheme, they are removed
+	//  when evaluation and rendering pipelines are stopped (see UserBufferShader::PublishPendingScheme)
+	mRemoveUnusedRequested.store(true, std::memory_order_release);
+	mUserShader->QueueSchemePublish();
+	return true;
+}
+
+void EffectShaderUserObject::UpdateUnusedProperties(const ShaderPropertyScheme& scheme, bool doRemove)
+{
+	std::vector<FBProperty*> unusedProperties;
+
+	for (int i = 0; i < PropertyList.GetCount(); ++i)
+	{
+		FBProperty* fbProperty = PropertyList[i];
+		if (!fbProperty)
+			continue;
+
+		// keep properties of the object itself and properties added by a user (not made from uniforms)
+		if (IsStaticPropertyName(fbProperty->GetName())
+			|| fbProperty->IsUserProperty()
+			|| fbProperty->IsReferenceProperty())
+		{
+			continue;
+		}
+
+		const ShaderProperty* shaderProperty = scheme.FindProperty(fbProperty->GetName());
+		if (shaderProperty && shaderProperty->IsGeneratedByUniform())
+			continue;
+
+		unusedProperties.push_back(fbProperty);
+	}
+
+	if (doRemove)
+	{
+		for (FBProperty* fbProperty : unusedProperties)
+		{
+			LOGI("[%s] remove unused property %s\n", LongName.AsString(), fbProperty->GetName());
+			PropertyRemove(fbProperty);
+		}
+		unusedProperties.clear();
+	}
+
+	mUnusedPropertyCount.store(static_cast<int>(unusedProperties.size()), std::memory_order_release);
+}
+
 FBProperty* EffectShaderUserObject::GetOrMakeProperty(const ShaderProperty& prop)
 {
+	// a uniform must not touch (remove, re-type or take over) a property of the object itself
+	if (IsStaticPropertyName(prop.GetName()))
+	{
+		LOGE("[%s] uniform %s has the same name as a property of the effect object, skip it\n", LongName.AsString(), prop.GetName());
+		return nullptr;
+	}
+
 	FBProperty* fbProperty = PropertyList.Find(prop.GetName());
 	const FBPropertyType fbPropertyType = ShaderProperty::ShaderPropertyToFBPropertyType(prop);
 
@@ -587,6 +680,13 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const ShaderProperty& prop
 	if (fbProperty && fbProperty->GetPropertyType() == fbPropertyType)
 	{
 		return fbProperty;
+	}
+
+	if (fbProperty && fbProperty->IsUserProperty())
+	{
+		// a custom property that a user has added, it is not ours to remove
+		LOGE("[%s] uniform %s has the same name as a user property of another type, skip it\n", LongName.AsString(), prop.GetName());
+		return nullptr;
 	}
 
 	if (fbProperty)
@@ -683,48 +783,62 @@ bool UserBufferShader::OnRenderPassBegin(const int pass, PostEffectRenderContext
 	return true;
 }
 
-void UserBufferShader::OnPropertySchemeUpdated(const ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme)
+void UserBufferShader::OnPropertySchemeUpdated(ShaderPropertyScheme* newScheme, const ShaderPropertyScheme* oldScheme)
 {
 	if (!newScheme || !mUserObject)
 		return;
 
-	// properties generated from the previous shader uniforms, whatever is left after
-	//  the new scheme is processed doesn't exist in the new shader anymore
-	std::unordered_map<uint32_t, FBProperty*> mPropertiesToRemove;
+	// NOTE: properties of uniforms that the new shader doesn't have (or the compiler has stripped as unused)
+	//  are kept, so a value and animation survive a shader edit. They are counted in UpdateUnusedProperties
+	//  and removed with the Remove Unused Properties action only.
 
-	if (oldScheme)
-	{
-		for (const auto& prop : oldScheme->GetProperties())
-		{
-			if (prop.IsGeneratedByUniform())
-			{
-				if (FBProperty* fbProperty = mUserObject->PropertyList.Find(prop.GetName()))
-				{
-					mPropertiesToRemove.emplace(prop.GetNameHash(), fbProperty);
-				}
-			}
-		}
-	}
-	
+	std::vector<uint32_t> skippedProperties;
+
 	for (const auto& prop : newScheme->GetProperties())
 	{
-		if (prop.IsGeneratedByUniform())
+		if (!prop.IsGeneratedByUniform())
+			continue;
+
+		if (!mUserObject->GetOrMakeProperty(prop))
 		{
-			auto iter = mPropertiesToRemove.find(prop.GetNameHash());
-			if (iter != mPropertiesToRemove.end())
-			{
-				mPropertiesToRemove.erase(iter);
-			}
-			//
-			mUserObject->GetOrMakeProperty(prop);
+			skippedProperties.push_back(prop.GetNameHash());
 		}
 	}
 
-	for (auto& pair : mPropertiesToRemove)
+	// a uniform that has no own property (a name conflict) must not read a value of another property
+	for (const uint32_t nameHash : skippedProperties)
 	{
-		mUserObject->PropertyRemove(pair.second);
+		if (ShaderProperty* prop = newScheme->FindPropertyByHash(nameHash))
+		{
+			prop->SetFlag(PropertyFlag::SKIP, true);
+			newScheme->AddWarning();
+		}
 	}
-	mPropertiesToRemove.clear();
+}
+
+void UserBufferShader::PublishPendingScheme()
+{
+	PostEffectBufferShader::PublishPendingScheme();
+
+	if (!mUserObject)
+		return;
+
+	const ShaderPropertyScheme* scheme = GetEvalPropertySchemePtr();
+	bool doRemove = mUserObject->IsRemoveUnusedPropertiesRequested();
+	mUserObject->mRemoveUnusedRequested.store(false, std::memory_order_release);
+
+	// without a loaded shader every property looks unused, never remove them in that case
+	const bool isLoaded = (mUserObject->GetLoadState() == EEffectLoadState::Loaded) && scheme && !scheme->IsEmpty();
+	if (!isLoaded)
+	{
+		if (doRemove)
+		{
+			LOGE("[%s] shader is not loaded, skip removing unused properties\n", mUserObject->LongName.AsString());
+		}
+		return;
+	}
+
+	mUserObject->UpdateUnusedProperties(*scheme, doRemove);
 }
 
 void UserBufferShader::OnPropertySchemeAssociated(const ShaderPropertyScheme* newScheme)

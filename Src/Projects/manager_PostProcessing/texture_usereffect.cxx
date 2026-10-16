@@ -338,6 +338,8 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 		mCache);
 
 	const ShaderPropertyScheme* schemeBefore = shader->GetPropertySchemePtr();
+	// NOTE: the evaluation scheme (FBProperties of the user object) is published later, when pipelines are synchronized
+	const ShaderPropertyScheme* evalSchemeBefore = shader->GetEvalPropertySchemePtr();
 
 	EffectShaderPropertyProcessor propertyProcessor;
 	propertyProcessor.CollectUIValues(userEffect, &proxy, shader, -1);
@@ -433,7 +435,8 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 	// 8. property schemes are built during the first renders (user properties are created from the shader uniforms)
 	//  and the values we have collected are incomplete, repeat the composition
 
-	if (schemeAfter != schemeBefore)
+	if (schemeAfter != schemeBefore || shader->GetEvalPropertySchemePtr() != evalSchemeBefore
+		|| shader->GetEvalPropertySchemePtr() != schemeAfter)
 	{
 		mWarmupFrames = WARMUP_FRAMES;
 	}
