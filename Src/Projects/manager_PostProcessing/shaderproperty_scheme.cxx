@@ -44,6 +44,7 @@ namespace _ShaderPropertySchemeInternal
 
 	static constexpr Rule rules[] = {
 			{ GL_FLOAT,       "_flag",  PropertyFlag::IsFlag },
+			{ GL_BOOL,        "_flag",  PropertyFlag::IsFlag },
 			{ GL_FLOAT,		  "_slider", PropertyFlag::IsClamped100 },
 			{ GL_FLOAT_VEC2,  "_wstoss", PropertyFlag::ConvertWorldToScreenSpace },
 			{ GL_FLOAT_VEC3,  "_color", PropertyFlag::IsColor },
@@ -89,6 +90,12 @@ namespace _ShaderPropertySchemeInternal
 					break;
 				}
 			}
+		}
+
+		// a glsl bool is always a checkbox, with or without the _flag postfix
+		if (type == GL_BOOL)
+		{
+			prop.SetFlag(PropertyFlag::IsFlag, true);
 		}
 
 		prop.SetName(finalName);
@@ -437,6 +444,15 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 			continue;
 		}
 
+		// an array is reported as "name[0]" (an array of structs as "name[0].member"),
+		//  a property drives a single value, so arrays are not supported
+		if (size > 1 || std::strchr(uniformName, '[') != nullptr)
+		{
+			LOGE("[ShaderPropertyScheme] uniform %s is an array, arrays are not supported, skip it\n", uniformName);
+			AddWarning();
+			continue;
+		}
+
 		// System uniform?
 		const int sysId = FindSystemUniform(uniformName);
 		const bool isSystemUniform = (sysId >= 0);
@@ -457,6 +473,15 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 		}
 
 		const auto shaderType = UniformTypeToShaderPropertyType(type);
+
+		// a value of a property can't be uploaded into a uniform of an unsupported type (samplerCube, ivec, mat3, etc.)
+		//  NOTE: system uniforms have their own type check and upload (like mat4 matrices)
+		if (shaderType == EPropertyType::NONE && !isSystemUniform)
+		{
+			LOGE("[ShaderPropertyScheme] uniform %s has an unsupported type 0x%x, skip it\n", uniformName, type);
+			AddWarning();
+			continue;
+		}
 
 		// 3) Create ShaderProperty
 		if (auto prop = FindPropertyByUniform(uniformName))
@@ -503,6 +528,16 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 		}
 	}
 
+	// registered properties that are expected to drive a uniform, report once here (values without a location are skipped on upload)
+	for (const ShaderProperty& prop : properties)
+	{
+		if (!prop.IsGeneratedByUniform() && prop.GetDefaultValue().IsRequired() && prop.GetLocation() < 0)
+		{
+			LOGE("[ShaderPropertyScheme] uniform %s of a property %s is not found in the shader\n", prop.GetUniformName(), prop.GetName());
+			AddWarning();
+		}
+	}
+
 	return added;
 }
 
@@ -522,13 +557,12 @@ EPropertyType ShaderPropertyScheme::UniformTypeToShaderPropertyType(GLenum type)
 		return EPropertyType::VEC3;
 	case GL_FLOAT_VEC4:
 		return EPropertyType::VEC4;
-	case GL_FLOAT_MAT4:
-		return EPropertyType::MAT4;
 	case GL_SAMPLER_2D:
 		return EPropertyType::TEXTURE;
 	default:
-		LOGE("unsupported uniform type %d", type);
-		return EPropertyType::FLOAT;
+		// NOTE: mat4 is not supported as a property yet (no FBProperty type to edit it and no upload),
+		//  matrices come as system uniforms only
+		return EPropertyType::NONE;
 	}
 }
 

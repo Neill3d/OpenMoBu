@@ -14,6 +14,7 @@
 #include <shared_mutex>
 #include "postprocessingmanager.h"
 #include "posteffect_contextmobu.h"
+#include "posteffect_shader_userobject.h"
 #include "postprocessing_helper.h"
 
 //--- Registration defines
@@ -411,6 +412,28 @@ void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEve
 
 void PostProcessingManager::EventSceneChange(HISender pSender, HKEvent pEvent)
 {
+	FBEventSceneChange sceneEvent(pEvent);
+
+	switch (sceneEvent.Type)
+	{
+	case kFBSceneChangeRenamed:
+	case kFBSceneChangeRenamedPrefix:
+	case kFBSceneChangeRenamedUnique:
+	case kFBSceneChangeRenamedUniquePrefix:
+	{
+		// a user effect keeps a hash of its name as a key of the effect property values
+		FBComponent* components[] = { sceneEvent.Component, sceneEvent.ChildComponent };
+		for (FBComponent* component : components)
+		{
+			if (EffectShaderUserObject* userObject = FBCast<EffectShaderUserObject>(component))
+			{
+				userObject->InvalidateNameHash();
+			}
+		}
+	} break;
+	default:
+		break;
+	}
 }
 
 
@@ -543,6 +566,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
 			mSyncContextData.store(pContextData, std::memory_order_release);
+			pContextData->SetVideoRendering(mVideoRendering.load(std::memory_order_acquire));
 			pContextData->RenderBeforeRender();
 			
 			if (mDoVideoClipTimewrap)
@@ -588,20 +612,25 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 
 	if (levent.GetState() == FBEventVideoFrameRendering::eBeginRendering)
 	{
-		CheckForAContextChange();
-		
-		if (PostProcessContextData* pContextData = GetCurrentContextData())
-		{
-			pContextData->VideoRenderingBegin();
-		}
+		// NOTE: the video is not necessarily rendered in the gl context that is current here,
+		//  the context data that renders the video picks up the state in OnPerFrameRenderingPipelineCallback
+		mVideoRendering.store(true, std::memory_order_release);
+
+		LOGI("[PP VIDEO] manager: video rendering begins, current gl context %p, evaluate data %p\n",
+			(void*)wglGetCurrentContext(), (void*)mEvaluateContextData.load(std::memory_order_acquire));
 		// turn off preview mode and switch quality settings if needed
 		PushUpperLowerClipForEffects();
 	}
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
 	{
+		mVideoRendering.store(false, std::memory_order_release);
+
+		LOGI("[PP VIDEO] manager: video rendering ends, current gl context %p\n", (void*)wglGetCurrentContext());
+
+		// the context that is current here gets back to the real-time mode right away, others on their next render
 		if (PostProcessContextData* pContextData = GetCurrentContextData())
 		{
-			pContextData->VideoRenderingEnd();
+			pContextData->SetVideoRendering(false);
 		}
 		// turn on back preview mode and display quality settings
 		PopUpperLowerClipForEffects();

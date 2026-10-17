@@ -19,8 +19,10 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 ShaderProperty::ShaderProperty(const ShaderProperty& other)
 {
-	SetNameHash(other.GetNameHash());
-	SetUniformNameHash(other.GetUniformNameHash());
+	name = other.name;
+	uniformName = other.uniformName;
+	nameHash = other.nameHash;
+	uniformNameHash = other.uniformNameHash;
 
 	SetFBComponent(other.GetFBComponent());
 	SetFBProperty(other.GetFBProperty());
@@ -62,21 +64,16 @@ uint32_t ShaderProperty::ComputeNameHash(std::string_view s) const
 	return xxhash32(s.data(), s.size(), HASH_SEED);
 }
 
-void ShaderProperty::SetName(std::string_view nameIN) 
-{ 
+void ShaderProperty::SetName(std::string_view nameIN)
+{
+	name.assign(nameIN.data(), nameIN.size());
 	nameHash = ComputeNameHash(nameIN);
 	mDefaultValue.SetNameHash(nameHash);
 }
 
-void ShaderProperty::SetNameHash(uint32_t hashIn)
-{
-	nameHash = hashIn;
-	mDefaultValue.SetNameHash(nameHash);
-}
-
 const char* ShaderProperty::GetName() const noexcept
-{ 
-	return ResolveHash32(nameHash); 
+{
+	return name.c_str();
 }
 
 uint32_t ShaderProperty::GetNameHash() const
@@ -86,17 +83,13 @@ uint32_t ShaderProperty::GetNameHash() const
 
 void ShaderProperty::SetUniformName(std::string_view uniformNameIN)
 {
-	uniformNameHash = ComputeNameHash(uniformNameIN.data());
-}
-
-void ShaderProperty::SetUniformNameHash(uint32_t hashIn)
-{
-	uniformNameHash = hashIn;
+	uniformName.assign(uniformNameIN.data(), uniformNameIN.size());
+	uniformNameHash = ComputeNameHash(uniformNameIN);
 }
 
 const char* ShaderProperty::GetUniformName() const noexcept
-{ 
-	return ResolveHash32(uniformNameHash);
+{
+	return uniformName.c_str();
 }
 
 uint32_t ShaderProperty::GetUniformNameHash() const

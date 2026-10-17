@@ -122,23 +122,11 @@ void PostEffectRenderContext::UploadUniformsInternal(GLuint programId, const Sha
 void PostEffectRenderContext::UploadUniformValue(GLuint programId, const ShaderPropertyValue& value, bool skipTextureProperties)
 {
 	constexpr int MAX_USER_TEXTURE_SLOTS = 16;
-	GLint location = value.GetLocation();
+	// NOTE: locations are resolved once in ShaderPropertyScheme::ReflectUniforms, no location means
+	//  the uniform is not active in the program (not declared or stripped by the compiler), nothing to upload
+	const GLint location = value.GetLocation();
 	if (location < 0)
-	{
-		location = glGetUniformLocation(programId, ResolveHash32(value.GetNameHash()));
-
-		if (location < 0 && value.IsRequired())
-		{
-			LOGE("failed to find property location [%u] %s\n", value.GetNameHash(), ResolveHash32(value.GetNameHash()));
-			return;
-		}
-		//LOGE("required property location is not cached [%u] %s\n", value.GetNameHash(), ResolveHash32(value.GetNameHash()).c_str());
-
-		if (location < 0)
-		{
-			return;
-		}
-	}
+		return;
 
 	const float* floatData = value.GetFloatData();
 	if (!floatData) {

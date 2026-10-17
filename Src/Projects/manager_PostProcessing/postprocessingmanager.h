@@ -82,6 +82,9 @@ private:
 	//
 	std::atomic<PostProcessContextData*> mSyncContextData{ nullptr };
 	std::atomic<PostProcessContextData*> mEvaluateContextData{ nullptr };
+
+	//! between begin and end of a video (file) rendering, a context data that renders picks it up in BeforeRender
+	std::atomic<bool> mVideoRendering{ false };
 	static std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	gContextMap;
 
 	RenderFrameGate mFrameGate;

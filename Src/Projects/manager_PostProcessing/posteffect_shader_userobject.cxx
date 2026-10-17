@@ -609,6 +609,22 @@ FBProperty* EffectShaderUserObject::MakePropertySampler(const ShaderProperty& pr
 	return nullptr;
 }
 
+uint32_t EffectShaderUserObject::GetNameHash() const
+{
+	// NOTE: double-checked, a reader that sees a clean flag sees the hash stored before the flag was cleared
+	if (mNameHashDirty.load(std::memory_order_acquire))
+	{
+		std::lock_guard<std::mutex> lock(mNameHashMutex);
+		if (mNameHashDirty.load(std::memory_order_acquire))
+		{
+			const char* fullName = const_cast<EffectShaderUserObject*>(this)->GetFullName();
+			mNameHash.store(xxhash32(fullName ? fullName : ""), std::memory_order_release);
+			mNameHashDirty.store(false, std::memory_order_release);
+		}
+	}
+	return mNameHash.load(std::memory_order_acquire);
+}
+
 bool EffectShaderUserObject::IsStaticPropertyName(const char* name) const
 {
 	return name && mStaticPropertyNames.find(name) != mStaticPropertyNames.end();
@@ -748,7 +764,7 @@ const char* UserBufferShader::GetName() const
 
 uint32_t UserBufferShader::GetNameHash() const
 {
-	return (mUserObject) ? xxhash32(mUserObject->GetFullName()) : SHADER_NAME_HASH;
+	return (mUserObject) ? mUserObject->GetNameHash() : SHADER_NAME_HASH;
 }
 
 const char* UserBufferShader::GetUseMaskingPropertyName() const 

@@ -86,6 +86,13 @@ void PostProcessContextData::Init()
 void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEvaluateInfo* pEvaluateInfoIn)
 {
     const bool ready = IsReadyToEvaluate();
+
+    if (mVideoRendering)
+    {
+        LOGV("[PP VIDEO] evaluate: data %p, local frame %d, ready %d, merge %d, eval panes %d\n",
+            (void*)this, static_cast<int>(localTime.GetFrame()), ready ? 1 : 0, FBMergeTransactionIsOn() ? 1 : 0, mEvaluatePaneCount);
+    }
+
     if (!ready || FBMergeTransactionIsOn())
     {
         // in a process of shaders reloading, skip evaluation for now
@@ -96,6 +103,7 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
     PrepareContextParameters(contextParameters, systemTime, localTime);
 
     // for all post processing view panes, evaluate their effect chains
+    std::lock_guard<std::mutex> lock(mEvaluateMutex);
 
     for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
     {
@@ -145,15 +153,23 @@ void PostProcessContextData::ReloadShaders(PostPersistentData* data, PostEffectC
     fxContext->Synchronize();
 }
 
-void PostProcessContextData::VideoRenderingBegin()
+void PostProcessContextData::SetVideoRendering(bool isVideoRendering)
 {
-	ENSURE(!mVideoRendering);
-	mVideoRendering = true;
-}
-void PostProcessContextData::VideoRenderingEnd()
-{
-	ENSURE(mVideoRendering);
-	mVideoRendering = false;
+	if (mVideoRendering.load(std::memory_order_acquire) == isVideoRendering)
+		return;
+
+	mVideoRendering.store(isVideoRendering, std::memory_order_release);
+
+	if (isVideoRendering)
+	{
+		// video rendering is not a real-time, every frame is evaluated right before its rendering (see PrepareVideoFrame),
+		//  the evaluation thread is not used for this context until the video is finished
+		SetReadyToEvaluate(false);
+	}
+	// NOTE: otherwise the evaluation thread is going to be enabled on a next synchronization
+
+	LOGI("[PP VIDEO] %s: data %p, gl context %p\n", isVideoRendering ? "begin" : "end",
+		(void*)this, (void*)wglGetCurrentContext());
 }
 
 void PostProcessContextData::UpdatePostProcessingFlag()
@@ -446,6 +462,10 @@ void PostProcessContextData::Synchronize()
         ResetPaneSettings();
         SetNeedToResetPaneSettings(false);
         SetReadyToEvaluate(false);
+        if (mVideoRendering)
+        {
+            LOGI("[PP VIDEO] sync: data %p, pane settings reset, evaluation is off\n", (void*)this);
+        }
         return;
     }
 
@@ -476,10 +496,19 @@ void PostProcessContextData::Synchronize()
             break;
         }
 
-        evalPane.fxContext->Synchronize();
+        // NOTE: during the video rendering a context is synchronized right after its evaluation (see PrepareVideoFrame)
+        if (!mVideoRendering)
+        {
+            evalPane.fxContext->Synchronize();
+        }
     }
 
-    SetReadyToEvaluate(isReady);
+    SetReadyToEvaluate(isReady && !mVideoRendering);
+
+    if (mVideoRendering)
+    {
+        LOGV("[PP VIDEO] sync: data %p, eval panes %d, ready to evaluate %d\n", (void*)this, mEvaluatePaneCount, IsReadyToEvaluate() ? 1 : 0);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -532,6 +561,13 @@ bool PostProcessContextData::RenderAfterRender(FBTime systemTime, FBTime localTi
 
     // we dicrement enterid, so enterid is equal to attached index
     const int enterId = mFrameGate.GetEnterId();
+
+    if (mVideoRendering)
+    {
+        LOGV("[PP VIDEO] after render: data %p, gl context %p, local frame %d, enter id %d, first enter %d, has post processing %d, render panes %d, ready to evaluate %d\n",
+            (void*)this, (void*)wglGetCurrentContext(), static_cast<int>(localTime.GetFrame()), enterId, isFirstEnter ? 1 : 0,
+            HasPostProcessing() ? 1 : 0, mRenderPaneCount, IsReadyToEvaluate() ? 1 : 0);
+    }
     if (enterId < 0)
     {
         // we leave the frame from the manipulator, don't need to process the frame once again
@@ -611,18 +647,60 @@ void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn,
 
     PrepareContextParametersForCamera(params, pCamera, pane.paneIndex);
 
+    // video rendering, every frame must be processed, finish all the preparation before rendering
+    if (mVideoRendering && params.w > 0)
+    {
+        PrepareVideoFrame(pEvaluateInfoIn, pane, paneBuffers, params);
+    }
+
     // not in schematic view
     if (params.w <= 0 || params.w > paneBuffers->GetWidth())
+    {
+        if (mVideoRendering)
+        {
+            LOGI("[PP VIDEO] pane %d, local frame %d: SKIPPED by viewport, camera %s, viewport %dx%d, pane buffers %dx%d\n",
+                pane.paneIndex, params.localFrame, pCamera ? pCamera->LongName.AsString() : "none",
+                params.w, params.h, paneBuffers->GetWidth(), paneBuffers->GetHeight());
+        }
         return;
+    }
 
-    if (!IsReadyToEvaluate() && fxContext->IsAnyReloadShadersRequested())
+    const bool isReloadRequestedBefore = fxContext->IsAnyReloadShadersRequested();
+    const bool isReadyToEvaluateBefore = IsReadyToEvaluate();
+
+    // NOTE: during the video rendering shaders are reloaded in PrepareVideoFrame
+    if (!mVideoRendering && !IsReadyToEvaluate() && fxContext->IsAnyReloadShadersRequested())
     {
         ReloadShaders(pane.data, fxContext, pEvaluateInfoIn, pCamera, params);
     }
 
-    const bool isReadyToRender = standardEffectsCollection.IsOk()
-        && fxContext->IsReadyToRender()
-        && !fxContext->IsAnyReloadShadersRequested();
+    const bool isStandardEffectsOk = standardEffectsCollection.IsOk();
+    const bool isContextReady = fxContext->IsReadyToRender();
+    const bool isReloadRequested = fxContext->IsAnyReloadShadersRequested();
+
+    const bool isReadyToRender = isStandardEffectsOk
+        && isContextReady
+        && !isReloadRequested;
+
+    if (mVideoRendering)
+    {
+        const bool isPendingContext = (pane.paneIndex >= 0 && pane.paneIndex < MAX_PANE_COUNT
+            && mPendingFXContexts[pane.paneIndex].get() == fxContext);
+        const PostEffectChain* chain = fxContext->GetFXChain();
+
+        // a rendered frame goes into the verbose log, a skipped one is always reported
+        auto logFunc = isReadyToRender ? &LOGV : &LOGI;
+        logFunc("[PP VIDEO] pane %d, local frame %d: %s, camera %s, camera changed %d, fx context %p (pending %d), "
+            "ready to evaluate %d, reload requested %d -> %d, standard effects ok %d, context ready %d "
+            "(evaluated camera %d, active data ready %d), viewport %dx%d, pane buffers %dx%d\n",
+            pane.paneIndex, params.localFrame, isReadyToRender ? "RENDER" : "SKIPPED",
+            pCamera ? pCamera->LongName.AsString() : "none", pane.isCameraChanged ? 1 : 0,
+            (void*)fxContext, isPendingContext ? 1 : 0,
+            isReadyToEvaluateBefore ? 1 : 0, isReloadRequestedBefore ? 1 : 0, isReloadRequested ? 1 : 0,
+            isStandardEffectsOk ? 1 : 0, isContextReady ? 1 : 0,
+            (chain && chain->HasEvaluatedCamera()) ? 1 : 0, (chain && chain->IsActiveDataReady()) ? 1 : 0,
+            params.w, params.h, paneBuffers->GetWidth(), paneBuffers->GetHeight());
+    }
 
     if (!isReadyToRender)
         return;
@@ -638,7 +716,13 @@ void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn,
     // 2. process it
 
     if (!fxContext->Render(pEvaluateInfoIn, paneBuffers))
+    {
+        if (mVideoRendering)
+        {
+            LOGI("[PP VIDEO] pane %d, local frame %d: effects chain render FAILED\n", pane.paneIndex, params.localFrame);
+        }
         return;
+    }
 
     // special test for an android device, send preview image by udp
 #if BROADCAST_PREVIEW == 1
@@ -671,6 +755,56 @@ void PostProcessContextData::RenderPane(FBEvaluateInfo* pEvaluateInfoIn,
     BlitFBOToFBOOffset(doubleFramebufferRequest->GetPtr()->GetFrameBuffer(), 0, 0, params.w, params.h, doubleFramebufferRequest->GetWriteAttachment(),
         fboInOut, params.x, params.y, params.w, params.h, 0,
         false, false, false, false); // don't copy depth or any other color attachment
+}
+
+void PostProcessContextData::PrepareVideoFrame(FBEvaluateInfo* pEvaluateInfoIn,
+    SPaneData& pane,
+    PostEffectBuffers* paneBuffers,
+    const PostEffectContextProxy::Parameters& params)
+{
+    PostEffectContextMoBu* fxContext = pane.fxContext;
+    if (!fxContext || !pane.data || !pane.camera || !paneBuffers)
+        return;
+
+    // 1. the camera viewport could be changed into the output resolution after the pane buffers were prepared
+
+    if (params.w > paneBuffers->GetWidth() || params.h > paneBuffers->GetHeight())
+    {
+        const bool usePreview = pane.data->OutputPreview;
+        const double scaleF = pane.data->OutputScaleFactor;
+
+        // NOTE: resize could change the current framebuffer
+        GLint currentFBO = 0;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);
+        paneBuffers->ReSize(params.w, params.h, usePreview, scaleF);
+        glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(currentFBO));
+
+        LOGI("[PP VIDEO] pane %d, local frame %d: pane buffers are resized to %dx%d\n",
+            pane.paneIndex, params.localFrame, paneBuffers->GetWidth(), paneBuffers->GetHeight());
+    }
+
+    std::lock_guard<std::mutex> lock(mEvaluateMutex);
+
+    // 2. shaders of the context (a new context, a new gl context or a reload request)
+
+    if (fxContext->IsAnyReloadShadersRequested())
+    {
+        if (!fxContext->ReloadShaders())
+        {
+            LOGE("[PP VIDEO] pane %d, local frame %d: failed to reload shaders\n", pane.paneIndex, params.localFrame);
+            return;
+        }
+    }
+
+    // 3. property schemes rebuilt during previous renders get their FBProperties,
+    //  the evaluation thread doesn't evaluate this context during the video
+
+    PostEffectBufferShader::PublishPendingSchemes();
+
+    // 4. evaluate the frame and make the result ready for rendering
+
+    fxContext->Evaluate(pEvaluateInfoIn, pane.camera, params);
+    fxContext->Synchronize();
 }
 
 void PostProcessContextData::PrepareContextParameters(PostEffectContextProxy::Parameters& contextParametersOut, FBTime systemTime, FBTime localTime) const

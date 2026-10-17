@@ -17,6 +17,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "glslShaderProgram.h"
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -235,6 +236,12 @@ public:
 	// a property that is published by the object itself (not made from a shader uniform)
 	bool IsStaticPropertyName(const char* name) const;
 
+	// a hash of the object full name, the key of effect property values. It is cached,
+	//  because it is requested several times per frame from evaluation and render threads
+	uint32_t GetNameHash() const;
+	// the object is renamed, the hash is going to be recalculated on a next request
+	void InvalidateNameHash() { mNameHashDirty.store(true, std::memory_order_release); }
+
 	// is the effect (directly or through other effects) connected to a post processing data
 	bool IsConnectedToPostProcessing(int depth = 0);
 	// compose a text for the Status property
@@ -257,6 +264,10 @@ protected:
 	std::atomic<int>	mWarningCount{ 0 };
 	std::atomic<int>	mUnusedPropertyCount{ 0 };
 	std::atomic<bool>	mRemoveUnusedRequested{ false };
+
+	mutable std::atomic<uint32_t>	mNameHash{ 0 };
+	mutable std::atomic<bool>		mNameHashDirty{ true };
+	mutable std::mutex				mNameHashMutex;
 	std::string			mStatusText; //!< storage for a string that is returned from the Status property getter
 
 	//! names of properties published in FBCreate, shader uniforms must not touch them

@@ -158,7 +158,8 @@ protected:
 	std::shared_ptr<const ShaderPropertyScheme> mRenderPropertyScheme; //!< the property scheme to use in render thread
 	std::shared_ptr<const ShaderPropertyScheme> mEvalPropertyScheme; //!< the property scheme to use in evaluation thread
 	std::shared_ptr<ShaderPropertyScheme> mPendingPropertyScheme; //!< a rebuilt scheme that is waiting to be published
-	FBComponent* mPendingSchemeComponent{ nullptr }; //!< a component to associate the pending scheme with
+	//!< a component to associate the pending scheme with, a handle is cleared if the component is destroyed before publishing
+	HdlFBPlugTemplate<FBComponent> mPendingSchemeComponent;
 
 	// associate a pending scheme with FBProperties and make it visible for the evaluation thread
 	virtual void PublishPendingScheme();

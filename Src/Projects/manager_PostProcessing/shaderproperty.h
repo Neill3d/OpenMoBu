@@ -63,11 +63,9 @@ struct MANAGER_POSTPROCESSING_API ShaderProperty
 	}
 
 	void SetName(std::string_view nameIN);
-	void SetNameHash(uint32_t nameHashIn);
 	inline const char* GetName() const noexcept;
 	inline uint32_t GetNameHash() const;
 	void SetUniformName(std::string_view uniformNameIN);
-	void SetUniformNameHash(uint32_t hashIn);
 	inline const char* GetUniformName() const noexcept;
 	inline uint32_t GetUniformNameHash() const;
 	
@@ -134,6 +132,10 @@ private:
 		
 	ShaderPropertyValue mDefaultValue;
 		
+	// NOTE: names are kept here, so they don't depend on the hash debug registry (a hash collision there keeps another string)
+	std::string name;
+	std::string uniformName;
+
 	uint32_t nameHash{ 0 };
 	uint32_t uniformNameHash{ 0 };
 

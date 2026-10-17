@@ -49,6 +49,10 @@ public:
 	/// w,h - local buffer size for processing, pCamera - current pane camera for processing
 	bool IsReadyToRender() const;
 
+	// diagnostics: a camera has been evaluated for the chain, and the data for rendering is ready
+	bool HasEvaluatedCamera() const { return mLastCamera.load(std::memory_order_acquire) != nullptr; }
+	bool IsActiveDataReady() const { return mRenderData[mActiveDataIndex.load(std::memory_order_acquire)].isReady; }
+
 	bool BeginFrame(PostEffectBuffers* buffers);
 
 	/// <summary>

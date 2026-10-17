@@ -15,26 +15,45 @@
 
 #include "hashUtils.h"
 #include "xxhash.h"
+#include "mobu_logging.h"
 //
 
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <mutex>
 #include <shared_mutex>
-#include <cassert>
 
 class HashDebugRegistry
 {
 public:
 	static void Register(uint32_t hash, std::string_view view)
 	{
+		// most of the hashes are registered already, check that without an exclusive lock and allocations
+		{
+			std::shared_lock lock(GetMutex());
+
+			const auto& map = GetMap();
+			const auto it = map.find(hash);
+			if (it != map.end())
+			{
+				if (it->second == view)
+					return;
+			}
+		}
+
 		std::unique_lock lock(GetMutex());
-		
-		auto [it, inserted] = GetMap().emplace(hash, std::string(view));
+
+		auto [it, inserted] = GetMap().try_emplace(hash, view);
 		if (!inserted && it->second != view)
 		{
-			assert(false && "Hash collision detected!");
-			abort();
+			// NOTE: a collision must not stop the application, the first registered string is kept
+			//  and the collision is reported once per hash
+			if (GetReportedCollisions().insert(hash).second)
+			{
+				LOGE("[hashUtils] hash collision %u between \"%s\" and \"%.*s\"\n",
+					hash, it->second.c_str(), static_cast<int>(view.size()), view.data());
+			}
 		}
 	}
 
@@ -62,16 +81,25 @@ public:
 	}
 
 private:
+	// NOTE: the registry is never destroyed on purpose, strings could be hashed or resolved
+	//  from destructors of static objects during the application exit
+
 	static std::unordered_map<uint32_t, std::string>& GetMap()
 	{
-		static std::unordered_map<uint32_t, std::string> map;
-		return map;
+		static auto* map = new std::unordered_map<uint32_t, std::string>();
+		return *map;
+	}
+
+	static std::unordered_set<uint32_t>& GetReportedCollisions()
+	{
+		static auto* hashes = new std::unordered_set<uint32_t>();
+		return *hashes;
 	}
 
 	static std::shared_mutex& GetMutex()
 	{
-		static std::shared_mutex m;
-		return m;
+		static auto* m = new std::shared_mutex();
+		return *m;
 	}
 };
 

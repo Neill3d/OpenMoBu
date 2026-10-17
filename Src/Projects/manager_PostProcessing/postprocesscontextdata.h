@@ -15,6 +15,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <map>
 #include <limits>
 #include <filesystem>
+#include <mutex>
 
 #include "GL/glew.h"
 
@@ -66,7 +67,10 @@ public:
 	int				mRenderPaneCount{ 0 }; // @see mRenderPanes
 	
 	int				mSchematicViewIndex{ -1 }; // -1 in case there is no pane with schematic view
-	bool			mVideoRendering = false;
+	//! the context renders a video (file rendering), see SetVideoRendering
+	std::atomic<bool> mVideoRendering{ false };
+	//! evaluation of the effect contexts, the evaluation thread and the video frame preparation (render thread) must not overlap
+	std::mutex		mEvaluateMutex;
 	bool			mHasPostProcessing = false;
 	std::atomic<bool> isReadyToEvaluate{ false };
 	std::atomic<bool> isNeedToResetPaneSettings{ false };
@@ -132,8 +136,11 @@ public:
 	
 	void    Init();
 	
-	void VideoRenderingBegin();
-	void VideoRenderingEnd();
+	// NOTE: the manager keeps the video rendering state, a video could be rendered in another gl context
+	//  than the one that is current when the video rendering begins, so each context data picks up
+	//  the state when it renders (see PostProcessingManager::OnPerFrameRenderingPipelineCallback)
+	void SetVideoRendering(bool isVideoRendering);
+	bool IsVideoRendering() const { return mVideoRendering.load(std::memory_order_acquire); }
 
 	bool HasPostProcessing() const { return mHasPostProcessing; }
 	void UpdatePostProcessingFlag();
@@ -181,6 +188,14 @@ private:
 		PostEffectBuffers* paneBuffers, 
 		PostEffectContextProxy::Parameters& params,
 		GLuint fboInOut);
+
+	// video rendering is not a real-time, every frame has to be processed. The evaluation thread is not used for
+	//  the video, each frame is prepared (shaders, property schemes, evaluation, buffers) right before its rendering
+	void PrepareVideoFrame(FBEvaluateInfo* pEvaluateInfoIn,
+		SPaneData& pane,
+		PostEffectBuffers* paneBuffers,
+		const PostEffectContextProxy::Parameters& params);
+
 	void BuffersPoolCollection();
 
 	// once we load file, we should reset pane user object pointers 

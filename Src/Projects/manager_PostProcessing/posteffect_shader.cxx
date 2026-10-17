@@ -26,15 +26,17 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 namespace _PostEffectBufferShaderInternal
 {
 	// shaders with a rebuilt property scheme that is waiting to be published
+	// NOTE: the registry is never destroyed on purpose, shaders are destroyed during the application exit
+	//  (static context data, scene objects) and could outlive function-local statics of the plugin
 	std::mutex& GetPendingMutex()
 	{
-		static std::mutex m;
-		return m;
+		static std::mutex* m = new std::mutex();
+		return *m;
 	}
 	std::vector<PostEffectBufferShader*>& GetPendingShaders()
 	{
-		static std::vector<PostEffectBufferShader*> shaders;
-		return shaders;
+		static auto* shaders = new std::vector<PostEffectBufferShader*>();
+		return *shaders;
 	}
 };
 
@@ -98,7 +100,7 @@ void PostEffectBufferShader::PublishPendingScheme()
 
 	mEvalPropertyScheme = std::move(mPendingPropertyScheme);
 	mPendingPropertyScheme.reset();
-	mPendingSchemeComponent = nullptr;
+	mPendingSchemeComponent = static_cast<FBComponent*>(nullptr);
 }
 
 void PostEffectBufferShader::MakeCommonProperties(ShaderPropertyScheme* scheme)

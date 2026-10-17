@@ -26,7 +26,7 @@ extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
 /// <summary>
 /// a method to transfer shared library logs into motionbuilder logs output
 /// </summary>
-DEFINE_LOGV; // TODO: have to be enabled only when corresponding log level is set in command line
+DEFINE_LOGV; // printed only when the OPENMOBU_VERBOSE_LOG environment variable is set
 DEFINE_LOGI;
 DEFINE_LOGE;
 

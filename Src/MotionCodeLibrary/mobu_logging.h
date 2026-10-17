@@ -3,10 +3,37 @@
 #include <cstdlib> // for std::abort
 
 /// <summary>
+/// verbose log lines are printed only when the environment variable OPENMOBU_VERBOSE_LOG is set
+///  to a non-empty value other than "0" before MotionBuilder starts (the value is read once)
+/// </summary>
+inline bool IsVerboseLogEnabledFromEnvironment()
+{
+	bool isEnabled = false;
+#if defined(_MSC_VER)
+	char* value = nullptr;
+	size_t length = 0;
+	if (_dupenv_s(&value, &length, "OPENMOBU_VERBOSE_LOG") == 0 && value)
+	{
+		isEnabled = (value[0] != '\0') && !(value[0] == '0' && value[1] == '\0');
+		free(value);
+	}
+#else
+	if (const char* value = std::getenv("OPENMOBU_VERBOSE_LOG"))
+	{
+		isEnabled = (value[0] != '\0') && !(value[0] == '0' && value[1] == '\0');
+	}
+#endif
+	return isEnabled;
+}
+
+/// <summary>
 /// a method to transfer shared library logs into motionbuilder logs output
 /// </summary>
 #define DEFINE_LOGV void LOGV(const char* pFormatString, ...) \
 { \
+	static const bool sIsVerboseLogEnabled = IsVerboseLogEnabledFromEnvironment(); \
+	if (!sIsVerboseLogEnabled) \
+		return; \
 	constexpr int BUFFER_SIZE{ 512 }; \
 	char buffer[BUFFER_SIZE]{ 0 }; \
 	va_list args; \
@@ -40,7 +67,7 @@
 
 // declaration of log functions
 
-// verbose, to print such log use a correspondent command line argument
+// verbose, printed only when the OPENMOBU_VERBOSE_LOG environment variable is set (see IsVerboseLogEnabledFromEnvironment)
 extern void LOGV(const char* pFormatString, ...);
 // information line
 extern void LOGI(const char* pFormatString, ...);
