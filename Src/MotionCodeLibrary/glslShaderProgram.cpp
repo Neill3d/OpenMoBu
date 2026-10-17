@@ -16,6 +16,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include <string>
 #include <string_view>
 #include <sstream>
+#include <cctype>
 #include <iostream>
 
 //
@@ -244,17 +245,24 @@ void ProcessTextWithInsertions(std::string& inputText, const std::unordered_map<
 
 	while (std::getline(inputStream, line))
 	{
+		// NOTE: shader files are read in binary mode, a line of a file with Windows line endings ends with '\r'
+		if (!line.empty() && line.back() == '\r')
+		{
+			line.pop_back();
+		}
+
 		size_t pos = line.rfind(insertPrefix);
 		if (pos != std::string::npos) {
 
-			size_t endPos = pos + insertPrefix.size() + 1;
+			// the keyword is "INSERT: NAME", NAME ends at a whitespace or at the end of the line
+			size_t endPos = pos + insertPrefix.size();
 			const size_t lineLen = line.size();
 
-			while (endPos < lineLen && !std::isspace(line[endPos] && line[endPos] != '\n'))
+			while (endPos < lineLen && !std::isspace(static_cast<unsigned char>(line[endPos])))
 			{
 				++endPos;
 			}
-			
+
 			std::string_view keyword(line.c_str() + pos, endPos - pos);
 			auto it = insertions.find(keyword);
 			if (it != end(insertions)) {
