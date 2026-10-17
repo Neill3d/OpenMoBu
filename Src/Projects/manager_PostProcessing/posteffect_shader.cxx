@@ -18,6 +18,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "FileUtils.h"
 #include "ShaderToyShaderProgram.h"
 #include "posteffect_shader_userobject.h"
+#include "posteffect_objectslot.h"
 
 #include <algorithm>
 #include <mutex>
@@ -37,6 +38,21 @@ namespace _PostEffectBufferShaderInternal
 	{
 		static auto* shaders = new std::vector<PostEffectBufferShader*>();
 		return *shaders;
+	}
+
+	// a post process data is a scene user object, check that it still exists before using a stored pointer
+	bool IsUserObjectInScene(const FBComponent* component)
+	{
+		FBScene* scene = FBSystem::TheOne().Scene;
+		if (!component || !scene)
+			return false;
+
+		for (int i = 0, count = scene->UserObjects.GetCount(); i < count; ++i)
+		{
+			if (scene->UserObjects[i] == component)
+				return true;
+		}
+		return false;
 	}
 };
 
@@ -86,6 +102,13 @@ void PostEffectBufferShader::PublishPendingSchemes()
 	shaders.clear();
 }
 
+bool PostEffectBufferShader::HasPendingSchemes()
+{
+	using namespace _PostEffectBufferShaderInternal;
+	std::lock_guard<std::mutex> lock(GetPendingMutex());
+	return !GetPendingShaders().empty();
+}
+
 void PostEffectBufferShader::PublishPendingScheme()
 {
 	if (!mPendingPropertyScheme)
@@ -93,14 +116,21 @@ void PostEffectBufferShader::PublishPendingScheme()
 
 	ShaderPropertyScheme* newScheme = mPendingPropertyScheme.get();
 
+	// the owner lives as long as the shader, the post process data could be destroyed after the scheme was built
+	FBComponent* component = mPendingSchemeComponent;
+	if (component && component != GetOwner() && !_PostEffectBufferShaderInternal::IsUserObjectInScene(component))
+	{
+		component = nullptr;
+	}
+
 	// user object could make new FBProperties according to the new scheme
 	OnPropertySchemeUpdated(newScheme, mEvalPropertyScheme.get());
-	newScheme->AssociateFBProperties(mPendingSchemeComponent);
+	newScheme->AssociateFBProperties(component);
 	OnPropertySchemeAssociated(newScheme);
 
 	mEvalPropertyScheme = std::move(mPendingPropertyScheme);
 	mPendingPropertyScheme.reset();
-	mPendingSchemeComponent = static_cast<FBComponent*>(nullptr);
+	mPendingSchemeComponent = nullptr;
 }
 
 void PostEffectBufferShader::MakeCommonProperties(ShaderPropertyScheme* scheme)
@@ -324,10 +354,21 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 	writeMap.clear();
 	writeMap.reserve(propertyScheme->GetNumberOfProperties());
 	
+	// a scene model connected to an object slot is read once, a slot and its companion uniforms share it
+	ObjectSlotCache objectSlots;
+
 	for (const auto& shaderProperty : propertyScheme->GetProperties())
 	{
 		ShaderPropertyValue value(shaderProperty.GetDefaultValue());
-		
+
+		if (shaderProperty.HasFlag(PropertyFlag::IsObjectCompanion))
+		{
+			const ObjectSlotData slotData = objectSlots.Get(propertyScheme, shaderProperty.GetObjectSlotNameHash(), effectContext);
+			WriteObjectSlotValue(value, slotData, shaderProperty.GetObjectSlotField());
+			writeMap.emplace_back(std::move(value));
+			continue;
+		}
+
 		if (!shaderProperty.HasFlag(PropertyFlag::SKIP))
 		{
 			FBProperty* fbProperty = shaderProperty.GetFBProperty();
@@ -341,7 +382,13 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 			if (fbProperty)
 			{
 				const FBPropertyType fbType = fbProperty->GetPropertyType();
-				if (fbType == FBPropertyType::kFBPT_object)
+				if (fbType == FBPropertyType::kFBPT_object && shaderProperty.HasFlag(PropertyFlag::IsObjectSlot))
+				{
+					// a scene model, the uniform gets its world position
+					const ObjectSlotData slotData = objectSlots.Get(propertyScheme, shaderProperty.GetNameHash(), effectContext);
+					WriteObjectSlotValue(value, slotData, ObjectSlotField::Position);
+				}
+				else if (fbType == FBPropertyType::kFBPT_object)
 				{
 					shaderProperty.ReadTextureConnections(value, fbProperty);
 					if (value.GetType() == EPropertyType::SHADER_USER_OBJECT

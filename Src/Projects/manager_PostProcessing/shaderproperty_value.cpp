@@ -37,7 +37,11 @@ void ShaderPropertyValue::SetType(EPropertyType newType)
 		value = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f };
 		break;
 	case EPropertyType::MAT4:
-		value = std::vector<float>(15, 0.0f);
+		// 4x4 floats, an identity matrix by default
+		value = std::vector<float>{ 1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f };
 		break;
 	}
 }

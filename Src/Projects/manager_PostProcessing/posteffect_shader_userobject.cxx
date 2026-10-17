@@ -680,6 +680,23 @@ void EffectShaderUserObject::UpdateUnusedProperties(const ShaderPropertyScheme& 
 	mUnusedPropertyCount.store(static_cast<int>(unusedProperties.size()), std::memory_order_release);
 }
 
+FBProperty* EffectShaderUserObject::MakePropertyObjectSlot(const ShaderProperty& prop)
+{
+	// a slot to connect one scene model (any model, a light gives also a color and an intensity)
+	// NOTE: no class filter on purpose (the same as in MakePropertySampler), a filter on a dynamic property
+	//  is suspected of a heap failure on application exit (kbrowsing.dll). A non-model connection is ignored in ReadObjectSlot
+	constexpr const bool isUser{ false };
+	FBProperty* newProp = PropertyCreate(prop.GetName(), FBPropertyType::kFBPT_object, ANIMATIONNODE_TYPE_OBJECT, false, isUser, nullptr);
+	if (FBPropertyListObject* listObjProp = FBCast<FBPropertyListObject>(newProp))
+	{
+		listObjProp->SetSingleConnect(true);
+
+		PropertyAdd(newProp);
+		return newProp;
+	}
+	return nullptr;
+}
+
 FBProperty* EffectShaderUserObject::GetOrMakeProperty(const ShaderProperty& prop)
 {
 	// a uniform must not touch (remove, re-type or take over) a property of the object itself
@@ -728,7 +745,7 @@ FBProperty* EffectShaderUserObject::GetOrMakeProperty(const ShaderProperty& prop
 		fbProperty = MakePropertyVec2(prop);
 		break;
 	case EPropertyType::VEC3:
-		fbProperty = MakePropertyVec3(prop);
+		fbProperty = (prop.HasFlag(PropertyFlag::IsObjectSlot)) ? MakePropertyObjectSlot(prop) : MakePropertyVec3(prop);
 		break;
 	case EPropertyType::VEC4:
 		fbProperty = MakePropertyVec4(prop);

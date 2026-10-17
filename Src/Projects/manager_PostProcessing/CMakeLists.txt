@@ -89,6 +89,8 @@ set (POSTEFFECTSCOMMON
     posteffect_buffers.cxx
     posteffect_cameralens.h
     posteffect_cameralens.cpp
+    posteffect_objectslot.h
+    posteffect_objectslot.cpp
     posteffect_shader.h
     posteffect_shader.cxx
     posteffect_rendercontext.h
@@ -97,6 +99,8 @@ set (POSTEFFECTSCOMMON
     shaderproperty.cxx
     shaderproperty_scheme.h
     shaderproperty_scheme.cxx
+    shaderproperty_naming.h
+    shaderproperty_naming.cpp
     shaderproperty_writer.h
     # shaderproperty_value and shaderproperty_storage live in shader_property_core
 )
@@ -218,7 +222,11 @@ FetchContent_MakeAvailable(googletest)
 
 set (POSTEFFECTSTESTS
     tests/posteffectbase_shaderproperty_tests.cpp
+    tests/shaderproperty_naming_tests.cpp
     tests/test_stubs.cpp
+    # the uniform naming rules have no fbsdk or GL dependencies, compiled into the tests directly
+    shaderproperty_naming.h
+    shaderproperty_naming.cpp
 )
 source_group("Tests" FILES ${POSTEFFECTSTESTS})
 

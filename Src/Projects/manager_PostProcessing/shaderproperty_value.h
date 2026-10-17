@@ -26,7 +26,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #define SHADER_PROPERTY_CORE_API
 #endif
 
-constexpr size_t PROPERTY_BITSET_SIZE = 8;
+constexpr size_t PROPERTY_BITSET_SIZE = 16; // NOTE: has to be larger than the biggest PropertyFlag value
 
 enum class EPropertyType : uint8_t
 {
@@ -50,7 +50,9 @@ enum class PropertyFlag : uint8_t
 	IsColor = 4,
 	ConvertWorldToScreenSpace = 5, // this is when world space vector3 is converted into screen space vector2 uniform
 	SKIP = 6, //!< this is for manual processing of property (like manual reading and setting value)
-	INVERT_VALUE = 7 //!< a given property value is going to be written as 1.0 - value to the uniform
+	INVERT_VALUE = 7, //!< a given property value is going to be written as 1.0 - value to the uniform
+	IsObjectSlot = 8, //!< vec3 <name>_object uniform, an object slot property, the uniform gets the object world position
+	IsObjectCompanion = 9 //!< <name>_object_<field> uniform, no own property, the value comes from the object slot <name>
 };
 
 

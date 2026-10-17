@@ -142,6 +142,9 @@ public:
 	void SetVideoRendering(bool isVideoRendering);
 	bool IsVideoRendering() const { return mVideoRendering.load(std::memory_order_acquire); }
 
+	// block the evaluation of effect contexts (for example while property schemes are published in the UI thread)
+	std::unique_lock<std::mutex> LockEvaluation() { return std::unique_lock<std::mutex>(mEvaluateMutex); }
+
 	bool HasPostProcessing() const { return mHasPostProcessing; }
 	void UpdatePostProcessingFlag();
 	

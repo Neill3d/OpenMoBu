@@ -14,6 +14,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <GL/glew.h>
 #include "shaderproperty_value.h"
+#include "shaderproperty_naming.h"
 #include <array>
 #include <string_view>
 #include <bitset>
@@ -123,6 +124,11 @@ public:
 	void SetIndexInArray(int32_t indexInArrayIn) { indexInArray = indexInArrayIn; }
 	int32_t GetIndexInArray() const { return indexInArray; }
 
+	// an object slot companion uniform (IsObjectCompanion flag), which value of the slot it gets and from which slot
+	void SetObjectCompanion(ObjectSlotField fieldIn, uint32_t slotNameHashIn) { objectSlotField = fieldIn; objectSlotNameHash = slotNameHashIn; }
+	ObjectSlotField GetObjectSlotField() const { return objectSlotField; }
+	uint32_t GetObjectSlotNameHash() const { return objectSlotNameHash; }
+
 public:
 
 	static FBPropertyType ShaderPropertyToFBPropertyType(const ShaderProperty& prop);
@@ -140,6 +146,9 @@ private:
 	uint32_t uniformNameHash{ 0 };
 
 	int32_t indexInArray{ -1 }; // for a quick access in the property array
+
+	ObjectSlotField objectSlotField{ ObjectSlotField::None };
+	uint32_t objectSlotNameHash{ 0 }; //!< a property name hash of the object slot (for a companion uniform)
 
 	std::bitset<PROPERTY_BITSET_SIZE> flags;
 

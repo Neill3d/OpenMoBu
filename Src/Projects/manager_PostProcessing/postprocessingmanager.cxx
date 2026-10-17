@@ -297,6 +297,11 @@ void PostProcessingManager::OnUIIdle(HISender pSender, HKEvent pEvent)
 #endif
 	}
 
+	mUIThreadId.store(GetCurrentThreadId());
+
+	// rebuilt shader property schemes make, remove and associate FBProperties
+	PublishPendingSchemes();
+
 	//
 #if BROADCAST_PREVIEW == 1
 	if (mSendPreview && nullptr != mSocketRecv)
@@ -334,6 +339,29 @@ void PostProcessingManager::OnUIIdle(HISender pSender, HKEvent pEvent)
 #endif
 }
 
+void PostProcessingManager::PublishPendingSchemes()
+{
+	if (!PostEffectBufferShader::HasPendingSchemes())
+		return;
+
+	// NOTE: making and removing FBProperties is a UI change, it must happen in the UI thread (here),
+	//  and the evaluation thread reads the published schemes and their FBProperties, so the evaluation
+	//  of every context is blocked while publishing
+	std::shared_lock rlock(gContextMapMutex);
+
+	std::vector<std::unique_lock<std::mutex>> evaluationLocks;
+	evaluationLocks.reserve(gContextMap.size());
+	for (auto& contextPair : gContextMap)
+	{
+		if (contextPair.second)
+		{
+			evaluationLocks.emplace_back(contextPair.second->LockEvaluation());
+		}
+	}
+
+	PostEffectBufferShader::PublishPendingSchemes();
+}
+
 bool PostProcessingManager::Clear()
 {
     return true;
@@ -361,6 +389,21 @@ bool PostProcessingManager::Close()
 	system.OnVideoFrameRendering.Remove(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
 	//CloseSocket();
+
+	// NOTE: context data (gl buffers, shaders, effect contexts) is intentionally not destroyed. Otherwise it would be
+	//  destroyed with the static map when the plugin is unloaded, after gl contexts and the SDK are already shut down,
+	//  and its destructors would call into them. It is also safe for a pipeline callback that could still be running.
+	//  The process memory is released by the system on exit.
+	mSyncContextData.store(nullptr, std::memory_order_release);
+	mEvaluateContextData.store(nullptr, std::memory_order_release);
+	{
+		std::unique_lock wlock(gContextMapMutex);
+		for (auto& contextPair : gContextMap)
+		{
+			contextPair.second.release();
+		}
+		gContextMap.clear();
+	}
 
     return true;
 }
@@ -474,8 +517,13 @@ void PostProcessingManager::OnPerFrameSynchronizationCallback(HISender pSender, 
 		// and no need to worry complicated thread issues.
 		//
 
-		// rebuilt shader property schemes make and associate FBProperties, it is safe only here
-		PostEffectBufferShader::PublishPendingSchemes();
+		// NOTE: property schemes are published in OnUIIdle, FBProperties must be made and removed in the UI thread
+		if (!mIsSyncThreadLogged)
+		{
+			mIsSyncThreadLogged = true;
+			LOGI("[PostProcessing] threads: synchronization callback %lu, UI idle %lu, rendering %lu\n",
+				static_cast<unsigned long>(GetCurrentThreadId()), mUIThreadId.load(), mRenderThreadId.load());
+		}
 
 		if (PostProcessContextData* pContextData =
 			mSyncContextData.load(std::memory_order_acquire))
@@ -565,6 +613,7 @@ void PostProcessingManager::OnPerFrameRenderingPipelineCallback(HISender pSender
 	{
 	case kFBGlobalEvalCallbackBeforeRender:
 		{
+			mRenderThreadId.store(GetCurrentThreadId());
 			mSyncContextData.store(pContextData, std::memory_order_release);
 			pContextData->SetVideoRendering(mVideoRendering.load(std::memory_order_acquire));
 			pContextData->RenderBeforeRender();

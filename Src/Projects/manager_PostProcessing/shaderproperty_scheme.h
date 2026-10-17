@@ -131,6 +131,9 @@ struct ShaderPropertyScheme
 
 	int ReflectUniforms(const GLuint programId, bool doPopulatePropertiesFromUniforms);
 
+	// make object slot properties for companion uniforms (<name>_object_<field>) that have no active slot uniform
+	void AddImplicitObjectSlots();
+
 	int		FindSystemUniform(const char* uniformName) const; // -1 if not found, or return an index of a system uniform in the ShaderSystemUniform enum
 	bool	IsInternalGLSLUniform(const char* uniformName) const;
 

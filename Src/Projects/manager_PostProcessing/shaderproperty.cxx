@@ -31,6 +31,8 @@ ShaderProperty::ShaderProperty(const ShaderProperty& other)
 	mDefaultValue = other.mDefaultValue;
 	indexInArray = other.indexInArray;
 	isGeneratedByUniform = other.isGeneratedByUniform;
+	objectSlotField = other.objectSlotField;
+	objectSlotNameHash = other.objectSlotNameHash;
 }
 
 ShaderProperty::ShaderProperty(std::string_view nameIn, std::string_view uniformNameIn, FBProperty* fbPropertyIn)
@@ -111,9 +113,9 @@ ShaderProperty& ShaderProperty::SetRequired(bool isRequired)
 
 ShaderProperty& ShaderProperty::SetDefaultValue(int valueIn)
 {
-	assert((type == EPropertyType::INT)
-		|| (type == EPropertyType::FLOAT)
-		|| (type == EPropertyType::TEXTURE));
+	assert((GetType() == EPropertyType::INT)
+		|| (GetType() == EPropertyType::FLOAT)
+		|| (GetType() == EPropertyType::TEXTURE));
 
 	mDefaultValue.SetValue(valueIn);
 	return *this;
@@ -121,42 +123,42 @@ ShaderProperty& ShaderProperty::SetDefaultValue(int valueIn)
 
 ShaderProperty& ShaderProperty::SetDefaultValue(bool valueIn)
 {
-	assert(type == EPropertyType::BOOL);
+	assert(GetType() == EPropertyType::BOOL);
 	mDefaultValue.SetValue(valueIn);
 	return *this;
 }
 
 ShaderProperty& ShaderProperty::SetDefaultValue(float valueIn)
 {
-	assert(type == EPropertyType::FLOAT);
+	assert(GetType() == EPropertyType::FLOAT);
 	mDefaultValue.SetValue(valueIn);
 	return *this;
 }
 
 ShaderProperty& ShaderProperty::SetDefaultValue(double valueIn)
 {
-	assert(type == EPropertyType::FLOAT);
+	assert(GetType() == EPropertyType::FLOAT);
 	mDefaultValue.SetValue(valueIn);
 	return *this;
 }
 
 ShaderProperty& ShaderProperty::SetDefaultValue(float x, float y)
 {
-	assert(type == EPropertyType::VEC2);
+	assert(GetType() == EPropertyType::VEC2);
 	mDefaultValue.SetValue(x, y);
 	return *this;
 }
 
 ShaderProperty& ShaderProperty::SetDefaultValue(float x, float y, float z)
 {
-	assert(type == EPropertyType::VEC3);
+	assert(GetType() == EPropertyType::VEC3);
 	mDefaultValue.SetValue(x, y, z);
 	return *this;
 }
 
 ShaderProperty& ShaderProperty::SetDefaultValue(float x, float y, float z, float w)
 {
-	assert(type == EPropertyType::VEC4);
+	assert(GetType() == EPropertyType::VEC4);
 	mDefaultValue.SetValue(x, y, z, w);
 	return *this;
 }
@@ -390,6 +392,8 @@ FBPropertyType ShaderProperty::ShaderPropertyToFBPropertyType(const ShaderProper
 		return (prop.HasFlag(PropertyFlag::ConvertWorldToScreenSpace)) ? FBPropertyType::kFBPT_Vector3D : FBPropertyType::kFBPT_Vector2D;
 
 	case EPropertyType::VEC3:
+		if (prop.HasFlag(PropertyFlag::IsObjectSlot))
+			return FBPropertyType::kFBPT_object; // a slot to connect a scene object
 		return (prop.HasFlag(PropertyFlag::IsColor)) ? FBPropertyType::kFBPT_ColorRGB : FBPropertyType::kFBPT_Vector3D;
 
 	case EPropertyType::VEC4:

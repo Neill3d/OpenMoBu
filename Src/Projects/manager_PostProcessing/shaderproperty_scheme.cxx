@@ -19,86 +19,40 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 namespace _ShaderPropertySchemeInternal
 {
-	inline std::string_view RemovePostfix(std::string_view name, std::string_view postfix)
+	UniformBaseType ToUniformBaseType(GLenum type)
 	{
-		if (postfix.empty()) {
-			return name;  // No postfix to remove
-		}
-
-		if (name.size() >= postfix.size() &&
-			name.compare(name.size() - postfix.size(), postfix.size(), postfix) == 0)
+		switch (type)
 		{
-			return name.substr(0, name.size() - postfix.size());  // Remove postfix
+		case GL_FLOAT: return UniformBaseType::Float;
+		case GL_BOOL: return UniformBaseType::Bool;
+		case GL_INT: return UniformBaseType::Int;
+		case GL_FLOAT_VEC2: return UniformBaseType::Vec2;
+		case GL_FLOAT_VEC3: return UniformBaseType::Vec3;
+		case GL_FLOAT_VEC4: return UniformBaseType::Vec4;
+		case GL_SAMPLER_2D: return UniformBaseType::Sampler2D;
+		default: return UniformBaseType::Other;
 		}
-
-		return name;
 	}
 
-	// TABLE OF POSTFIX RULES
-	struct Rule
+	// apply naming rules (see ParseUniformName) to a property made from a uniform
+	void SetNameAndFlagsFromUniformInfo(ShaderProperty& prop, const UniformNameInfo& info)
 	{
-		GLenum glType;
-		std::string_view postfix;
-		PropertyFlag flag;
-	};
+		prop.SetFlag(PropertyFlag::IsFlag, info.isFlag);
+		prop.SetFlag(PropertyFlag::IsClamped100, info.isClamped100);
+		prop.SetFlag(PropertyFlag::IsColor, info.isColor);
+		prop.SetFlag(PropertyFlag::ConvertWorldToScreenSpace, info.isWorldToScreen);
+		prop.SetFlag(PropertyFlag::IsObjectSlot, info.isObjectSlot);
 
-	static constexpr Rule rules[] = {
-			{ GL_FLOAT,       "_flag",  PropertyFlag::IsFlag },
-			{ GL_BOOL,        "_flag",  PropertyFlag::IsFlag },
-			{ GL_FLOAT,		  "_slider", PropertyFlag::IsClamped100 },
-			{ GL_FLOAT_VEC2,  "_wstoss", PropertyFlag::ConvertWorldToScreenSpace },
-			{ GL_FLOAT_VEC3,  "_color", PropertyFlag::IsColor },
-			{ GL_FLOAT_VEC4,  "_color", PropertyFlag::IsColor }
-	};
-
-	std::string_view GetNameFromUniformName(std::string_view name, GLenum type)
-	{
-		std::string_view finalName = name;
-
-		for (const Rule& r : rules)
+		if (info.isObjectCompanion)
 		{
-			if (r.glType == type)
-			{
-				if (name.size() > r.postfix.size() &&
-					name.compare(name.size() - r.postfix.size(), r.postfix.size(), r.postfix) == 0)
-				{
-					finalName = name.substr(0, name.size() - r.postfix.size());
-					break;
-				}
-			}
+			// no own FBProperty, the value is written from the object slot while collecting values
+			prop.SetFlag(PropertyFlag::IsObjectCompanion, true);
+			prop.SetFlag(PropertyFlag::SKIP, true);
+			prop.SetObjectCompanion(info.companionField,
+				xxhash32(info.slotPropertyName.data(), info.slotPropertyName.size(), ShaderProperty::HASH_SEED));
 		}
 
-		return finalName;
-	}
-
-	void SetNameAndFlagsFromUniformNameAndType(ShaderProperty& prop, const char* uniformNameIn, GLenum type)
-	{
-		std::string_view name(uniformNameIn);
-
-		// default: no change
-		std::string_view finalName = name;
-
-		for (const Rule& r : rules)
-		{
-			if (r.glType == type)
-			{
-				if (name.size() > r.postfix.size() &&
-					name.compare(name.size() - r.postfix.size(), r.postfix.size(), r.postfix) == 0)
-				{
-					prop.SetFlag(r.flag, true);
-					finalName = name.substr(0, name.size() - r.postfix.size());
-					break;
-				}
-			}
-		}
-
-		// a glsl bool is always a checkbox, with or without the _flag postfix
-		if (type == GL_BOOL)
-		{
-			prop.SetFlag(PropertyFlag::IsFlag, true);
-		}
-
-		prop.SetName(finalName);
+		prop.SetName(info.propertyName);
 	}
 };
 
@@ -491,8 +445,10 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 				|| (prop->GetType() == EPropertyType::BOOL && shaderType == EPropertyType::FLOAT);
 			if (!isTypeMatched)
 			{
-				LOGE("[ShaderPropertyScheme] uniform %s has a type that differs from the registered property\n", uniformName);
+				// a value of the property can't be uploaded into the uniform (GL rejects it), keep the property without a location
+				LOGE("[ShaderPropertyScheme] uniform %s has a type that differs from the registered property, skip it\n", uniformName);
 				AddWarning();
+				continue;
 			}
 			prop->SetLocation(location);
 		}
@@ -502,16 +458,25 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 
 			if (doPopulatePropertiesFromUniforms)
 			{
+				// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
+				const UniformNameInfo nameInfo = ParseUniformName(uniformName, ToUniformBaseType(type));
+
+				if (nameInfo.isInvalidCompanion)
+				{
+					LOGE("[ShaderPropertyScheme] object slot uniform %s has an unexpected type, skip it\n", uniformName);
+					AddWarning();
+					continue;
+				}
+
 				ShaderProperty newProp;
 
-				newProp.SetGeneratedByUniform(true);
+				// NOTE: a companion of an object slot has no own FBProperty, it is not a property for a user
+				newProp.SetGeneratedByUniform(!nameInfo.isObjectCompanion);
 				newProp.SetUniformName(uniformName);
 				newProp.SetLocation(location);
 				newProp.SetType(shaderType);
 
-				// from a uniform name, let's extract special postfix and convert it into a flag bit, prepare a clean property name
-				// metadata
-				SetNameAndFlagsFromUniformNameAndType(newProp, newProp.GetUniformName(), type);
+				SetNameAndFlagsFromUniformInfo(newProp, nameInfo);
 
 				// different uniforms could end up with the same property name after a postfix is removed
 				//  (like "glow" and "glow_slider")
@@ -528,6 +493,13 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 		}
 	}
 
+	// companions of an object slot need the slot property, even if the slot uniform itself is not declared
+	//  or stripped by the compiler as unused (a shader could use only <name>_object_screen, for example)
+	if (doPopulatePropertiesFromUniforms)
+	{
+		AddImplicitObjectSlots();
+	}
+
 	// registered properties that are expected to drive a uniform, report once here (values without a location are skipped on upload)
 	for (const ShaderProperty& prop : properties)
 	{
@@ -539,6 +511,55 @@ int ShaderPropertyScheme::ReflectUniforms(const GLuint programId, bool doPopulat
 	}
 
 	return added;
+}
+
+void ShaderPropertyScheme::AddImplicitObjectSlots()
+{
+	// NOTE: names are collected first, adding a property while iterating would invalidate the iteration
+	std::vector<std::string> missingSlots;
+
+	for (const ShaderProperty& prop : properties)
+	{
+		if (!prop.HasFlag(PropertyFlag::IsObjectCompanion))
+			continue;
+
+		const ShaderProperty* slot = FindPropertyByHash(prop.GetObjectSlotNameHash());
+		if (slot && slot->HasFlag(PropertyFlag::IsObjectSlot))
+			continue;
+
+		if (slot)
+		{
+			LOGE("[ShaderPropertyScheme] uniform %s needs an object slot %s, but a property with that name is not an object slot\n",
+				prop.GetUniformName(), slot->GetName());
+			AddWarning();
+			continue;
+		}
+
+		// <slot>_object_<field>, the slot property name is the part before "_object_"
+		const std::string_view uniformName(prop.GetUniformName());
+		const size_t infixPos = uniformName.rfind("_object_");
+		if (infixPos == std::string_view::npos)
+			continue;
+
+		std::string slotName(uniformName.substr(0, infixPos));
+		if (std::find(begin(missingSlots), end(missingSlots), slotName) == end(missingSlots))
+		{
+			missingSlots.push_back(std::move(slotName));
+		}
+	}
+
+	for (const std::string& slotName : missingSlots)
+	{
+		ShaderProperty slotProp;
+		slotProp.SetGeneratedByUniform(true);
+		slotProp.SetUniformName(slotName + "_object");
+		slotProp.SetType(EPropertyType::VEC3);
+		slotProp.SetFlag(PropertyFlag::IsObjectSlot, true);
+		slotProp.SetName(slotName);
+		// NOTE: no location, the slot uniform is not active, the property exists for the companion uniforms
+
+		AddProperty(std::move(slotProp));
+	}
 }
 
 EPropertyType ShaderPropertyScheme::UniformTypeToShaderPropertyType(GLenum type) const

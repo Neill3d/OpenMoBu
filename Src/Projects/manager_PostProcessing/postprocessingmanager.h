@@ -85,6 +85,14 @@ private:
 
 	//! between begin and end of a video (file) rendering, a context data that renders picks it up in BeforeRender
 	std::atomic<bool> mVideoRendering{ false };
+
+	// publish rebuilt shader property schemes in the UI thread, while the evaluation of every context is blocked
+	void PublishPendingSchemes();
+
+	//! diagnostics, threads of the UI idle and rendering callbacks, logged once from the synchronization callback
+	std::atomic<unsigned long> mUIThreadId{ 0 };
+	std::atomic<unsigned long> mRenderThreadId{ 0 };
+	bool mIsSyncThreadLogged{ false };
 	static std::map<HGLRC, std::unique_ptr<PostProcessContextData>>	gContextMap;
 
 	RenderFrameGate mFrameGate;

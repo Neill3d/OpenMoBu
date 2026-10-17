@@ -158,8 +158,10 @@ protected:
 	std::shared_ptr<const ShaderPropertyScheme> mRenderPropertyScheme; //!< the property scheme to use in render thread
 	std::shared_ptr<const ShaderPropertyScheme> mEvalPropertyScheme; //!< the property scheme to use in evaluation thread
 	std::shared_ptr<ShaderPropertyScheme> mPendingPropertyScheme; //!< a rebuilt scheme that is waiting to be published
-	//!< a component to associate the pending scheme with, a handle is cleared if the component is destroyed before publishing
-	HdlFBPlugTemplate<FBComponent> mPendingSchemeComponent;
+	//!< a component to associate the pending scheme with (the owner or the post process data),
+	//!<  it is validated when published, the component could be destroyed in between (file new)
+	//!< NOTE: not an SDK handle on purpose, a shader could be destroyed after the SDK is shut down
+	FBComponent* mPendingSchemeComponent{ nullptr };
 
 	// associate a pending scheme with FBProperties and make it visible for the evaluation thread
 	virtual void PublishPendingScheme();
@@ -192,8 +194,12 @@ public:
 	//! the property scheme for the evaluation thread (collecting values from FBProperties)
 	const ShaderPropertyScheme* GetEvalPropertySchemePtr() const { return mEvalPropertyScheme.get(); }
 
-	/// process all shaders with a rebuilt property scheme, call it only when evaluation and rendering pipelines are stopped
+	/// process all shaders with a rebuilt property scheme. It makes and removes FBProperties (a UI change),
+	///  so call it in the UI thread and only when the evaluation of effect contexts is blocked
+	///  (see PostProcessingManager::PublishPendingSchemes)
 	static void PublishPendingSchemes();
+	/// is any shader waiting for its property scheme to be published
+	static bool HasPendingSchemes();
 
 	virtual int GetNumberOfProperties() const;
 	virtual const ShaderProperty& GetProperty(int index) const;

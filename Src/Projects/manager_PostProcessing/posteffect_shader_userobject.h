@@ -287,6 +287,7 @@ protected:
 	FBProperty* MakePropertyVec3(const ShaderProperty& prop);
 	FBProperty* MakePropertyVec4(const ShaderProperty& prop);
 	FBProperty* MakePropertySampler(const ShaderProperty& prop);
+	FBProperty* MakePropertyObjectSlot(const ShaderProperty& prop);
 
 	FBProperty* GetOrMakeProperty(const ShaderProperty& prop);
 
