@@ -250,6 +250,26 @@ const ShaderProperty* ShaderPropertyScheme::GetProperty(const ShaderPropertyProx
 	return FindPropertyByHash(proxy.nameHash);
 }
 
+namespace _ShaderPropertySchemeInternal
+{
+	// a property that is generated from a shader uniform must have exactly the type that we expect,
+	//  otherwise we are looking at some other (outdated or system) property with the same name
+	bool IsFBPropertyTypeExpected(FBProperty* fbProp, const ShaderProperty& prop)
+	{
+		return !prop.IsGeneratedByUniform()
+			|| fbProp->GetPropertyType() == ShaderProperty::ShaderPropertyToFBPropertyType(prop);
+	}
+};
+
+FBProperty* ShaderPropertyScheme::FindFBProperty(FBComponent* component, const ShaderProperty& prop)
+{
+	if (!component)
+		return nullptr;
+
+	FBProperty* fbProp = component->PropertyList.Find(prop.GetName());
+	return (fbProp && _ShaderPropertySchemeInternal::IsFBPropertyTypeExpected(fbProp, prop)) ? fbProp : nullptr;
+}
+
 void ShaderPropertyScheme::AssociateFBProperties(FBComponent* component)
 {
 	if (!component)
@@ -259,10 +279,7 @@ void ShaderPropertyScheme::AssociateFBProperties(FBComponent* component)
 	{
 		FBProperty* fbProp = component->PropertyList.Find(prop.GetName());
 
-		// a property that is generated from a shader uniform must have exactly the type that we expect,
-		//  otherwise we are looking at some other (outdated or system) property with the same name
-		if (fbProp && prop.IsGeneratedByUniform()
-			&& fbProp->GetPropertyType() != ShaderProperty::ShaderPropertyToFBPropertyType(prop))
+		if (fbProp && !_ShaderPropertySchemeInternal::IsFBPropertyTypeExpected(fbProp, prop))
 		{
 			LOGE("[ShaderPropertyScheme] property %s has an unexpected type %s, skip association\n",
 				prop.GetName(), fbProp->GetPropertyTypeName());

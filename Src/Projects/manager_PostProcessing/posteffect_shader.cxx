@@ -118,9 +118,20 @@ void PostEffectBufferShader::PublishPendingScheme()
 
 	// the owner lives as long as the shader, the post process data could be destroyed after the scheme was built
 	FBComponent* component = mPendingSchemeComponent;
-	if (component && component != GetOwner() && !_PostEffectBufferShaderInternal::IsUserObjectInScene(component))
+	bool isAssociationValid = true;
+	if (component && component != GetOwner())
 	{
-		component = nullptr;
+		if (!SceneGeneration::IsCurrent(mPendingSchemeGeneration))
+		{
+			// a scene change after the scheme was built, the component could be destroyed and a new one could get its address,
+			//  the scheme stays not associated and it's rebuilt for the current component (see Render)
+			component = nullptr;
+			isAssociationValid = false;
+		}
+		else if (!_PostEffectBufferShaderInternal::IsUserObjectInScene(component))
+		{
+			component = nullptr;
+		}
 	}
 
 	// user object could make new FBProperties according to the new scheme
@@ -128,9 +139,14 @@ void PostEffectBufferShader::PublishPendingScheme()
 	newScheme->AssociateFBProperties(component);
 	OnPropertySchemeAssociated(newScheme);
 
+	const uint32_t generation = isAssociationValid ? SceneGeneration::Current() : SceneGeneration::NotAssociated;
+	newScheme->SetAssociatedGeneration(generation);
+
 	mEvalPropertyScheme = std::move(mPendingPropertyScheme);
+	mEvalSchemeGeneration.store(generation, std::memory_order_release);
 	mPendingPropertyScheme.reset();
 	mPendingSchemeComponent = nullptr;
+	mPendingSchemeGeneration = SceneGeneration::NotAssociated;
 }
 
 void PostEffectBufferShader::MakeCommonProperties(ShaderPropertyScheme* scheme)
@@ -357,13 +373,19 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 	// a scene model connected to an object slot is read once, a slot and its companion uniforms share it
 	ObjectSlotCache objectSlots;
 
+	// NOTE: scene components could be destroyed since the scheme was associated (file new / open, merge, delete),
+	//  cached FBProperties must not be touched then. Properties are found by name in the given component
+	//  until the scheme is rebuilt and published again, a frame or two after the scene change
+	const bool isAssociationCurrent = propertyScheme->IsAssociationCurrent();
+	FBComponent* lookupComponent = (isAssociationCurrent) ? nullptr : component;
+
 	for (const auto& shaderProperty : propertyScheme->GetProperties())
 	{
 		ShaderPropertyValue value(shaderProperty.GetDefaultValue());
 
 		if (shaderProperty.HasFlag(PropertyFlag::IsObjectCompanion))
 		{
-			const ObjectSlotData slotData = objectSlots.Get(propertyScheme, shaderProperty.GetObjectSlotNameHash(), effectContext);
+			const ObjectSlotData slotData = objectSlots.Get(propertyScheme, shaderProperty.GetObjectSlotNameHash(), effectContext, lookupComponent);
 			WriteObjectSlotValue(value, slotData, shaderProperty.GetObjectSlotField());
 			writeMap.emplace_back(std::move(value));
 			continue;
@@ -371,13 +393,9 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 
 		if (!shaderProperty.HasFlag(PropertyFlag::SKIP))
 		{
-			FBProperty* fbProperty = shaderProperty.GetFBProperty();
-			
-			//if (!fbProperty || component != shaderProperty.GetFBComponent())
-			//{
-			//	const char* shaderPropertyName = shaderProperty.GetName();
-			//	fbProperty = component->PropertyList.Find(shaderPropertyName);
-			//}
+			FBProperty* fbProperty = (isAssociationCurrent)
+				? shaderProperty.GetFBProperty()
+				: ShaderPropertyScheme::FindFBProperty(lookupComponent, shaderProperty);
 
 			if (fbProperty)
 			{
@@ -385,7 +403,7 @@ bool EffectShaderPropertyProcessor::CollectUIValues(FBComponent* component, Post
 				if (fbType == FBPropertyType::kFBPT_object && shaderProperty.HasFlag(PropertyFlag::IsObjectSlot))
 				{
 					// a scene model, the uniform gets its world position
-					const ObjectSlotData slotData = objectSlots.Get(propertyScheme, shaderProperty.GetNameHash(), effectContext);
+					const ObjectSlotData slotData = objectSlots.Get(propertyScheme, shaderProperty.GetNameHash(), effectContext, lookupComponent);
 					WriteObjectSlotValue(value, slotData, ObjectSlotField::Position);
 				}
 				else if (fbType == FBPropertyType::kFBPT_object)
@@ -696,6 +714,16 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 	
 	OnRenderBegin(renderContext, effectContext);
 	
+	const uint32_t sceneGeneration = SceneGeneration::Current();
+	if (!bIsNeedToUpdatePropertyScheme
+		&& mEvalSchemeGeneration.load(std::memory_order_acquire) != sceneGeneration
+		&& mRebuiltSchemeGeneration != sceneGeneration)
+	{
+		// scene components could be destroyed since the scheme was associated (file new / open, merge, delete),
+		//  rebuild it to associate with the current components
+		bIsNeedToUpdatePropertyScheme = true;
+	}
+
 	if (bIsNeedToUpdatePropertyScheme)
 	{
 		// change shader, change context, reload shader, we have to re-initialize property scheme with a new one
@@ -707,6 +735,8 @@ void PostEffectBufferShader::Render(PostEffectRenderContext& renderContext, Post
 		// the new scheme is used for rendering right away, FBProperties are made and associated
 		//  when both pipelines are stopped (see PublishPendingSchemes)
 		mPendingSchemeComponent = GetOwner() ? GetOwner() : effectContext->GetPostProcessData();
+		mPendingSchemeGeneration = sceneGeneration;
+		mRebuiltSchemeGeneration = sceneGeneration;
 		mRenderPropertyScheme = newPropertyScheme;
 		mPendingPropertyScheme = std::move(newPropertyScheme);
 		QueueSchemePublish();

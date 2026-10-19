@@ -11,6 +11,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include <GL/glew.h>
 #include "shaderproperty.h"
+#include "shaderproperty_generation.h"
 
 #include <array>
 #include <atomic>
@@ -127,6 +128,16 @@ struct ShaderPropertyScheme
 	// @see PostEffectBufferShader::Render
 	void AssociateFBProperties(FBComponent* component);
 
+	// find a property of the component for the shader property, nullptr when it's missing or has an unexpected type
+	// NOTE: a name search, too expensive for a regular per frame use
+	static FBProperty* FindFBProperty(FBComponent* component, const ShaderProperty& prop);
+
+	// the scene generation the FBProperties were associated in (see SceneGeneration)
+	void SetAssociatedGeneration(uint32_t generation) { associatedGeneration = generation; }
+	uint32_t GetAssociatedGeneration() const { return associatedGeneration; }
+	// false when scene components could be destroyed after the association, cached FBProperties must not be used then
+	bool IsAssociationCurrent() const { return SceneGeneration::IsCurrent(associatedGeneration); }
+
 	bool ExportToJSON(const std::filesystem::path& filePath) const;
 
 	int ReflectUniforms(const GLuint programId, bool doPopulatePropertiesFromUniforms);
@@ -146,5 +157,6 @@ struct ShaderPropertyScheme
 private:
 	std::vector<ShaderProperty> properties;
 	int warningCount{ 0 };
+	uint32_t associatedGeneration{ SceneGeneration::NotAssociated };
 	std::array<GLint, static_cast<int>(ShaderSystemUniform::COUNT)> systemUniformLocations;
 };

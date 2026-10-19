@@ -57,7 +57,9 @@ public: // CALLBACKS
 
 	void EventSceneChange(HISender pSender, HKEvent pEvent);
 
+	void EventFileNewBegin(HISender pSender, HKEvent pEvent);
 	void EventFileNew(HISender pSender, HKEvent pEvent);
+	void EventFileMerge(HISender pSender, HKEvent pEvent);
 	void EventFileOpen(HISender pSender, HKEvent pEvent);
 	void EventFileOpenComplete(HISender pSender, HKEvent pEvent);
 	void EventFileOpenOverride(HISender pSender, HKEvent pEvent);

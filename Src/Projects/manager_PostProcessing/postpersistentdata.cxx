@@ -1266,7 +1266,11 @@ void PostPersistentData::DoFixCameraSettings()
 
 			for (int i = 0, count = Camera.GetCount(); i < count; ++i)
 			{
-				FBCamera *pCamera = (FBCamera*)Camera.GetAt(i);
+				// NOTE: the class filter is a UI restriction, check the type before the cast
+				if (!FBIS(Camera.GetAt(i), FBCamera))
+					continue;
+
+				FBCamera *pCamera = static_cast<FBCamera*>(Camera.GetAt(i));
 				if (false == pCamera->SystemCamera)
 				{
 					fn_fixsettings(pCamera);
@@ -1528,10 +1532,12 @@ void PostPersistentData::OnUIIdle(HISender pSender, HKEvent pEvent)
 			int userChoice = FBMessageBox("Post Processing", "Focus Object is already assigned.\n What do you want to do with existing?", "Delete", "Disconnect", "Cancel");
 			if (1 == userChoice)
 			{
-				FBModel *pModel = (FBModel*)FocusObject.GetAt(0);
+				FBComponent *pFocusObject = FocusObject.GetAt(0);
 				FocusObject.RemoveAll();
-				pModel->FBDelete();
-				pModel = nullptr;
+				if (FBIS(pFocusObject, FBModel))
+				{
+					pFocusObject->FBDelete();
+				}
 			}
 			else if (2 == userChoice)
 			{
@@ -1810,8 +1816,12 @@ void PostPersistentData::ReloadUserEffects()
 	for (int i = 0; i < UserEffects.GetCount(); ++i)
 	{
 		FBComponent* component = UserEffects.GetAt(i);
-		EffectShaderUserObject* userEffect = FBCast<EffectShaderUserObject>(component);
-		if (userEffect && userEffect->IsNeedToReloadShaders())
+		// NOTE: FBCast doesn't validate the type, the list has no class filter and any object could be connected
+		if (!FBIS(component, EffectShaderUserObject))
+			continue;
+
+		EffectShaderUserObject* userEffect = static_cast<EffectShaderUserObject*>(component);
+		if (userEffect->IsNeedToReloadShaders())
 		{
 			// an effect reports its failure by itself, let's carry on with the rest of effects
 			userEffect->DoReloadShaders();

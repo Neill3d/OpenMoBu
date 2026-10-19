@@ -10,6 +10,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include "posteffect_rendercontext.h"
+#include "shaderproperty_generation.h"
+#include <atomic>
 #include <memory>
 #include <unordered_map>
 #include <filesystem>
@@ -162,6 +164,12 @@ protected:
 	//!<  it is validated when published, the component could be destroyed in between (file new)
 	//!< NOTE: not an SDK handle on purpose, a shader could be destroyed after the SDK is shut down
 	FBComponent* mPendingSchemeComponent{ nullptr };
+	//!< the scene generation when the pending component was taken, an older one means the component could be destroyed
+	uint32_t mPendingSchemeGeneration{ SceneGeneration::NotAssociated };
+	//!< the scene generation of the published (evaluation) scheme, written in publish, read in the render thread
+	std::atomic<uint32_t> mEvalSchemeGeneration{ SceneGeneration::NotAssociated };
+	//!< render thread only, the scene generation of the last scheme rebuild, so a stale scheme is rebuilt once per generation
+	uint32_t mRebuiltSchemeGeneration{ SceneGeneration::NotAssociated };
 
 	// associate a pending scheme with FBProperties and make it visible for the evaluation thread
 	virtual void PublishPendingScheme();

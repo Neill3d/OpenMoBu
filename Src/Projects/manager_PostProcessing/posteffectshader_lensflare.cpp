@@ -206,7 +206,16 @@ void EffectShaderLensFlare::SubShader::ProcessLightObjects(PostEffectContextProx
 
 void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostEffectContextProxy* effectContext, PostPersistentData* pData, FBCamera* pCamera, FBMatrix& mvp, int index, int w, int h, double dt, double* flarePos)
 {
-	FBLight* pLight = static_cast<FBLight*>(pData->FlareLight.GetAt(index));
+	// NOTE: the class filter is a UI restriction, a non-light connection gives no flare
+	FBComponent* lightComponent = pData->FlareLight.GetAt(index);
+	if (!FBIS(lightComponent, FBLight))
+	{
+		m_LightColors[index] = FBColor(0.0, 0.0, 0.0);
+		m_LightAlpha[index] = 0.0f;
+		return;
+	}
+
+	FBLight* pLight = static_cast<FBLight*>(lightComponent);
 
 	FBVector3d lightPos;
 	pLight->GetVector(lightPos, FBModelTransformationType::kModelTranslation, true, effectContext->GetEvaluateInfo());
@@ -240,8 +249,10 @@ void EffectShaderLensFlare::SubShader::ProcessSingleLight(PostEffectContextProxy
 
 		for (int i = 0, count = pData->FlareOcclusionObjects.GetCount(); i < count; ++i)
 		{
-			if (FBModel* model = FBCast<FBModel>(pData->FlareOcclusionObjects.GetAt(i)))
+			FBComponent* occlusionObject = pData->FlareOcclusionObjects.GetAt(i);
+			if (FBIS(occlusionObject, FBModel))
 			{
+				FBModel* model = static_cast<FBModel*>(occlusionObject);
 				FBVector3d hitPosition, hitNormal;
 				if (model->RayCast(pCamera, x, y, hitPosition, hitNormal))
 				{

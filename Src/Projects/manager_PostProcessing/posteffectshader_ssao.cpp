@@ -262,8 +262,10 @@ bool EffectShaderSSAO::InitMisc()
 
 	glBindTexture(GL_TEXTURE_2D, hbaoRandomTexId);
 	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// NOTE: the texture is tiled over the screen (gl_FragCoord / AO_RANDOMTEX_SIZE in ssao.fsh),
+	//  a clamp would give every pixel outside of the first 4x4 block the same edge rotation
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 

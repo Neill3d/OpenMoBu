@@ -136,8 +136,13 @@ bool EffectShaderMix::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 	else
 	{
 		// collect from the specific effect shader user object
-		EffectShaderMixUserObject* userObject = FBCast<EffectShaderMixUserObject>(mUIComponent);
-		if (userObject && userObject->Bloom)
+		EffectShaderMixUserObject* userObject = FBIS(mUIComponent, EffectShaderMixUserObject)
+			? static_cast<EffectShaderMixUserObject*>(mUIComponent) : nullptr;
+		if (!userObject)
+		{
+			writer(mBloom, 0.0f, 0.0f, 0.0f, 0.0f);
+		}
+		else if (userObject->Bloom)
 		{
 			writer(mBloom,
 				static_cast<float>(0.01 * userObject->BloomTone),

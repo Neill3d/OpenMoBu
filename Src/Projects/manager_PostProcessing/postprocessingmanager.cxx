@@ -16,6 +16,7 @@
 #include "posteffect_contextmobu.h"
 #include "posteffect_shader_userobject.h"
 #include "postprocessing_helper.h"
+#include "shaderproperty_generation.h"
 
 //--- Registration defines
 #define POSTPROCESSING_MANAGER__CLASS POSTPROCESSING_MANAGER__CLASSNAME
@@ -142,7 +143,9 @@ bool PostProcessingManager::Open()
 	FBSystem& system = FBSystem::TheOne();
 	FBEvaluateManager& evaluateManager = FBEvaluateManager::TheOne();
 
+	application.OnFileNew.Add(this, (FBCallback)&PostProcessingManager::EventFileNewBegin);
 	application.OnFileNewCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileNew);
+	application.OnFileMerge.Add(this, (FBCallback)&PostProcessingManager::EventFileMerge);
 	application.OnFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpen);
 	application.OnFileOpenCompleted.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
 	application.OnOverrideFileOpen.Add(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
@@ -372,7 +375,9 @@ bool PostProcessingManager::Close()
 	evaluateManager.OnEvaluationPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameEvaluationPipelineCallback);
 	evaluateManager.OnSynchronizationEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameSynchronizationCallback);
 	evaluateManager.OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
+	application.OnFileNew.Remove(this, (FBCallback)&PostProcessingManager::EventFileNewBegin);
 	application.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
+	application.OnFileMerge.Remove(this, (FBCallback)&PostProcessingManager::EventFileMerge);
 	application.OnFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpen);
 	application.OnFileOpenCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
 	application.OnOverrideFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
@@ -400,6 +405,18 @@ bool PostProcessingManager::Close()
 }
 
 
+void PostProcessingManager::EventFileNewBegin(HISender pSender, HKEvent pEvent)
+{
+	// nothing is destroyed yet, cached FBProperties of property schemes are not going to be valid anymore
+	SceneGeneration::Bump();
+}
+
+void PostProcessingManager::EventFileMerge(HISender pSender, HKEvent pEvent)
+{
+	// a merge could replace a post process data or a user effect object
+	SceneGeneration::Bump();
+}
+
 void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 {
 	// clear all pointers (start point)
@@ -414,6 +431,8 @@ void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
 	skipRender = true;
+	// nothing is destroyed yet, cached FBProperties of property schemes are not going to be valid anymore
+	SceneGeneration::Bump();
 	std::unique_lock wlock(gContextMapMutex);
 	for (auto& contextPair : gContextMap)
 	{
@@ -459,6 +478,19 @@ void PostProcessingManager::EventSceneChange(HISender pSender, HKEvent pEvent)
 			if (component && component->Is(EffectShaderUserObject::TypeInfo))
 			{
 				static_cast<EffectShaderUserObject*>(component)->InvalidateNameHash();
+			}
+		}
+	} break;
+	case kFBSceneChangeDestroy:
+	{
+		// property schemes could keep FBProperties of the destroyed component (merge replace, delete, python)
+		FBComponent* components[] = { sceneEvent.Component, sceneEvent.ChildComponent };
+		for (FBComponent* component : components)
+		{
+			if (component && (component->Is(PostPersistentData::TypeInfo) || component->Is(EffectShaderUserObject::TypeInfo)))
+			{
+				SceneGeneration::Bump();
+				break;
 			}
 		}
 	} break;

@@ -46,7 +46,10 @@ void WriteObjectSlotValue(ShaderPropertyValue& value, const ObjectSlotData& data
 class ObjectSlotCache
 {
 public:
-	ObjectSlotData Get(const ShaderPropertyScheme* scheme, uint32_t slotNameHash, const PostEffectContextProxy* effectContext);
+	/// @param lookupComponent when set, the slot property is found by name in it instead of using the associated FBProperty
+	///  (the scheme association is not current, see ShaderPropertyScheme::IsAssociationCurrent)
+	ObjectSlotData Get(const ShaderPropertyScheme* scheme, uint32_t slotNameHash, const PostEffectContextProxy* effectContext,
+		FBComponent* lookupComponent = nullptr);
 
 private:
 	std::vector<std::pair<uint32_t, ObjectSlotData>> mEntries;

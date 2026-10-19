@@ -24,9 +24,11 @@ void ReadObjectSlot(ObjectSlotData& out, FBProperty* slotProperty, const PostEff
 
 	FBPropertyListObject* listProperty = FBCast<FBPropertyListObject>(slotProperty);
 	FBComponent* component = (listProperty && listProperty->GetCount() > 0) ? listProperty->GetAt(0) : nullptr;
-	FBModel* model = FBCast<FBModel>(component);
-	if (!model)
+	// NOTE: FBCast doesn't validate the type, the slot has no class filter and any object could be connected
+	if (!FBIS(component, FBModel))
 		return;
+
+	FBModel* model = static_cast<FBModel*>(component);
 
 	FBEvaluateInfo* evaluateInfo = effectContext->GetEvaluateInfo();
 
@@ -39,8 +41,9 @@ void ReadObjectSlot(ObjectSlotData& out, FBProperty* slotProperty, const PostEff
 		out.position[i] = static_cast<float>(position[i]);
 	}
 
-	if (FBLight* light = FBCast<FBLight>(model))
+	if (FBIS(model, FBLight))
 	{
+		FBLight* light = static_cast<FBLight*>(model);
 		double color[3]{ 1.0, 1.0, 1.0 };
 		light->DiffuseColor.GetData(color, sizeof(double) * 3, evaluateInfo);
 
@@ -103,7 +106,8 @@ void WriteObjectSlotValue(ShaderPropertyValue& value, const ObjectSlotData& data
 	}
 }
 
-ObjectSlotData ObjectSlotCache::Get(const ShaderPropertyScheme* scheme, uint32_t slotNameHash, const PostEffectContextProxy* effectContext)
+ObjectSlotData ObjectSlotCache::Get(const ShaderPropertyScheme* scheme, uint32_t slotNameHash, const PostEffectContextProxy* effectContext,
+	FBComponent* lookupComponent)
 {
 	for (const auto& entry : mEntries)
 	{
@@ -113,7 +117,11 @@ ObjectSlotData ObjectSlotCache::Get(const ShaderPropertyScheme* scheme, uint32_t
 
 	// NOTE: a slot without an associated FBProperty (or without a connection) gives values of an empty slot
 	const ShaderProperty* slot = (scheme) ? scheme->FindPropertyByHash(slotNameHash) : nullptr;
-	FBProperty* slotProperty = (slot && slot->HasFlag(PropertyFlag::IsObjectSlot)) ? slot->GetFBProperty() : nullptr;
+	FBProperty* slotProperty = nullptr;
+	if (slot && slot->HasFlag(PropertyFlag::IsObjectSlot))
+	{
+		slotProperty = (lookupComponent) ? ShaderPropertyScheme::FindFBProperty(lookupComponent, *slot) : slot->GetFBProperty();
+	}
 
 	ObjectSlotData data;
 	ReadObjectSlot(data, slotProperty, effectContext);

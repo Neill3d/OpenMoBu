@@ -223,10 +223,12 @@ FetchContent_MakeAvailable(googletest)
 set (POSTEFFECTSTESTS
     tests/posteffectbase_shaderproperty_tests.cpp
     tests/shaderproperty_naming_tests.cpp
+    tests/shaderproperty_generation_tests.cpp
     tests/test_stubs.cpp
     # the uniform naming rules have no fbsdk or GL dependencies, compiled into the tests directly
     shaderproperty_naming.h
     shaderproperty_naming.cpp
+    shaderproperty_generation.h
 )
 source_group("Tests" FILES ${POSTEFFECTSTESTS})
 

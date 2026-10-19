@@ -227,10 +227,11 @@ bool EffectShaderDOF::OnCollectUI(PostEffectContextProxy* effectContext, int mas
 			_lensBlurScale = static_cast<float>(std::max(focusAngle, 0.0) * kApertureSizePerDegree * lens.focalLengthPx);
 		}
 	}
-	else if (pData->AutoFocus && pData->FocusObject.GetCount() > 0)
+	else if (pData->AutoFocus && pData->FocusObject.GetCount() > 0 && FBIS(pData->FocusObject.GetAt(0), FBModel))
 	{
 		// Dont write to property
 		// FocalDistance = dist;
+		// NOTE: the class filter is a UI restriction, the type is checked above
 		FBModel* pModel = static_cast<FBModel*>(pData->FocusObject.GetAt(0));
 		_focalDistance = ComputeViewDepth(effectContext->GetModelViewMatrix(), pModel, effectContext->GetEvaluateInfo());
 	}
