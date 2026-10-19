@@ -30,6 +30,7 @@ uniform float	lowerClip;
 uniform vec4 projInfo;
 uniform int projOrtho;
 uniform vec2 InvFullResolution;
+uniform vec2 gResolution;			// size of the render target, a half of the view in the composite mode (see EffectShaderSSAO::RenderPass)
 
 uniform float RadiusToScreen;		// radius
 uniform float NegInvR2;				// radius * radius
@@ -154,6 +155,19 @@ float ComputeCoarseAO(vec2 FullResUV, float RadiusPixels, vec4 Rand, vec3 ViewPo
 	return AO;
 }
 
+//----------------------------------------------------------------------------------
+// the linear depth is a full resolution texture with a nearest filter, while the AO target could be smaller (half resolution).
+//  A center of a smaller target pixel is then exactly on a border between depth texels, and a fetched depth belongs
+//  to a texel that is half a pixel away from the uv used to reconstruct the view position. On steep surfaces
+//  that error flips from texel to texel and gives stripes of a false occlusion. Snap to a depth texel center instead
+vec2 GetFullResUV(vec2 uv)
+{
+	vec2 depthSize = vec2(textureSize(linearDepthSampler, 0));
+	vec2 targetPixel = floor(uv * gResolution);
+	vec2 depthTexel = floor(targetPixel * depthSize / max(gResolution, vec2(1.0))) + 0.5;
+	return depthTexel / depthSize;
+}
+
 // -----------------------------------------------------------------------
 
 void main()
@@ -167,10 +181,11 @@ void main()
 		return;
 	}
 	
-	vec3 ViewPosition = FetchViewPos(uv);
+	vec2 FullResUV = GetFullResUV(uv);
+	vec3 ViewPosition = FetchViewPos(FullResUV);
 
 	// Reconstruct view-space normal from nearest neighbors
-	vec3 ViewNormal = -ReconstructNormal(uv, ViewPosition);
+	vec3 ViewNormal = -ReconstructNormal(FullResUV, ViewPosition);
 
 	// Compute projection of disk of radius control.R into screen space
 	float RadiusPixels = RadiusToScreen / max(abs(ViewPosition.z), 1e-4);
@@ -178,7 +193,7 @@ void main()
 	// Get jitter vector for the current full-res pixel
 	vec4 Rand = GetJitter();
 	
-	float AO = ComputeCoarseAO(uv, RadiusPixels, Rand, ViewPosition, ViewNormal);
+	float AO = ComputeCoarseAO(FullResUV, RadiusPixels, Rand, ViewPosition, ViewNormal);
 	AO = pow(AO, PowExponent);
 	
 	if (useMasking > 0.0)
