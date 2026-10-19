@@ -269,15 +269,9 @@ void PostProcessingManager::LoadConfig()
 
 void PostProcessingManager::OnUIIdle(HISender pSender, HKEvent pEvent)
 {
-	FBSystem& system = FBSystem::TheOne();
-
 	if (mFirstRun)
 	{
 		mFirstRun = false;
-
-		//
-		system.OnConnectionNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnNotify);
-		system.OnConnectionDataNotify.Add(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
 
 		//
 		LoadConfig();
@@ -380,12 +374,9 @@ bool PostProcessingManager::Close()
 	evaluateManager.OnRenderingPipelineEvent.Remove(this, (FBCallback)&PostProcessingManager::OnPerFrameRenderingPipelineCallback);
 	application.OnFileNewCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileNew);
 	application.OnFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpen);
-	application.OnFileMerge.Remove(this, (FBCallback)&PostProcessingManager::EventFileMerge);
 	application.OnFileOpenCompleted.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenComplete);
 	application.OnOverrideFileOpen.Remove(this, (FBCallback)&PostProcessingManager::EventFileOpenOverride);
 	system.Scene->OnChange.Remove(this, (FBCallback)&PostProcessingManager::EventSceneChange);
-	system.OnConnectionNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnNotify);
-	system.OnConnectionDataNotify.Remove(this, (FBCallback)&PostProcessingManager::EventConnDataNotify);
 	system.OnVideoFrameRendering.Remove(this, (FBCallback)&PostProcessingManager::OnVideoFrameRendering);
 
 	//CloseSocket();
@@ -437,10 +428,6 @@ void PostProcessingManager::EventFileOpenOverride(HISender pSender, HKEvent pEve
 	SetCurrentFileOpenPath(lEvent.FilePath.AsString());
 }
 
-void PostProcessingManager::EventFileMerge(HISender pSender, HKEvent pEvent)
-{
-}
-
 void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEvent)
 {
 	skipRender = false;
@@ -468,9 +455,10 @@ void PostProcessingManager::EventSceneChange(HISender pSender, HKEvent pEvent)
 		FBComponent* components[] = { sceneEvent.Component, sceneEvent.ChildComponent };
 		for (FBComponent* component : components)
 		{
-			if (EffectShaderUserObject* userObject = FBCast<EffectShaderUserObject>(component))
+			// NOTE: FBCast does not validate the type, any renamed component would be reinterpreted as a user object
+			if (component && component->Is(EffectShaderUserObject::TypeInfo))
 			{
-				userObject->InvalidateNameHash();
+				static_cast<EffectShaderUserObject*>(component)->InvalidateNameHash();
 			}
 		}
 	} break;
@@ -480,16 +468,6 @@ void PostProcessingManager::EventSceneChange(HISender pSender, HKEvent pEvent)
 }
 
 
-
-void PostProcessingManager::EventConnDataNotify(HISender pSender, HKEvent pEvent)
-{
-	
-}
-
-void PostProcessingManager::EventConnNotify(HISender pSender, HKEvent pEvent)
-{
-	
-}
 
 PostProcessContextData* PostProcessingManager::GetCurrentContextData()
 {

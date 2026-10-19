@@ -59,7 +59,6 @@ public: // CALLBACKS
 
 	void EventFileNew(HISender pSender, HKEvent pEvent);
 	void EventFileOpen(HISender pSender, HKEvent pEvent);
-	void EventFileMerge(HISender pSender, HKEvent pEvent);
 	void EventFileOpenComplete(HISender pSender, HKEvent pEvent);
 	void EventFileOpenOverride(HISender pSender, HKEvent pEvent);
 
@@ -67,8 +66,6 @@ public: // CALLBACKS
 	void OnPerFrameRenderingPipelineCallback(HISender pSender, HKEvent pEvent);
 	void OnPerFrameEvaluationPipelineCallback(HISender pSender, HKEvent pEvent);
 
-	void EventConnNotify(HISender pSender, HKEvent pEvent);
-	void EventConnDataNotify(HISender pSender, HKEvent pEvent);
 
 	void OnUIIdle(HISender pSender, HKEvent pEvent);
 	
