@@ -62,3 +62,27 @@ TEST(SceneGenerationTest, WrapAroundSkipsNotAssociated)
     EXPECT_EQ(SceneGeneration::Next(std::numeric_limits<uint32_t>::max()), 1u);
     EXPECT_NE(SceneGeneration::Next(std::numeric_limits<uint32_t>::max()), SceneGeneration::NotAssociated);
 }
+
+// a file operation turns the gate on, its end bumps the generation, so panes collected during it are outdated
+TEST(SceneGenerationTest, ChangeEndOutdatesStampsTakenDuringChange)
+{
+    EXPECT_FALSE(SceneGeneration::IsChanging());
+
+    SceneGeneration::BeginChange();
+    EXPECT_TRUE(SceneGeneration::IsChanging());
+
+    // a render pane collected while the old scene is being destroyed
+    const uint32_t stampDuringChange = SceneGeneration::Current();
+
+    EXPECT_TRUE(SceneGeneration::EndChange());
+    EXPECT_FALSE(SceneGeneration::IsChanging());
+    EXPECT_FALSE(SceneGeneration::IsCurrent(stampDuringChange));
+}
+
+// an end without a begin (an idle after a completed operation) changes nothing
+TEST(SceneGenerationTest, EndWithoutChangeKeepsGeneration)
+{
+    const uint32_t stamp = SceneGeneration::Current();
+    EXPECT_FALSE(SceneGeneration::EndChange());
+    EXPECT_TRUE(SceneGeneration::IsCurrent(stamp));
+}

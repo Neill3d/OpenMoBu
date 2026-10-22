@@ -60,6 +60,13 @@ public: // CALLBACKS
 	void EventFileNewBegin(HISender pSender, HKEvent pEvent);
 	void EventFileNew(HISender pSender, HKEvent pEvent);
 	void EventFileMerge(HISender pSender, HKEvent pEvent);
+
+	// a scene change, scene components (cameras, post process data) are going to be destroyed,
+	//  bump the scene generation and wait for an evaluation that is in progress
+	// @param isSceneChangeBegin a file new / open / merge begins, the evaluation and rendering are off until EndSceneChange
+	void StopEvaluationOfOutdatedPanes(bool isSceneChangeBegin);
+	// a file operation is completed (or the UI is idle again), the evaluation and rendering are back with new panes
+	void EndSceneChange();
 	void EventFileOpen(HISender pSender, HKEvent pEvent);
 	void EventFileOpenComplete(HISender pSender, HKEvent pEvent);
 	void EventFileOpenOverride(HISender pSender, HKEvent pEvent);

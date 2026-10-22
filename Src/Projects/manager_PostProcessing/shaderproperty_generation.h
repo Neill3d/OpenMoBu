@@ -43,6 +43,21 @@ public:
 
 	static bool IsCurrent(uint32_t generation) noexcept { return generation != NotAssociated && generation == Current(); }
 
+	// a file new / open / merge is in progress, scene components are being destroyed and made,
+	//  pane cameras and post process data must not be used until the change ends
+	static void BeginChange() noexcept { sIsChanging.store(true, std::memory_order_release); }
+	static bool IsChanging() noexcept { return sIsChanging.load(std::memory_order_acquire); }
+	// ends the change, components collected during it are outdated (the generation is bumped)
+	// @return false when there was no change in progress
+	static bool EndChange() noexcept
+	{
+		if (!sIsChanging.exchange(false, std::memory_order_acq_rel))
+			return false;
+		Bump();
+		return true;
+	}
+
 private:
 	static inline std::atomic<uint32_t> sValue{ 1 };
+	static inline std::atomic<bool> sIsChanging{ false };
 };

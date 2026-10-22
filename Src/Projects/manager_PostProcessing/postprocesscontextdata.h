@@ -65,6 +65,10 @@ public:
 	//
 	int				mEvaluatePaneCount{ 0 }; // @see mEvaluatePanes
 	int				mRenderPaneCount{ 0 }; // @see mRenderPanes
+	//!< the scene generation when the render panes were collected (render thread), see SceneGeneration
+	uint32_t		mRenderPanesGeneration{ 0 };
+	//!< the scene generation of the evaluation panes, an older one means pane cameras and post process data could be destroyed
+	uint32_t		mEvaluatePanesGeneration{ 0 };
 	
 	int				mSchematicViewIndex{ -1 }; // -1 in case there is no pane with schematic view
 	//! the context renders a video (file rendering), see SetVideoRendering

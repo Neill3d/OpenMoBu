@@ -12,6 +12,7 @@
 #include <Windows.h>
 #include <filesystem>
 #include <shared_mutex>
+#include <vector>
 #include "postprocessingmanager.h"
 #include "posteffect_contextmobu.h"
 #include "posteffect_shader_userobject.h"
@@ -275,6 +276,10 @@ void PostProcessingManager::LoadConfig()
 
 void PostProcessingManager::OnUIIdle(HISender pSender, HKEvent pEvent)
 {
+	// a fallback for a merge (no completed event) and a cancelled file new / open,
+	//  the file operations run in the UI thread, so an idle means the operation is over
+	EndSceneChange();
+
 	if (mFirstRun)
 	{
 		mFirstRun = false;
@@ -408,40 +413,83 @@ bool PostProcessingManager::Close()
 }
 
 
+void PostProcessingManager::StopEvaluationOfOutdatedPanes(bool isSceneChangeBegin)
+{
+	if (isSceneChangeBegin)
+	{
+		// NOTE: panes that the render thread collects during the change still point to the old scene components,
+		//  the evaluation is off until the change ends (see EndSceneChange)
+		SceneGeneration::BeginChange();
+		skipRender = true;
+	}
+
+	// cached FBProperties of property schemes and evaluation panes (cameras, post process data) are not valid anymore
+	SceneGeneration::Bump();
+
+	std::vector<PostProcessContextData*> contexts;
+	{
+		std::shared_lock rlock(gContextMapMutex);
+		contexts.reserve(gContextMap.size());
+		for (auto& contextPair : gContextMap)
+		{
+			if (contextPair.second)
+			{
+				contexts.push_back(contextPair.second.get());
+			}
+		}
+	}
+
+	// NOTE: the evaluation checks the generation under its lock, so once the lock is taken here, an evaluation
+	//  that is in progress is finished and a next one skips the outdated panes. The context data is never destroyed
+	for (PostProcessContextData* contextData : contexts)
+	{
+		contextData->SetNeedToResetPaneSettings(true);
+		std::unique_lock<std::mutex> evaluationLock = contextData->LockEvaluation();
+	}
+}
+
+void PostProcessingManager::EndSceneChange()
+{
+	if (!SceneGeneration::IsChanging())
+		return;
+
+	// panes collected during the change are outdated, the next render collects new ones and enables the evaluation
+	if (SceneGeneration::EndChange())
+	{
+		std::shared_lock rlock(gContextMapMutex);
+		for (auto& contextPair : gContextMap)
+		{
+			if (contextPair.second)
+			{
+				contextPair.second->SetNeedToResetPaneSettings(true);
+			}
+		}
+	}
+	skipRender = false;
+}
+
 void PostProcessingManager::EventFileNewBegin(HISender pSender, HKEvent pEvent)
 {
-	// nothing is destroyed yet, cached FBProperties of property schemes are not going to be valid anymore
-	SceneGeneration::Bump();
+	// nothing is destroyed yet
+	StopEvaluationOfOutdatedPanes(true);
 }
 
 void PostProcessingManager::EventFileMerge(HISender pSender, HKEvent pEvent)
 {
-	// a merge could replace a post process data or a user effect object
-	SceneGeneration::Bump();
+	// a merge could replace a post process data, a camera or a user effect object
+	// NOTE: there is no merge completed event, the change ends on the next UI idle (see OnUIIdle)
+	StopEvaluationOfOutdatedPanes(true);
 }
 
 void PostProcessingManager::EventFileNew(HISender pSender, HKEvent pEvent)
 {
-	// clear all pointers (start point)
-	std::unique_lock wlock(gContextMapMutex);
-	for (auto& contextPair : gContextMap)
-	{
-		PostProcessContextData& contextData = *contextPair.second; 
-		contextData.SetNeedToResetPaneSettings(true);
-	}
+	EndSceneChange();
 }
 
 void PostProcessingManager::EventFileOpen(HISender pSender, HKEvent pEvent)
 {
-	skipRender = true;
-	// nothing is destroyed yet, cached FBProperties of property schemes are not going to be valid anymore
-	SceneGeneration::Bump();
-	std::unique_lock wlock(gContextMapMutex);
-	for (auto& contextPair : gContextMap)
-	{
-		PostProcessContextData& contextData = *contextPair.second;
-		contextData.SetNeedToResetPaneSettings(true);
-	}
+	// nothing is destroyed yet
+	StopEvaluationOfOutdatedPanes(true);
 }
 
 void PostProcessingManager::EventFileOpenOverride(HISender pSender, HKEvent pEvent)
@@ -452,13 +500,7 @@ void PostProcessingManager::EventFileOpenOverride(HISender pSender, HKEvent pEve
 
 void PostProcessingManager::EventFileOpenComplete(HISender pSender, HKEvent pEvent)
 {
-	skipRender = false;
-	std::unique_lock wlock(gContextMapMutex);
-	for (auto& contextPair : gContextMap)
-	{
-		PostProcessContextData& contextData = *contextPair.second;
-		contextData.SetNeedToResetPaneSettings(true);
-	}
+	EndSceneChange();
 }
 
 
@@ -490,9 +532,11 @@ void PostProcessingManager::EventSceneChange(HISender pSender, HKEvent pEvent)
 		FBComponent* components[] = { sceneEvent.Component, sceneEvent.ChildComponent };
 		for (FBComponent* component : components)
 		{
-			if (component && (component->Is(PostPersistentData::TypeInfo) || component->Is(EffectShaderUserObject::TypeInfo)))
+			// a camera and a post process data could be used by the evaluation panes
+			if (component && (component->Is(PostPersistentData::TypeInfo) || component->Is(EffectShaderUserObject::TypeInfo)
+				|| component->Is(FBCamera::TypeInfo)))
 			{
-				SceneGeneration::Bump();
+				StopEvaluationOfOutdatedPanes(false);
 				break;
 			}
 		}

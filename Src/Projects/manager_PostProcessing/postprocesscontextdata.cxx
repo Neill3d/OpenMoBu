@@ -13,6 +13,7 @@
 #include "posteffect_buffers.h"
 #include "posteffect_contextmobu.h"
 #include "postprocessing_helper.h"
+#include "shaderproperty_generation.h"
 
 #define IS_INSIDE_MAIN_CYCLE			(mEnterId==1)
 #define IS_RENDERING_OFFLINE			(mAttachedFBO[mEnterId-1] > 0)
@@ -105,6 +106,13 @@ void PostProcessContextData::Evaluate(FBTime systemTime, FBTime localTime, FBEva
     // for all post processing view panes, evaluate their effect chains
     std::lock_guard<std::mutex> lock(mEvaluateMutex);
 
+    // NOTE: checked under the lock, see PostProcessingManager::StopEvaluationOfOutdatedPanes.
+    //  Pane cameras and post process data could be destroyed after the panes were collected (file new / open, a deleted camera)
+    if (!IsReadyToEvaluate() || SceneGeneration::IsChanging() || !SceneGeneration::IsCurrent(mEvaluatePanesGeneration))
+    {
+        return;
+    }
+
     for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
     {
         const SPaneData& pane = mEvaluatePanes[nPane];
@@ -188,6 +196,9 @@ void PostProcessContextData::UpdatePostProcessingFlag()
 
 void PostProcessContextData::PrepareEachPaneCamera()
 {
+    // NOTE: taken before reading pane cameras, a scene change after this point makes the collected panes outdated
+    mRenderPanesGeneration = SceneGeneration::Current();
+
     // grab the whole viewer
 
     mViewerViewport[0] = mViewerViewport[1] = 0;
@@ -471,6 +482,7 @@ void PostProcessContextData::Synchronize()
 
     // sync mEvaluatePanes with mRenderPanes
     mEvaluatePaneCount = mRenderPaneCount;
+    mEvaluatePanesGeneration = mRenderPanesGeneration;
     bool isReady = mEvaluatePaneCount > 0;
 
     for (int nPane = 0; nPane < mEvaluatePaneCount; ++nPane)
