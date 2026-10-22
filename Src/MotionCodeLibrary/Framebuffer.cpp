@@ -13,6 +13,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include	<stdio.h>
 
 #include	"FrameBuffer.h"
+#include	"gl_texture_trace.h"
 #include	"checkglerror.h"
 #include	"Logger.h"
 
@@ -433,7 +434,10 @@ void FrameBuffer::CleanUpAttachment( AttachmentObject &object )
 		if (object.target == GL_RENDERBUFFER)
 			glDeleteRenderbuffers(1, &object.id);
 		else
+		{
+			GLTrace::Delete(object.id, "FrameBuffer");
 			glDeleteTextures(1, &object.id);
+		}
 
 		object.id = 0;
 	}
@@ -507,7 +511,10 @@ unsigned FrameBuffer::CreateTexture2D ( const int width, const int height, GLenu
 	GLuint	tex = (useId) ? *useId : 0;
 
 	if (tex == 0)
+	{
 		glGenTextures   ( 1, &tex );
+		GLTrace::Gen(tex, "FrameBuffer");
+	}
 
     glBindTexture   ( GL_TEXTURE_2D, tex );
 	if (true == unpackAlignment)

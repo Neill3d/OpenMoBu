@@ -8,6 +8,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 */
 
 #include "posteffectshader_ssao.h"
+#include "gl_texture_trace.h"
 #include "posteffectshader_mix.h"
 #include "posteffectshader_blur_lineardepth.h"
 #include "posteffect_buffers.h"
@@ -52,6 +53,7 @@ void EffectShaderSSAO::DeleteTextures()
 {
 	if (hbaoRandomTexId > 0)
 	{
+		GLTrace::Delete(hbaoRandomTexId, "SSAO random");
 		glDeleteTextures(1, &hbaoRandomTexId);
 		hbaoRandomTexId = 0;
 	}
@@ -259,6 +261,7 @@ bool EffectShaderSSAO::InitMisc()
 	
 	DeleteTextures();
 	glGenTextures(1, &hbaoRandomTexId);
+	GLTrace::Gen(hbaoRandomTexId, "SSAO random");
 
 	glBindTexture(GL_TEXTURE_2D, hbaoRandomTexId);
 	

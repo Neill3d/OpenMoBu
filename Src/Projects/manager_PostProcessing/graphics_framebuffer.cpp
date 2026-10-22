@@ -3,6 +3,7 @@
 // Sergei <Neill3d> Solokhin 2018
 
 #include "graphics_framebuffer.h"
+#include "gl_texture_trace.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,21 +49,25 @@ void MainFrameBuffer::texture_pack::deleteTextures()
 {
 	if (color_texture > 0)
 	{
+		GLTrace::Delete(color_texture, "MainFrameBuffer");
 		glDeleteTextures(1, &color_texture);
 		color_texture = 0;
 	}
 	if (depth_texture > 0)
 	{
+		GLTrace::Delete(depth_texture, "MainFrameBuffer");
 		glDeleteTextures(1, &depth_texture);
 		depth_texture = 0;
 	}
 	if (stencil_texture > 0)
 	{
+		GLTrace::Delete(stencil_texture, "MainFrameBuffer");
 		glDeleteTextures(1, &stencil_texture);
 		stencil_texture = 0;
 	}
 	if (accum_texture > 0)
 	{
+		GLTrace::Delete(accum_texture, "MainFrameBuffer");
 		glDeleteTextures(1, &accum_texture);
 		accum_texture = 0;
 	}
@@ -80,11 +85,13 @@ void MainFrameBuffer::texture_pack::deleteTextures()
 #ifdef MANY_ATTACHMENTS
 	if (normal_texture > 0)
 	{
+		GLTrace::Delete(normal_texture, "MainFrameBuffer");
 		glDeleteTextures(1, &normal_texture);
 		normal_texture = 0;
 	}
 	if (mask_texture > 0)
 	{
+		GLTrace::Delete(mask_texture, "MainFrameBuffer");
 		glDeleteTextures(1, &mask_texture);
 		mask_texture = 0;
 	}
@@ -267,6 +274,7 @@ const GLuint MainFrameBuffer::prepTexture(GLuint id, int depthSamples, int cover
 	if (texId == 0)
 	{
 		glGenTextures(1, &texId);
+		GLTrace::Gen(texId, "MainFrameBuffer");
 	}
 
 	if (depthSamples <= 1)

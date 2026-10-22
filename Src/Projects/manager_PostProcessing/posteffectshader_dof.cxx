@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffectshader_dof.h"
+#include "gl_texture_trace.h"
 #include "postpersistentdata.h"
 #include "shaderproperty_writer.h"
 
@@ -310,6 +311,7 @@ void EffectShaderDOF::InitTexture()
 
 	DeleteTexture();
 	glGenTextures(1, &randomTexId);
+	GLTrace::Gen(randomTexId, "DOF random");
 
 	glBindTexture(GL_TEXTURE_2D, randomTexId);
 
@@ -327,6 +329,7 @@ void EffectShaderDOF::DeleteTexture()
 {
 	if (randomTexId > 0)
 	{
+		GLTrace::Delete(randomTexId, "DOF random");
 		glDeleteTextures(1, &randomTexId);
 		randomTexId = 0;
 	}

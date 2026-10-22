@@ -4,6 +4,7 @@
 
 #include "FileUtils.h"
 #include "postprocessing_fonts.h"
+#include "gl_texture_trace.h"
 #include "mobu_logging.h"
 
 #if defined(HUD_FONT)
@@ -169,6 +170,7 @@ void CFont::Free()
 {
 	if (nullptr != font_manager)
 	{
+		GLTrace::Delete(font_manager->atlas->id, "fonts atlas");
 		glDeleteTextures(1, &font_manager->atlas->id);
 		font_manager->atlas->id = 0;
 		font_manager_delete(font_manager);
@@ -205,6 +207,7 @@ void CFont::TextAdd(float x, float y, float _size, float rectw, float recth, con
 
 		if (nullptr != font_manager)
 		{
+			GLTrace::Delete(font_manager->atlas->id, "fonts atlas");
 			glDeleteTextures(1, &font_manager->atlas->id);
 			font_manager->atlas->id = 0;
 			font_manager_delete(font_manager);
@@ -223,6 +226,7 @@ void CFont::TextAdd(float x, float y, float _size, float rectw, float recth, con
 		text_buffer_add_text(buffer, &pen, &normal, text, length);
 		//text_buffer_align(buffer, &pen, ALIGN_CENTER);
 		glGenTextures(1, &font_manager->atlas->id);
+		GLTrace::Gen(font_manager->atlas->id, "fonts atlas");
 		glBindTexture(GL_TEXTURE_2D, font_manager->atlas->id);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

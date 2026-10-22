@@ -19,6 +19,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 #include "ShaderToyShaderProgram.h"
 #include "posteffect_shader_userobject.h"
 #include "posteffect_objectslot.h"
+#include "gl_texture_trace.h"
+#include "posteffect_scenetexture.h"
 
 #include <algorithm>
 #include <mutex>
@@ -616,11 +618,17 @@ void PostEffectBufferShader::PreRender(PostEffectRenderContext& renderContext, P
 		if (!texture)
 			continue;
 
-		int textureId = texture->TextureOGLId;
-		if (textureId == 0)
+		// NOTE: TextureOGLId is not trusted, a scene texture is initialized again on a switch of the gl context
+		//  (the viewer, a file render), see SceneTextureTracker
+		int textureId = static_cast<int>(SceneTextureTracker::Acquire(texture));
+
+		if (GLTrace::Enabled())
 		{
-			texture->OGLInit();
-			textureId = texture->TextureOGLId;
+			GLTrace::ProbeOnContextChange("PreRender");
+			FBVideo* video = texture->Video;
+			const FBVideoClip* clip = FBIS(video, FBVideoClip) ? static_cast<FBVideoClip*>(video) : nullptr;
+			GLTrace::CheckSceneTexture(texture->LongName, static_cast<GLuint>(textureId),
+				clip ? static_cast<int>(clip->Width) : 0, clip ? static_cast<int>(clip->Height) : 0);
 		}
 
 		if (textureId > 0)

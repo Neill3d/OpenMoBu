@@ -13,6 +13,8 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 #include "posteffect_shader_userobject.h"
 #include "posteffect_shader.h"
+#include "gl_texture_trace.h"
+#include "posteffect_scenetexture.h"
 #include "mobu_logging.h"
 #include "hashUtils.h"
 
@@ -350,11 +352,17 @@ void TextureUserEffect::RenderUserEffect(EffectShaderUserObject* userEffect, FBT
 	if (Layers.GetCount() > 0 && Layers[0])
 	{
 		FBTexture* inputTexture = Layers[0];
-		if (inputTexture->TextureOGLId == 0)
+		// NOTE: TextureOGLId is not trusted, a scene texture is initialized again on a switch of the gl context
+		srcTextureId = SceneTextureTracker::Acquire(inputTexture);
+
+		if (GLTrace::Enabled())
 		{
-			inputTexture->OGLInit();
+			GLTrace::ProbeOnContextChange("TextureUserEffect");
+			FBVideo* video = inputTexture->Video;
+			const FBVideoClip* clip = FBIS(video, FBVideoClip) ? static_cast<FBVideoClip*>(video) : nullptr;
+			GLTrace::CheckSceneTexture(inputTexture->LongName, srcTextureId,
+				clip ? static_cast<int>(clip->Width) : 0, clip ? static_cast<int>(clip->Height) : 0);
 		}
-		srcTextureId = inputTexture->TextureOGLId;
 	}
 
 	// NOTE: the buffer pool is owned by this texture, so the key doesn't have to be unique between texture objects

@@ -17,6 +17,7 @@
 #include "posteffect_shader_userobject.h"
 #include "postprocessing_helper.h"
 #include "shaderproperty_generation.h"
+#include "gl_texture_trace.h"
 
 //--- Registration defines
 #define POSTPROCESSING_MANAGER__CLASS POSTPROCESSING_MANAGER__CLASSNAME
@@ -139,6 +140,8 @@ bool PostProcessingManager::Init()
 
 bool PostProcessingManager::Open()
 {
+	LOGV("PostProcessing: build %s %s, gl texture trace level %d (see POSTPROCESSING_GL_TRACE)\n", __DATE__, __TIME__, GLTrace::Level());
+
 	FBApplication& application = FBApplication::TheOne();
 	FBSystem& system = FBSystem::TheOne();
 	FBEvaluateManager& evaluateManager = FBEvaluateManager::TheOne();
@@ -591,6 +594,7 @@ void PostProcessingManager::CheckForAContextChange()
 		entry = std::make_unique<PostProcessContextData>();
 		entry->Init();
 		LOGI("PostProcessing: created context data for HGLRC=%p\n", (void*)hContext);
+		GLTrace::ProbeSharing("new context data");
 	}
 }
 
@@ -674,6 +678,7 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 		// NOTE: the video is not necessarily rendered in the gl context that is current here,
 		//  the context data that renders the video picks up the state in OnPerFrameRenderingPipelineCallback
 		mVideoRendering.store(true, std::memory_order_release);
+		GLTrace::ProbeSharing("video begin");
 
 		LOGI("[PP VIDEO] manager: video rendering begins, current gl context %p, evaluate data %p\n",
 			(void*)wglGetCurrentContext(), (void*)mEvaluateContextData.load(std::memory_order_acquire));
@@ -683,6 +688,7 @@ void PostProcessingManager::OnVideoFrameRendering(HISender pSender, HKEvent pEve
 	else if (levent.GetState() == FBEventVideoFrameRendering::eEndRendering)
 	{
 		mVideoRendering.store(false, std::memory_order_release);
+		GLTrace::ProbeSharing("video end");
 
 		LOGI("[PP VIDEO] manager: video rendering ends, current gl context %p\n", (void*)wglGetCurrentContext());
 

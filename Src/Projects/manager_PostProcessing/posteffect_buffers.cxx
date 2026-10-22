@@ -10,6 +10,7 @@ Licensed under The "New" BSD License - https://github.com/Neill3d/OpenMoBu/blob/
 
 //--- Class declaration
 #include "posteffect_buffers.h"
+#include "gl_texture_trace.h"
 #include "hashUtils.h"
 
 namespace _internal
@@ -155,12 +156,14 @@ void PostEffectBuffers::FreeTextures()
 {
 	if (mCompressedPreviewId > 0)
 	{
+		GLTrace::Delete(mCompressedPreviewId, "PostEffectBuffers");
 		glDeleteTextures(1, &mCompressedPreviewId);
 		mCompressedPreviewId = 0;
 	}
 
 	if (mCompressOnFlyId > 0)
 	{
+		GLTrace::Delete(mCompressOnFlyId, "PostEffectBuffers");
 		glDeleteTextures(1, &mCompressOnFlyId);
 		mCompressOnFlyId = 0;
 	}
@@ -252,6 +255,7 @@ bool PostEffectBuffers::PreviewOpenGLCompress(EImageCompression	compressionType,
 			compressionCode = internalFormat;
 
 			glGenTextures(1, &mCompressOnFlyId);
+			GLTrace::Gen(mCompressOnFlyId, "PostEffectBuffers");
 			glBindTexture(GL_TEXTURE_2D, mCompressOnFlyId);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -399,6 +403,7 @@ bool PostEffectBuffers::PreviewCompressEnd()
 		if (0 == mCompressedPreviewId)
 		{
 			glGenTextures(1, &mCompressedPreviewId);
+			GLTrace::Gen(mCompressedPreviewId, "PostEffectBuffers");
 
 			glBindTexture(GL_TEXTURE_2D, mCompressedPreviewId);
 			glCompressedTexImage2D(GL_TEXTURE_2D, 0, mCompressionInternal, mPreviewWidth, mPreviewHeight, 0, mCompressedData.size(), mCompressedData.data());
