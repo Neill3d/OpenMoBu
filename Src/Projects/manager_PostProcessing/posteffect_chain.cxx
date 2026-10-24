@@ -59,7 +59,8 @@ bool PostEffectChain::IsReadyToRender() const
 	
 	if (!mLastCamera)
 	{
-		LOGE("[PostEffectChain] IsReadyToRender: mLastCamera is null, frame skipped");
+		// NOTE: expected for the first frame of a new effect context (a pane reset on a scene change), it's not evaluated yet
+		LOGV("[PostEffectChain] IsReadyToRender: mLastCamera is null, frame skipped\n");
 		return false;
 	}
 	
