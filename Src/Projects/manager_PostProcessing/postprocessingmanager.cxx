@@ -526,6 +526,9 @@ void PostProcessingManager::EventSceneChange(HISender pSender, HKEvent pEvent)
 			}
 		}
 	} break;
+	// NOTE: a delete (FBDelete, the navigator, python) sends Detach only, Destroy is never sent for it (MoBu 2025),
+	//  the component is still valid at Detach
+	case kFBSceneChangeDetach:
 	case kFBSceneChangeDestroy:
 	{
 		// property schemes could keep FBProperties of the destroyed component (merge replace, delete, python)

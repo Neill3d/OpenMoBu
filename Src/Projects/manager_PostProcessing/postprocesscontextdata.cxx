@@ -606,7 +606,10 @@ bool PostProcessContextData::RenderAfterRender(FBTime systemTime, FBTime localTi
         
         // NOTE: at the moment only first pane could do effect processing, no need to render more panes than that
         constexpr const int RENDER_PANE_LIMIT{ 1 };
-        for (int nPane = 0; nPane < mRenderPaneCount && nPane < RENDER_PANE_LIMIT; ++nPane)
+        // NOTE: render panes collected before a scene change could point to destroyed cameras and post process data,
+        //  the frame is shown without effects then (the main framebuffer is still blitted below)
+        const bool arePanesCurrent = !SceneGeneration::IsChanging() && SceneGeneration::IsCurrent(mRenderPanesGeneration);
+        for (int nPane = 0; arePanesCurrent && nPane < mRenderPaneCount && nPane < RENDER_PANE_LIMIT; ++nPane)
         {
             SPaneData& pane = mRenderPanes[nPane];
 			RenderPane(pEvaluateInfoIn, pane, mPaneEffectBuffers[nPane].get(), params, fboInOut);
