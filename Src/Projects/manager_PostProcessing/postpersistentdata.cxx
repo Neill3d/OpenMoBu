@@ -509,6 +509,8 @@ bool PostPersistentData::FBCreate()
 {
 	// modify system behavoiur
 	DisableObjectFlags(kFBFlagClonable);
+	// a delete of the object could be undone (EXPERIMENT: is it enough for a custom user object?)
+	EnableObjectFlags(kFBFlagUndoable);
 
 	FBPropertyPublish(this, UniqueClassId, "UniqueClassId", nullptr, nullptr);
 	FBPropertyPublish(this, Active, "Active", nullptr, nullptr);

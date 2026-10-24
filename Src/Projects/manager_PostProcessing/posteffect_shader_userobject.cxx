@@ -108,7 +108,10 @@ bool EffectShaderUserObject::FBCreate()
 
 	// modify system behavoiur
 	DisableObjectFlags(kFBFlagClonable);
-
+	// a delete of the object could be undone
+	// EXPERIMENT: with kFBFlagUndoable alone, a delete prints "[name] is not deletable!" (but works and can be undone),
+	EnableObjectFlags(kFBFlagUndoable);
+	
 	FBPropertyPublish(this, UniqueClassId, "UniqueClassId", nullptr, nullptr);
 	FBPropertyPublish(this, Active, "Active", nullptr, nullptr);
 	
